@@ -1,0 +1,38 @@
+# ci.yml — @mkbabb/atlas PR-GATE ONLY (ANSWERS Q71). The owner publishes locally via
+# scripts/release.sh (the glass-ui model); CI never runs `npm publish` and carries NO
+# NPM_TOKEN. This workflow is the regression fence: every PR must pass the full library
+# gate battery before merge.
+name: gate
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "styles/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.lib.config.mts"
+      - "tsconfig*.json"
+
+# The ATLAS_DEV_LINK dev-alias flag is DELIBERATELY absent from this file (ANSWERS Q72): it
+# must never be set in a committed build config / CI, so the dev-convenience self-alias can
+# never leak into a shipped bundle. The guard step below asserts it stays unset at runtime.
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: guard — ATLAS_DEV_LINK must be unset in CI
+        run: '[ -z "${ATLAS_DEV_LINK:-}" ] || { echo "ATLAS_DEV_LINK is set in CI — the dev-alias must never enter a shipped build"; exit 1; }'
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run lint:pub
+      - run: npm run test
+      - run: npm run gates

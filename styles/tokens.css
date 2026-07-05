@@ -1,0 +1,6 @@
+/* @mkbabb/atlas — the design-token layer. O-B0 genesis scaffold: the real token surface
+   (the lib/design decompose) lands in O-B2. Kept minimal-but-valid so build:css emits a
+   near-empty dist/tokens.css that publint + attw resolve. */
+:root {
+  --atlas-genesis: 1;
+}

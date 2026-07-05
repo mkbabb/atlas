@@ -1,0 +1,40 @@
+{
+  "//": "tsconfig.dts.json — the @mkbabb/atlas .d.ts emit config (COPIED-and-adapted from",
+  "//2": "packages/atlas-core/tsconfig.dts.json at O-B0). vue-tsc -p tsconfig.dts.json --declaration",
+  "//3": "--emitDeclarationOnly emits the publish types into ./types (mirroring ./src). vite-plugin-dts",
+  "//4": "is ABSENT (not installed); vue-tsc alone emits clean .vue.d.ts. scripts/repoint-dts.mjs then",
+  "//5": "rewrites the emitted `@/` alias specifiers to relative paths (the portability fix, the hard",
+  "//6": "dependency it is since api-extractor/rollupTypes is not installed). The one O-B0 adaptation:",
+  "//7": "rootDir/baseUrl point at THIS repo's own ./src (no ../../atlas hop).",
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "jsx": "preserve",
+    "strict": true,
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationMap": false,
+    "outDir": "./types",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "types": ["vite/client", "node"]
+  },
+  "include": ["./src/**/*.ts", "./src/**/*.vue", "./src/**/*.d.ts"],
+  "exclude": [
+    "./src/**/*.spec.ts",
+    "./src/**/*.gate.ts",
+    "./src/**/__tests__/**"
+  ]
+}
