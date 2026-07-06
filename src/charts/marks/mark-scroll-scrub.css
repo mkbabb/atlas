@@ -1,0 +1,35 @@
+/* mark-scroll-scrub.css — the ONE scroll-scrub block (I-MARK.c · GAP-4). The three mark wrappers
+   (HandUnderline, HandHighlight, AnimatedRule) each copy-pasted the SAME `@media
+   (prefers-reduced-motion: no-preference) { @supports (animation-timeline: view()) }` `crayon-wipe`
+   view()-timeline block, differing only in the host selector + the entry-range %. This collapses
+   them to ONE authored block keyed on a shared `data-mark-scroll` marker the wrappers stamp on the
+   scrolling instances; each wrapper tunes its entry % via the `--mark-scrub-end` custom property
+   (the only per-wrapper delta — the underline settles at `entry 26%`, the highlighter at `30%`, the
+   rule over `cover 40%`). The mechanism, the PRM/`@supports` fences, and the `crayon-wipe`
+   binding are NOW authored once. The `@keyframes crayon-wipe` itself is DEFINED in the atlas-owned,
+   index-imported `platform/design/map-draw.css` (the sibling of geo-draw/dot-draw) — `@keyframes`
+   are document-global, so the literal `crayon-wipe` name resolves here. (It is NOT a glass-ui
+   global: 4.2.0 ships a `crayon` brush KIND but no `crayon-wipe` @keyframes.)
+
+   It binds the `crayon-wipe` @keyframes (the clip-path inset wipe) to the mark's OWN `view()`
+   timeline, applied via `:deep()` to the InkMark's `.hm__svg`. The wipe clips the SVG from the right
+   at scroll-out → fully revealed at scroll-in, so the mark LOOKS drawn as the figure scrolls into the
+   lower third (and un-drawn on scroll-up). `clip-path` is the compositor-eligible, filter-STABLE wipe
+   — the static seeded grain filter rasters ONCE and is untouched (no per-frame re-raster).
+
+   THE FENCES are the standard scroll-mark pair: the OUTER
+   `prefers-reduced-motion: no-preference` + the INNER `@supports (animation-timeline: view())` so
+   under PRM (or a non-supporting engine) the wipe NEVER attaches and the mark rests at its terminal
+   DRAWN state. The draw RANGE is entry-keyed (the mark draws as it ENTERS the lower viewport);
+   `--mark-scrub-start`/`--mark-scrub-end` tune the per-wrapper window, defaulting to the
+   underline's `entry 0% → entry 26%`. */
+@media (prefers-reduced-motion: no-preference) {
+    @supports ((animation-timeline: view()) and (animation-range: entry)) {
+        [data-mark-scroll] :deep(.hm__svg) {
+            animation: crayon-wipe auto linear both;
+            animation-timeline: view(block);
+            animation-range: var(--mark-scrub-start, entry 0%)
+                var(--mark-scrub-end, entry 26%);
+        }
+    }
+}

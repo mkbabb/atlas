@@ -1,0 +1,31 @@
+/* src/platform/charts/placement.css — the dock SWING (K-EXPRESS D2; the ONE D2 surface outside
+   DashboardEssay). Imported by platform/design/index.css AFTER the chrome-overlays import.
+
+   The three-item dock (filter-toggle · download · enlarge) is NOT a floating corner — it is the
+   `#actions` CONTROL zone of ChartFrame's plate-header three-column grid (MASTHEAD | KEY | CONTROL,
+   `grid-template-columns: minmax(0,1fr) auto auto`). "Dock opposite the title" is a `grid-column`
+   swap of the MASTHEAD ↔ CONTROL zones — NEVER `order` (the control is interactive; reordering
+   would break the keyboard path). Keyed by the beat's `data-dock` ANCESTOR attribute (the host
+   already stamps it), so it travels with the zebra and touches ZERO ChartFrame .vue.
+
+   DESKTOP-gated (≥1024px) to match the masthead swing AND — load-bearing — to NOT override
+   ChartFrame's `@media (--compact)` (≤640px) single-column `.plate-header` collapse: this swing's
+   `[data-dock] .plate-header` is specificity (0,2,0), which would beat the compact rule's
+   `.plate-header` (0,1,0) at ANY width if un-gated, re-establishing a 3-column grid on phones.
+   Inside the 1024 gate it can never reach the ≤640 register. grid-column placement ≠ source order
+   ⇒ tab order (masthead → key → control) is preserved; only the columns reverse. */
+@media (min-width: 1024px) {
+    [data-dock="left"] .plate-header {
+        grid-template-columns: auto auto minmax(0, 1fr);
+    }
+    [data-dock="left"] .plate-header__masthead {
+        grid-column: 3;
+    }
+    [data-dock="left"] .plate-header__key {
+        grid-column: 2;
+    }
+    [data-dock="left"] .plate-header__control {
+        grid-column: 1;
+    }
+    /* data-dock="right" is the ChartFrame default (control at column 3) — no rule needed. */
+}

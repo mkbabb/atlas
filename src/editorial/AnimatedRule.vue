@@ -1,0 +1,220 @@
+<script setup lang="ts">
+// platform/editorial/AnimatedRule.vue — ⑤ the animated divider (SUBSUMES SectionDivider). F3a /
+// design-interstitial-system §3.5 · f6-hero-interstitials §2.B-⑤.
+//
+// THE SUBSUMPTION (the R-SUBSUME decision): `<AnimatedRule variant="rule">` IS today's
+// `<SectionDivider>` — the static drawn `InkMark` (`animation="none"`), the same thin-consumer of
+// `@mkbabb/glass-ui/handmark` (the atlas authors NO stroke cubic; the brush, the wobble, the
+// seeded-static grain are ALL library-rendered). It carries SectionDivider's `full`/`short` weight
+// tiers + a NEW `hero` tier (heavier — the page-cover rule below `<DashboardHero>`). The variants
+// ESCALATE expression, restraint-first (most junctions stay the static `rule`):
+//   · rule    — the static drawn InkMark (today's default; boil FORBIDDEN — the frame-guard).
+//   · draw    — the InkMark draws-on on scroll-entry, un-draws on scroll-up (the bidirectional
+//               view() draw the underlines already use; clock="scroll" semantics).
+//   · numeral — the `text-ghost-numeral` chapter watermark wipes in behind the next beat as the
+//               junction passes (the existing recipe, now scroll-scrubbed).
+//
+// (The actual file MOVE — SectionDivider → editorial/, the call-site re-points — is a phase-2
+// integration edit OUTSIDE this lane's write-bound; SPEC'd in the lane's blockers. AnimatedRule
+// composes the SAME InkMark primitive here, so the subsumption is real, not a fork: one divider
+// component, escalating variants, the `<HandUnderline clock>` precedent — two divider components
+// would be a seam that drifts.)
+//
+// THE RUNG — ④ chrome (rule/draw) → ⑤ atmosphere (numeral, the recessive ghost). The ink is the
+// PAGE ink (`--foreground` for full, `--engrave` for short) — L1 frame chrome, NEVER a data color
+// (the existing SectionDivider law). It binds --attn-chrome via the SUFFUSION contract.
+//
+// THE BOIL STAYS FORBIDDEN: a permanent structural mark costs ZERO rAF (the pencil-boil
+// frame-guard, the E1/E4 root law); the `draw`/`numeral` reveals are ONE-SHOT scroll-scrubs, not
+// continuous boil. PRM: ALL three render STATIC (the rule drawn, the numeral set, no wipe — the
+// library snaps it; token-register eases only, never a bespoke transition). a11y: role="separator"
+// (today's SectionDivider semantics); `aria-hidden` on the ink (the numeral is decorative — the
+// chapter SEMANTICS live in the `<h2>` headings, not the rule).
+import { computed } from "vue";
+import { InkMark } from "@mkbabb/glass-ui/handmark";
+import { toRoman } from "@/platform/composables/useRomanNumeral";
+
+const props = withDefaults(
+    defineProps<{
+        /** The escalating expression (default "rule" — the static drawn divider). */
+        variant?: "rule" | "draw" | "numeral";
+        /** The demarcation tier — `full` (chapter rule) · `short` (figure rule) · `hero`
+            (the heavier page-cover rule below the DashboardHero). */
+        weight?: "full" | "short" | "hero";
+        /** The ghost chapter figure (variant="numeral") → the Roman watermark. */
+        numeral?: number;
+        /** The InkMark grain determinism (the SectionDivider seed law — pixel-identical reloads). */
+        seed?: number;
+    }>(),
+    { variant: "rule", weight: "full", numeral: undefined, seed: 1 },
+);
+
+const isShort = computed(() => props.weight === "short");
+// TIER ① CHAPTER/HERO → marker (the confident fat-pen) · TIER ② FIGURE → pencil (the whisper).
+const brush = computed<"marker" | "pencil">(() =>
+    isShort.value ? "pencil" : "marker",
+);
+// The ink: the chapter/hero rule in the page ink, the figure rule in the faint engrave hairline.
+// THE SILVER RULE FINISH (H.W4.b · §SILVER) — the FIGURE rule (the short pencil whisper, the
+// structural section divider) wears the brushed-metal finish: --silver-rule mixes a faint cool-
+// steel tint INTO the --engrave hairline ink, so the rule reads as a struck-metal section cut, not
+// flat graphite. ADDITIVE (the --engrave fallback survives if silver is unset); NEUTRAL (it does
+// not fight the route accent). The CHAPTER/HERO rule stays full page ink (a loud cut earns no tint).
+const ink = computed<string>(() =>
+    isShort.value
+        ? "color-mix(in oklab, var(--engrave, var(--muted-foreground)), var(--silver-rule) 40%)"
+        : "var(--foreground)",
+);
+
+// THE DRAW CLOCK — `rule` is static (drawn-but-still, `animation="none"`, `appear="mount"`); `draw`
+// fires the bidirectional scroll draw (the underlines' Clock B — `animation="draw-on"` on the
+// library's view-timeline arm via the `data-rule-clock="scroll"` binding below); `numeral` is the
+// scroll-scrubbed ghost watermark (no InkMark — the recipe text, scrubbed). PRM collapses every
+// arm to static (the library snaps the draw; the numeral is simply set).
+const animation = computed<"none" | "draw-on">(() =>
+    props.variant === "draw" ? "draw-on" : "none",
+);
+const appear = computed<"mount" | "visible">(() =>
+    props.variant === "draw" ? "visible" : "mount",
+);
+
+/** The Roman ghost numeral (variant="numeral") off the ONE platform converter (V-W2). */
+const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : ""));
+</script>
+
+<template>
+    <!-- The host keeps the `<hr>`-EQUIVALENT a11y semantics — role="separator" IS the ARIA role an
+         `<hr>` maps to, on a `<div>` so it can hold the InkMark / ghost-numeral child. It binds
+         --attn-chrome (the SUFFUSION rung; the numeral arm recesses to atmosphere via its own
+         ghost ink). The `data-weight` is the tier probe (full/short/hero). -->
+    <div
+        class="animated-rule"
+        :class="`animated-rule--${weight}`"
+        role="separator"
+        aria-hidden="true"
+        data-attn="chrome"
+        :data-weight="weight"
+        :data-variant="variant"
+        data-testid="animated-rule"
+    >
+        <!-- variant="numeral" — the ghost chapter watermark (text-ghost-numeral, the recessive ⑤
+             atmosphere ink). Decorative + aria-hidden (the chapter label lives in the <h2>). -->
+        <span
+            v-if="variant === 'numeral'"
+            class="animated-rule__numeral text-ghost-numeral"
+            :data-rule-clock="'scroll'"
+        >
+            {{ roman }}
+        </span>
+
+        <!-- variant="rule" | "draw" — the drawn InkMark rule. STATIC for `rule` (drawn-but-still,
+             no boil — the frame-guard); the bidirectional scroll draw for `draw` (Clock B, the
+             view() draw the underlines use). The brush, grain, and clip-path wipe are ALL
+             library-rendered (the thin-consumer contract; no atlas stroke cubic). -->
+        <InkMark
+            v-else
+            class="animated-rule__ink"
+            shape="strikethrough"
+            :brush="brush"
+            :color="ink"
+            :seed="seed"
+            :animation="animation"
+            :appear="appear"
+            :data-rule-clock="variant === 'draw' ? 'scroll' : 'static'"
+        />
+    </div>
+</template>
+
+<style scoped>
+/* Both ink variants are DRAWN rules — the host is a sized BOX (no background, no border; the ink
+   is the InkMark path / the ghost glyph, not a CSS fill). The chapter/hero rule breathes wide; the
+   figure rule breathes tighter. The host carries the measured HEIGHT the brush stroke needs (the
+   marker is fat, the pencil thin) + the full reading measure, so the inline-block InkMark `.hm`
+   has a box to fill. (This mirrors SectionDivider's geometry exactly — the subsumption is real.) */
+.animated-rule {
+    border: 0;
+    background: none;
+    /* THE READING MEASURE (the N.LIVE-DEFECTS full-bleed-rule fix). The rule is EDITORIAL SPINE —
+       a chapter/figure divider (role="separator"), not a data mark — so it reads at the PROSE
+       measure, NOT the wide `--measure-figure` figure track its `.dashboard-body` host provides
+       (the §13 viz-area-is-viz-ONLY law: high-level text/furniture stays at the reading measure;
+       only the marks break out). Before this, `width:100%` stretched the tapered InkMark across
+       the whole ~1280px figure track — the "wildly long dividing rule". `min(100%, --measure-prose)`
+       + `margin-inline:auto` centres it in the reading column at every width (the phone column
+       still fills, the 100% term winning below 72ch). */
+    width: 100%;
+    max-inline-size: var(--measure-prose, 72ch);
+    margin-inline: auto;
+    display: block;
+    padding: 0;
+    overflow: visible;
+    /* THE SUFFUSION RUNG (DESIGN §13 / HIER-SUFFUSION · rung ④). The drawn rule declares its
+       recession from --attn-chrome (0.46) — the ONE source of truth, NEVER the brush's intrinsic
+       opacity (the marker/pencil presets carry their own alpha; the rung recedes the whole rendered
+       mark uniformly to the chrome register, as the inversion law demands of frame chrome). The
+       numeral arm recesses further via its own ghost ink (the ⑤ atmosphere floor), so its
+       additional fade composes on top of this chrome floor. */
+    opacity: var(--attn-chrome);
+}
+/* The InkMark `.hm` root is inline-block (the library's scoped default); the rule host needs it
+   to STRETCH the full measure. The descendant selector (two classes) out-specifies the library's
+   `.hm[data-v]` (one class + one attribute), so the block override wins deterministically. We only
+   restyle the BOX (display/size) — the library still owns the stroke markup (the thin-consumer
+   contract; no CSS touches the rendered path). */
+.animated-rule .animated-rule__ink {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* TIER ① the CHAPTER rule — the confident drawn `marker` bar between beats (the wide margin parts
+   whole story beats). */
+.animated-rule--full {
+    height: 18px;
+    margin-block: clamp(2.5rem, 6vw, 5rem);
+}
+/* TIER ② the FIGURE rule — the faint `pencil` graphite whisper within a beat (a tighter margin;
+   never louder than a whisper, the stopping rule). */
+.animated-rule--short {
+    height: 14px;
+    margin-block: clamp(1.5rem, 3.5vw, 2.5rem);
+}
+/* THE NEW HERO TIER — the heavier page-cover rule below the DashboardHero (the band ends, the lead
+   beat begins). Taller than the chapter rule so the marker draws a heavier cut; a tighter top
+   margin (it sits against the cover) and a wider bottom (it parts the cover from the first plate). */
+.animated-rule--hero {
+    height: 22px;
+    margin-block-start: clamp(1.5rem, 4vw, 3rem);
+    margin-block-end: clamp(3rem, 7vw, 6rem);
+}
+
+/* THE GHOST NUMERAL — the recessive ⑤ atmosphere watermark (text-ghost-numeral owns the
+   face/ink/size). It wipes in behind the next beat as the junction passes (scroll-scrubbed, the
+   existing recipe). Centered in the rule's measure; decorative (aria-hidden). The opacity is the
+   ghost ink's own (the recipe's `--ghost-numeral-ink`) — the ⑤ atmosphere floor. */
+.animated-rule__numeral {
+    display: block;
+    text-align: center;
+    line-height: 0.8;
+}
+
+/* THE SCRUBBED DRAW-ON (variant="draw") — the rule draws/un-draws BIDIRECTIONALLY under real
+   scroll, binding the `crayon-wipe` @keyframes (the clip-path inset wipe) to the mark's OWN view()
+   timeline — the SAME mechanism the HandUnderline scroll arm uses. The `@keyframes crayon-wipe` is
+   DEFINED in the atlas-owned, index-imported `platform/design/map-draw.css` (`@keyframes` are
+   document-global; it is NOT a glass-ui global — 4.2.0 has a `crayon` brush KIND, no `crayon-wipe`
+   @keyframes). The fences are the standard scroll-mark pair: the
+   OUTER `prefers-reduced-motion: no-preference` + the INNER `@supports (animation-timeline: view())`
+   so under PRM (or a non-supporting engine) the wipe NEVER attaches and the rule rests at its
+   terminal DRAWN state (token-register eases only — no bespoke transition; the boil stays
+   forbidden). */
+@media (prefers-reduced-motion: no-preference) {
+    @supports ((animation-timeline: view()) and (animation-range: entry)) {
+        .animated-rule[data-variant="draw"] :deep(.hm__svg) {
+            animation: crayon-wipe auto linear both;
+            animation-timeline: view(block);
+            animation-range: entry 0% cover 40%;
+        }
+    }
+}
+</style>
