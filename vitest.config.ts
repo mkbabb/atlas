@@ -1,3 +1,4 @@
+import { fileURLToPath, URL } from "node:url";
 import { defineConfig, configDefaults } from "vitest/config";
 
 // vitest.config.ts — @mkbabb/atlas test + gate runner. `test` runs the whole tree; `gates`
@@ -11,6 +12,12 @@ import { defineConfig, configDefaults } from "vitest/config";
 // spec (cream-law.spec.ts) IS the runner. A later gate-corpus wave (WG-B B13–B15) may formalize a
 // naming convention for driven-gate modules; until then this exclude names them explicitly.
 export default defineConfig({
+    // The `@` → `src/` alias mirrors tsconfig `paths` so the pure-core unit specs (O-A9's
+    // predicate-prose / resolve-provenance / active-viz layer) resolve the same `@/…` specifiers the
+    // source uses. The filesystem gates (genesis, composables-anti-god) read off disk and are unaffected.
+    resolve: {
+        alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+    },
     test: {
         include: ["tests/**/*.spec.ts", "tests/**/*.gate.ts"],
         exclude: [...configDefaults.exclude, "tests/gates/cream-law.gate.ts"],

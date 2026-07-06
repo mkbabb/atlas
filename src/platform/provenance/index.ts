@@ -9,3 +9,13 @@
 // `provenance-render` row — this barrel claims NO render [src-rearchitecture §A.4; CD-10].
 export * from "./provenance-contract";
 export * from "./aggregate-contract";
+
+// ── v1.0.4 (O-A9) — THE RENDER FAMILY lands: the seam is finally SERVED ─────────────────────────
+// The WG-A successor the B7 barrel named. `humanizePredicate` (the reader-facing formatter) +
+// `useProvenance` (the static ⊕ vintage ⊕ algebra resolver) + `ProvenanceBar`/`ProvenanceChip` (the
+// `#provenance` slot filler + the at-viz leave-one-out chip). The filter-view `AlgebraReadout` band
+// lands in the `filter/ui` barrel (filter-panel chrome consuming this family's `humanizePredicate`).
+export * from "./predicate-prose";
+export * from "./useProvenance";
+export { default as ProvenanceBar } from "./ProvenanceBar.vue";
+export { default as ProvenanceChip } from "./ProvenanceChip.vue";

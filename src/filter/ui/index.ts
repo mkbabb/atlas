@@ -13,6 +13,10 @@ export { default as PercentileRangeSlider } from "./PercentileRangeSlider.vue";
 export { default as FilterRow } from "./components/FilterRow.vue";
 export { default as FilterDrawerFoot } from "./components/FilterDrawerFoot.vue";
 
+// — O-A9 (v1.0.4): the filter-view GLOBAL algebra band (provenance-surface §3.2). Filter-panel
+//   chrome consuming `humanizePredicate` from the `provenance/` family; band 0 of UnifiedFilterPanel. —
+export { default as AlgebraReadout } from "./AlgebraReadout.vue";
+
 // — O-B4R (the SCC closure): the panel hosts + dials —
 export { default as UnifiedFilterPanel } from "./UnifiedFilterPanel.vue";
 export { default as DimDial } from "./DimDial.vue";

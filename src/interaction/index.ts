@@ -28,6 +28,12 @@ export * from "./useAffordanceHint";
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
 export * from "./useVizContext";
 export * from "./useSelectionTreatment";
+
+// ── v1.0.4 (O-A9) — THE ACTIVE-VIZ HOOK: the scrolled-to/selected viz as a NAMED READ-ONLY event
+// source (provenance-surface §4). A thin subscription façade over `useActiveBeat` + the route
+// coordinator + `useSelection`; writes NOTHING (the single-writer gates hold). Consumed by the
+// provenance ProvenanceChip binding + O-A11 drill-down.
+export * from "./useActiveViz";
 export { default as HoverCard } from "./HoverCard.vue";
 export { default as ReadoutDrill } from "./ReadoutDrill.vue";
 
