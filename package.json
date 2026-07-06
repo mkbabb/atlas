@@ -39,19 +39,19 @@
       "import": "./dist/filter.js"
     },
     "./story": {
-      "types": "./types/platform/story/index.d.ts",
+      "types": "./types/story/index.d.ts",
       "import": "./dist/story.js"
     },
     "./motion": {
-      "types": "./types/platform/motion/index.d.ts",
+      "types": "./types/motion/index.d.ts",
       "import": "./dist/motion.js"
     },
     "./editorial": {
-      "types": "./types/platform/editorial/index.d.ts",
+      "types": "./types/editorial/index.d.ts",
       "import": "./dist/editorial.js"
     },
     "./interaction": {
-      "types": "./types/platform/interaction/index.d.ts",
+      "types": "./types/interaction/index.d.ts",
       "import": "./dist/interaction.js"
     },
     "./data": {
