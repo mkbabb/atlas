@@ -1,0 +1,236 @@
+/* THE PAGE COVER — the un-gridded headline band on paper (no glass, no grid). Under
+   figure-primacy (H.W10.a) the AUDACIOUS FIGURE series is the cover-line and the title is
+   the `text-page-title` rung (Fraunces optical-display, the receded quiet label — smaller
+   than the shared `text-headline` plate question-titles, distinct so they don't shrink with
+   it); the dek is Newsreader prose; the series is the three lifted audacious cap-box slugs.
+   The band breathes wide above the lead beat — the figure is the page's first, loudest mark. */
+.dashboard-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-block-end: 0.5rem;
+}
+.dashboard-hero__eyebrow {
+    /* the eyebrow names the page (the small-caps kicker above the cover-line). */
+    margin: 0;
+}
+.dashboard-hero__title {
+    margin: 0;
+    /* the page <h1> — the receded quiet label (text-page-title); the recipe owns face/axes/size. */
+    max-inline-size: var(--measure, 36ch);
+}
+.dashboard-hero__dek {
+    margin: 0;
+    max-inline-size: var(--measure, 60ch);
+    color: var(--muted-foreground);
+}
+
+/* THE COVER STANDFIRST + KICKER (K-PAPER-COVER · ARM B) — both ride the global `masthead-eyebrow`
+   recipe (face/axes/size/italic, recipes.css §6); only their SEAT in the cover flow lands here. The
+   standfirst is the felt deck beside the dek; the kicker is the small word above the series. */
+.dashboard-hero__standfirst {
+    margin: 0;
+    max-inline-size: var(--measure, 60ch);
+}
+.dashboard-hero__kicker {
+    margin: 0;
+    margin-block-start: 0.5rem;
+}
+
+/* THE AUDACIOUS SERIES — three cap-box figures in a row (the rule of three). On the phone
+   measure they stack; from the tablet up they ride one row, each its own slug + caption. The
+   `--attn-hero` rung is on the host (the SUFFUSION token); the figures tint via the page ramp. */
+.dashboard-hero__series {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(1.25rem, 5vw, 3rem);
+    margin-block-start: 0.75rem;
+    /* The rung ⓪ recession multiplier — the page thesis at full ink (the loudest fold surface).
+       The series declares its rung HERE (the SUFFUSION contract — never a brush-intrinsic alpha).
+       The RANKED register (I11 §2) lifts the row-level fade: the ink is declared PER-FIGURE there
+       (the crown at `--attn-hero`, the flanks at `--attn-data`), so the host stays opaque and each
+       member carries its own rung. */
+    opacity: var(--attn-hero);
+    align-items: start;
+    /* THE COVER-HERO SERIES CLS RESERVATION (L3-CSS · Fork 12 — relocated off the platform recipe
+       sheet onto the DashboardHero that OWNS the audacious series; serves demand/sci/ecf). The series
+       lays out at h=0 first (the `cqw` figure-slug + count-up resolve a frame late) then jumps to its
+       real height, growing the cover and shoving the lead beat (+130px desktop) — the J-CLOSE dominant
+       shift. `min-block-size` = the SETTLED rendered height holds the series box from first paint so the
+       late slug layout FILLS a reserved box instead of growing the cover. A MIN (a richer crown wrap
+       grows past it with no shift); per-viewport because the phone STACKS the series into one full-width
+       column. The phone floor reserves the tallest narrow register (demand 471 · sci/ecf 348). The
+       mobile-base + `min-width:640px` split mirrors the §4c measure (UNCHANGED, so CLS does not move). */
+    min-block-size: 460px;
+}
+@media (min-width: 640px) {
+    /* the desktop one-row band — every DashboardHero route settles at ~129px (the audacious row);
+       reserve it so the cover stays its settled ~270–303px from first paint (no 173→303 jump). */
+    .dashboard-hero__series {
+        min-block-size: 128px;
+    }
+}
+.dashboard-hero__series--ranked {
+    opacity: 1;
+}
+
+/* THE BANNER CARDINALITY STATE (M.W1 D3, ratified · N.WG1 Arm E). The ranked-4 lockup (usf,
+   demand): the CROWN banners row one — a full-row track, so `min(rung, track-fit)` finally lets
+   the lifted audacious rung paint (the §12 ×1.5 lift was PAIRED with exactly this track release)
+   — and the flanks share ONE recessed row beneath it (`flex:1 1 0` — equal thirds, each flank's
+   own ch-count self-clamp + `--rank-scale-ancillary` sizing the visible recession). Desktop-row
+   register only (≥640px matches the series' one-row band); the phone column stack governs below. */
+@media (min-width: 640px) {
+    .dashboard-hero__series--banner .dashboard-hero__figure--lede {
+        flex-basis: 100%;
+        flex-grow: 1;
+    }
+    .dashboard-hero__series--banner
+        .dashboard-hero__figure:not(.dashboard-hero__figure--lede) {
+        flex: 1 1 0;
+        /* the flank's OWN cap-line (the JS emits both tracks) — on its own recessed row the
+           lede floor is unnecessary and the size recession actually paints; the phone column
+           below 640 keeps the floored default (no inversion on a shared-width stack). */
+        --slug-num-track: var(--slug-num-track-own);
+    }
+}
+/* I-MOBILE figure-stack (F-FIG-2) — at the phone register the three `flex:1 1 auto` figures
+   shrink-fit onto ONE row (the wrap squeeze: the audacious slugs cramp + share a row band). On the
+   phone each figure reads on its OWN full-width row, so we stack the series into a single column
+   (the figures are the page thesis — they must not cramp at the measure that can least afford it). */
+@media (--phone) {
+    .dashboard-hero__series {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+    }
+}
+.dashboard-hero__figure {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0;
+    /* a container so the slug's `17cqw` resolves against the figure's own track (L2). */
+    container-type: inline-size;
+    flex: 1 1 auto;
+    min-inline-size: 0;
+}
+.dashboard-hero__value {
+    /* the audacious value — the figure-slug recipe owns the Fira cap-box (crowns never shear). */
+    display: block;
+    /* A figure slug is ATOMIC — it never wraps. Without this, a signed crown ("−$324.1M") breaks
+       at the U+2212↔"$" opportunity and floats the sign a line above the digits (the CC-6 typo the
+       re-rank kills); the recipe's fit-to-track (min(rung, track-fit)) sizes the font so the whole
+       token fits its column, so nowrap reads on ONE line without overflow. */
+    white-space: nowrap;
+}
+
+/* THE COVER RANK (I11 §2 · design-usf §0 ⓪ · K-C-HIER graded) — the `lede` CROWN at the full
+   audacious rung, the flanks recessed by SIZE (`--rank-scale-ancillary`) + INK (`--attn-data`).
+   Rank governs SIZE: each rung re-points `--type-figure-slug` by a named `--rank-scale-*` scalar
+   (the PullFigure idiom — re-point the recipe's rung, the `min(rung, track-fit)` term unchanged so a
+   member can neither shear nor collide), replacing the deleted `/1.3` magic divisor. The crown also
+   claims more of the row track (`--rank-grow-lede`, replacing the literal `flex-grow:1.6`) so its
+   wider slug seats without crowding the flanks. The per-figure `data-attn` binds the SUFFUSION ink:
+   the lede at `hero` (full), the flanks at `data` (recessed). */
+.dashboard-hero__figure--lede {
+    flex-grow: var(--rank-grow-lede);
+}
+.dashboard-hero__figure--lede .dashboard-hero__value {
+    /* the crown rides the FULL audacious rung (`--rank-scale-lede: 1`) — the page apex. */
+    --type-figure-slug: calc(var(--type-display-audacious) * var(--rank-scale-lede));
+    opacity: var(--attn-hero);
+    /* THE PAYER HUE (I11 §2 · design-usf §0 ⓪) — the crown is the net CARRY (a payer-side figure),
+       so it wears the diverging-LOW payer pole (one-color-one-meaning, INV-2: the payer pole is the
+       net-out hue the route's spine already speaks). The ramp-ink ban allows the FIGURE to tint (it
+       is the audacious figure, not body text); the flanks stay ink + recede by opacity alone. The
+       cascade-resolved token is theme-aware. The crown's sign glyph rides the same pole. */
+    color: var(--ink-diverging-low-lg); /* O-C7 D5 — the payer-pole crown as a READABLE hero ink (hue kept, L to the AA-large band) */
+    --readout-sign-color: var(--ink-diverging-low-lg);
+}
+/* E-3 (K-DESIGN-SUFFUSE · the /sci cover-thesis pop) — the lede CROWN hue is the ROUTE's icon-palette
+   pole, not the diverging payer pole, on the rainbow route. The crown rule above hardcodes
+   `--viz-diverging-low` (the /usf, /demand diverging payer hue — correct there, E-2 PASS). On the
+   RAINBOW route (/sci) that left the cover thesis speaking the diverging pole while the route accent
+   is GREEN (--rainbow-signature-1, sci/meta.ts) — two voices for one route. Keyed on the EXISTING
+   `data-color-kind="rainbow"` seam (the series host already carries it — no new prop, no consumer
+   patch; the lede-hue authority stays HERE), the rainbow page's lede crown wears the green
+   signature-1 pole, so the cover thesis + the route accent are ONE voice. A chrome PICKOUT on the
+   lede figure (a budgeted signature pop) within the K-C crown — the colorkind/three-red law GREEN
+   (the audacious FIGURE may tint; the signature green is an L3 chrome accent, never a new data ramp). */
+.dashboard-hero__series[data-color-kind="rainbow"]
+    .dashboard-hero__figure--lede
+    .dashboard-hero__value {
+    color: var(--ink-rainbow-signature-1-lg); /* O-C7 D5 — the /sci green signature crown as a readable hero ink */
+    --readout-sign-color: var(--ink-rainbow-signature-1-lg);
+}
+.dashboard-hero__figure--support .dashboard-hero__value {
+    /* the graded middle (PROVISIONAL, §7) — the support rung between lede + ancillary; its rung is
+       `--rank-scale-support` (`calc(1/1.3)`, the byte-equivalent successor to the old `/1.3`). */
+    --type-figure-slug: calc(var(--type-display-audacious) * var(--rank-scale-support));
+    opacity: var(--attn-data);
+}
+.dashboard-hero__figure--ancillary .dashboard-hero__value {
+    /* the recessed flank — the rung recessed to `--rank-scale-ancillary` (0.59) + the ink ducked to
+       `--attn-data`, so the flanks read as the crown's supporting magnitudes, not co-equal KPIs. */
+    --type-figure-slug: calc(var(--type-display-audacious) * var(--rank-scale-ancillary));
+    opacity: var(--attn-data);
+}
+/* The recessed flank's CAPTION text stays full-ink (WCAG 1.4.3 AA — the recession governs the
+   figure's ink mass, never drops the unit/context prose below the 4.5:1 floor; the PullFigure
+   convergence-pass precedent). The `--attn-data` fade is scoped to the slug VALUE above. */
+.dashboard-hero__figure--ancillary .dashboard-hero__caption,
+.dashboard-hero__figure--support .dashboard-hero__caption {
+    opacity: 1;
+}
+
+/* THE K-B SEAM STAND-IN (D13 · K-FRAMEWORK §4) — a K-B-OWNED, load-anchored fade-in-up scoped to the
+   `lede` crown, so the deterministic-subject seam (K-C NAMES the subject; K-B owns the TIMING) is
+   testable BEFORE K-B's `vizzes` band lands. It is a sibling-wave PLACEHOLDER, retired the moment
+   K-B's band keys its fade-in-up off `[data-rank="lede"]` — NOT a permanent K-C deliverable. The
+   fence is the POSITIVE `@media (prefers-reduced-motion: no-preference)` form (matching
+   scroll-driven/chrome-overlays/map-draw), NOT `not (… reduce)`: the positive form also evaluates
+   FALSE where the feature is UNSUPPORTED, so the crown stays STATIC there too. The crown's SIZE
+   recession is PRM-INDEPENDENT (CSS, not motion) — the crown reads by size under PRM regardless. */
+@media (prefers-reduced-motion: no-preference) {
+    @keyframes dashboard-hero-lede-reveal {
+        from {
+            opacity: 0;
+            transform: translateY(0.5rem);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .dashboard-hero__figure--lede {
+        animation: dashboard-hero-lede-reveal 0.5s var(--ease-engrave, ease-out) both;
+    }
+}
+
+/* THE SHOWN-MATH (CC-6) — the recessive equation the crown produces, in place of the bare
+   en-dash. It is the relation that yields the crown (the carry), set quiet so it never reads as
+   a fourth co-equal figure. THE TEXT-RECESSION LAW (N5 design consult · G-N9): this is TEXT, so
+   its recession is the MUTED INK + the caption size — the prior `--attn-chrome` (④, 0.46) alpha
+   stacked on the mute landed it at 1.94:1 on light paper (the W0 e2e defect); the §HIERARCHY
+   covenant forbids sub-AA text. Full alpha: the mute + `text-caption` scale ARE the rung.
+   (Live after-fix: 5.46:1 light; the dark arm rides the 6.70:1 dark-muted token.) */
+.dashboard-hero__relation {
+    margin: 0;
+    margin-block-start: 0.1rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+}
+.dashboard-hero__caption {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+.dashboard-hero__unit {
+    /* the unit caption — the Fira eyebrow that NAMES the unit (the F6.4 close). */
+    margin: 0;
+}
+.dashboard-hero__context {
+    /* the "what / when" line — Newsreader caption, recessive. */
+    margin: 0;
+}

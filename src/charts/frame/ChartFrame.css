@@ -1,0 +1,369 @@
+/* The atlas-plate recipe (FD1 §5.2): flat --card paper bordered by the engraved
+   double rule — an outer hairline, a hair-gap mat in the page paper, and the
+   heavier inner rule, all as one stacked box-shadow. Print-crisp --radius-plate
+   corners. NOT a glass lens (the radial-glow source fix).
+
+   THE `resting` TIER (C.W6.b2 / AS-8 · cap-glass-ui §6). The plate IS the platform's
+   `resting`-rung surface — the canonical in-flow content plate the Aurora field reads
+   *behind* (the §1 z-ladder: dock/filter/hover float ABOVE on the `floating`/`overlay`
+   rungs; the chart plate rests at the bottom rung). It expresses that tier as the FLAT
+   engraved-paper plate, NOT a `<GlassPanel>` lens — wrapping the plate in a glass material
+   is exactly the dark-radial-glow source the C2 doctrine kills, so the `resting` rung here
+   is the OPAQUE engraved plate (the field is felt through the grain/grid, never sampled by
+   a backdrop-filter on the data). One vocabulary, the deft expression of its rung. */
+.plate {
+    /* `position: relative` + `isolation: isolate` makes the plate the SELF-CONTAINED
+       painting root for the z:-3 grid `::before`: a new stacking context whose negative-z
+       child paints ABOVE the plate's own `--card` background but BELOW the in-flow chart
+       body — so the grid shows on the paper and the data rides ON TOP. `isolate` (not an
+       explicit z-index) forms the context WITHOUT re-ordering the plate against its
+       siblings, so the C3 expand seam + the hero box-shadow stacking are untouched. */
+    position: relative;
+    isolation: isolate;
+    background: var(--card);
+    /* THE ENGRAVED-FRAME HAIRLINE wears the SILVER finish (H.W4.b · §SILVER). The bezel ink
+       stays its --engrave rung; --silver-hairline mixes a faint brushed-metal tint ON TOP, so
+       the hairline reads as machined-metal rather than flat ink. ADDITIVE: the --engrave
+       fallback keeps the bare ink if silver is ever unset. Not loud — a subtle steel whisper. */
+    border: 1px solid color-mix(in oklab, var(--engrave), var(--silver-hairline) 45%);
+    border-radius: var(--radius-plate, 6px);
+    box-shadow:
+        0 0 0 4px var(--background),
+        0 0 0 5px color-mix(in oklab, var(--engrave), var(--silver-hairline) 45%),
+        /* the specular catch-light edge — a hairline of lit metal at the top rim (the
+           engraved-instrument register; the same ivory whisper --cp-glass-rim carries). */
+            inset 0 1px 0 var(--silver-specular),
+        0 1px 3px oklch(0 0 0 / 0.08);
+
+    /* §GRID register (AS-4 / atmosphere-aesthetic P0·3 → I8.b §1.5) — the plate-grid pitch +
+       line + opacity are now ONE platform token each in `tokens.css §GRID` (`--plate-grid-pitch`
+       at the larger 24px monograph register, `--plate-grid-line`, and `--plate-grid-opacity:
+       light-dark(0.5, 0.35)` collapsing the old hand-coded dark split). The grid stays SCOPED to
+       this `.plate::before` (the token promotion does NOT mount it page-wide — the documented XOR
+       against the aurora is preserved); the `::before` below CONSUMES those tokens. No `.plate`-
+       local grid declaration remains (the 16px literal + the `--plate-grid-opacity-dark`
+       companion are retired — fb-backgrounds §1.5/P4). */
+
+    /* THE DATA-REGION MASK (ds2-medium M5 — the data-fence, the BINDING LAW). The library's
+       `paper-grain-overlay` `::after` reads `--paper-grain-mask` to carve the grain. Grain on
+       the FRAME, NEVER under the FIGURE: a fleck over a choropleth reads as a data artifact; on
+       the plate margin it reads as paper. This radial mask is OPAQUE only toward the plate edge
+       (the bezel/margin ring, where the data never sits) and TRANSPARENT across the whole
+       interior (the data viewport), so no grain fleck can land on a tier fill or a map cell. It
+       mirrors the grid's collision-guard fence inverted: the GRID owns the interior, the GRAIN
+       owns the margin — one delineation each. The grain `::after` is felt at rest, never seen. */
+    --paper-grain-mask: radial-gradient(
+        130% 130% at 50% 50%,
+        transparent 0%,
+        transparent 72%,
+        #000 100%
+    );
+}
+
+/* THE E8 PLATE-GRID — the faint figure-on-graph-paper underlay (C.W6.b2 · Scope 6 / AS-4;
+   atmosphere-aesthetic P0·3/P2·3; D1 §1). The atlas lineage is the scientific monograph:
+   a chart is "a plotted figure on graph paper." A sub-grain 16px graph-paper tile INSIDE
+   the plate (z:-3, behind the chart body, BENEATH the data ink) earns its keep by
+   reinforcing the plate-is-a-figure metaphor — the one grid role that is deft, not noise.
+   The page-wide blueprint grid (it would fight the Aurora — two fields) and the gallery
+   grid (it would duplicate the constellation) are DECLINED — the documented XOR; this grid
+   lives ONLY inside ChartFrame, NEVER page-wide.
+
+   THE COLLISION GUARD (P2·3). The engraved `--engrave` double-rule bezel already delineates
+   the plate edge (the working atlas idiom, preserved above). The grid must NOT collide with
+   it: the `mask-image` radial fades the grid to transparent toward the bezel, so the
+   ENGRAVED FRAME owns the boundary and the GRID owns the interior — one delineation, never
+   two. `pointer-events: none` keeps it inert; it sits below the body on the z:-3 rung. */
+.plate::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: var(--z-atmosphere-grid, -3);
+    pointer-events: none;
+    border-radius: inherit;
+    /* CONSUME the §GRID platform tokens (tokens.css §GRID). The light/dark split rides the
+       grid INK color (`--plate-grid-ink` — the `--plate-grid-line` dialed to the
+       `--plate-grid-opacity` strength, baked into the color's alpha via `light-dark()`, which
+       is valid only in `<color>` context). Painting that themed color at element `opacity: 1`
+       renders the grid at 0.5 light / 0.35 dark in every engine — the ONE `light-dark()` token,
+       no `:where(.dark) .plate::before` override, no `-dark` companion (the §1.5 collapse).
+       The pitch is the larger 24px monograph register. */
+    opacity: 1;
+    background-image:
+        linear-gradient(var(--plate-grid-ink) 1px, transparent 1px),
+        linear-gradient(90deg, var(--plate-grid-ink) 1px, transparent 1px);
+    background-size: var(--plate-grid-pitch) var(--plate-grid-pitch);
+    /* fade the grid toward the plate edges so it never collides with the engraved bezel —
+       the engraved frame OWNS the boundary, the grid OWNS the interior (P2·3). */
+    -webkit-mask-image: radial-gradient(
+        120% 120% at 50% 50%,
+        #000 60%,
+        transparent 100%
+    );
+    mask-image: radial-gradient(120% 120% at 50% 50%, #000 60%, transparent 100%);
+}
+/* The dark-stock grid recession (the engraved bezel is the louder mark on graphite, the grid
+   only the faintest tooth) is now carried by the ONE `--plate-grid-opacity: light-dark(0.5,
+   0.35)` token in tokens.css §GRID — the hand-coded `:where(.dark) .plate::before` opacity
+   override is RETIRED (I8.b §1.5/§6). */
+
+/* THE STRADDLE GRID-FENCE (F6.1 / f6-breakout-titles §2.1 Gate D). When the headline band
+   STRADDLES, its lower half re-enters the plate's top region — that re-entrant half must sit
+   on FLAT --card, NEVER on graph paper (a thesis figure on grid reads as plotted data, not the
+   argument). So the grid `::before` starts BELOW the band's lower half: its `inset-block-start`
+   becomes the MEASURED `--headline-lift` (the band's own half-height — the same source that
+   lifts the band). The grid OWNS the interior below the band; the band OWNS the flat lip above.
+   One measured source, two consumers (the lift + the fence). */
+.plate--straddle::before {
+    inset-block-start: var(--headline-lift, 0px);
+}
+
+/* The HERO register (K3): the flagship plate's double-rule is HEAVIER — a wider mat in the
+   page paper and a deeper drop, so the engraved frame reads as a presentation plate, not a
+   consequence card. The eye lands here first. Same warm-paper ground + print-crisp corners. */
+.plate--hero {
+    box-shadow:
+        0 0 0 6px var(--background),
+        0 0 0 8px var(--engrave),
+        0 3px 12px oklch(0 0 0 / 0.1);
+}
+
+/* ── THE THREE-ZONE HEADER GRID (E5a §1 · d-header-legend M1–M7) ─────────────────────────────
+   The single header is a named three-column grid: MASTHEAD (the eyebrow + title) takes the
+   flexible measure; KEY (the inline legend) + CONTROL (the `#actions` cluster) take their
+   intrinsic widths and never crowd the title. The KEY/CONTROL zones are absent from the grid
+   when their slot is empty (the template `v-if`s), so a title-only plate is a single-column
+   masthead — byte-identical to the old `flex justify-between` header at rest. The zones align
+   to the masthead's top (a tall ledger or a tall title never vertically centres the control). */
+.plate-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: start;
+    gap: 1rem;
+}
+.plate-header__masthead {
+    grid-column: 1;
+}
+.plate-header__key {
+    grid-column: 2;
+    display: flex;
+    align-items: flex-start;
+}
+.plate-header__control {
+    grid-column: 3;
+    display: flex;
+    flex: none;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+/* ── THE HEADLINE BAND ZONE + STRADDLE POSTURE (F6.1 / f6-breakout-titles §2.1) ──────────────
+   The band is the `#headline` cluster's host: its OWN un-gridded ground. The FRAME owns the
+   engraved figure-rule that closes the band from the data — applied to the band's slotted child
+   (`:deep(> *)`), never hand-rolled by the consumer (the consumers' comments say so: "the
+   ChartFrame band owns the engraved figure-rule + the post-band spacing"). The grain mask + the
+   grid fence keep the band on flat --card; the rule is the seam to the gridded data below. */
+.plate-headline {
+    position: relative;
+    /* the band sits above the data on the in-flow z-order (the grid `::before` is z:-3 below
+       it); its OWN ground is the flat --card the plate already paints, no extra fill needed. */
+    margin-block-end: 1.25rem;
+}
+/* The engraved figure-rule (the band's foot — the FRAME's seam, F6.1 Gate D). The consumer's
+   band cluster is the slot's direct child; the rule rides ITS lower edge so the cluster is
+   delineated from the data viewport by the same `--engrave` hairline the plate bezel wears.
+   This is the one place the frame styles the slotted content — the rule is the band's, not the
+   cluster's (INV-F4: the consumer mounts the figure, the frame owns the band's grammar). */
+.plate-headline :deep(> *) {
+    border-block-end: 1px solid var(--engrave);
+    padding-block-end: 1rem;
+}
+
+/* THE STRADDLE LIFT (the negative-margin, NOT a transform — layout-honest, f6-breakout §2.1
+   mechanism #2). The band is pulled UP by HALF its own MEASURED height (`--headline-lift`), so
+   its vertical midline lands on the plate's top bezel: half on the page paper above (breaching
+   the frame), half re-entering below the figure-rule. The negative margin ALSO pulls the
+   following data viewport up under the band's lower half, so the plate's height stays honest (a
+   transform would leave a layout ghost reserving full height below an empty top). `overflow:
+   visible` on the plate (already the default — G1.3) lets the band's top half render OUTSIDE the
+   bezel, un-clipped. Before the band measures (`--headline-lift:0`), the band sits in flow — it
+   lifts on the next frame, never jumping to a guessed literal. */
+.plate-headline--straddle {
+    margin-block-start: calc(-1 * var(--headline-lift, 0px));
+    /* the band's top half breaches the plate; let its overshoot paint past the bezel. */
+    overflow: visible;
+}
+/* The straddle plate keeps room for the band's re-entrant LOWER half at its top, so the data
+   viewport never collides with the band foot. The lower half is exactly `--headline-lift`; the
+   plate's existing top padding (p-6/p-8) plus this reserve clears the rule + its breathing gap. */
+.plate--straddle {
+    /* the data tucks below the band's lower half — the band's negative margin already pulls the
+       following content up, so no extra body padding is needed; this marker is the gate's hook
+       + the `::before` fence selector (above). */
+}
+
+/* ── THE SIDE RAIL (E5a §1 — the docked legend's hero column) ────────────────────────────────
+   When the legend is RAILED, the body is a flex row: the data viewport grows, the rail takes a
+   hero-register fixed measure beside it (the literal "legend on the side of the viz"). Opaque
+   resting-tier, top-aligned, one engraved hairline off the data. Inline/none docks render the
+   body alone (this flex collapses to a single grow child — byte-identical to before). */
+.plate-body {
+    display: flex;
+    flex-direction: column;
+}
+.plate-body--railed {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.25rem;
+}
+.plate-body--railed > .frame-expand {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+}
+.plate-rail {
+    flex: none;
+    inline-size: clamp(7rem, 14cqi, 11rem);
+    align-self: stretch;
+    padding-inline-start: 1.25rem;
+    border-inline-start: 1px solid var(--engrave);
+}
+
+/* ── THE MOBILE FOLD (≤640 — the band UN-straddles, the rail stacks under) ───────────────────
+   At the narrow register the straddle would push the cluster off the top of the viewport, so the
+   band folds to the in-flow posture (the lift zeroes — the band re-enters normal flow ABOVE the
+   data, the f-breakout in-flow band). The grid-fence + figure-rule still delineate it. The
+   header grid collapses to a single column (masthead → key → control stack), and the side rail
+   folds UNDER the body (a horizontal key strip below the viz). One zone model, two postures. */
+@media (--compact) {
+    .plate-headline--straddle {
+        margin-block-start: 0;
+    }
+    .plate--straddle::before {
+        inset-block-start: 0;
+    }
+    .plate-header {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .plate-header__key,
+    .plate-header__control {
+        grid-column: 1;
+    }
+    .plate-body--railed {
+        flex-direction: column;
+    }
+    .plate-rail {
+        inline-size: auto;
+        align-self: stretch;
+        padding-inline-start: 0;
+        padding-block-start: 1rem;
+        margin-block-start: 0.5rem;
+        border-inline-start: 0;
+        border-block-start: 1px solid var(--engrave);
+    }
+}
+
+/* THE ASPECT-BOX RESERVE — the CLS skeleton (C8.5 / MX-5 · pf-lighthouse O-CLS · Scope 10a).
+   The §20 RR7-3 row puts the WHOLE aspect-box reserve here, on ChartFrame, not split across
+   waves. The CLS risk is a chart body that paints at 0-height then REFLOWS to its real height
+   when the data lands (the ECF treemap/choropleth's 0.175 baseline CLS). Most plates already
+   reserve via a fixed `chart-h-*` host (340/460/640px) on the slotted chart — that consumer
+   reserve is why ECF CLS is already < 0.02 — but a content-driven host (no `chart-h-*`) would
+   collapse to 0 pre-data and reflow in. So `.frame-expand` (the ONE real box every chart body
+   routes through — the slotted host is its child) carries a `min-block-size` FLOOR: a pre-data
+   plate reserves at least this much vertical space, so the body never paints at 0 and then jumps.
+   The floor (200px) sits BELOW the smallest real chart host (chart-h-sm = 340px), so a plate
+   that DOES set a fixed host is byte-identical (its host out-measures the floor — the floor is
+   inert there); only a not-yet-sized / content-driven body is held off 0. The fullscreen body
+   is TELEPORTED to <body> (`.fixed.inset-0`), so this in-flow wrapper keeps the reserve at rest
+   regardless of expand state — no fullscreen carve needed (the teleported surface owns its own
+   layout, this box stays the resting plate behind it).
+
+   T-PERF-4 (I-PERF-DATA.c) — THIS reserve is what makes `useEChart({ lazyMount: true })` CLS-safe.
+   A lazyMounted below-fold chart does NOT init its canvas at hydration; it inits on scroll-into-
+   view. Without a reserved box the deferred canvas would mount into a 0-height slot and SHIFT the
+   layout as it scrolled in. The `chart-h-*` host on every lazyMounted consumer (StackedBar/
+   TimeSeries/Treemap = chart-h-lg; BreakEvenScatter/SciScatter = chart-h-md) reserves the full box
+   up-front, and THIS `min-block-size` floor backstops any content-driven host — so the lazy canvas
+   mounts into an already-sized slot and the GREEN ≤0.038 CLS holds. The box reservation is the
+   PAIR to the lazyMount opt-in (the wave's CLS floor), root-homed here on the ONE frame. */
+.frame-expand {
+    min-block-size: 200px;
+}
+
+/* THE EXPANDED BODY (D7). glass-ui's teleported fullscreen surface is a bare `.fixed.inset-0`
+   <div> with no stable class hook, so ChartFrame marks its OWN body off the slot's `fullscreen`
+   flag (the documented slot API). At rest the wrapper is inert (display:contents — it adds NO
+   box, so every plate is byte-identical to before). When fullscreen it BECOMES the layout box:
+   it fills the teleported surface (the .fixed.inset-0 parent) and centers the chart, so the
+   expanded viz grows to the full-viewport plate (not stuck at its resting size). */
+.frame-expand__body {
+    display: contents;
+}
+.frame-expand__body--fullscreen {
+    /* The fullscreen PRESENTATION surface (D7). A column stack that fills the teleported
+       `.fixed.inset-0` width and is AT LEAST viewport-tall (`min-block-size: 100%`), growing
+       with its content so a rich plate (hero readout + prose + chart) scrolls inside the
+       fixed surface rather than being clipped. The chart host (the last child) is the GROW
+       child — it claims the remaining room (`flex: 1`) at a generous presentation floor, so
+       the expanded chart genuinely USES the screen (the resting `chart-h-lg` host is far
+       smaller). Centered horizontally with a comfortable gutter. */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    box-sizing: border-box;
+    /* The PRESENTATION surface is taller than one viewport (a generous 1.2× floor) so the
+       expanded plate is a true ZOOM that scrolls inside the fixed `.inset-0` surface — never a
+       viewport-letterboxed thumbnail. The floor is content-independent: even a short single-
+       chart plate clears the viewport, so the expand always grows the figure well past its
+       resting footprint (the D7 contract). The body still GROWS past 120vh when its content
+       (a tall hero readout + prose + chart) needs more. */
+    min-block-size: 120vh;
+    inline-size: 100%;
+    padding: clamp(1rem, 3vw, 3rem);
+}
+/* The chart host claims the remaining fullscreen height — the expand's whole point is the
+   chart BIGGER. The resting `chart-h-*` fixed-height utility is overridden HERE (the only
+   place ChartFrame overrides a consumer's host size, and only in the fullscreen branch) so
+   the host grows to fill the tall presentation surface. */
+.frame-expand__body--fullscreen > :last-child {
+    flex: 1 1 auto;
+    min-block-size: 60vh;
+    block-size: auto;
+    inline-size: 100%;
+}
+/* Every child fills the column width (the chart goes from its resting ~460px to the full
+   presentation width — the expand reads as a true zoom, not a centered thumbnail). */
+.frame-expand__body--fullscreen > * {
+    inline-size: 100%;
+    max-inline-size: 100%;
+}
+
+/* THE EXPAND TRIGGER — QUIET BY DEFAULT, ENGRAVED INTO THE PLATE CORNER (A7).
+   The glass-ui <ExpandableContainer> ships its corner trigger always-visible; the atlas register
+   wants it QUIET — invisible at rest so a plate reads as pure data, revealing only when the plate
+   is hovered or holds focus (the engraved corner affordance that "appears under the hand").
+   THE RE-SKIN REACH (arm b · the published 4.1.0 cut): the trigger no longer carries the legacy
+   `.expandable-container__trigger` class — the published cut exposes the stable `data-part='trigger'`
+   attribute on BOTH the inline trigger and the fullscreen collapse button. We pierce with `:deep()`
+   onto `[data-part='trigger']` and scope to the INLINE trigger (a descendant of `.plate`); the
+   FULLSCREEN collapse button is teleported to <body>, OUTSIDE `.plate`, so it is unaffected and stays
+   visible. Reduced-motion drops the opacity transition (the reveal is instant, never animated). */
+.frame-expand :deep([data-part="trigger"]) {
+    opacity: 0;
+    transition: opacity 0.18s ease;
+}
+.plate:hover .frame-expand :deep([data-part="trigger"]),
+.plate:focus-within .frame-expand :deep([data-part="trigger"]) {
+    opacity: 1;
+}
+/* Keyboard reach: when the quiet trigger itself takes focus it MUST become visible (so a
+   keyboard user can see what they are about to activate), independent of plate hover. */
+.frame-expand :deep([data-part="trigger"]:focus-visible) {
+    opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+    .frame-expand :deep([data-part="trigger"]) {
+        transition: none;
+    }
+}
