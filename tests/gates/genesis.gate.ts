@@ -34,8 +34,8 @@ describe("O-B0 genesis — package identity", () => {
     it("is named @mkbabb/atlas (the ROUND-RULED name; @atlas/core is unpublishable)", () => {
         expect(pkg.name).toBe("@mkbabb/atlas");
     });
-    it("is version 1.0.0 from the first cut (§5.5 owner override)", () => {
-        expect(pkg.version).toBe("1.0.0");
+    it("is version 1.0.1 — the O-B10 re-cut over the 1.0.0 first cut (§5.5 owner override)", () => {
+        expect(pkg.version).toBe("1.0.1");
     });
     it("ships bundler-only via files: [dist, types]", () => {
         expect(pkg.files).toEqual(["dist", "types"]);

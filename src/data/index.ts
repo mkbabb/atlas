@@ -23,6 +23,10 @@ export * from "./dataSaver";
 export * from "./geometry";
 export * from "./entityGeometry";
 
+// — the raw NC district topology glyph (v1.0.1 · O-B10): the ONE synchronously-bound topology asset
+//   (the SCI school map's `GeoChoropleth :topology`), exposed by name past the deep-path boundary —
+export * from "./districtTopology";
+
 // — the joins + derivations —
 export * from "./leaJoin";
 export * from "./multiYear";

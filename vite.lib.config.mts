@@ -18,6 +18,7 @@
 // chunks into ONE dist/assets/core.css aggregate (folded into dist/style.css by build-styles.mjs).
 import { fileURLToPath, URL } from "node:url";
 import { resolve } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
 import { builtinModules } from "node:module";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
@@ -91,12 +92,41 @@ function preserveJsonImportAttributes() {
     };
 }
 
+// The committed geodata is EXTERNALIZED (never bundled/inlined into the JS graph — see `external`
+// above), so the emitted modules keep bare `import … from "./glyphs/x.json" with { type: "json" }` /
+// `import … from "./nc-counties.json"` specifiers that resolve to SIBLING files in dist. v1.0.0 left
+// the imports externalized but never SHIPPED the files — the consumer's bundler then failed to
+// resolve `./glyphs/*.json`. This pass EMITS the committed geodata (the `data/glyphs/*` registry +
+// the cropped `data/nc-counties.json`) verbatim into dist at its module-relative path, so the raw
+// JSON rides beside `dist/data/leaJoin.js` / `geometry.js` / `districtTopology.js` as a static asset.
+// (The BARE `us-atlas/*` topology stays external — it resolves from the consumer's node_modules; only
+// the LIBRARY-COMMITTED relative geodata ships here.)
+function emitCommittedGeodata() {
+    const dataDir = src("data");
+    const glyphsDir = src("data/glyphs");
+    return {
+        name: "atlas-emit-committed-geodata",
+        generateBundle(this: { emitFile: (f: unknown) => void }) {
+            const emit = (absPath: string, fileName: string): void =>
+                this.emitFile({
+                    type: "asset",
+                    fileName,
+                    source: readFileSync(absPath),
+                });
+            for (const f of readdirSync(glyphsDir)) {
+                if (f.endsWith(".json")) emit(resolve(glyphsDir, f), `data/glyphs/${f}`);
+            }
+            emit(resolve(dataDir, "nc-counties.json"), "data/nc-counties.json");
+        },
+    };
+}
+
 export default defineConfig({
     root: ROOT,
     base: "./", // module-relative worker/asset URLs (survive off-origin-root)
     cacheDir: resolve(ROOT, ".vite-cache"),
     logLevel: "info",
-    plugins: [vue(), tailwindcss(), preserveJsonImportAttributes()],
+    plugins: [vue(), tailwindcss(), preserveJsonImportAttributes(), emitCommittedGeodata()],
     resolve: { alias: { "@": src("") } },
     build: {
         outDir: OUT,

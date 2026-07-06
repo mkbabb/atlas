@@ -84,6 +84,18 @@ await writeFile(resolve(DIST, "style.css"), styleCss);
 const tokensCss = header + "@layer atlas, atlas.tokens;\n" + `@layer atlas.tokens {\n${tokensBody}\n}\n`;
 await writeFile(resolve(DIST, "tokens.css"), tokensCss);
 
+// dist/breakpoints.css — the RAW `@custom-media` author-surface (the `./styles/breakpoints` export;
+// v1.0.1 · O-B10). The compiled aggregates above ship 0 raw `@custom-media` (Tailwind + the token
+// layer resolve them away), but the consumer's build glue — a local zero-dep PostCSS plugin that
+// substitutes `@media (--phone)` across its OWN dashboard SFC <style> blocks — must READ the raw
+// `@custom-media --name (cond);` DECLARATIONS. So the design-foundation source ships VERBATIM (no
+// layer wrap, no Tailwind pass) as a resolvable style asset, retiring the consumer's vendored mirror.
+const breakpointsCss = await readFile(
+    resolve(ROOT, "src/design/foundations/breakpoints.css"),
+    "utf8",
+);
+await writeFile(resolve(DIST, "breakpoints.css"), breakpointsCss);
+
 // Delete the intermediate SFC chunk (folded into style.css).
 await rm(resolve(DIST, "assets/core.css"), { force: true });
 await rm(TMP, { recursive: true, force: true });

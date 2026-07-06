@@ -1,6 +1,6 @@
 {
   "name": "@mkbabb/atlas",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "@mkbabb/atlas — the Connectivity Atlas rendering engine (platform charts / chrome / story / motion + the dashboard contract + the Vite preset). Extracted from mkbabb/sci-report at the O-arc reformation; ships BUNDLER-ONLY via the born-clean subpath exports map. O-B0 genesis: buildable + publishable scaffold, empty of source until the O-B2–B9 module-move waves fill it.",
   "type": "module",
   "license": "MIT",
@@ -77,7 +77,8 @@
       "import": "./dist/vite.js"
     },
     "./styles": "./dist/style.css",
-    "./styles/tokens": "./dist/tokens.css"
+    "./styles/tokens": "./dist/tokens.css",
+    "./styles/breakpoints": "./dist/breakpoints.css"
   },
   "files": [
     "dist",
@@ -89,7 +90,7 @@
     "build:dts": "vue-tsc -p tsconfig.dts.json --declaration --emitDeclarationOnly && node scripts/repoint-dts.mjs",
     "build:css": "node scripts/build-styles.mjs",
     "typecheck": "vue-tsc --noEmit",
-    "lint:pub": "attw --pack . --profile esm-only --exclude-entrypoints ./styles ./styles/tokens --ignore-rules internal-resolution-error && publint .",
+    "lint:pub": "attw --pack . --profile esm-only --exclude-entrypoints ./styles ./styles/tokens ./styles/breakpoints --ignore-rules internal-resolution-error && publint .",
     "test": "vitest run",
     "gates": "vitest run tests/gates",
     "prepare": "test -f dist/contract.js || npm run build",

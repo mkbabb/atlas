@@ -30,3 +30,39 @@ export * from "./useVizContext";
 export * from "./useSelectionTreatment";
 export { default as HoverCard } from "./HoverCard.vue";
 export { default as ReadoutDrill } from "./ReadoutDrill.vue";
+
+// ── v1.0.1 (O-B10 re-cut) — THE VIZ-CONTEXT HUB PROVIDER SURFACE ───────────────────────────────
+// The N.WD1 hub (`platform/context/hub.ts`) rides no barrel of its own, so v1.0.0 tree-shook the
+// provider factory out of dist (only `VIZ_HUB_KEY` + `useOptionalVizContext` survived, dragged in by
+// `charts/frame/useVizPlate`). A route body provides the hub at `VIZ_HUB_KEY` (`DashboardView`) and
+// binds its facets through `useVizHub()` (`DashboardBody`); a plate reads it through the hub's
+// `useVizContext`. This barrel is the home the O-B11 flip routes those symbols to.
+//
+// The hub's per-viz reader is ALSO named `useVizContext`, colliding with the O-A6 motion
+// `useVizContext` exported above (two distinct composables that shared a name at distinct source
+// paths pre-flip). A bare `export *` would make the name ambiguous and DROP it from this barrel
+// (breaking BOTH), so the hub surface is re-exported by NAME, omitting its `useVizContext` — the
+// motion export above holds the bare name. (The route-facing hub accessors — `useVizHub` /
+// `createVizContextHub` — are unambiguous and land here.)
+export {
+    createVizContextHub,
+    useVizHub,
+    useOptionalVizHub,
+    useOptionalVizContext,
+    VIZ_HUB_KEY,
+} from "@/platform/context/hub";
+export type {
+    C,
+    ResolvedAtmosphere,
+    FilterFacet,
+    SelectionFacet,
+    ReadoutFacet,
+    VizContext,
+    VizContextHub,
+    VizContextHubDeps,
+} from "@/platform/context/hub";
+
+// The readiness contract the hub folds each source phase through (`SourcePhase` — a route store's
+// per-source `{loading, error, resolved}` shape it registers via `hub.registerSource`).
+export type { Readiness, SourcePhase } from "@/platform/context/readiness";
+export { foldReadiness, aggregateReadiness, mayEvaluateEmpty } from "@/platform/context/readiness";

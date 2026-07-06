@@ -6,3 +6,7 @@ export { default as GalleryMasthead } from "./GalleryMasthead.vue";
 export { default as BrandMark } from "./BrandMark.vue";
 export { default as FigureInitial } from "./FigureInitial.vue";
 export { default as SiteColophon } from "./SiteColophon.vue";
+
+// v1.0.1 (O-B10 re-cut) — the `Colophon` contract (the footer credit block a route declares); the
+// `default`-only re-export dropped the named `<script>` type. Re-exported by name from the owning SFC.
+export type { Colophon, ColophonAuthor } from "./SiteColophon.vue";
