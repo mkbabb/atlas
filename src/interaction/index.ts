@@ -24,3 +24,9 @@ export * from "./pointer-machine";
 export * from "./usePointerGestures";
 export * from "./useAffordance";
 export * from "./useAffordanceHint";
+
+// ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
+export * from "./useVizContext";
+export * from "./useSelectionTreatment";
+export { default as HoverCard } from "./HoverCard.vue";
+export { default as ReadoutDrill } from "./ReadoutDrill.vue";

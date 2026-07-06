@@ -12,3 +12,10 @@
 export { default as PercentileRangeSlider } from "./PercentileRangeSlider.vue";
 export { default as FilterRow } from "./components/FilterRow.vue";
 export { default as FilterDrawerFoot } from "./components/FilterDrawerFoot.vue";
+
+// — O-B4R (the SCC closure): the panel hosts + dials (FilterPanel stays O-B8, chrome-blocked) —
+export { default as UnifiedFilterPanel } from "./UnifiedFilterPanel.vue";
+export { default as DimDial } from "./DimDial.vue";
+export { default as SelectionSetPane } from "./SelectionSetPane.vue";
+export { default as VizOptionsBand } from "./VizOptionsBand.vue";
+export { default as YearScrubber } from "./components/YearScrubber.vue";

@@ -15,6 +15,16 @@
 // the ColorScale god-split, §A.9) + the clean `contract/` + `lib/` members — and DEFERS the rest
 // (VizPlate/ChartFrame + marks/geo/readout/scene components + the entangled contract trio) to the
 // waves that land their upstream closure. See the O-B4 PACK deferral ledger + the RED-LEDGER row.
+// ── O-B4R (the SCC closure) — the full family surface ────────────────────────────────────────
+// O-B4 landed scale/contract(clean)/lib; O-B4R closes the SCC and wires every family barrel.
 export * from "./scale";
 export * from "./contract";
 export * from "./lib";
+export * from "./frame";
+export * from "./geo";
+export * from "./glyph";
+export * from "./legend";
+export * from "./marks";
+export * from "./readout";
+export * from "./scene";
+export * from "./composables";

@@ -21,3 +21,12 @@
 // The monorepo import flip to this home is O-B11.
 
 export { default as EasterEgg } from "./EasterEgg.vue";
+
+// ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
+// Beat/DashboardEssay/editorial-contract stay DEFERRED to O-B8 (they value-import chrome).
+export * from "./useBeatLayout";
+export { default as AnimatedRule } from "./AnimatedRule.vue";
+export { default as DataAside } from "./DataAside.vue";
+export { default as PullFigure } from "./PullFigure.vue";
+export { default as StoryBeat } from "./StoryBeat.vue";
+export { default as DashboardHero } from "./DashboardHero.vue";

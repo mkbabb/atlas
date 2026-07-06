@@ -7,3 +7,8 @@
 // (`selection-contract` / `viz-contract` — O-B4R) and `useVizRegistry` (O-B9), so they defer to
 // **O-B5R** (the post-B9 filter closure).
 export { useFilterPane } from "./useFilterPane";
+
+// — O-B4R (the SCC closure): the dimension/mount/panel hooks —
+export * from "./useFilterDimensions";
+export * from "./useFilterMount";
+export * from "./useFilterPanel";

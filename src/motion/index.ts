@@ -46,3 +46,21 @@ export * from "./useScrollLettering";
 export * from "./useRankMotion";
 export * from "./useGoldOneShot";
 export * from "./useLoadSequence";
+
+// ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
+// motion-director re-exports ./buildMarkAnimation; useScrollTimeline re-exports ./useSectionReveal.
+export * from "./motion-director";
+export * from "./useCoverProgress";
+export * from "./useScrollTimeline";
+export * from "./useMarkMorphology";
+// useHandMarkClock's `MarkAnimation` string-union clashes by NAME with buildMarkAnimation's handle
+// interface (two distinct concepts); the union is deep-imported where needed, so the barrel omits it.
+export {
+    type MarkClock,
+    type MarkAppear,
+    type DarkLiftPair,
+    RED_INK,
+    clockAppear,
+    clockAnimation,
+    useHandMarkClock,
+} from "./useHandMarkClock";

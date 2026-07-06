@@ -5,12 +5,10 @@
 // scrolled-to viz) is served by the `provenance/` family (O-B7) consuming `filter/engine` — NOT a
 // fourth filter home.
 //
-// This barrel is CURATED to the clean closure landable under the COPY-stays-green invariant
-// (repo-split §F): the leaf `Signal` type, the `useFilterPane` drawer singleton, and the three
-// presentational UI leaves. The SCC-blocked bulk — the coordinator graph, the panel hosts, the
-// dimension hooks — value-imports O-B9 stores + O-B4R charts and rides **O-B5R** (the post-B9 filter
-// closure; the per-wave curated-barrel precedent of O-B3 data / O-B4 charts). The monorepo import
-// flip to this home is O-B11.
-export type { Signal } from "./engine";
-export { useFilterPane } from "./composables";
-export { PercentileRangeSlider, FilterRow, FilterDrawerFoot } from "./ui";
+// ── O-B4R (the SCC closure) — the full unified filter surface ─────────────────────────────────
+// O-B5 landed the leaf closure (Signal, useFilterPane, the 3 UI leaves); O-B4R closes the SCC and
+// wires the whole engine + composables + ui. The chrome-blocked `FilterPanel.vue` (→ chrome/
+// freshness) stays deferred to O-B8. The monorepo import flip to this home is O-B11.
+export * from "./engine";
+export * from "./composables";
+export * from "./ui";

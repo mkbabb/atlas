@@ -17,3 +17,10 @@
 export * from "./centreAxis";
 export * from "./corridor";
 export * from "./clone-overlay";
+
+// ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
+export * from "./story-contract";
+export * from "./story-template";
+export * from "./useStoryDirector";
+export * from "./story-director-provide";
+export { default as StoryCorridor } from "./StoryCorridor.vue";

@@ -30,3 +30,7 @@ export * from "./multiYear";
 // — the year-scope reader (URL-driven year cursor) + the route dataset-universe resolver (O-B9) —
 export * from "./useYearScope";
 export * from "./routeUniverse";
+
+// — O-B4R (the SCC closure): the filtered-rows selector + the minimap mark leaf —
+export * from "./useFilteredRows";
+export * from "./minimapMark";
