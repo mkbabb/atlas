@@ -39,7 +39,7 @@ const entries = {
     motion: src("platform/motion/index.ts"),
     editorial: src("platform/editorial/index.ts"),
     interaction: src("platform/interaction/index.ts"),
-    data: src("platform/data/index.ts"),
+    data: src("data/index.ts"),
     stores: src("platform/stores/index.ts"),
     composables: src("platform/composables/index.ts"),
     lib: src("lib/index.ts"),

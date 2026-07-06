@@ -62,14 +62,13 @@ describe("O-B0 genesis — the subpath exports map", () => {
             const entry = pkg.exports[sub];
             const dist = entry.import as string; // ./dist/<name>.js
             const name = dist.replace(/^\.\/dist\//, "").replace(/\.js$/, "");
+            // The restructure (src-rearchitecture §A.10) progressively lifts each family from the
+            // genesis `platform/<name>/` stub to a top-level `src/<name>/` home; the barrel is real
+            // in EITHER location, so both are accepted (`vite` is preset-backed, not a barrel).
             const candidates =
                 name === "vite"
                     ? ["src/vite/preset.ts"]
-                    : name === "contract"
-                      ? ["src/contract/index.ts"]
-                      : name === "lib"
-                        ? ["src/lib/index.ts"]
-                        : [`src/platform/${name}/index.ts`];
+                    : [`src/${name}/index.ts`, `src/platform/${name}/index.ts`];
             expect(
                 candidates.some((c) => existsSync(resolve(ROOT, c))),
                 `no src barrel for ${sub} (looked at ${candidates.join(", ")})`,

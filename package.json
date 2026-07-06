@@ -55,7 +55,7 @@
       "import": "./dist/interaction.js"
     },
     "./data": {
-      "types": "./types/platform/data/index.d.ts",
+      "types": "./types/data/index.d.ts",
       "import": "./dist/data.js"
     },
     "./stores": {
@@ -123,7 +123,11 @@
     "@mkbabb/pencil-boil": "^0.4.1",
     "@mkbabb/value.js": "^1.2.0",
     "@tailwindcss/vite": "^4.3.0",
+    "@types/d3-geo": "^3",
+    "@types/geojson": "^7946",
     "@types/node": "^22.19.0",
+    "@types/topojson-client": "^3",
+    "@types/topojson-specification": "^1",
     "@vitejs/plugin-vue": "^6.0.7",
     "pinia": "^3.0.4",
     "publint": "^0.3.0",
