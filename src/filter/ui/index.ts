@@ -13,9 +13,13 @@ export { default as PercentileRangeSlider } from "./PercentileRangeSlider.vue";
 export { default as FilterRow } from "./components/FilterRow.vue";
 export { default as FilterDrawerFoot } from "./components/FilterDrawerFoot.vue";
 
-// — O-B4R (the SCC closure): the panel hosts + dials (FilterPanel stays O-B8, chrome-blocked) —
+// — O-B4R (the SCC closure): the panel hosts + dials —
 export { default as UnifiedFilterPanel } from "./UnifiedFilterPanel.vue";
 export { default as DimDial } from "./DimDial.vue";
 export { default as SelectionSetPane } from "./SelectionSetPane.vue";
 export { default as VizOptionsBand } from "./VizOptionsBand.vue";
 export { default as YearScrubber } from "./components/YearScrubber.vue";
+
+// — O-B8a (the chrome-blocked residue closes): FilterPanel value-imports `chrome/freshness`
+//   (the chrome root, homed by the O-B8a split), so the drawer host lands. —
+export { default as FilterPanel } from "./FilterPanel.vue";

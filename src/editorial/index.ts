@@ -23,10 +23,17 @@
 export { default as EasterEgg } from "./EasterEgg.vue";
 
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
-// Beat/DashboardEssay/editorial-contract stay DEFERRED to O-B8 (they value-import chrome).
 export * from "./useBeatLayout";
 export { default as AnimatedRule } from "./AnimatedRule.vue";
 export { default as DataAside } from "./DataAside.vue";
 export { default as PullFigure } from "./PullFigure.vue";
 export { default as StoryBeat } from "./StoryBeat.vue";
 export { default as DashboardHero } from "./DashboardHero.vue";
+
+// ── O-B8a (the chrome-blocked residue closes) — Beat/DashboardEssay/editorial-contract land ────
+// These value-imported the chrome family (Beat → masthead/FigureInitial · DashboardEssay →
+// background/Atmosphere + masthead/SiteColophon · editorial-contract → masthead/SiteColophon); the
+// O-B8a chrome split homed them, so the editorial essay surface is now whole.
+export { default as Beat } from "./Beat.vue";
+export { default as DashboardEssay } from "./DashboardEssay.vue";
+export * from "./editorial-contract";
