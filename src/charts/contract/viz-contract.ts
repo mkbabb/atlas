@@ -26,6 +26,7 @@ import type { VizOptionSpec } from "@/charts/composables/useVizOptions";
 import type { ChartDataRow } from "@/charts/legend/ChartDataTable.vue";
 import type { SelectionKind } from "@/charts/contract/selection-contract";
 import type { VariantSpec } from "@/motion/variant-spec";
+import type { ProvenanceFacet } from "@/platform/provenance/provenance-contract";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // E1 — THE AXIS-COLOURED DESCRIPTION.
@@ -337,27 +338,15 @@ export interface AggregateStat {
     crowd the graph-paper). */
 export type AggregateStatsFacet = () => AggregateStat[];
 
-// ── FACET 5 — `provenance` (the per-viz source lockup · IMPL is J-VOICE) ───────────────────────
+// ── FACET 5 — `provenance` (the per-viz source lockup) — LIFTED to `provenance/` at O-B7 ─────────
 
-/** FACET 5 — the per-viz `provenance` facet: the structured data-provenance lockup + the x-vs-y
-    encoding declaration (the forthright-data-analysis principle, J-FEEDBACK-5 §6/§7-C42). The viz
-    DECLARES its source truth (`dataset`·`sections`·`attributes`·`analysis`·`yearRange`) + the plain
-    "what is measured against what" (`encoding`). J-FRAME declares the lockup TYPE; J-VOICE renders it. */
-export interface ProvenanceFacet {
-    /** The source DATASET name (e.g. `"USAC Open Data — FRN Status"`). */
-    dataset: string;
-    /** The dataset SECTIONS / tables the viz draws from. */
-    sections?: string[];
-    /** The ATTRIBUTES (columns) the viz reads. */
-    attributes?: string[];
-    /** The ANALYSIS applied (the transform from source rows to the rendered measure). */
-    analysis?: string;
-    /** The data YEAR-RANGE the viz spans (e.g. `"2016–2025"`). */
-    yearRange?: string;
-    /** The x-vs-y encoding declaration — the plain "what is measured against what" (e.g.
-        `{ x: "year", y: "net retention" }`). The forthright-data-analysis principle. */
-    encoding?: { x: string; y: string };
-}
+/** FACET 5 — the per-viz `provenance` facet. The declared-provenance SHAPE was LIFTED out of this
+    keystone to its first-class home (`platform/provenance/provenance-contract.ts`) at O-B7 — the
+    oldest unserved seam (L7 / CD-10) finally has a module. Re-exported HERE as a type-only shim so
+    the `charts` subpath + every `VizContract.provenance`-typing consumer resolves `ProvenanceFacet`
+    unchanged. The RENDER primitive is the NAMED WG-A successor (`ProvenanceBar`/`ProvenanceChip`/
+    `useProvenance`); this wave claims NO render [src-rearchitecture §A.4; provenance-surface §3; CD-10]. */
+export type { ProvenanceFacet };
 
 /** THE VIZ CONTRACT (DESIGN §3.7). A viz declared once, rendered whole by `VizPlate`.
     `Row` is the contract's row shape (defaults to `ChartDataRow`). */
