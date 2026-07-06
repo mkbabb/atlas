@@ -34,8 +34,16 @@ describe("O-B0 genesis — package identity", () => {
     it("is named @mkbabb/atlas (the ROUND-RULED name; @atlas/core is unpublishable)", () => {
         expect(pkg.name).toBe("@mkbabb/atlas");
     });
-    it("is version 1.0.1 — the O-B10 re-cut over the 1.0.0 first cut (§5.5 owner override)", () => {
-        expect(pkg.version).toBe("1.0.1");
+    it("carries a valid semver at or above the 1.0.0 release floor (a re-cut must never orphan the gate)", () => {
+        // The gate asserts the PACKAGE STATE, not a frozen literal. A re-cut bumps package.json
+        // (1.0.0 first cut → 1.0.1/1.0.2/1.0.3 re-cuts, §5.5 owner override) and the gate MUST
+        // travel with it — pinning a literal here orphaned the gate at the 1.0.2 re-cut. So read the
+        // live manifest (already off disk, line 12) and assert the two invariants that actually hold:
+        // semver SHAPE + the >=1.0.0 public-release floor (major >= 1 never regresses below cut one).
+        const v = pkg.version as string;
+        const m = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.exec(v);
+        expect(m, `version is not semver-shaped: ${v}`).not.toBeNull();
+        expect(Number(m![1]), `version ${v} is below the 1.0.0 release floor`).toBeGreaterThanOrEqual(1);
     });
     it("ships bundler-only via files: [dist, types]", () => {
         expect(pkg.files).toEqual(["dist", "types"]);
