@@ -27,7 +27,7 @@
       "import": "./dist/chrome.js"
     },
     "./charts": {
-      "types": "./types/platform/charts/index.d.ts",
+      "types": "./types/charts/index.d.ts",
       "import": "./dist/charts.js"
     },
     "./provenance": {

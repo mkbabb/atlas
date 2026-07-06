@@ -32,7 +32,7 @@ const src = (p: string) => resolve(ROOT, "src", p);
 const entries = {
     contract: src("contract/index.ts"),
     chrome: src("platform/chrome/index.ts"),
-    charts: src("platform/charts/index.ts"),
+    charts: src("charts/index.ts"),
     provenance: src("platform/provenance/index.ts"),
     filter: src("platform/filter/index.ts"),
     story: src("platform/story/index.ts"),
