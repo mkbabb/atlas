@@ -1,0 +1,302 @@
+/* platform/design/scroll-driven.css — the per-beat SCROLL REVEAL on the native
+   `animation-timeline: view()` engine (C.W5.1 · scroll-reveal-design §3/§4; adopts the
+   glass-ui `scroll-driven.css` recipe vocabulary). This is the PRIMARY reveal path: the
+   browser scrubs each beat's fade+lift on the COMPOSITOR off the section's own view-progress
+   — zero scroll listeners, zero getBoundingClientRect, zero per-frame JS. It reverses on
+   scroll-up for free (the keyframes are a pure function of the timeline position), and it
+   SNAPS to land at the `animation-range` endpoints (`fill-mode: both` holds the terminal
+   frame), so the hero-never-1 floor is structurally impossible. The JS scene in
+   `useScrollProgress.ts` survives ONLY as the `@supports`-gated fallback (Firefox / jsdom /
+   SSR), demoted behind the `supportsViewTimeline()` detect — one writer per target (T6).
+
+   THE TWO STRUCTURAL FENCES (scroll-reveal-design §9; T5):
+   1. OUTER `@media (prefers-reduced-motion: no-preference)` — under PRM the reveal NEVER
+      binds, so the beat renders in its terminal state (the `from` keyframe is never applied
+      because the animation never attaches). Information parity, no JS check needed.
+   2. INNER `@supports ((animation-timeline: view()) and (animation-range: entry))` — where
+      the engine lacks the native timeline the block is skipped and the JS fallback is the
+      sole writer. The two paths can never both write the same target (the dual-path
+      single-writer guarantee, glass-ui scroll-driven.css:16-21).
+
+   ONE NAMED TIMELINE, TWO CONSUMERS. The host `view-timeline-name: --beat-tl` is declared
+   by the W4 `map-draw.css` producer (`[data-reveal-beat] { view-timeline-name: --beat-tl }`,
+   map-draw.css:25-28) — this file BINDS the plate reveal to that SAME `var(--beat-tl)`, so
+   the section's fade+lift and the per-feature draw-on (states ink, dots stipple) scrub off
+   ONE view-progress clock: the data draws AS the plate settles into the viewport. This file
+   does NOT re-declare `view-timeline-name` (one writer of the host axis — the W4 producer
+   owns it); it only adds the reveal `@keyframes` + the beat-level binding.
+
+   ════════════════════════════════════════════════════════════════════════════════════════
+   THE ENGINE CONTRACT (D1.1 · audit-d/d-reveal-ribbon §c · the temporal.spec.ts scroll-walk
+   asserts it live):
+
+       THE NEAREST SCROLL CONTAINER OF EVERY `[data-reveal-beat]` IS THE ROOT.
+
+   A `view()` ViewTimeline resolves its `source` to the nearest ANCESTOR scroll container of
+   the named host (scroll-animations-1). For the reveal to scrub it MUST resolve to the live
+   document scroller (`document.scrollingElement` = <html>) — the element a user's wheel
+   actually moves. If any ancestor between a beat and the root establishes a scroll container,
+   the timeline binds THERE and reads a frozen progress no matter how far the page scrolls
+   (the D9/D23 root cause: `overflow-x: hidden` on html/body made <body> the scroller).
+
+   THE BAN — grep-able, the D5 grep enforces it (no `overflow-x: hidden` may rest on html/body
+   or on any `[data-reveal-beat]` ancestor):
+
+       SCROLL-ENGINE-BAN: overflow-x:hidden@html,body  →  use `overflow-x: clip` (index.css)
+
+   `clip` clips the axis WITHOUT establishing a scroll container (overflow-y stays `visible`);
+   `hidden` does the opposite (forces `overflow-y: auto`). The token lives in styles/index.css;
+   this comment is the contract the gate reads. The live assertion is
+   `el.getAnimations()[0].timeline.source === document.scrollingElement` for every beat
+   (temporal.spec.ts (b) "MISBOUND beats whose timeline rides a NON-scrolling element"). Any
+   future ancestor-scroller regression (a new `overflow:auto/hidden/scroll` on a beat ancestor)
+   re-misbinds the source and that probe catches it — fix it at THAT ancestor's root, never by
+   patching the beat. */
+
+/* ════════════════════════════════════════════════════════════════════════════════════════
+   THE SCROLL-TIMELINE PROGRESS FACET (H.W11.a — the faceted scrub host).
+
+   The C.W5 engine above scrubs a BINARY reveal (a fade+lift over the compressed entry
+   window). H11 adds a SECOND, full-transit axis: a 0→1 scalar over the section's WHOLE
+   on-screen travel (`cover 0% → cover 100%` — the moment the section's leading edge touches
+   the viewport bottom to the moment its trailing edge leaves the top), written to the
+   registered custom property `--scroll-tl` ON THE COMPOSITOR. `useScrollTimeline.ts` READS
+   that property each rAF (ONE `getComputedStyle` read, zero getBoundingClientRect) and drives
+   a keyframes.js `ManualTimeline` off it — so a viz's facets (year/mark/lettering/figure/
+   annotation/forecast) scrub bi-directionally off the native view() clock, reverse-for-free.
+
+   `@property` is what makes this work on the compositor: a registered `<number>` custom
+   property INTERPOLATES (an un-registered `--x` would step, not scrub). The animation is
+   `linear both` over the full `cover` range — the timeline IS the easing axis (any reveal
+   shaping lives per-facet in JS, never here). It binds the SAME `--beat-tl` host the reveal
+   binds (one named timeline, now TWO consumers: the fade AND the progress scalar) — no second
+   `view-timeline-name`, the single-writer-of-the-host-axis law holds (the W4 producer owns it).
+
+   THE FENCES inherit from the wrapping guards: under PRM the outer `@media` skips the whole
+   block, so `--scroll-tl` never animates and the JS engine binds its terminal `seek(1)`
+   instead (information parity). Where `view()` is absent the `@supports` skips it and the JS
+   engine takes the `useScrollProgress` fallback. One writer of `--scroll-tl` per environment. */
+@property --scroll-tl {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    @supports ((animation-timeline: view()) and (animation-range: entry)) {
+        /* The full-transit progress sweep — the scalar `useScrollTimeline` reads. Separate
+           `@keyframes` from `reveal-beat` because it spans the WHOLE `cover` range (not the
+           compressed `entry` reveal window): the viz's story scrubs across the section's
+           entire on-screen life, while the plate's fade still lands early (entry 22%). */
+        @keyframes scroll-tl-pos {
+            from {
+                --scroll-tl: 0;
+            }
+            to {
+                --scroll-tl: 1;
+            }
+        }
+
+        /* Bind the progress sweep to the SAME `--beat-tl` view() host, over the full cover
+           transit. A SECOND animation on the host (alongside `reveal-beat`) — both ride the
+           one named timeline, each with its own range. `linear` because the timeline is the
+           axis; `both` so the scalar HOLDS 0 before entry and 1 after exit (the engine reads
+           a clean clamped value at the boundaries, no flicker). No `will-change` — the bound
+           view() animation promotes its own layer. The host opts in via `[data-scroll-tl]`
+           so a beat that carries NO faceted viz pays nothing (the property never animates). */
+        [data-reveal-beat][data-scroll-tl] {
+            animation:
+                reveal-beat auto linear both,
+                scroll-tl-pos auto linear both;
+            animation-timeline: --beat-tl, --beat-tl;
+            animation-range:
+                entry var(--reveal-in, 5%) entry var(--reveal-out, 22%),
+                cover 0% cover 100%;
+        }
+
+        /* THE STANDALONE SCRUB HOST (I17 · h11-scroll-timeline — the FROZEN-CROWN fix). I3 moved
+           the /usf decade + /sci chase intra-beat timelines onto their OWN component roots
+           (DecadeBeat.vue / ChaseBeat.vue, each `[data-scroll-tl]`) — a host the DashboardEssay
+           does NOT also stamp `data-reveal-beat` on (the essay owns the BEAT reveal <section>; the
+           component owns its INTRA-beat scrub, the I3 host de-coupling). So the combined rule above
+           — keyed on BOTH attributes — never matched these roots, `--scroll-tl` stayed FROZEN at its
+           `@property` initial 0, and `useScrollTimeline`'s native rAF read 0 every frame → the crown
+           showed 0× (2.73× /usf, 7.36× /sci) regardless of scroll.
+
+           The combined rule rides the SHARED named `--beat-tl` host axis (declared by the W4
+           map-draw.css producer ONLY on `[data-reveal-beat]`). A standalone scrub host carries no
+           such name on itself, so it mints its OWN ANONYMOUS `view()` timeline — its own block-axis
+           view-progress — to drive `scroll-tl-pos` over the SAME `cover 0% cover 100%` full-transit
+           range the combined rule uses (the §H11 scalar spans the section's whole on-screen life).
+           `linear both` + `auto` duration exactly mirror the combined rule's `scroll-tl-pos` arm:
+           the timeline is the easing axis, `both` HOLDS the clamped 0/1 at the boundaries (clean
+           reads, no flicker). The PRM fence is structural — this rule sits inside the SAME outer
+           `@media (prefers-reduced-motion: no-preference)`, so under `reduce` it never binds and
+           `--scroll-tl` rests at the `@property` initial 0 (the hard-cut); the JS engine's PRM path
+           binds its own terminal `seek(1)` instead (information parity, the §H11 fence).
+
+           ── I17 CLOSE · THE SELECTOR SCOPING (the proof-motion interrupt REGRESSION fix) ──────────
+           The FROZEN-CROWN fix first shipped this rule keyed on the BARE attribute
+           `[data-scroll-tl]:not([data-reveal-beat])`. A bare attribute selector is a STANDING
+           document-wide `view()` binding: it mints an anonymous scroll-progress timeline whose
+           per-frame view-progress sampling (plus `useScrollTimeline`'s own native rAF
+           `getComputedStyle(--scroll-tl)` reader) runs on the MAIN THREAD from mount — even while the
+           host beat sits far below the fold during the LOAD window. The /usf load arrival
+           (`useArrivalSequence` → `useLoadSequence`) draws the ribbon trunk on a keyframes.js
+           `requestAnimationFrame` loop that writes `stroke-dashoffset` on the main thread (NOT a
+           compositor WAAPI animation, `draw-svg` writes `.style`). Under concurrent load (the
+           h11-scroll-timeline fleet scrubbing crowns + rails + lettering in sibling pages) the broad
+           binding's per-frame scroll-timeline work STARVES that draw rAF, and because the test's
+           synthetic mid-load `wheel` fires inside `useLoadSequence`'s pre-arm `await
+           loadAnimationEngine()` window the interrupt's `seek(duration)` is missed — so the slowed
+           draw is read MID-SWEEP and the trunk rests half-drawn (stroke-dashoffset 2.9–15, the
+           proof-motion `< 2` gate). A/B-isolated on :5173: the bare selector spiked the trunk
+           residual to 3–23 under contention; the ENUMERATED selector below holds it at the keyframes.js
+           terminal residual (~1.8) — same matched hosts, far cheaper standing recalc.
+
+           So this rule is SCOPED to the four KNOWN intra-beat scrub hosts by their stable component
+           root classes (NOT the bare attribute) — the de-coupled crown roots (`.decade-beat`,
+           `.sci-chase-beat`) + the self-driven lettering titles (`.sci-lettering-title`,
+           `.ecf-lettering-title`, each a `useScrollTimeline` native `--scroll-tl` reader). Every one
+           STILL mints its `view()` scrub (the decade 2.73× + chase 7.36× crowns + the SCI/ECF
+           lettering scrub are UNCHANGED — verified live), but the binding no longer fans out as a
+           document-wide attribute match that thrashes the load-window main thread. NOTE: USF lettering
+           (`ScrollLetteringTitle.vue`) drives off the JS `useScrollScene` fallback (no `data-scroll-tl`,
+           no `--scroll-tl`), so it is correctly absent here. A FUTURE standalone scrub host must add
+           BOTH its `data-scroll-tl` attribute AND its root class to this enumerated list (the gate is
+           h11-scroll-timeline's per-route crown/lettering scrub assertion — a frozen new host fails it). */
+        .decade-beat[data-scroll-tl]:not([data-reveal-beat]),
+        .sci-chase-beat[data-scroll-tl]:not([data-reveal-beat]),
+        .sci-lettering-title[data-scroll-tl]:not([data-reveal-beat]),
+        .ecf-lettering-title[data-scroll-tl]:not([data-reveal-beat]) {
+            animation: scroll-tl-pos auto linear both;
+            animation-timeline: view();
+            animation-range: cover 0% cover 100%;
+        }
+
+        /* The beat reveal: fade up + a restrained lift from below (S3 §2.3). The `to`
+           keyframe is the terminal state; `fill-mode: both` (below) holds it past the range
+           end, so a settled beat rests at exactly opacity 1 — the snap is structural. */
+        @keyframes reveal-beat {
+            from {
+                opacity: 0;
+                transform: translate3d(var(--reveal-x, 0px), var(--reveal-lift, 6vh), 0);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
+
+        /* THE SCROLL-IN AXIS SWAP (K-EXPRESS D2) — a custom-property re-parameterization of the
+           SHARED `reveal-beat` FROM frame, NEVER an `animation-name` override (an override would DROP
+           the `scroll-tl-pos` arm the aside/normalization beat carries on its two-animation list).
+           `data-scroll-in="left"|"right"` slide the beat in horizontally (lift→0); `up`/absent keeps
+           `--reveal-x:0` + `--reveal-lift:6vh` — the vertical rise, byte-UNCHANGED for every beat
+           that sets no scroll-in. The lead/cover beat carries no masthead ⇒ no stamp ⇒ never reaches
+           the hero. PRM is fenced by the enclosing `@media (prefers-reduced-motion: no-preference)`. */
+        [data-reveal-beat][data-scroll-in="left"] {
+            --reveal-x: calc(-1 * var(--reveal-shift, 6vw));
+            --reveal-lift: 0px;
+        }
+        [data-reveal-beat][data-scroll-in="right"] {
+            --reveal-x: var(--reveal-shift, 6vw);
+            --reveal-lift: 0px;
+        }
+
+        /* The INTERIOR narrative beat: scrubs its reveal off its own view-timeline, reverses
+           exactly on scroll-up (position-derived). `auto` duration = timeline-owned; `linear`
+           because the timeline IS the easing axis; `both` so the terminal frame is HELD past
+           the range endpoints (the boundary snap, on the compositor, no JS). NO `will-change`
+           here — a bound view() animation promotes its own compositor layer (§6); a manual
+           hint is redundant and defeats promotion. */
+        [data-reveal-beat] {
+            animation: reveal-beat auto linear both;
+            /* Reference the named timeline LITERALLY (a `<dashed-ident>`, NOT `var(--beat-tl)`):
+               `view-timeline-name: --beat-tl` (declared by the W4 map-draw.css producer on this
+               same host) mints a timeline NAME, not a custom-property value — so `var(--beat-tl)`
+               substitutes to nothing and `animation-timeline` falls back to `auto` (probed: the
+               reveal never binds). The literal `--beat-tl` resolves the named timeline the host
+               declares on itself. */
+            animation-timeline: --beat-tl;
+            /* THE ENTRY-ANCHORED REVEAL (F6.3 · f6-scroll-reveal §2.2 — the reveal compression).
+               BOTH endpoints live in the `entry` phase: a reveal means "this plate lights as it
+               ARRIVES", and "arrival" IS the entry phase (the beat crossing up from the fold).
+               The cover phase is "already filling the screen" — too late to still be lighting.
+
+               The math that matters: entry X% is reached after `X%·v` of scroll (v = viewport
+               height); cover B% after `B%·(v+h)` (h = the beat's OWN height). The old
+               `cover var(--reveal-out,38%)` end made the scroll-distance-to-full GROW with the
+               beat's own height — a tall plate finished lighting only as its top hit the viewport
+               edge (47–76% of its own height entered; on mobile its top had scrolled OFF screen).
+               Re-anchoring the END to `entry 22%` makes that distance a height-INDEPENDENT
+               `0.22·v` — a tall plate and a short plate now light after the SAME scroll, exactly
+               the user's model ("it shouldn't take more scroll just because the viz is bigger").
+               A plate is fully lit while its top is still ~78% down the viewport (≤22% own-height
+               for every plate ≥ a viewport tall — the tall plates F6.3 names). The LIFT (6vh)
+               settles WITH the opacity for free — both ride this one compressed window, so the
+               plate no longer rests low-and-faded for a long cover-anchored span.
+
+               This RETURNS the app to glass-ui's own grammar (the shipped `[data-scroll-reveal]`
+               recipe is `entry 0% entry var(--scroll-reveal-range-end,60%)` — entry-anchored on
+               both endpoints; the app's earlier `cover` end was the deviation). The tail register
+               (`entry 100%`, below) was ALREADY entry-anchored — this makes the interior rhyme
+               with it. Tunable per-beat via the custom-property defaults below; `--reveal-out`
+               now means "% into ENTRY", not "% into cover". */
+            animation-range: entry var(--reveal-in, 5%) entry var(--reveal-out, 22%);
+        }
+
+        /* Tune registers (f6-scroll-reveal §2.2) — a beat opts in via a data-attribute, no new
+           keyframes; only the VALUES move (the phase is `entry` for all three now). Once
+           entry-anchored, height no longer drives the timing, so the registers converge: dense
+           stays a faint touch firmer on the 2,600-dot field, chrome a touch gentler. */
+        [data-reveal-beat][data-dense] {
+            --reveal-in: 4%;
+            --reveal-out: 18%;
+        }
+        [data-reveal-beat][data-chrome] {
+            --reveal-in: 6%;
+            --reveal-out: 26%;
+        }
+
+        /* THE TAIL REGISTER (D1.1 · audit-d/d-reveal-ribbon §c.2) — the end-of-document
+           reachability fix. A `cover var(--reveal-out)` end-stop for the FINAL beat lies past
+           `maxScroll` whenever its tail (`docH − beatTop`) is shorter than
+           `reveal-out × (vh + h)` — Chrome does NOT clamp view-timeline ranges to the
+           scrollable bounds, so the last About/colophon beat perma-fades below 1.0 on common
+           desktop heights (D23: the dimmed "Sources & credits" card resting at the page end).
+
+           The fix is a per-beat ATTRIBUTE, never a global mode (a global flag re-introduces
+           the two-clocks bug, §7) and never bottom padding (~0.4×vh of dead air is a workaround,
+           not a fix). `entry 100%` — the beat FULLY on-screen — is reachable for EVERY
+           in-document beat BY CONSTRUCTION (`beatTop + h ≤ docH` always holds), and it is the
+           right semantics for a colophon: fully lit the instant it is fully present. The three
+           `beat-about` sections (usf/sci/ecf DashboardBody.vue) carry `data-reveal-tail`. */
+        [data-reveal-beat][data-reveal-tail] {
+            animation-range: entry var(--reveal-in, 12%) entry 100%;
+        }
+
+        /* The LEAD / fold beat is NOT a scroll-reveal — it is the load-arrival surface,
+           terminal-lit the instant it mounts (§5.2). It carries the page's first structural
+           header (the masthead-measured top); a transform here would displace it during the
+           load window. Opt OUT of the view() regime structurally: the animation never binds,
+           the beat rests at opacity 1 from first paint. The load-clock arrival (count-up /
+           ribbon / NET) is the W5.2 keyframes.js Sequence, NOT this scroll engine — load=once
+           / scroll=bidirectional, the E5 two-clock split (§7). */
+        [data-reveal-beat][data-reveal-once="load"] {
+            animation: none;
+            opacity: 1;
+            transform: none;
+        }
+
+        /* A rare INTERIOR beat that must latch to its terminal state (none currently specced
+           — the bidirectional reverse is the default and correct). The opt-out is a per-beat
+           ATTRIBUTE, never a global mode (a global flag re-introduces the two-clocks bug, §7).
+           `data-reveal-latch` freezes the terminal frame: the W5 fallback owns the one-shot
+           IntersectionObserver that adds it; under native, `forwards` holds the end frame and
+           the timeline scrub is decoupled. */
+        [data-reveal-beat][data-reveal-latch] {
+            animation-fill-mode: forwards;
+        }
+    }
+}

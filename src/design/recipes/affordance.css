@@ -1,0 +1,47 @@
+/* platform/design/affordance.css (K-ANIM A5.c · proto/A5-afford.md §3.2) — THE AFFORDANCE RECIPE SHEET.
+   The single global recipe consuming `--afd-*` — every interactive primitive binds a `data-afd` attribute
+   instead of a hand-rolled cursor/focus. ONE `:focus-visible` halo (the 15-file collapse), ONE press
+   feedback, ONE disabled veil. Imported once (styles/index.css), unscoped (it reaches primitives across
+   every dashboard). This file is the ONE home the `k-affordance-honesty` gate whitelists for the focus
+   ring. */
+
+/* ── the static cursor signifiers (the 17-locus collapse) ──────────────────────────────────────── */
+[data-afd="click"] {
+    cursor: var(--afd-click);
+}
+[data-afd="grab"] {
+    cursor: var(--afd-grab);
+}
+[data-afd="grab"][data-grabbing] {
+    cursor: var(--afd-grabbing);
+}
+[data-afd="disabled"] {
+    cursor: var(--afd-disabled);
+    opacity: var(--afd-disabled-veil);
+    pointer-events: none; /* the negative affordance is honest — no phantom click */
+}
+
+/* ── the ONE focus halo (the 15-file collapse) ─────────────────────────────────────────────────── */
+:where(a, button, [role="button"], [tabindex], [data-afd]):focus-visible {
+    outline: var(--afd-focus-width) solid var(--afd-focus-ring);
+    outline-offset: var(--afd-focus-offset);
+    border-radius: var(--afd-focus-radius);
+}
+/* the gilt focus VARIANT (Dock crest, BrandMark) — a NAMED variant, not a divergent recipe. */
+[data-afd-focus="gilt"]:focus-visible {
+    outline-color: var(--gold-ink, #d4a017);
+}
+
+/* ── the press feedback (Kowalski scale 0.97 on :active — never scale(0)) ─────────────────────────
+   THE TRANSFORM-MERGE LAW: the press uses the `scale:` LONGHAND, NOT `transform: scale()`. A
+   `[data-afd="click"]` element may CONCURRENTLY carry a reveal/affordance-lift `transform: translate3d`
+   or a rank-band lift — the `transform` SHORTHAND would OVERWRITE it, nuking the reveal mid-press. The
+   independent `scale` longhand composites with a sibling `translate`/`rotate`/`transform` (the EXACT A4
+   BLEND law — independent longhands, no slot fight), so a pressed mark that is also mid-reveal both lifts
+   AND presses. (`will-change` is intentionally OMITTED — the I17 no-standing-will-change law.) */
+@media (prefers-reduced-motion: no-preference) {
+    [data-afd="click"]:active {
+        scale: 0.97;
+        transition: scale 100ms var(--ease-overshoot); /* the deft tactile press-back */
+    }
+}

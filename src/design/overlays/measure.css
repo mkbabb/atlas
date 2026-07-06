@@ -1,0 +1,72 @@
+/* platform/design/measure.css — THE DOCK-AWARE ASYMMETRIC MEASURE (J-STORY §8/§9/§13).
+
+   THE KEYSTONE SPACE TRANSPOSITION (C25 the measure half · j2 [M1]/[F7]): the figure
+   reclaims the width the prose does not need. Every route body used to wrap its chapters in
+   the byte-identical symmetric reading cap `mx-auto max-w-[var(--bp-read)]` (1024px centred),
+   which NESTS inside the (J-DOCK-reclaimed) `--cp-dock-reserve` — so the column was
+   DOUBLE-starved (the /sci band-cake painted at 200px on a 390px phone; charts rendered with a
+   154px dead left gutter + a 170px right gutter at 1440). The cap was the WRONG instrument: it
+   forced the FIGURE plates — whose magnitude wants the width — to share the PROSE's ~70ch
+   reading measure.
+
+   THE DOCK-AWARE ASYMMETRIC MEASURE replaces it with ONE outer track + TWO measures:
+
+     · `.dashboard-body` is the OUTER track — it widens to `--measure-figure` (the post-dock
+       available width, min(100%, 92rem)), centred in the non-dock area. The figure plates fill
+       THIS track (the BREAK-OUT toward the reclaimed width). The symmetric `--bp-read` cap is
+       retired for the body.
+
+     · the PROSE column clamps to `--measure-prose` (~72ch) and stays centred WITHIN the outer
+       track. The editorial spine — the section header triplet (eyebrow · <h2> · dek), the body
+       text, captions, eyebrows — keeps its optimal reading measure regardless of the wide track.
+       NO prose change; legibility is unaffected (the §8 contract: "prose stays at ~70ch").
+
+   This is the live `DESIGN §2 BREAK-OUT` idiom (the DashboardHero/PullFigure thesis-figures
+   already wear "thesis figures live OFF the gridded plate") generalized to the ROUTE-BODY figure
+   track — genuinely NEW measure-grid work (J-FEEDBACK-3 §7: zero existing 100vw/calc/max-w-none/
+   negative-margin route-body break-out), taking the hero/pull-figure break-out as a design
+   PRECEDENT to match, not a fence to widen.
+
+   THE VIZ-AREA-IS-VIZ-ONLY LAW (§13 · J-FEEDBACK-5 §2/§7-C44): the prose clamp is a CONTENT
+   law as much as a measure — every high-level text/stat/title item reads at the prose measure
+   OUTSIDE the figure track; the figure track carries the marks (and the in-figure
+   `aggregateStats` band J-FRAME declares, placed top/bottom-alternating). The figure breaks out;
+   the text stays at the prose measure outside it.
+
+   J-DOCK owns the reserve (the floating-dock margin overlap); J-STORY's measure RIDES the
+   reclaimed width — it never re-bases `--cp-dock-reserve`. The two reclaims compose: the
+   `--bp-read`→`--measure-figure` widen + the reserve re-base both fall regardless of the other. */
+
+.dashboard-body {
+    /* the OUTER figure track — the post-dock available width (the symmetric --bp-read cap
+       retired). `margin-inline: auto` centres it in the non-dock area; the route still pads
+       through PlatformShell's inline-start float-overlap gutter. */
+    max-inline-size: var(--measure-figure);
+    margin-inline: auto;
+}
+
+/* THE PROSE CLAMP — the editorial spine stays at the ~70ch reading measure WITHIN the wide
+   track. The header triplet (the eyebrow + <h2> + dek) clamps to `--measure-prose`; the figure
+   body (the chapter viz slot — a `.viz-plate`/chart host) is NOT a prose surface, so it fills the
+   outer track (the break-out). TWO authoring paths share ONE clamp:
+     · the shared DashboardEssay/Beat host wraps the triplet in `.beat__header` (usf/ecf/demand/sci);
+     · the hand-rolled inline beats spell the prose ELEMENTS directly (speedtest's `.eyebrow` +
+       `<h2 class="text-section-fluid">` + `.text-prose-muted`).
+   So the clamp catches BOTH: the `.beat__header` wrapper AND the prose element classes directly,
+   each a DIRECT child of a beat section (`:where(.beat) >`) so it never reaches INTO a figure
+   plate's own internal prose (a chart's axis label / legend caption stays the plate's own
+   measure). The `:where()` keeps zero specificity so a plate's own max-width still wins. This is
+   the §13 viz-area-is-viz-ONLY law expressed as a measure: all high-level text reads at the prose
+   measure OUTSIDE the figure track; the figure track carries the marks. */
+.dashboard-body :where(.beat__header),
+.dashboard-body :where(.beat) > :where(.eyebrow, h2, .text-prose, .text-prose-muted, .text-caption),
+.dashboard-body
+    > :where(.eyebrow, h2, .text-prose, .text-prose-muted, .text-caption) {
+    max-inline-size: var(--measure-prose);
+}
+
+/* THE COVER / COLOPHON full-width members — the page hero masthead + the provenance colophon
+   are page-level chapters whose own internal grid governs their measure (the hero centres its
+   masthead + the audacious cover-figure track; the colophon lays its credits columns). They are
+   NOT clamped here — they sit at the outer track and self-measure (the hero's `--measure` token
+   already governs its dek/blurb; the colophon owns its own layout). */

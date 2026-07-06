@@ -1,0 +1,92 @@
+/* platform/design/base.css — THE GLOBAL CASCADE PARTIAL (L3-CSS · R4).
+
+   The genuinely-global cascade extracted from the retired second Tailwind root
+   (styles/index.css) when L3 collapsed the two roots into ONE
+   (platform/design/index.css). This file carries ONLY the page-level reset/cascade:
+   the html/body/#app min-height, the scroll-engine overflow token, the warm-ground
+   paint, the focus-visible rings, and the JS-side reduced-motion belt. It mints NO
+   preflight (`@import "tailwindcss"` lives ONCE in the surviving root), NO viz/ground
+   tokens (those live in tokens.css §VIZ), and NO --measure/text-section-fluid (routed
+   to the token + recipe loci per L3 §4.B move 4).
+
+   ORDER IS LOAD-BEARING (the styles/index.css:2 invariant, preserved): this partial is
+   `@import`'d FIRST in the one root — BEFORE tokens/recipes/variants — so the global
+   reset leads and the locus layers cascade over it exactly as the two-root order did. */
+
+html,
+body,
+#app {
+    min-height: 100dvh;
+}
+
+/* No horizontal overflow at any width (W4 §1 mobile gate) — `clip`, NEVER `hidden`.
+   THE SCROLL-ENGINE TOKEN (D1.1 · audit-d/d-reveal-ribbon §c). `overflow-x: hidden`
+   on html/body forces computed `overflow-y: auto` (CSS-overflow-3), which turns <body>
+   into a SCROLL CONTAINER. Per scroll-animations-1, `view()` resolves the nearest
+   ancestor scroll container — so every `[data-reveal-beat]` ViewTimeline bound its source
+   to <body>, which NEVER scrolls (the page scrolls on <html> = document.scrollingElement),
+   freezing every reveal's progress (D9/D23: the lower half of every dashboard rests dim).
+   `overflow-x: clip` clips identically but NEVER establishes a scroll container
+   (overflow-y stays `visible`), so the timelines resolve up to the root scroller — AND it
+   enforces the W4 no-x-overflow gate MORE strictly (no programmatic x-scroll either). This
+   is the ONE token that arms the entire scroll-motion engine. The engine contract + the ban
+   marker live in platform/design/scroll-driven.css; do NOT reintroduce `overflow-x: hidden`
+   at the html/body level (the D5 grep enforces it). */
+html,
+body {
+    overflow-x: clip;
+}
+
+/* PAINT the warm ground opaquely (C1 THE GROUND — the token was defined but never painted
+   on an opaque ancestor). The dark page read espresso only via the Aurora canvas / the
+   color-scheme UA canvas, leaving every section surface transparent — so text over the bare
+   main stage had NO opaque background to resolve contrast against, and axe fell back to #fff,
+   flagging the dark muted-ink eyebrows at 2.67:1 (serious). Painting --background here makes
+   the ground deterministic: the Aurora composes OVER it, PRM/no-canvas still shows warm paper,
+   and contrast resolves against the real espresso/cream. */
+body {
+    background-color: var(--background);
+    color: var(--foreground);
+}
+
+/* Focus-visible rings everywhere (W4 §2). A consistent keyboard-only ring on any
+   interactive element that doesn't already carry one (links, buttons, the SVG
+   choropleth polygons, table headers). Mouse focus stays ring-free. */
+:where(
+    a,
+    button,
+    [role="button"],
+    [tabindex="0"],
+    input,
+    select,
+    summary
+):focus-visible {
+    outline: 2px solid var(--ring, oklch(0.6 0.15 250));
+    outline-offset: 2px;
+    border-radius: var(--radius-mark, 2px);
+}
+/* The choropleth polygons get a crisp focus ring (SVG outline is unreliable). */
+.choropleth-state:focus-visible {
+    outline: none;
+    stroke: var(--ring, oklch(0.6 0.15 250));
+    stroke-width: 2.5;
+}
+
+/* The raised (linked-highlight) choropleth state lifts above its neighbors. */
+.choropleth-state[data-raised="true"] {
+    filter: drop-shadow(0 0 2px var(--foreground));
+}
+
+/* JS-side reduced-motion belt-and-suspenders: snap any leftover CSS transitions
+   too (the glass cascade already guards its own, this covers USF-local ones). */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+</content>

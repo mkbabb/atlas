@@ -1,0 +1,728 @@
+/* @mkbabb/atlas · design/tokens/color.css — the COLOR family, split byte-for-byte from the
+   1,444-LOC tokens.css monolith at O-B2 (property-routed; every value preserved, cascade unchanged).
+   Holds: the viz data scales (§B/§VIZ/§PROGRAM/§RAINBOW), the engraved grounds + silver (§D), the
+   NCSU brand register (§BRAND), grain/grid inks, route-identity, the paired-ink cure (§INK), and the
+   selection treatment. @theme / @theme inline blocks register the Tailwind color namespaces. */
+
+/* §A — the type APEX rungs + THE CONTAINED FIGURE-SLUG REGISTER (FD1 §2.1, §1.2;
+   C.W2.1, master H-1/H-2/H-3/H-7, NHI §3.1, FHV-1). PURE ADDITIONS over glass-ui's
+   body rungs (--type-prose, --type-heading, …); glass-ui ships neither display apex.
+
+   THE COHESION KEYSTONE (C2-4/HD-11). --type-display-audacious is the ONE audacious
+   register every dashboard reaches — the USF hero `text-audacious`, SCI's
+   RainbowStack.vue:164, the ECF hero. Its fluid term is re-authored IN PLACE from `vw`
+   to `17cqw` (container-query width of the figure's OWN track), so the glyph scales
+   with its box, not the screen — the category-error fix that retires the +118px @1024
+   overflow (master H-2). Because the keystone is REPLACED in place, every existing
+   `text-audacious` consumer inherits the contained register with no re-point; minting a
+   parallel token would have left SCI on the old `vw` (a cohesion regression). The 22vw
+   apex rung is RETIRED here; the FundLedgerFlow.vue:438 19vw scoped override is retired
+   by C.W2.2 (named in FD1-figure-slug-addendum.md). The floor/ceiling are the legibility
+   floor + the optical ceiling, fitted to the `$N.NNB` measure.
+
+   --type-display-mega is the dropped-capital / figure-number rung (the <FigureInitial>
+   signature) — likewise re-authored container-relative. The recipes in recipes.css §1
+   bind these as @utility text-audacious/text-mega/figure-slug. */
+:root {
+    /* THE GHOST CHAPTER NUMERAL ink (D3.a / augment 14 — `ds2-medium` M9b). The Roman
+       chapter figure set at --type-display-hero scale as a recessive WATERMARK in the
+       asymmetric beat's margin (the <FigureInitial>'s illuminated dropped-cap is the
+       FILLED, distribution-weighted key; this is its quiet large-scale TWIN — the
+       grid-breaker's counterweight, D3.d composes the position). It is a decorative,
+       aria-hidden manuscript watermark, NOT body text — so it sits BELOW the AA text
+       floor by design (a 4.5:1 ghost is no ghost). The ink is a low-alpha FOREGROUND
+       tint (not a fixed colour) so it warms with the §D ground in lockstep on both arms:
+       espresso-on-paper (light) ↔ ivory-on-espresso (dark), each ~8% so the glyph reads
+       as engraved-into-the-paper, never as a competing figure. */
+    --ghost-numeral-ink: oklch(0.255 0.028 55 / 0.07); /* light — espresso watermark */
+}
+
+/* §B — the THREE named data scales as Tailwind color namespaces (FD1 §3, G1:3.4).
+   DIVERGING + SEQUENTIAL read the existing raw viz props (styles/index.css:15-34) so
+   there is ONE source of truth, two consumers: the raw props feed the JS palette
+   bridge (lib/palette.ts), and `@theme inline` additionally exposes the composable
+   utility form (text-viz-diverging-high, bg-viz-sequential-low). Registering
+   --color-viz-diverging-high here is what later kills the hex-fallback escape hatch
+   in StateExplainPanel.vue:126 (CQ5-3.2) — but that adoption is a later wave; here
+   the namespace is declared, unconsumed. */
+@theme inline {
+    /* 1. DIVERGING — signed net direction ONLY (warm receiver <-> cool payer). */
+    --color-viz-diverging-low: var(--viz-diverging-low);
+    --color-viz-diverging-mid: var(--viz-diverging-mid);
+    --color-viz-diverging-high: var(--viz-diverging-high);
+    /* 2. SEQUENTIAL — unbounded magnitude ONLY (single-hue teal-leaning ramp). */
+    --color-viz-sequential-low: var(--viz-sequential-low);
+    --color-viz-sequential-high: var(--viz-sequential-high);
+    --color-viz-no-data: var(--viz-no-data);
+    /* 3. ORDINAL-RAINBOW — ranked discrete TIERS ONLY (the SCI signature, the
+       sanctioned 4th kind, FD1 §3.3). 14 stops, base green -> apex violet, each a
+       verbatim FD1 hex; never interpolated, never a continuous quantity. Exposed as
+       bg-rainbow-tier-{1..14} reading the raw props in §RAINBOW below. */
+    --color-rainbow-tier-1: var(--rainbow-tier-1);
+    --color-rainbow-tier-2: var(--rainbow-tier-2);
+    --color-rainbow-tier-3: var(--rainbow-tier-3);
+    --color-rainbow-tier-4: var(--rainbow-tier-4);
+    --color-rainbow-tier-5: var(--rainbow-tier-5);
+    --color-rainbow-tier-6: var(--rainbow-tier-6);
+    --color-rainbow-tier-7: var(--rainbow-tier-7);
+    --color-rainbow-tier-8: var(--rainbow-tier-8);
+    --color-rainbow-tier-9: var(--rainbow-tier-9);
+    --color-rainbow-tier-10: var(--rainbow-tier-10);
+    --color-rainbow-tier-11: var(--rainbow-tier-11);
+    --color-rainbow-tier-12: var(--rainbow-tier-12);
+    --color-rainbow-tier-13: var(--rainbow-tier-13);
+    --color-rainbow-tier-14: var(--rainbow-tier-14);
+    --color-rainbow-null: var(--rainbow-null);
+    /* 4. CATEGORICAL-PROGRAM — discrete identity with NO order (the USF programs,
+       FD1 §3.4). Never invented: aliases glass-ui's perceptually-even-L, maximally
+       hue-separated --section-color-* ramp (the same move fourier makes). The four
+       USF programs land on the 70/265/171/317° quad — survives grayscale + the three
+       common CVD types. Exposed as bg-viz-program-* reading the raw props in §PROGRAM. */
+    --color-viz-program-high-cost: var(--viz-program-high-cost);
+    --color-viz-program-low-income: var(--viz-program-low-income);
+    --color-viz-program-rural-healthcare: var(--viz-program-rural-healthcare);
+    --color-viz-program-schools-libraries: var(--viz-program-schools-libraries);
+}
+
+/* §VIZ — the data-ramp raw props, ONE LOCUS (C.W1.a WG-7; collapsed in from styles/index.css).
+   The SVG choropleth, the glass legend, and the ECharts palette-bridge (lib/palette.ts,
+   useVizPalette/ColorScale) all read these ONE source-of-truth custom props. Formerly split
+   across styles/index.css (the raw ramps) + a tokens.css :root override (the diverging-mid
+   wash-fix that depended on this file loading AFTER index.css). That source-order dependency
+   is RETIRED: --viz-diverging-mid is now authored ONCE per theme right here, at its source —
+   no :root-out-cascades-base override, no dark re-assert. The full light+dark viz arm reads
+   in this single locus beside the grounds it samples.
+
+   The recessive NEUTRALS (--viz-no-data / --viz-grid) are re-hued OUT of cool-250 onto the
+   warm spine (~60°, low chroma) so they sit on the warm grounds at the SAME temperature — no
+   cool gray survives in the recessive viz neutrals (Hard-Gate ②, the enumerated re-hue).
+
+   DIVERGING poles stay red↔teal (the emergent-tricolor data poles — warm receiver ↔ cool payer);
+   their saturated low/high hues are the DATA semantic and are out of the warm-spine sweep. */
+:root {
+    /* DIVERGING — signed net direction (warm receiver ← break-even → cool payer). */
+    --viz-diverging-low: oklch(0.62 0.17 28); /* net receiver (disb >> contrib) */
+    /* RR-C1 CLOSED (J-COLOR §3 — warm-neutral both arms). The break-even hinge cool-vs-warm
+       adjudication, open since the C-arc, is ADJUDICATED to warm-neutral for BOTH theme arms (one
+       coherent break-even on the §1.1.1 warm spine). The light mid was ALREADY warm — L 0.87 (the
+       K2 wash-fix: ΔL ≈ 0.115 off the cream ground so break-even ≠ paper ≠ no-data), hue 95
+       near-neutral (chroma 0.02 so barely perceptible AS a hue — the POINT: it reads NEUTRAL, not
+       a cool tint fighting the red↔teal pole temperature contrast). It STAYS; the dark arm re-hues
+       OFF cool-250 onto the warm spine to match (see .dark below). The supersession is recorded
+       here, in the doctrine's home — not a silent re-hue. */
+    --viz-diverging-mid: oklch(
+        0.87 0.02 95
+    ); /* K2 — break-even, seen off the page cream (warm-neutral, RR-C1 closed) */
+    --viz-diverging-high: oklch(0.55 0.13 245); /* net payer (contrib >> disb) */
+    /* SEQUENTIAL — unbounded magnitude (single-hue teal-leaning ramp). */
+    --viz-sequential-low: oklch(0.95 0.03 230);
+    --viz-sequential-high: oklch(
+        0.52 0.15 250
+    ); /* L-floor 0.52, NOT 0.45 (FD1 §3.2 "too dark" fix) */
+    /* recessive NEUTRALS — re-hued warm (was cool-250) onto the warm spine ~60°. */
+    --viz-no-data: oklch(0.9 0.01 60); /* #e3ddd8 — warm recessive no-data */
+    --viz-grid: oklch(0.85 0.01 60 / 0.5); /* warm recessive gridline */
+    /* CATEGORY QUAD (J-COLOR §5.1 — the RWB-emergent-plus-one). The categorical data palette the
+       VC ranked-bar↔choropleth coordination needs: RankedBar fills bar k with --viz-category-{k},
+       GeoChoropleth fills the matching territory with the SAME stop (1:1 by index through the
+       J-ARCH GeoPlate shared scale), so the reader binds bar→territory by COLOUR. Drawn FROM the
+       emergent registers (the red-white-blue tricolor the data poles carry + the warm gold of the
+       §VIZ spine + green, SCI's rainbow-green floor) — completed, not invented. A FIFTH lawful
+       KIND-adjacent register, in its OWN role (NOT the band-cake rainbow, NOT chrome): the
+       role-separation §5.4 proves keeps it at FOUR (a >4-class categorical encoding is the
+       band-cake's role, not this quad's).
+         category-1 is a NON-brand DATA-red, JND-distinct from the brand --ncsu-red #cc0000
+       (COLOR-2 — the brand red stays chrome/route-accent only; live ΔE category-1↔#cc0000 ~0.06).
+       Each stop is JND-distinct on the cream ground (pairwise ΔE ≥ ~0.21) AND clears the 3:1
+       graphical-mark floor against the paper ground (§5.4). */
+    --viz-category-1: oklch(0.58 0.165 22); /* data-red (NON-brand, distinct from --ncsu-red) */
+    --viz-category-2: oklch(0.50 0.13 250); /* blue */
+    --viz-category-3: oklch(0.63 0.14 80); /* gold (L floored for the 3:1 mark-floor on cream) */
+    --viz-category-4: oklch(0.58 0.13 150); /* green (the SCI rainbow-green register) */
+}
+
+.dark {
+    --viz-diverging-low: oklch(0.68 0.18 28);
+    /* RR-C1 CLOSED (J-COLOR §3 — warm-neutral both arms). On the warm-espresso dark stock (L 0.205)
+       the break-even mid stays RECESSIVE at L 0.42 (wide ΔL off the deep ground — the wash never
+       threatened dark). Its hue is ADJUDICATED off cool-250 onto the warm spine (~78°), L + C
+       UNCHANGED — at chroma 0.02 the hue is barely perceptible AS a hue, so the mid still reads as
+       a NEUTRAL break-even, now at the SAME temperature as the light arm (hue 95). The dark mid
+       JOINS the warm spine, so it no longer NEEDS the cool-250 i0-dark-warm by-name carve-out (the
+       value-membership exclusion in DATA_PALETTE_TOKENS survives — that is a separate, load-bearing
+       mechanism). The gestalt win: an adjudication that RETIRES the cool-250 rationale. */
+    --viz-diverging-mid: oklch(0.42 0.02 78);
+    --viz-diverging-high: oklch(0.68 0.14 245);
+    --viz-sequential-low: oklch(0.35 0.05 250);
+    --viz-sequential-high: oklch(0.78 0.15 250);
+    /* recessive NEUTRALS — re-hued warm (was cool-250) onto the warm spine ~55°. */
+    --viz-no-data: oklch(
+        0.32 0.012 55
+    ); /* #38312d — warm recessive no-data on dark stock */
+    --viz-grid: oklch(0.45 0.012 55 / 0.5); /* warm recessive gridline on dark stock */
+    /* CATEGORY QUAD — DARK arm (J-COLOR §5.1; L lifted for the warm-espresso ground so each clears
+       the 3:1 mark-floor vs the dark stock, pairwise JND-distinct, hue/rank frozen off the light). */
+    --viz-category-1: oklch(0.68 0.16 25); /* data-red */
+    --viz-category-2: oklch(0.68 0.13 250); /* blue */
+    --viz-category-3: oklch(0.80 0.13 82); /* gold */
+    --viz-category-4: oklch(0.72 0.13 152); /* green */
+}
+
+/* §PROGRAM — the categorical-program raw props (FD1 §3.4, the section-ramp alias). The
+   fourth legal data-color KIND: discrete, unordered program identity. Each aliases a
+   glass-ui --section-color-* rung (light-dark-paired already, so theme parity is free),
+   chosen for maximal hue separation — amber 70°, indigo 265°, forest 171°, violet 317°.
+   This is the ROOT FIX for the two kind-guard breaches: the USF hero strands
+   (FundLedgerFlow.vue) and the net-retention hover breakdown bars (NetRetentionMap.vue)
+   re-point here, off the forbidden rainbow/diverging surfaces (FD3 §1.2). Split
+   fill-vs-label (FD1 §3.4): --viz-program-* fills; text stays --muted-foreground. */
+:root {
+    --viz-program-high-cost: var(
+        --section-color-5
+    ); /* amber  70°  — the largest program */
+    --viz-program-low-income: var(--section-color-2); /* indigo 265° */
+    --viz-program-rural-healthcare: var(--section-color-4); /* forest 171° */
+    --viz-program-schools-libraries: var(--section-color-7); /* violet 317° */
+}
+
+/* §RAINBOW — the raw ordinal-rainbow props (FD1 §3.3, the verbatim .twb stops). A
+   PURE ADDITION: glass-ui ships no --rainbow-tier-* (verified), so this introduces
+   no override. Declared as raw props (matching the diverging/sequential pattern) so
+   the same dual-consumer bridge works: a JS RainbowStack palette can read them, and
+   §B exposes the Tailwind utility form. The inert cyan/teal 10/20/50 Mbps tiers are
+   omitted (clamped to the 100 Mbps floor, they never paint). Ultra-tiers >=10 Gbps
+   collapse into the magenta->violet apex band (the retro-Apple reconciliation, no
+   cool stripe — cool stays the diverging pole's). */
+:root {
+    --rainbow-tier-1: #23ac78; /* 100 Mbps  — green (the connected floor) */
+    --rainbow-tier-2: #3ea147; /* 200 Mbps  — green */
+    --rainbow-tier-3: #84ae2d; /* 250 Mbps  — chartreuse */
+    --rainbow-tier-4: #cabc21; /* 300 Mbps  — yellow-green */
+    --rainbow-tier-5: #f2b921; /* 320 Mbps  — gold */
+    --rainbow-tier-6: #f89f1a; /* 400 Mbps  — amber */
+    --rainbow-tier-7: #f16b18; /* 750 Mbps  — orange */
+    --rainbow-tier-8: #ec5816;
+    /* 2 Gbps    — red-orange (D3 RE-TEMPER: pushed off tier-7's
+                                  orange so the load-bearing 750↔2G pair is JND-distinct — the
+                                  inter-tier ΔEOK opens 0.0152→0.0390, ~2.6×, the metro-fleet
+                                  boundary the band-cake clusters at. fd-sci A1/M3.) */
+    --rainbow-tier-9: #e0302b; /* 3 Gbps    — red */
+    --rainbow-tier-10: #ef3955; /* 4 Gbps    — red-pink */
+    --rainbow-tier-11: #f85a84; /* 5 Gbps    — pink */
+    --rainbow-tier-12: #da6bbb; /* 10 Gbps   — magenta */
+    --rainbow-tier-13: #ac6cc1; /* 15 Gbps   — violet */
+    --rainbow-tier-14: #7c72c1; /* 20 Gbps   — violet (the fully-provisioned apex) */
+    --rainbow-null: #4e79a7; /* no-tier   — recessive slate */
+    /* the 6-stop signature accent set (FD1 §3.3) — each a real tier hue so chrome and
+       data share one palette; for the tier-legend, the dock route marker, the cover
+       spectral rule. Budgeted suffusion, not sprayed. */
+    --rainbow-signature-1: #23ac78; /* 100 Mbps green  — "connected" / entry */
+    --rainbow-signature-2: #f4b921; /* 500 Mbps gold */
+    --rainbow-signature-3: #f89417; /* 1 Gbps orange */
+    --rainbow-signature-4: #e0302b; /* 3 Gbps red */
+    --rainbow-signature-5: #da6bbb; /* 10 Gbps magenta */
+    --rainbow-signature-6: #7c72c1; /* 20 Gbps violet — "fully provisioned" / apex */
+}
+
+/* §RAINBOW.dark — THE THEME-PAIRED DARK ARM (C.W1.a WG-4, fixes D2/T-3/DLG-3 — THE KEYSTONE).
+   The 14 tiers (+ null + 6 signatures) are OKLab duals of the light arm: HUE + ORDINAL RANK frozen
+   (the spectral order IS the data), L lifted to clear ctr ≥ 5.78 on the warm-espresso ground, C
+   trimmed ~14%. The oklab.ts relight transform (Ld = clamp(L_lt + lift, floor, 0.82); Cd = C_lt ×
+   0.86, the contrast floor baked into the clamp so a dark-on-dark tier is structurally impossible
+   at the source) is the DERIVATION SEAM every instance-authored ramp derives its dark arm through.
+   N.WF2 · G-N14 PROVENANCE: this block is NOT a byte-for-byte transcription of that transform's
+   output — 5 tiers (8, 9, 10, 13, 14) carry hand-tuned duals that diverge from the closed form
+   (e.g. tier-8 shipped `#f77744` vs derived `#f27445`). Measured (P2-B): BOTH sets clear the 5.78
+   floor; the shipped duals are the MORE-legible D3 apex re-temper. The N.WF2 owner RATIFIES the
+   shipped values as authored (the 5 are named in
+   docs/tranches/N/__readback__/N.WF2/dark-palette-disposition.json, so n0-relight-divergence
+   reads them as lawful, not a silent hand-nudge); the transform is NOT re-emitted downward onto
+   this block. The interpolation stays DISCRETE (FD1 §3.5 kind-guard: each fixed stop is
+   re-authored, never blended between adjacent tiers). The light arm shipped byte-identical in both
+   themes (the one KIND that escaped the FD1 §3.0 theme-paired invariant); this is the missing pair. */
+.dark {
+    --rainbow-tier-1: #53b98b; /* 100 Mbps  — green (ctr 7.42) */
+    --rainbow-tier-2: #5dae61; /* 200 Mbps  — green (ctr 6.58) */
+    --rainbow-tier-3: #97bc56; /* 250 Mbps  — chartreuse (ctr 8.25) */
+    --rainbow-tier-4: #d3c855; /* 300 Mbps  — yellow-green (ctr 10.40) */
+    --rainbow-tier-5: #edbc4d; /* 320 Mbps  — gold (ctr 10.18) */
+    --rainbow-tier-6: #ffb254; /* 400 Mbps  — amber (ctr 10.05) */
+    --rainbow-tier-7: #f8844a; /* 750 Mbps  — orange (ctr 7.18) */
+    --rainbow-tier-8: #f77744;
+    /* 2 Gbps    — red-orange (D3 RE-TEMPER, dark dual: pushed off
+                                  tier-7 so the 750↔2G pair is JND-distinct on espresso too —
+                                  inter-tier ΔEOK 0.0140→0.0274, ~2×; still clears ②.b ΔC_ab
+                                  ≥0.11 (tier-8=0.152). fd-sci A1/M3.) */
+    --rainbow-tier-9: #fc695c; /* 3 Gbps    — red (ctr 6.25) */
+    --rainbow-tier-10: #fe6673; /* 4 Gbps    — red-pink (ctr 6.30) */
+    --rainbow-tier-11: #ff7796; /* 5 Gbps    — pink (ctr 7.12) */
+    --rainbow-tier-12: #e383c6; /* 10 Gbps   — magenta (ctr 7.12) */
+    --rainbow-tier-13: #c38bd6; /* 15 Gbps   — violet (ctr 6.83) */
+    --rainbow-tier-14: #a29be2; /* 20 Gbps   — violet apex (ctr 7.12, no longer sinks) */
+    --rainbow-null: #7495bb; /* no-tier   — recessive slate (ctr 5.78) */
+    --rainbow-signature-1: #53b98b; /* 100 Mbps green  — "connected" / entry */
+    --rainbow-signature-2: #eebd4f; /* 500 Mbps gold */
+    --rainbow-signature-3: #fba74e; /* 1 Gbps orange */
+    --rainbow-signature-4: #fc695c; /* 3 Gbps red */
+    --rainbow-signature-5: #e383c6; /* 10 Gbps magenta */
+    --rainbow-signature-6: #a29be2; /* 20 Gbps violet — "fully provisioned" / apex */
+}
+
+/* §D — the engraved-atlas grounds (FD1 §1.1, §7.2; C.W1.a WG-1/WG-2/WG-3/WG-7). The
+   warm-ground retune, now landing the keystone values verbatim from the verified palette
+   (audit/fd-warm-ground-palette.md §1.4/§2.3): ONE warm hue spine — paper 47° · plate 55° ·
+   ink 55° (light), espresso 55° · plate 57° · ivory ink 80° (dark). Chroma is lifted above
+   the near-white JND so the warmth READS (the C 0.008 below-JND defect retired); L is dropped
+   off the 0.985 ceiling so --card SEPARATES (the C1 engraved plate). The dark stock is re-hued
+   OUT of cool-250 onto warm 55–80° so ground and ivory ink share ONE temperature ("an atlas
+   printed on dark stock with ivory ink," D1 §3.2). Overriding glass-ui's
+   --background/--card/--foreground/--muted-foreground here recolors the page warm; glass-ui's
+   glass-tier tokens (--glass-*) read these grounds, so the chrome warms in lockstep. */
+:root {
+    /* THE color-scheme DECLARATION (I8 REVISE FIX-1) — the load-bearing seam that makes EVERY
+       platform `light-dark()` resolve correctly. CSS `light-dark()` keys off the COMPUTED
+       `color-scheme`, NOT the `.dark` CLASS — and color-scheme was declared NOWHERE (a src-wide
+       grep returned zero), so the UA default (`normal` ⇒ light) pinned every `light-dark()` to its
+       LIGHT branch even on the dark theme (the dark plate-grid resolving 0.5 not 0.35, --red-text
+       resolving #cc0000 not the AA-lifted hsl on dark stock). Declared HERE on the §D ground root
+       (light) + the .dark ground root (dark) — co-located with the warm grounds — so the espresso
+       theme computes `color-scheme: dark` and every `light-dark()` (the grid opacity/ink, --red-text,
+       --color-red-text) resolves its DARK branch platform-wide. The app paints its OWN --background,
+       so this introduces NO flash/regression on the flip; native scrollbars/form controls going
+       dark on the espresso stock is CORRECT (they were light-on-dark before). */
+    color-scheme: light;
+    --background: oklch(
+        0.97 0.022 47
+    ); /* #fff1e9 — warm peach-ivory PAPER (ctr 1.105 vs #fff) */
+    --card: oklch(
+        0.99 0.01 55
+    ); /* #fffaf6 — the brighter printed PLATE (ctr 1.066 vs bg) */
+    --foreground: oklch(
+        0.255 0.028 55
+    ); /* #2d1f16 — warm espresso-black INK (re-hued off cool 260) */
+    --muted-foreground: oklch(
+        0.5 0.024 55
+    ); /* #6f6056 — captions/labels (ctr 5.46 on --card) */
+    --engrave: oklch(
+        0.255 0.028 55 / 0.16
+    ); /* FD1 §1.1 — the engraved-frame hairline (warm 55°) */
+    /* §SILVER — THE STRUCTURE-METAL QUAD (H.W4.b · the F5 SILVER obligation, finally built).
+       Zero silver tokens lived at any root before this; the structure (hairlines/rules/rivets)
+       wore the bare --engrave ink. Silver is NOT a new ink rung — it is the refined METAL FINISH
+       the structural elements wear ON TOP of their existing ink: a subtle brushed-metal tint + a
+       specular catch-light edge, the engraved-instrument register the atlas already speaks in its
+       glass rims (--cp-glass-rim). NOT a loud chrome — a near-neutral steel at the perceptual
+       edge, low chroma, so it reads as "machined metal" without out-shouting the data (rung ④,
+       the margin). It is NEUTRAL STRUCTURE: hue ~250 at C 0.012 is the cool-steel whisper that
+       does NOT collide with any route tritone (USF red 28° · SCI green 155° · ECF teal 250° — the
+       silver chroma is an order below the accents, so it never reads as a fourth hue; it tints,
+       never competes). The QUAD: one BASE metal + three element bindings (hairline/rule/rivet)
+       the structural consumers color-mix INTO their --engrave ink (an ADDITIVE finish, never a
+       replacement — the structure still reads at its ink rung if a consumer ignores silver).
+
+         --silver-base       the brushed steel itself — a cool-neutral the bindings derive from.
+         --silver-hairline   the finish the engraved-frame HAIRLINE wears (ChartFrame bezel, the
+                             census/figure rules) — silver mixed faintly into the hairline ink.
+         --silver-rule       the finish the section RULE wears (AnimatedRule short/figure rule) —
+                             a touch more metal than the hairline (the rule is a wider cut).
+         --silver-rivet      the finish the RIVET wears (the ScrollTimeline rail stops, the dock
+                             rivets) — the most metal of the three (a rivet IS a fastener; it reads
+                             as struck metal, the brightest structural finish).
+         --silver-specular   the lit EDGE — the specular catch-light a metal surface throws at its
+                             top rim (the same ivory whisper --cp-glass-rim carries). A near-white
+                             low-alpha highlight a consumer lays on the lit edge of a rivet/rule. */
+    --silver-base: oklch(
+        0.78 0.012 250
+    ); /* the brushed cool-steel base (neutral, low-C) */
+    --silver-hairline: oklch(
+        0.78 0.012 250 / 0.22
+    ); /* the hairline finish — a faint metal tint over --engrave */
+    --silver-rule: oklch(
+        0.8 0.014 250 / 0.34
+    ); /* the section-rule finish — a touch brighter than the hairline */
+    --silver-rivet: oklch(
+        0.84 0.016 250 / 0.5
+    ); /* the rivet finish — struck metal, the brightest structural finish */
+    --silver-specular: oklch(
+        1 0 0 / 0.55
+    ); /* the specular catch-light edge (mirrors --cp-glass-rim's lit rim) */
+    /* The dimmed-basemap county wash (FD5 §3.1) — a faint WARM-PAPER tier just off --card
+       so counties separate from the plate. Single-sourced here (the phantom-token fix,
+       map-animation-dark §6.2): GeoPointLayer's color-mix fallback is now dead. */
+    --viz-basemap-dim: oklch(0.94 0.01 85 / 0.55);
+}
+
+.dark {
+    /* color-scheme: dark (I8 REVISE FIX-1) — the dark ground root declares the dark color-scheme so
+       every `light-dark()` resolves its DARK branch under the espresso theme (the grid 0.35, the
+       --red-text AA-lift). Mirrors the :root `color-scheme: light` on the §D light ground above. */
+    color-scheme: dark;
+    --background: oklch(
+        0.205 0.018 55
+    ); /* #1e150f — warm espresso-graphite, R>G>B (was cool-250) */
+    --card: oklch(
+        0.255 0.02 57
+    ); /* #2a2019 — the plate on dark stock (ctr 1.13 vs bg) */
+    --foreground: oklch(
+        0.92 0.014 80
+    ); /* #e9e4da — warm IVORY ink, hue 80 = shares the ground warmth */
+    --muted-foreground: oklch(
+        0.7 0.018 78
+    ); /* #a59d92 — dark-arm captions (ctr 6.70 on bg) */
+    /* The dark-stock hairline (warm ivory) — alpha LIFTED 0.14 → 0.22 so the engraved
+       coastline reads on the warm-graphite ground (the county strokes were a near-black
+       ~5.6% smear after the 0.4 stroke-opacity multiplier; map-animation-dark §6.1). The
+       GeoPointLayer base-shape drops its 0.4 stroke-opacity in lockstep — ONE token locus,
+       no per-component dark CSS. */
+    --engrave: oklch(0.92 0.014 80 / 0.22);
+    /* §SILVER.dark — THE DARK-STOCK STRUCTURE-METAL (H.W4.b). On the espresso ground the
+       cool-steel base flips to a brighter IVORY-metal whisper (the same inversion --cp-glass-rim
+       makes: a lit metal edge on dark stock is ivory, not slate). L is lifted to clear the
+       graphite ground; the hue stays near-neutral (250 cool whisper) so the finish reads as
+       "machined metal on dark stock," never a competing ivory ink. The alphas track the light
+       arm's hairline→rule→rivet escalation (the rivet still the brightest struck-metal finish).
+       The specular edge is the dark-stock ivory rim (mirrors --cp-glass-rim.dark). Authored once,
+       at the source — the consumers read ONE token name, theme-resolved by this cascade. */
+    --silver-base: oklch(0.74 0.012 250); /* the brushed metal base on dark stock */
+    --silver-hairline: oklch(
+        0.8 0.012 250 / 0.2
+    ); /* dark-arm hairline finish — ivory metal whisper over --engrave */
+    --silver-rule: oklch(0.84 0.014 250 / 0.3); /* dark-arm section-rule finish */
+    --silver-rivet: oklch(
+        0.88 0.016 250 / 0.46
+    ); /* dark-arm rivet finish — the brightest struck-metal edge */
+    --silver-specular: oklch(
+        0.92 0.01 70 / 0.16
+    ); /* dark-arm specular — the ivory lit rim (matches --cp-glass-rim.dark) */
+    /* The ghost chapter numeral on dark stock — the ivory-ink watermark (shares the §D
+       80° ivory the --foreground carries). Alpha lifted to 0.09 vs the light arm's 0.07:
+       a low-alpha light glyph on the espresso ground needs a touch more presence to read
+       as the SAME engraved watermark (the dark-stock parity the §D inks all carry). */
+    --ghost-numeral-ink: oklch(0.92 0.014 80 / 0.09); /* dark — ivory watermark */
+    /* The dimmed-basemap county wash on dark stock — a WARM-GRAPHITE tier at L 0.30, ABOVE
+       the L 0.205 ground, so the dimmed counties read as a distinct (recessive) tier, never
+       dark-on-dark. Hue 85 shares the warm ground + the ivory stroke (map-animation-dark §6.2). */
+    --viz-basemap-dim: oklch(0.3 0.012 85 / 0.5);
+}
+
+/* §BRAND — the NCSU Wolfpack-red register (FD1 §4.1, ported from deck-theme.css). This
+   is L3 brand/CHROME accent ONLY — never a data fill (the three-red law, FD1 §4.1): the
+   eyebrow leading-rule, the card-flag spine, the SiteColophon, the dock brand-mark, the
+   hand-underline. A complete accessibility-correct red system: the hero --ncsu-red holds
+   the 3:1 large-text bar; --red-text auto-lifts on dark stock so small red text holds
+   WCAG AA. Consumed today by meta.ts (`accent: var(--ncsu-red)`), NotFoundView, and the
+   eyebrow ::before — all of which resolved to nothing until this register landed. */
+@theme {
+    --color-ncsu-red: #cc0000; /* the hero accent — "look here" */
+    --color-ncsu-red-deep: #990000; /* Reynolds Red — depth/hover/gradient */
+    --color-ncsu-red-bright: #e6322a; /* lifts off DARK surfaces */
+    --color-red-text: light-dark(
+        #cc0000,
+        hsl(6 88% 62%)
+    ); /* small red TEXT — AA-lifted on dark */
+    --color-red-wash: color-mix(in srgb, #cc0000 9%, transparent);
+    --color-red-tint-15: color-mix(in srgb, #cc0000 15%, transparent);
+    --color-red-tint-30: color-mix(in srgb, #cc0000 30%, transparent);
+}
+
+/* The bare custom-property forms the chrome reads directly (var(--ncsu-red), not the
+   Tailwind bg-ncsu-red utility) — the eyebrow rule, the colophon spine, meta.ts. */
+:root {
+    --ncsu-red: #cc0000;
+    --ncsu-red-deep: #990000;
+    --ncsu-red-bright: #e6322a;
+    --red-text: light-dark(#cc0000, hsl(6 88% 62%));
+}
+
+/* §GRAIN — the per-surface plate-grain calibration (K-PAPER-GRAIN, P5).
+   glass-ui 4.2.0 RETIRED the old 3.10.0 `--glass-grain-opacity-plate` rung (grep the dist:
+   zero consumers) and re-calibrated the PUBLIC `--paper-grain-opacity` LOUD to a JND floor
+   tuned for a full-bleed page underpaint — 0.22 light (glass-fx.css) / 0.16 dark (dark-arm.css).
+   But the `paper-grain-overlay` `::after` (ChartFrame's chart plate; VFT's SpecimenPlate) reads
+   that SAME public var, so an un-overridden plate inherits the loud page default ≈5.8× over the
+   intended felt floor — the heavy gray TV-static defect.
+
+   THE FIX is custom-property INHERITANCE, NOT specificity: scope the override to the GESTALT
+   surface class `.paper-grain-overlay` (NOT the narrow `[data-grain="plate"]`, which would leave
+   VFT's SpecimenPlate — `paper-grain-overlay` with no data-grain marker — loud). glass-ui's
+   `::after` resolves `opacity: var(--paper-grain-opacity, …)` against this scoped value, so EVERY
+   surface that wears the overlay class calms to the felt floor. Authored once, at the source:
+   0.038 light arm (≤ the 0.05 kitsch line, the felt plate tooth) / 0.028 dark arm (keeps the
+   rendered plate ΔL < 0.03, the atmosphere-gate band, so the espresso plate reads AS its --card
+   ground). The page-wide PaperBackdrop underpaint keeps the loud public default untouched. */
+.paper-grain-overlay {
+    --paper-grain-opacity: 0.038; /* light arm — felt plate tooth, ≤ the 0.05 kitsch line */
+}
+
+.dark .paper-grain-overlay {
+    --paper-grain-opacity: 0.028; /* dark arm — keeps the rendered plate ΔL < 0.03 (the gate band) */
+}
+
+/* §GRID — the plate graph-paper pitch, promoted to ONE platform token (I8.b / §1.5 KISS-DRY,
+   fb-backgrounds §1.5/P4). The plate-grid was a `.plate`-scoped local in ChartFrame (a 16px
+   engineering literal + a hand-coded `:where(.dark)` opacity split); §I2 wants it LARGER and
+   defined ONCE so a future per-route or second grid reads one source — the canonical platform
+   constant lives HERE, beside §GRAIN/§Z-LADDER, not buried in a component scope. The grid stays
+   SCOPED to `ChartFrame.vue::before` (promoting the TOKEN to :root does NOT mount the grid
+   page-wide — a page-wide blueprint grid would fight the aurora, the documented XOR); only the
+   pitch + the opacity split move here.
+
+   --plate-grid-pitch — the MONOGRAPH register: a graph-paper pitch WITH AIR (24px), not the dense
+     16px engineering grid the literal carried. Larger on each viz, defined once.
+   --plate-grid-line — the SAME warm hairline ink as the bezel, only fainter (--engrave mixed to
+     40%), so the grid reads as the plate's own engraving, never a foreign rule.
+   --plate-grid-opacity — ONE `light-dark()` token (the codebase already uses light-dark() — see
+     §BRAND --red-text above), retiring the `--plate-grid-opacity-dark` companion + the
+     `:where(.dark) .plate::before` override: on the espresso stock the grid sits DEEPER recessive
+     (0.35) since the engraved bezel is the louder mark on graphite; on cream it carries 0.5. This
+     is the authored DIAL of record (the single source a future page-wide / per-route grid reads).
+   --plate-grid-ink — the RENDERED grid color: the `--plate-grid-line` ink dialed to the
+     `--plate-grid-opacity` strength, baked into the COLOR's alpha via `light-dark()` (where
+     light-dark is valid CSS — it is a `<color>` function, NOT a `<number>` one, so a numeric
+     `opacity: light-dark(0.5, 0.35)` is invalid-at-computed-value and falls to 1; the theme split
+     must live in the color). ChartFrame's `::before` paints THIS color at `opacity: 1`, so the
+     grid renders at 0.5 light / 0.35 dark in every engine with NO `:where(.dark)` override and NO
+     `-dark` companion — the §1.5 one-source / light-dark law, made to actually paint. */
+:root {
+    --plate-grid-pitch: 24px;
+    --plate-grid-line: color-mix(in oklab, var(--engrave) 40%, transparent);
+    --plate-grid-opacity: light-dark(0.5, 0.35);
+    --plate-grid-ink: light-dark(
+        color-mix(in oklab, var(--plate-grid-line) 50%, transparent),
+        color-mix(in oklab, var(--plate-grid-line) 35%, transparent)
+    );
+}
+
+/* §ROUTE-IDENTITY — THE route-* CHROME-IDENTITY VOCABULARY (design-palette-identity §2.4 MOVE 4,
+   the keystone). The per-route chrome accent rides a NAMED token group bound ONCE at the route
+   subtree root (the data-DRIVEN cascade — the DashboardView/PlatformShell inline style bound from
+   ctx, the EXACT pattern the dock-accent already uses), NEVER a per-route color stylesheet keyed on
+   the data-dashboard attribute (the C1-retired FD1 §9 chrome-CSS-per-route fork — the
+   data-dashboard attribute stays a PURE route marker). This block declares the VOCABULARY plus the
+   platform-wide FALLTHROUGH defaults; the route bind overrides them per route, so every chrome
+   consumer reads ONE token name, route-resolved by the cascade — the same architecture the attn-*
+   and cp-* axes already use.
+
+   THE NAMESPACE SPLIT IS THE GUARANTEE: the route-* group is CHROME-only (eyebrow icon · dock
+   rivet · legend chip-rim · dirty-dot · CardFlag) and resolves ONLY to owned hues (the viz-*,
+   rainbow-*, ncsu-red families); the DATA reads viz-* and colorKind, untouched. "CHROME identity,
+   never data encoding" (the charter) is enforced by this namespace boundary, not a runtime check.
+   All five are pop-budget fenced (a stroke/dot/chip-edge/glyph-fill, sub-1.5rem dose,
+   meaning-bearing, scarce-per-route, NO new hue, NO gold-as-pop).
+
+   THE FALLTHROUGH (when no route binds — the gallery, the about page, SSR): route-accent falls to
+   the receiver-teal diverging high pole (the platform's resting brand register), the warm and cool
+   legs to the diverging poles, the eyebrow hue to the accent, the flag tint to the accent. So the
+   tokens ALWAYS resolve (the chrome never reads an unset value); a route's bind is purely the
+   per-route refinement on top. Theme-aware for free — the values are viz-* references, so a theme
+   flip retunes them.
+
+   THE PER-TOKEN JOBS (the route bind overrides each — see design-palette-identity §2.4):
+     route-accent       the route's primary chrome accent (dock active-adjacent, eyebrow, CTA).
+                        default receiver-teal; bind USF teal, SCI green-floor, ECF deep teal.
+     route-accent-warm  the warm leg of a directional route (USF's payer-red pole). default the
+                        accent; USF binds diverging-low so the rivets read a warm-to-cool index.
+     route-accent-cool  the cool chrome echo (USF blue pole, ECF teal, SCI null-slate). default
+                        the accent.
+     route-eyebrow-hue  the section-eyebrow icon tint (d-pops M2). default the accent; SCI binds a
+                        per-BEAT spectral walk (beat 1 green to beat 8 violet).
+     route-flag-tint    the shared CardFlag tint (the accent), so the gallery card zone-rule and
+                        the dashboard section header read the SAME tritone, cover and inside. */
+:root {
+    --route-accent: var(--viz-diverging-high);
+    --route-accent-warm: var(--route-accent);
+    --route-accent-cool: var(--route-accent);
+    --route-eyebrow-hue: var(--route-accent);
+    --route-flag-tint: var(--route-accent);
+    /* THE MINTED ROUTE-CHROME ACCENTS (J-COLOR §1/§2 — the quintet completion). Two NAMED
+       chrome-only accents the per-route chromeIdentity binds, so the five routes read as five
+       JND-distinct hues, not a blue-teal smear. These are §ROUTE-IDENTITY tokens — they resolve
+       ONLY through --route-accent/--route-eyebrow-hue chrome consumers (the dock rivet, eyebrow
+       icon, legend chip-rim, CardFlag), NEVER a --viz-* data ramp stop (the namespace boundary
+       is the "CHROME identity, never data encoding" guarantee). The dark arms are authored beside
+       the light arms (theme-paired). */
+    /* SPEEDTEST bright-teal (J-COLOR §1 — the H8 RESERVED leg MINTED). H8 reserved this as a
+       BRIGHTER teal JND-distinct from ECF's deep teal (--viz-sequential-high oklch(0.52 0.15 250))
+       so the quad reads teal-DEEP (ECF) vs teal-BRIGHT (speedtest), not "the same blue twice". TWO
+       axes of separation: the hue shifts CYAN-ward (205° vs 250°) AND the L lifts (0.66 vs 0.52),
+       so ecf↔speedtest clears the JND floor (live pairwise ΔE ~0.16 light / ~0.13 dark, was 0.0000
+       byte-identical). */
+    --viz-speedtest-bright: oklch(0.66 0.14 205);
+    /* DEMAND warm-amber (J-COLOR §2 — re-led off the diverging payer pole). Demand formerly led
+       --viz-diverging-high (oklch(0.55 0.13 245)), a sub-JND smear ~0.038 off ECF's deep teal. The
+       chrome IDENTITY re-leads onto its own warm register (gold-amber ~70°, the equipment/contracts
+       register) while the demand store keeps its diverging DATA semantic (the crossover's warm↔cool
+       index, the accentWarm/accentCool legs). The five then span the wheel: red 28° · amber 70° ·
+       green 155° · teal-deep 250° · teal-bright 205° — a true quintet. */
+    --viz-demand-warm: oklch(0.70 0.13 70);
+}
+
+.dark {
+    /* The minted route-chrome accents — DARK arm (lifted L for the espresso ground). */
+    --viz-speedtest-bright: oklch(0.82 0.14 200);
+    --viz-demand-warm: oklch(0.80 0.12 72);
+}
+
+/* §INK — THE D5 PAIRED-INK CURE (readable ink derived from accent) [O-C7 · design-canon §F;
+   audit/darkmode.md §1/§3/§5]. THE deepest theming bug: text `color` bound to a viz-ramp POLE
+   or a per-datum accent is unreadable in at least one theme (the pole endpoints are chosen for
+   FILL contrast against EACH OTHER, not for TEXT contrast against paper), and re-theming just
+   moves the failure to the other pole (49 light + 17 dark FAILs, one disease).
+
+   THE CURE (§F2): every accent that touches TEXT splits into the accent (fills/marks/swatches,
+   UNTOUCHED) and a derived INK (text). The ink preserves HUE identity (payee-red stays red, the
+   vft earth-tones stay botanical) and clamps LIGHTNESS to the contrast-safe band per theme —
+   light forces L DOWN (≤0.47, darker on cream); dark forces L UP (≥0.75, lighter on espresso) —
+   with a chroma clamp (gamut/neon guard). ONE `light-dark()` declaration serves BOTH arms: it
+   picks the clamp DIRECTION, and because each source pole is re-declared on this SAME root
+   element under `.dark`, `var(--viz-*)` inside resolves the theme-correct pole in lockstep (no
+   `.dark` re-declaration of the ink needed). Verified live (chromium readback): the light body
+   ink lands ~5:1, the dark ~8:1 vs their grounds (§F2's Y≈L³ prediction).
+
+   THE TWO REGISTERS (§F2 large-text relaxation · [ANSWERS Q-13] clamp ALL, heroes RIDE AA-large):
+     · body register — normal text (AA ≥4.5): L≤0.47 light / L≥0.75 dark. NOTE (O-C2-TAIL · the
+       G16 LEAD RULING, Q-13 clamp-all fidelity): the light-arm floor tightened 0.52→0.47 so
+       chromatic BODY text (the key-stat card figures, the axis-keyed words, the void-mark) clears
+       AA-normal 4.5 across the gamut — at 0.52 the cool poles (sequential-high L0.52, the green/
+       teal) and even the warm diverging-low card figures sat 3.9–4.4. Heroes keep the -lg arm.
+     · `-lg` register — the audacious HEROES (≥24px, or ≥18.66px bold): the AA-large relaxation
+       (≥3.0) L≤0.62 light / L≥0.66 dark — they keep MOST of their vividness yet stay both-theme
+       readable (the vivid-crown EXEMPTION is REJECTED, Q-13; the heroes ARE clamped, just to the
+       looser large-text band). Measured: ~3.3:1 light / ~6.2:1 dark. NOTE (tree-over-spec): the
+       O-C7 draft line cites "dark ≥0.75" for the large relaxation, which is the BODY floor (no
+       relaxation); the cited design-canon §F2 is self-consistent (dark large L≥0.66) and is the
+       register implemented here — the draft figure is a transcription slip.
+
+   THE PER-DATUM SEAM: the static viz-pole sites read the named inks below (a one-token swap in
+   their scoped rule). The DYNAMIC sites the cascade cannot pre-name — the per-card gallery
+   `--accent`, the per-hover readout datum fill — apply the SAME clamp recipe re-declared at the
+   consumer (reading their local accent), so the derivation respects the value the element
+   actually carries. ROUTE OVERRIDES re-declare the ink beside the pole they clamp: vft-tokens.css
+   re-points `--viz-diverging-*` to the botanical ramp, so it re-derives `--ink-diverging-*` there
+   (the ink follows the pole). The ban (§F3, G17): no text node's computed color equals a raw
+   `--viz-*` pole var or a per-datum fill — the accent survives only as a NON-text carrier. */
+:root {
+    /* body register (AA ≥4.5) — the pole/accent as READABLE text ink */
+    --ink-diverging-low: light-dark(
+        oklch(from var(--viz-diverging-low) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--viz-diverging-low) max(l, 0.75) min(c, 0.15) h)
+    );
+    --ink-diverging-high: light-dark(
+        oklch(from var(--viz-diverging-high) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--viz-diverging-high) max(l, 0.75) min(c, 0.15) h)
+    );
+    --ink-sequential-high: light-dark(
+        oklch(from var(--viz-sequential-high) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--viz-sequential-high) max(l, 0.75) min(c, 0.15) h)
+    );
+    /* the chrome PRIMARY as text ink (the filter dim value, the drawer crosslink, the gallery CTA)
+       — a clamp that is a no-op on glass-ui's already-readable primary and lifts a route-overridden
+       accent (vft shadyshroom) into band. */
+    --ink-primary: light-dark(
+        oklch(from var(--primary) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--primary) max(l, 0.75) min(c, 0.15) h)
+    );
+    /* the per-card / per-datum default — the gallery cell re-declares this from its own `--accent`
+       (see GalleryView); this :root default keeps the token always-resolved off `--accent`. */
+    --ink-accent: light-dark(
+        oklch(from var(--accent, var(--primary)) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--accent, var(--primary)) max(l, 0.75) min(c, 0.15) h)
+    );
+    /* `-lg` register (AA-large ≥3.0) — the audacious HERO crowns ride this looser band, keeping
+       more vividness (L≤0.62 light / L≥0.66 dark). */
+    --ink-diverging-low-lg: light-dark(
+        oklch(from var(--viz-diverging-low) min(l, 0.62) min(c, 0.17) h),
+        oklch(from var(--viz-diverging-low) max(l, 0.66) min(c, 0.15) h)
+    );
+    --ink-diverging-high-lg: light-dark(
+        oklch(from var(--viz-diverging-high) min(l, 0.62) min(c, 0.17) h),
+        oklch(from var(--viz-diverging-high) max(l, 0.66) min(c, 0.15) h)
+    );
+    --ink-sequential-high-lg: light-dark(
+        oklch(from var(--viz-sequential-high) min(l, 0.62) min(c, 0.17) h),
+        oklch(from var(--viz-sequential-high) max(l, 0.66) min(c, 0.15) h)
+    );
+    /* the SCI rainbow-green signature as a hero crown ink (the /sci lede crown + the chase crown) */
+    --ink-rainbow-signature-1-lg: light-dark(
+        oklch(from var(--rainbow-signature-1) min(l, 0.62) min(c, 0.17) h),
+        oklch(from var(--rainbow-signature-1) max(l, 0.66) min(c, 0.15) h)
+    );
+}
+
+/* §SELECTION — THE CROSS-VIZ TREATMENT TOKENS (I-UX.a · UX-S1/UX-S2 · DESIGN §4.3). The ONE
+   recede + the ONE focus register every interactive primitive reads through `useSelectionTreatment`
+   so a selection made on viz A paints the SAME entity coherently on vizzes B/C/D — the atlas's
+   reason to be a COORDINATED atlas. NOT a §A theme-atmosphere register (it carries no aurora/grain
+   role); it is the INTERACTION layer's own locus, authored once here, theme-paired below.
+
+   THE DIM LAW (the keystone, fb-filters FB-5). A dimmed-context mark must read as DELIBERATELY
+   RECEDED, NEVER as an opacity-to-CREAM wash that drags the mark back to the paper ground and reads
+   as GONE (the "nothing happened" trap — fb-filters FB-5 measured the 0.55 cream wash at ~1.05:1
+   rendered contrast, where "dimmed" and "absent" read identical). The cure is a DESATURATE-TOWARD-
+   INK: strip the mark's chroma (it is no longer a vivid sibling competing with the lit mark) AND
+   pull it TOWARD --foreground (ink — darker on cream, ivory on espresso), so the receded mark KEEPS
+   its pixel PRESENCE against the paper. This is the SAME recede for filter-out AND selection-context
+   (one treatment, two callers — fb-filters FB-5 / §scope-2), so the two states cannot drift.
+
+     --sel-dim-saturate  the `saturate()` filter factor a `dimmed:` mark applies (0.32 — most chroma
+                         gone, the mark reads as a grey sibling, not a competing hue).
+     --sel-dim-mix       the % of --foreground (INK, theme-resolved) mixed INTO the mark's own fill —
+                         the toward-ink pull (42%): the desaturated mark darkens to ink on cream /
+                         lifts to ivory on espresso, holding presence; it is NEVER mixed toward
+                         --background (that is the cream-wash that reads as gone). A primitive's
+                         dimmed fill: `color-mix(in oklab, <fill>, var(--sel-dim-ink) var(--sel-dim-mix))`.
+     --sel-dim-ink       the toward-ink target the mix pulls to — --foreground, named so the consumer
+                         reads ONE token (theme-resolved: warm ink on cream, ivory on espresso).
+     --sel-dim-opacity   the recede opacity floor (0.66) — recessive but FAR above the perceptibility
+                         floor, so even a pure-opacity consumer (a mark that cannot filter) holds the
+                         ≥1.6:1 rendered contrast vs paper the DIM LAW requires. The WORST case — a
+                         near-paper PALE mark, the most adverse possible fill — measures 1.77:1 vs
+                         --background at this mix+opacity (a mid-grey mark 2.4:1, a saturated mark
+                         ~3.0:1: comfortable headroom over the 1.6:1 bar), and the saturate+ink path
+                         runs richer still. NEVER drop a dimmed mark to the ~0.30 "gone" floor the
+                         pre-fix USF dim carried.
+
+   THE SELECTED / PRIMARY TREATMENT. The lit register: a `selected` mark gains a foreground frame
+   ring (the same --foreground stroke GeoChoropleth's `[data-selected]` already draws, promoted to a
+   token); the PRIMARY (`isPrimary`) mark gains the GILT rim — the one-gilt-at-a-time tier (DESIGN
+   §4.3 / §N6, the gold-scarcity law) — so the focused subject reads ONE rung above its siblings in
+   the set. The ring colours reference existing inks (--foreground / the gold register), never a new
+   hue (the no-new-hue law); the widths are the discrete-select stroke register GeoChoropleth proved. */
+:root {
+    --sel-dim-saturate: 0.32; /* the desaturate factor — chroma stripped, the mark greys out */
+    --sel-dim-ink: var(--foreground); /* the toward-INK target (warm ink on cream) */
+    --sel-dim-mix: 42%; /* the % ink mixed in — the toward-ink pull that holds presence */
+    --sel-dim-opacity: 0.66; /* the recede floor — recessive yet ≥1.6:1 vs paper (NOT the gone floor) */
+    --sel-selected-ring: var(
+        --foreground
+    ); /* the lit-frame stroke (the framed-mark ring) */
+    --sel-selected-stroke-width: 2.5px; /* the discrete-select frame width (GeoChoropleth's register) */
+    --sel-primary-ring: var(
+        --gold-ink,
+        #b8860b
+    ); /* the GILT rim — the one-gilt focused tier (gold-scarcity) */
+    --sel-primary-stroke-width: 3px; /* the primary rim — one rung heavier than a plain selected frame */
+}
+
+/* THE ACTIVE-VIZ RIM register — the ONE gilt home (A3 single-gilt-home). The deft golden
+   `.plate-active-rim` (chrome-overlays.css) composes the SHIPPED --sel-primary-ring (= var(--gold-ink))
+   at these alphas; D4 / K-SCENE consume these tokens, never a third hardcoded 38% / 22%. The rim recipe
+   ships with var() FALLBACKS (38% / 22% / 1.5px) so it renders correctly even without this home — this
+   register PROMOTES the constants to a single named source. */
+:root {
+    --active-gilt: 38%; /* the gilt hairline alpha */
+    --active-glow: 22%; /* the inner-glow alpha (below the §key-stat record-pill saturation) */
+    --active-rim-width: 1.5px; /* the rim hairline width */
+}
+
+.dark {
+    /* The toward-ink pull inverts on espresso stock: --foreground is the warm IVORY ink, so the
+       mix LIFTS a dimmed mark toward ivory (it brightens to a grey-ivory recede, never sinking into
+       the graphite ground — the dark-stock dual of the cream-wash trap). The mix % lifts a touch
+       (44%) so the ivory pull reads on the deeper ground; the opacity floor lifts to 0.66 for the
+       same reason (a recede on dark stock needs marginally more presence to clear the 1.6:1 floor).
+       The gilt rim brightens to the dark-arm gold (matches the §key-stat record pill on dark). */
+    --sel-dim-mix: 44%;
+    --sel-dim-opacity: 0.66;
+    --sel-primary-ring: var(--gold-ink, #d4a017);
+}

@@ -1,0 +1,14 @@
+/* platform/design/variants.css — the @custom-variant declarations (FD1 §2.3, DL5 §4.3,
+   B.md INV-8). @custom-variant is a genuinely-free namespace (grep over glass-ui dist =
+   zero hits, DL5 §4.0b), so the platform owns these names with no collision risk.
+
+   INERT contract: these are DECLARED, applied to no element. A @custom-variant emits
+   nothing until a template writes `raised:stroke-2` / `dimmed:opacity-30` / an
+   `aggregate:`-prefixed utility; the adoption (the thin <GeoChoropleth> redesign, the
+   multi-year aggregate band) is a later wave. Here the hooks exist, unconsumed. */
+
+@custom-variant raised (&[data-raised="true"]); /* choropleth linked-highlight lift (hover) */
+@custom-variant dimmed (&[data-dimmed="true"]); /* choropleth non-selection dim (filter) */
+@custom-variant selected (&[data-selected="true"]); /* the pinned-mark FRAME (click) — C.W4.2 S1 */
+@custom-variant kbd-active (&[data-kbd-active="true"]); /* the roving keyboard cursor ring — C.W4.2 S4b */
+@custom-variant aggregate (&[data-view="aggregate"]); /* the multi-year all-years band (G8:6) */

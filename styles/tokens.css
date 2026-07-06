@@ -1,6 +1,14 @@
-/* @mkbabb/atlas — the design-token layer. O-B0 genesis scaffold: the real token surface
-   (the lib/design decompose) lands in O-B2. Kept minimal-but-valid so build:css emits a
-   near-empty dist/tokens.css that publint + attw resolve. */
-:root {
-  --atlas-genesis: 1;
-}
+/* @mkbabb/atlas — the design-token layer build entry (compiled to dist/tokens.css, shipped as
+   `./styles/tokens` for the theming-only consumer). O-B2 filled the O-B0 scaffold: the token surface
+   is the `src/design/tokens/{color,type,space,motion,elevation,radius}.css` family split, the
+   byte-for-byte decompose of the former `tokens.css` monolith (the C2 H-3 ordering rule). The Tailwind
+   import is what makes the @theme / @theme inline color-namespace registers in color.css process; the
+   var() references (glass-ui `--section-color-*`, `--spring-*`, `--duration-*`, `--primary`, …) are
+   PRESERVED (unresolved) so the consumer's glass-ui peer supplies them. */
+@import "tailwindcss";
+@import "../src/design/tokens/color.css";
+@import "../src/design/tokens/type.css";
+@import "../src/design/tokens/space.css";
+@import "../src/design/tokens/motion.css";
+@import "../src/design/tokens/elevation.css";
+@import "../src/design/tokens/radius.css";

@@ -1,0 +1,247 @@
+/* @mkbabb/atlas · design/tokens/type.css — the TYPE family, split byte-for-byte from tokens.css
+   at O-B2. Holds the §A apex/figure-slug rungs + the reading-register golden ladder + the font-stack
+   pins. THE WG-C successor home for the global +1–2-golden-step type bump (R-011/CD-20). */
+
+/* §A — the type APEX rungs + THE CONTAINED FIGURE-SLUG REGISTER (FD1 §2.1, §1.2;
+   C.W2.1, master H-1/H-2/H-3/H-7, NHI §3.1, FHV-1). PURE ADDITIONS over glass-ui's
+   body rungs (--type-prose, --type-heading, …); glass-ui ships neither display apex.
+
+   THE COHESION KEYSTONE (C2-4/HD-11). --type-display-audacious is the ONE audacious
+   register every dashboard reaches — the USF hero `text-audacious`, SCI's
+   RainbowStack.vue:164, the ECF hero. Its fluid term is re-authored IN PLACE from `vw`
+   to `17cqw` (container-query width of the figure's OWN track), so the glyph scales
+   with its box, not the screen — the category-error fix that retires the +118px @1024
+   overflow (master H-2). Because the keystone is REPLACED in place, every existing
+   `text-audacious` consumer inherits the contained register with no re-point; minting a
+   parallel token would have left SCI on the old `vw` (a cohesion regression). The 22vw
+   apex rung is RETIRED here; the FundLedgerFlow.vue:438 19vw scoped override is retired
+   by C.W2.2 (named in FD1-figure-slug-addendum.md). The floor/ceiling are the legibility
+   floor + the optical ceiling, fitted to the `$N.NNB` measure.
+
+   --type-display-mega is the dropped-capital / figure-number rung (the <FigureInitial>
+   signature) — likewise re-authored container-relative. The recipes in recipes.css §1
+   bind these as @utility text-audacious/text-mega/figure-slug. */
+:root {
+    /* §FONT REGISTER — PIN the editorial faces (C1 ground, glass-ui ^3.9.0 fix).
+       The B-era INERT-contract assumption "—font-display/--font-serif stay glass-ui's"
+       BROKE at the C0 ^3.6→^3.9 bump: glass-ui 3.9 re-pointed its brand register to
+       "Plus Jakarta Sans" (text + display), so the inherited display title rendered in
+       Plus Jakarta, not Fraunces (render-matrix "display title must be Fraunces" RED).
+       The warm-paper design language mandates Fraunces (editorial display) + Newsreader
+       (prose serif); both are Google-loaded in index.html. Pin them HERE, decoupled from
+       glass-ui's now-changed default. --font-mono (Fira Code) still matches glass-ui's. */
+    --font-display: "Fraunces", "Fraunces Fallback", Georgia, "Times New Roman", serif;
+    --font-serif:
+        "Newsreader", "Newsreader Fallback", Georgia, "Times New Roman", serif;
+    /* THE BODY PIN (D3.a / augment 7 / E2) — the ROOT seam, one move fixes the platform.
+       glass-ui 3.9+ re-homed its WHOLE text register onto --font-stack-text ("Plus Jakarta
+       Sans"): theme.css §Font-families @theme inline INLINES --font-stack-* into the Tailwind
+       --font-* namespace utilities (theme.css:165-169), and typography.css sets
+       `body { font-family: var(--font-text) }` → var(--font-stack-text). So the C2-era
+       --font-display/--font-serif pins above re-point the WRONG SIDE of the bridge:
+       (a) the `font-display` UTILITY references the INLINED --font-stack-display (Jakarta),
+           never our --font-display (the D20 drawer-h3 leak);
+       (b) every unregistered body-inherited node falls to --font-text → Jakarta (the D19
+           colophon-brand leak + the 78-82% register-sweep leak across all three dashboards).
+       The cure glass-ui itself documents (tokens.css §0 / theme.css:162-163: "A consumer
+       rebrands the whole text register by overriding --font-text once") is to pin the
+       SOURCE tokens, not the bridged names. We re-point all three §0 source stacks:
+       the BODY/prose register → Newsreader (the warm-paper prose serif, the editorial body
+       law — the language has no sanctioned sans), the DISPLAY register → Fraunces (so the
+       inlined `font-display` utility resolves to Fraunces), and the bare --font-stack-sans
+       to the same prose face so an unregistered element FAILS to the platform voice, never
+       to Jakarta. --font-stack-mono stays glass-ui's (Fira Code = our --font-mono). This is
+       belt + suspenders with the bridged-name pins above (which remain as the explicit
+       --font-display/--font-serif consumers' source). */
+    --font-stack-text:
+        "Newsreader", "Newsreader Fallback", Georgia, "Times New Roman", serif;
+    --font-stack-display:
+        "Fraunces", "Fraunces Fallback", Georgia, "Times New Roman", serif;
+    --font-stack-sans:
+        "Newsreader", "Newsreader Fallback", Georgia, "Times New Roman", serif;
+    /* THE audacious register — contained (cqw), floored to the $N.NNB measure. The
+       figure scales with its GRID TRACK, never the viewport. (retires the 22vw apex.)
+       H.W10.a — LIFTED to figure-PRIMACY: the leading number IS the cover-line, so the
+       rung climbs floor 3.25→4rem, track 17→20cqw, cap 9→11rem (still CONTAINER-relative;
+       the cqw cohesion keystone holds — never a vw apex). The page-hero <h1> recedes to
+       --type-page-title below, so the figure reads distinctly larger than the title on
+       every fold (the user's "bigger numbers, smaller title" directive). The cap-box
+       (--slug-cap 1.04) still seats the larger $8.92B crown — no decapitation at size.
+
+       I-COMPOSE.scale — THE AUDACIOUS LIFT (the user's figure-primacy mandate, platform-wide):
+       the hero/beat lead figures must read MUCH LARGER — the loudest thing on the page (§B/E7/H10).
+       The rung climbs floor 4→5rem, track 20→26cqw, cap 11→14rem. Because this keystone is the ONE
+       audacious register every route reaches (--type-figure-slug aliases it; the USF hero / decade
+       crown, the SCI chase ×, the ECF cliff crown, the speedtest hero ALL inherit it), bumping it
+       HERE lifts every route in lockstep — no per-route re-point. The lift is SAFE against clip BY
+       CONSTRUCTION: the figure-slug recipe sizes `min(rung, track-fit)` (recipes.css §1), so the
+       bigger rung wins ONLY on a track wide enough to seat it and shrinks-to-track on a collapsed
+       flank — the I2 register, never a shear (i0-num-clip / i0-figure-magnitude stay GREEN at
+       1440/768/390). The cap-box (--slug-cap 1.04, a MULTIPLE) scales with the rung — the crown
+       still seats at 14rem without decapitation. */
+    --type-display-audacious: clamp(
+        7.5rem,
+        39cqw,
+        21rem
+    ); /* C0 hero / SCI / ECF — the ONE register (J-STORY §12 ×1.5 over I-COMPOSE: 5→7.5rem · 26→39cqw · 14→21rem, every term ×1.5, the ladder ORDER preserved — PAIRED with the /usf 2×2 cover track release so the lifted rung paints past the min(rung,track-fit) clamp; an atlas-LOCAL cqw bump, NOT a glass-ui text-hero revert) */
+    --type-display-mega: clamp(
+        4rem,
+        11cqw,
+        13rem
+    ); /* dropped-cap / figure-no. — container-relative (lifted in proportion) */
+    /* THE TITLE-DISPLAY rung (F6.1 / design-typography — the audacious cover-line). The NEW
+       display register between text-hero (36px) and text-audacious (the Fira figure register,
+       FORBIDDEN for titles): the straddle band's plate-title set in Fraunces optical-display
+       at a TRUE cover-line size — "bigger, larger, more audacious in STYLE" (the user's F6.1
+       ask) WITHOUT out-weighing the thesis figure (the inversion law is held by FACE/WEIGHT
+       separation — serif vs the figure's mono-600 — not by capping this size). Container-
+       relative (`cqw`, the cohesion keystone that retired the audacious figure's vw overflow):
+       the title scales with its plate track, never the viewport. The floor (2.75rem ≈ 44px)
+       sits ABOVE the 36px text-hero step — the Gate C audacity floor; the cap (4.5rem ≈ 72px)
+       is the desktop cover-line. */
+    --type-display-headline: clamp(
+        2.75rem,
+        6cqw,
+        4.5rem
+    ); /* the straddle plate-title — Fraunces display cover-line (F6.1) */
+    /* THE PAGE-TITLE rung — O-C2 THE TITLE LAW (design-canon §A3; ANSWERS Q-1/Q-8/Q-10).
+       INVERTED from the H.W10.a receded label: the page-hero <h1> (`The Fund Ledger Atlas`
+       / `The Capacity Atlas` / `The Emergency Atlas`) now RESTS LARGE — a true cover-line
+       one size below vft's journal register — so h1 > h2 on every route (closing the D6
+       inversion where h1 28 < h2 42 on 8/8). This is the REST size; the compact companion
+       (`--type-page-title-compact`) is the scroll-scrubbed terminal the sticky lockup
+       shrinks to (recipes.css §1a). Still a SEPARATE token from --type-display-headline —
+       that rung is ALSO the plate question-title (the Zeisz interrogatives) which must NOT
+       grow; only the page <h1> binds this rung via `text-page-title`. Container-relative
+       (cqw — the cohesion keystone), so the cover-line scales with the hero band. The floor
+       (2.75rem ≈ 44px) is the phone cover-line, one thumb-width above the h2 floor; the cap
+       (4.5rem ≈ 72px) is the desktop cover-line, held BELOW the audacious figure by FACE +
+       WEIGHT (Fraunces serif 560 vs the mono-600 figure), never by size — so figure primacy
+       survives the growth (§A3 relative rule: 1.5 ≤ figure ÷ h1 ≤ 5.0). */
+    --type-page-title: clamp(
+        2.75rem,
+        7cqw,
+        4.5rem
+    );
+    /* the page-hero <h1> cover-line — RESTS LARGE, h1 > h2 (O-C2 · §A3, 72/54/44).
+        TRACK NOTE: §A3 specs 5.5cqw for the 72/52/44 ladder, but that math assumed a
+        container reference WIDER than the viewport; the live hero band declares NO
+        container-type ancestor, so cqw resolves VIEWPORT-relative — 5.5cqw lands the tablet
+        (768) at the 44rem floor (measured 44px, below G1's 48–60 band + G2's 1.25 order).
+        7cqw realizes §A3's INTENT viewport-relative: 1440→cap 72 · 768→54 (in-band, h1/h2
+        1.29) · 390→floor 44 — the cap + floor are unchanged, only the mid-track slope. */
+    /* THE COMPACT PAGE-TITLE rung (O-C2 · §A3 shrink terminal). The scroll-scrubbed sticky
+       lockup shrinks the cover-line to this compact wayfinding label (design-canon §A3:
+       72→30 desktop, 52→28 tablet, 44→24 phone). cqw-tracked so it lands ~30 on the wide
+       hero band and ~24 on the phone column — inside the G5 24–34px band at every width.
+       The keyframe interpolates computed px between the rest clamp and THIS clamp, LINEAR in
+       scroll (bijective, no scrolljack — recipes.css §1a). */
+    --type-page-title-compact: clamp(
+        1.5rem,
+        3.6cqw,
+        1.875rem
+    ); /* the scrolled sticky wayfinding label — 30/28/24 (O-C2 · §A3; viewport-cqw) */
+    /* THE TITLE-SHRINK SCROLL RANGE (O-C2 · §A3). The scrub completes over the first
+       hero-fold exit: 320px desktop (ANSWERS Q-8, RULED). The phone shortens it to 200px
+       (recipes.css §1a re-points under --phone); the tablet rides the desktop range (no
+       clean 768 breakpoint seam exists — --phone is max 767.98). LINEAR in scroll distance:
+       a scrubbed property MUST be bijective with scroll position (easing belongs to timed
+       motion, never a scrub). */
+    --title-scrub-range: 320px; /* the shrink transit — first hero-fold exit (O-C2) */
+    /* THE ONE CAP-BOX LINE-BOX (L1 · E5/E4 §3 — figure-clip). The 0.72 cap-box SHEARED the
+       crown: a figure's natural glyph ink — cap-crown to the "$" sub-baseline tail of "$8.92B"
+       — rasters to ≈1.02em (MEASURED: 147px ink in a 144px figure), far taller than a 0.72em
+       line-box, and `overflow: clip` then shore off the caps (the $8.92B decapitation the
+       figure-clip gate fails on). Raised to the MEASURED full glyph extent + half-leading =
+       1.04em, so the line-box CONTAINS the natural cap+digit+"$"-tail ink — the crown is
+       structurally inside the box, never sheared. --slug-lead drops to 0 (the 1.04 box already
+       seats the "$" descender; a positive pad would re-bleed into the sibling eyebrow). ONE
+       token; the three forked line-box regimes (figure-slug, text-audacious, .choro-peak) bind
+       to this one cap-box (E4 §3). */
+    --slug-cap: 1.04; /* line-height multiple = measured glyph extent + half-leading (L1) */
+    --slug-lead: 0; /* the 1.04 cap-box already seats the descender (L1) */
+    /* the three figure-slug sizes — ONE voice, three rungs (the recipe in recipes.css §1
+       binds these). slug = the audacious register itself; axis = the small tabular tick
+       rung; card = the HoverCard fact figure. (FD1 §1.2.) */
+    --type-figure-slug: var(
+        --type-display-audacious
+    ); /* the hero/$N.NNB register (one source) */
+    /* THE RIVER PULL-FIGURE rung (③½ SIZE recession — I13 / design-ecf §0 + §CROSS-VIZ + §13
+       FIC-3). The interstitial pull-figure was binding the FULL --type-display-audacious slug
+       rung (the page-cover register) and recessing ONLY by --attn-pull OPACITY — but an opacity
+       fade does NOT re-rank SIZE: the ECF `98` river stat rendered at ~176px (2.4× the cliff
+       thesis crown, 2.7× the hero cover triplet), inverting the ladder so the connective tissue
+       out-shouted every chapter thesis. The river-never-out-weighs-the-chapter LAW is a SIZE law,
+       not only an opacity one: the pull rung is now a dedicated SUB-thesis register that caps
+       BELOW the plate thesis crown (the cliff crown caps at 6rem; the hero triplet reads ~4rem),
+       so the ladder reads hero ≥ thesis-crown > interstitial by CONSTRUCTION. Still container-
+       relative (cqw, the cohesion keystone — it scales with its figure track), still audacious
+       enough to read as a pull-quote-in-numbers, never the page's loudest mark. */
+    --type-figure-pull: clamp(
+        2.25rem,
+        7.5cqw,
+        3.5rem
+    ); /* the river ③½ rung — recessed BELOW the thesis crown by SIZE (I13 figure-ladder) */
+    /* D1.3 — the axis + card rungs are REM-FLOORED (no cqw): the C2-4 cq-frame move took
+       `container-type` OFF the slug element onto its consuming TRACK, and these two rungs
+       have NO ancestor container (the axis tick rides a canvas-adjacent label cell; the
+       card fact rides the teleported HoverCard value lane — neither declares a cq context),
+       so a `cqw` term would resolve to 0 and collapse the figure (the blank-`<dd>` trap).
+       Their clamp floors already carried the legibility minimum; the cqw mid-term that
+       briefly grew them on a wide track is dropped — the rem floor IS the rung. The `slug`
+       register keeps its cqw (it scales with the hero flank, which IS a container). */
+    --type-figure-axis: clamp(
+        0.9rem,
+        1.4vw,
+        1.06rem
+    ); /* axis tick — same VOICE, small rung; rem/vw-floored (no cqw). O-C1: floor 0.82→0.9rem (13.1→14.4px), +1 √φ rung — the smallest data-bearing text clears the glance floor [design-canon §A2] */
+    --type-figure-card: clamp(
+        1.2rem,
+        1.3vw,
+        1.6rem
+    ); /* HoverCard fact figure — rem/vw-floored (no cqw). O-C1: floor 1.05→1.2rem (16.8→19.2px), +1 √φ rung — the touch-primary readout clears the thumb [design-canon §A2] */
+    /* §A.LADDER — THE READING-REGISTER GOLDEN BUMP (O-C1 · design-canon §A2/§A3, ROUND §5.6).
+       The owner's "it is all too small" (61ef4d2b): every reading register grows ONE √φ rung so no
+       text on any route sits below the glance floor, and the h1>h2>h3>body ladder reads monotone.
+       These are the TOKEN-OWNED rungs the recipes (recipes.css) bind — the type ladder is no longer
+       a scatter of hardcoded Tailwind steps (text-xs / text-[1.125rem]); it reads from ONE locus.
+
+       RULED +1 NOW (ROUND §5.6, [CH-C M1]): this wave implements the FIRST √φ step globally; the
+       SECOND per-register step is a RED-LEDGER "ratify-per-register" note (successor: the live-review
+       gate), NOT a blanket bump. The control-register (`--ui-scale`) rises with the SAME mechanism via
+       the glass-ui body-register clamp — that arm is WG-E's (O-C1 CONSUMES the clamp, never forks it).
+
+       The clamps land the design-canon §A3 ladder targets on the three measured breakpoints (390/768/
+       1440), with the h3 rung floored so h3 ≥ 1.2×prose holds at EVERY width (G3) — the middle rung
+       the dashboards skip today (h3 count 0 on /speedtest). NOTE (tree-over-spec): the §A2 prose cell
+       cites `clamp(1.25rem, 1.16rem + 0.31vw, 1.625rem)`, but that mid-term resolves ~23px @1440 —
+       above the table's own "21px desktop" HEADLINE and tight against the G3 h3-ratio ceiling. We land
+       the STATED 21px headline (the ladder's design intent) so the ratios read with margin; the
+       measured G6 floor (≥20 @1440 / ≥18 @390) holds either way. */
+    --type-prose: clamp(
+        1.25rem,
+        1.18rem + 0.16vw,
+        1.5rem
+    ); /* body/prose — 21px @1440 · 20px @768 · 20px @390 floor (+1 √φ over 18.6px; G6 ≥20@1440/≥18@390) */
+    --type-prose-lh: 1.5; /* lh compensates DOWN as size rises: 1.5 @21px = 31.5px [§A2] */
+    --type-kicker: clamp(
+        0.8125rem,
+        0.7rem + 0.5vw,
+        0.875rem
+    ); /* eyebrow/kicker — 14px @1440+ · 13px phone floor (+1 √φ over 12px; the whisper register, cleared) */
+    --type-caption: clamp(
+        0.8125rem,
+        0.72rem + 0.5vw,
+        0.9375rem
+    ); /* caption/gloss — 15px @1440 · 13px phone floor (+1 √φ over 12px; captions follow the kicker up) */
+    --type-heading-section: clamp(
+        1.875rem,
+        4.2vw + 0.6rem,
+        2.625rem
+    ); /* h2 section — 42px @1440 (keep the measured 41.6) · 30px phone floor [§A3]; text-section-fluid binds it */
+    --type-heading-sub: clamp(
+        1.625rem,
+        1.5rem + 0.8vw,
+        1.75rem
+    ); /* h3 plate/sub — 28px @1440/768 · 27px @390 (the middle rung; h3 ≥ 1.2×prose at all 3 widths, G3) */
+}

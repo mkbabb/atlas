@@ -1,0 +1,74 @@
+/* @mkbabb/atlas · design/tokens/elevation.css — the ELEVATION family, split byte-for-byte from
+   tokens.css at O-B2. Holds the §Z-LADDER paint order (--z-*) and the §HIERARCHY z-of-attention
+   weight ladder (--attn-*) — the two strata axes. */
+
+/* §Z-LADDER — the four-rung elevation order (S2 §1.4, CQ5-3.5), replacing the
+   uncoordinated z-index literals (the old z-20 rail / z-30 mobile nav / z-50 skip).
+   These nest WITHIN glass-ui's published stacking order: the library names the
+   bottom rung (--z-content = 10, flat content) and the teleported top
+   (--z-popover = 130); the chrome's own rungs (dock/panel/overlay/hovercard) seat
+   between them. --z-content is glass-ui's already (we do not redeclare it). */
+:root {
+    --z-dock: 40; /* the left dock — glass-dock surface, samples Aurora */
+    --z-panel: 45; /* the floating filter / explain panel — peer of dock */
+    --z-overlay: 50; /* transient overlays (the brush lens, the skip-link) */
+    --z-preview: 55;
+    /* the I5 SelectionPreview stage — above resting panels, BELOW the live
+                        hover card + modals (the §7/Hard-Gate-2 rung: a parked workbench card,
+                        not a cursor-chasing readout) */
+    --z-hovercard: 60; /* the body-teleported hover card — above the panels + the preview */
+}
+
+/* §HIERARCHY — THE Z-OF-ATTENTION (the platform strata law + the --attn-* vocabulary).
+   d-hierarchy M1/M2 · C-AESTHETIC §0 spine row 7 / CO-7 · DESIGN §0.
+   A DIFFERENT axis from §Z-LADDER: --z-* orders PAINT (who's on top); --attn-* orders
+   ATTENTION (who's loudest). The §Z-LADDER answers stacking; this answers VISUAL WEIGHT —
+   the law every plate, mark, legend, and chrome surface is measured against, so a future
+   mark can never out-shout the figure it points at (the s6 inversion the audit caught).
+
+   THE Z-OF-ATTENTION (descending visual weight — the strata law):
+     ① THESIS FIGURE   the audacious count (43% · $8.92B · $721.91) — the plate's ARGUMENT.
+                       the single loudest mark on its fold. NOTHING out-weighs it.
+     ② DATA            the chart marks (bands, bars, dots, geo fills) — the evidence.
+                       loud, saturated, INSIDE the plate. the data does the talking.
+     ③ LEGEND / AXIS   the key + the ticks — consulted AFTER the figure, ADJACENT to the data.
+                       quiet, below the figure, beside the viz it explains. never top-rung.
+     ④ CHROME          the dock, the filter, the eyebrow, the section rule, the editorial MARK
+                       (ring/underline) — the MARGIN. recedes. a mark POINTS, never SHOUTS.
+     ⑤ ATMOSPHERE      aurora · grain · constellation · ghost numeral — FELT, never seen.
+                       every opacity at the perceptual floor. never wins a contrast fight.
+
+   THE INVERSION LAW: for any element E annotating a referent R, weight(E) < weight(R).
+     (a ring on a figure; a legend on its data; an eyebrow on its title.) The E0 ring-weight
+     gate (ring ≤ 0.15 × its figure's height) is this law's runtime enforcement.
+
+   A surface DECLARES its rung; the rung is a recession multiplier the surface applies to its
+   ink/alpha/contrast — so "one rung quieter than data" is a TOKEN, not a per-component alpha
+   guess (the IC-5 escape-hatch close). The editorial-mark/legend/eyebrow consumers read these
+   instead of a raw alpha literal; the radius-tier gate's sibling — no new raw mark/legend alpha
+   where an --attn-* token exists. Scalars are W-calibrated against the cream-law floor: a
+   surface at --attn-legend must still clear its legibility floor (recession multiplies ink
+   presence, never crosses below AA for text); --attn-atmosphere is PINNED to the §1 aurora
+   0.06 perceptual floor so the two systems agree. */
+:root {
+    /* ⓪ THE PAGE HERO — the dashboard cover figures (the page thesis). Equal in VALUE to
+       --attn-thesis (both full ink) but DISTINCT in NAME, so the no-double-thesis law is
+       gate-checkable: the page hero and a plate cluster may not BOTH bind the 1.00 rung on
+       one fold (DESIGN §13 / design-hierarchy §4 FIC-2). The two-tier law's top rung. */
+    --attn-hero: 1; /* ⓪ the page cover figures — the page thesis (DESIGN §13) */
+    --attn-thesis: 1; /* ① the audacious figure — full ink, the argument */
+    --attn-data: 0.92; /* ② chart marks — saturated, inside the plate */
+    /* ③½ THE PULL-ELEMENT — the between-plate interstitial figure (the page river). It
+       RECEDES one rung from a PLATE thesis figure even at the same type size (the
+       river-never-out-weighs-the-chapter law, DESIGN §13 / design-hierarchy §4 FIC-3): a
+       foreshadow is not the chapter. Sits between --attn-data and --attn-legend. */
+    --attn-pull: 0.8; /* ③½ the interstitial pull-figure — recedes from a PLATE thesis */
+    --attn-legend: 0.64; /* ③ key + axis — present, recessive, adjacent */
+    /* ④ is a NON-TEXT rung (N5 design consult · G-N9, 2026-07): muted TEXT tolerates ≤ ~7% alpha
+       recession before crossing the 4.5:1 AA floor (the covenant above), so no --attn-* below
+       ~0.93 may bind text ink — text at the margin wears the MUTED ink at FULL alpha (the mute
+       IS the recession). Live-audited: the ④-on-muted-text stacks read 1.94:1 (/usf light) and
+       2.41:1 (/sci dark) before the consumer fixes (DashboardHero relation · AxisNameLockup). */
+    --attn-chrome: 0.46; /* ④ dock/filter/eyebrow/editorial mark — the margin (non-text) */
+    --attn-atmosphere: 0.06; /* ⑤ aurora/grain — the perceptual floor (matches §GRAIN/§1) */
+}

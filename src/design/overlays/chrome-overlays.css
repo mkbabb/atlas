@@ -1,0 +1,196 @@
+/* chrome-overlays.css — THE UNSCOPED CHROME OVERLAY STYLESHEET (D2.b).
+ *
+ * The platform's body-TELEPORTED overlay surfaces (the filter Drawer's
+ * `DrawerContent`, mounted through reka-ui's `DialogPortal`) never receive a
+ * consumer SFC's Vue `data-v-*` scope attribute — the scope-id does not cross a
+ * Teleport's Portal root. So every `.cp-drawer[data-v-…]` rule a `<style scoped>`
+ * block authors is DEAD CSS on the teleported element (`el.matches()` = false),
+ * and the surface falls back to glass-ui's base `.glass-drawer` recipe (a
+ * full-width, bottom-anchored sheet — no `direction="right"` geometry exists in
+ * the library's drawer.css, which ships only a `top` variant).
+ *
+ * This file is the UNSCOPED seam the teleport target DOES see. It carries the
+ * chrome geometry + tier the scoped rules could not reach. Imported once from the
+ * platform design index (the platform styles seam), so it is global by
+ * construction — exactly what a Portal-teleported node requires.
+ *
+ * SELECTOR DISCIPLINE: target `.cp-drawer` (the class glass-ui's DrawerContent
+ * merges via `cn("glass-drawer", class)`, which DOES land) — never
+ * `[data-testid]`/`[aria-label]` (undeclared fallthrough attrs the multi-root
+ * Portal child drops). The `[data-vaul-drawer-direction="right"]` attr vaul tags
+ * is the right-axis guard.
+ */
+
+/* ── THE RIGHT LIVE-BEHIND LENS — geometry + the FLOATING glass tier ───────────
+   The drawer wears the `floating` rung of glass-ui's 5-rung surface ladder
+   (`ds-glass-suffusion` §1 row 1: filter drawer → floating). The frost is the
+   REAL backdrop-filter — composed exactly as glass-ui's own `.glass-drawer`
+   composes the overlay rung (the oklab tint over the rung bg + the rung blur +
+   the rung rim/shadow), one rung down. The geometry re-anchors the bottom-sheet
+   box to the RIGHT edge and clamps the lens to its width token — the
+   right-direction arm glass-ui's library drawer.css still lacks. */
+.cp-drawer[data-vaul-drawer-direction="right"] {
+    inset-inline: auto 0;
+    inset-block: 0;
+    /* The lens width — never the full viewport. min(token, 92vw) so a phone never
+       overruns; the test floor caps it at 420px (the 22rem ≈ 352px token + slack). */
+    inline-size: min(var(--cp-drawer-w, 22rem), 92vw);
+    max-inline-size: 92vw;
+    block-size: 100dvh;
+    max-block-size: 100dvh;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+
+    /* THE FLOATING TIER (the real frost) — the floating rung's bg/blur/rim/shadow,
+       the same recipe GlassPanel variant="floating" paints. The oklab tint composite
+       reads the live stock (zero-delta at --glass-tint-strength: 0%).
+
+       BUILD NOTE: the STANDARD `backdrop-filter` is declared ALONE (no `-webkit-`
+       twin). When the two are paired with an identical `var()` value, the CSS minifier
+       (esbuild) collapses them to the `-webkit-` form ONLY — which Chrome does NOT
+       surface on the standard `backdrop-filter` computed property (it reads `none`,
+       the exact D4 FLAT defect). The unprefixed property alone survives minification and
+       Chrome (the test target) honors it natively — this is how the GlassPanel hover card
+       paints its real frost. */
+    background: color-mix(
+        in oklab,
+        var(--glass-bg-floating),
+        var(--glass-tint-source) var(--glass-tint-strength)
+    );
+    backdrop-filter: var(--glass-blur-floating);
+    border: 1px solid var(--glass-border-floating);
+    border-inline-end: 0;
+    border-start-start-radius: var(--radius-panel, var(--cp-radius, 1.25rem));
+    border-end-start-radius: var(--radius-panel, var(--cp-radius, 1.25rem));
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+    box-shadow: var(--glass-material-rim), var(--glass-shadow-floating);
+
+    /* Sit at the panel band — BELOW the hover card (--z-hovercard 60), the AT-7
+       z-table order (the drawer is panel chrome, the readout floats above it). */
+    z-index: var(--z-panel, 45);
+}
+
+/* The left arm rides the same grammar (mirrored) — authored for completeness so a
+   future left lens inherits the tier, not a re-roll. */
+.cp-drawer[data-vaul-drawer-direction="left"] {
+    inset-inline: 0 auto;
+    inset-block: 0;
+    inline-size: min(var(--cp-drawer-w, 22rem), 92vw);
+    max-inline-size: 92vw;
+    block-size: 100dvh;
+    max-block-size: 100dvh;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    background: color-mix(
+        in oklab,
+        var(--glass-bg-floating),
+        var(--glass-tint-source) var(--glass-tint-strength)
+    );
+    backdrop-filter: var(--glass-blur-floating);
+    border: 1px solid var(--glass-border-floating);
+    border-inline-start: 0;
+    border-start-end-radius: var(--radius-panel, var(--cp-radius, 1.25rem));
+    border-end-end-radius: var(--radius-panel, var(--cp-radius, 1.25rem));
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+    box-shadow: var(--glass-material-rim), var(--glass-shadow-floating);
+    z-index: var(--z-panel, 45);
+}
+
+/* KILL THE BOTTOM-SHEET GRIP on the side lens. glass-ui's `DrawerContent`
+   hard-codes `<div class="glass-drawer-handle"><span class="glass-drawer-grip">`
+   as the sheet's first child — a HORIZONTAL drag affordance that is a
+   bottom-sheet idiom, never a right/left lens one (the lens slides, it is not
+   dragged by a top grip). Suppress it for the side directions. */
+.cp-drawer[data-vaul-drawer-direction="right"] .glass-drawer-handle,
+.cp-drawer[data-vaul-drawer-direction="left"] .glass-drawer-handle {
+    display: none;
+}
+
+/* ── THE FIRST-VIZ AFFORDANCE MICRO-LIFT (I-UX.b · UX-D1, the invisible-instrument fix) ──────────
+   A one-time, restrained micro-lift on the FIRST interactive plate's first scroll-into-view, so a
+   first-time reader's eye learns "these marks MOVE" — the verbs-of-movement made discoverable WITHOUT
+   a modal or a coachmark (DESIGN D1/D6 — the instrument teaches itself through its own motion). The
+   `useAffordanceHint` composable sets `data-affordance-lift` on the plate for ONE pass (session-once,
+   PRM-gated in JS) then strips it; this keyframe is the pass. It lives in the UNSCOPED chrome sheet
+   (not a plate's scoped CSS) because the composable stamps the attribute on a FOREIGN element (a
+   feature plate the chrome does not own) — only an unscoped global rule reaches it.
+
+   The lift is a brief settle of the plate body (a small up-and-back, opacity steady) — the shipped
+   reveal grammar's own lift vocabulary, ONE pass, NEVER a loop. It is gentle (4px, 1 pass, eased) so
+   it reads as "alive", not as a re-layout. The keyframe targets the plate's figure body so the chrome
+   (title/legend/actions) stays still — only the MARKS lift, the exact "these move" teach.
+
+   THE PRM FENCE (DESIGN §4.0) — the whole rule sits inside `prefers-reduced-motion: no-preference`,
+   so under reduced-motion NO animation attaches even if the JS fence were ever bypassed (belt +
+   suspenders: the composable also never sets the attribute under PRM). */
+@media (prefers-reduced-motion: no-preference) {
+    [data-affordance-lift] [data-viz-body] {
+        /* SM-10 — the raw quint literal (0.22 1 0.36 1) is the EXACT --ease-engrave
+           curve (the atlas strong-decelerate settle); bind the token, same feel. */
+        animation: affordance-lift 1100ms var(--ease-engrave) both;
+    }
+    @keyframes affordance-lift {
+        0% {
+            transform: translate3d(0, 0, 0);
+        }
+        38% {
+            transform: translate3d(0, -4px, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+}
+
+/* ── THE DEFT GOLDEN RIM — THE CENTRE-GRAIN ACTIVE-VIZ MEDAL (K-ACTIVE §4.F) ──────────────────────
+   A dedicated `.plate-active-rim` CHILD ChartFrame mounts as the first child of its `.plate` figure
+   (NEVER a pseudo-element — the figure's `::before`/`::after` are the §GRID underlay + the glass-ui
+   paper grain; a rim pseudo would clobber the grain, the ship-blocker the harden caught). It lives in
+   THIS unscoped sheet (not a scoped block) because it lights off the GLOBAL imperative attributes the
+   VizPlate stamp toggles (`[data-viz-plate][data-active-viz]`) on a FOREIGN figure — a scoped rule's
+   `data-v-*` hash would never key on that pairing.
+
+   The child carries its OWN box-shadow (STATIC, never animated) + its OWN opacity, so the fade is a
+   pure COMPOSITOR opacity transition — no shadow repaint, no `will-change` (a one-shot fade on ≤1
+   plate needs no standing compositor layer — the I17 standing-cost lesson, applied to layers). The
+   gilt composes the SHIPPED `--sel-primary-ring` (= var(--gold-ink)) at the `--active-gilt`/
+   `--active-glow` alphas — ONE gilt home D4/K-SCENE consume (the A3 single-gilt-home); the argmin
+   singleton + the centre band keep it one-gilt-at-a-time BY CONSTRUCTION (the gold-scarcity law). */
+.plate-active-rim {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    /* above the figure body + grid (z:-3), below the dock controls + the ?fig= chrome. */
+    z-index: 1;
+    /* the resting state — the medal is absent until the plate centres at viewport-centre. */
+    opacity: 0;
+    /* the gilt hairline (38%) + the tight INSET inner glow (22%) — both low-alpha mixes of the
+       SHIPPED --sel-primary-ring; the shadow is STATIC, only the layer's opacity moves. */
+    box-shadow:
+        inset 0 0 0 var(--active-rim-width, 1.5px)
+            color-mix(in oklab, var(--sel-primary-ring) var(--active-gilt, 38%), transparent),
+        inset 0 0 18px -6px
+            color-mix(in oklab, var(--sel-primary-ring) var(--active-glow, 22%), transparent);
+    /* FOLLOW-THROUGH: the rim settles ~320ms — --ease-engrave is the SHIPPED strong-decelerate
+       (tokens.css; reused, no new token). */
+    transition: opacity 320ms var(--ease-engrave);
+}
+/* THE MEDAL FADES IN — when the VizPlate stamp lands `data-active-viz` on the centred figure. */
+[data-viz-plate][data-active-viz] .plate-active-rim {
+    opacity: 1;
+}
+
+/* THE PRM FENCE — the KEPT-but-de-animated idiom (`transition:none`), NOT the no-preference gating
+   form: the rim must still APPLY under PRM-unsupporting engines (it is wayfinding). Under full PRM
+   the registry is naturally inert (the scrub host never registers), so the rim is ABSENT and this
+   fence is harmless-now / correct-if-revived. */
+@media (prefers-reduced-motion: reduce) {
+    .plate-active-rim {
+        transition: none;
+    }
+}

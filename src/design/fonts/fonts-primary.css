@@ -1,0 +1,155 @@
+/* platform/design/fonts-primary.css — THE SELF-HOSTED FACE CORPUS (I-PERF-FOUNDATION.b · T-PERF-2).
+   Re-homed from src/styles/fonts.css by L3-CSS (the one-root collapse): the 10 primary
+   @font-face declarations (Fraunces · Newsreader · Fira Code) now live in the design locus
+   and are @import'd from the ONE surviving root beside design/fonts.css (the Computer-Modern
+   family-stack token) — the UNION, never a dedup-drop (the two files are COMPLEMENTARY).
+   Retires the gstatic critical-path round-trip. index.html previously shipped two
+   render-blocking https://fonts.googleapis.com stylesheets (Fraunces display=optional;
+   Newsreader + Fira Code display=swap) + two gstatic preconnects — a third-party
+   round-trip (CSS request → gstatic CSS → woff2 fetch) on EVERY route's critical path
+   (fb-perf.md §1.4, G-PERF-FOLD-2). Here the three faces ship as woff2 SUBSETS from
+   /fonts/ (latin + latin-ext only — the vietnamese/cyrillic/greek/symbols2 ranges the
+   English atlas never sets are dropped), declared with the per-face font-display the
+   index.html lineage encodes:
+
+     • Fraunces (the 274px hero DISPLAY face) → font-display: optional. A face swapping
+       in mid-arrival reflows the whole masthead (the ECF 0.178 CLS lineage,
+       index.html C.W8.2 note). `optional` uses Fraunces only if it arrives within the
+       ~100ms block window, else falls back permanently for this load — NO swap, NO
+       reflow. The fraunces-normal-latin face is ALSO <link rel="preload"> in index.html
+       so it wins the block window on a warm cache.
+     • Newsreader (the prose BODY face) + Fira Code (the figure MONO face) → swap. No
+       large-hero CLS; a swap on body/figure text is the right trade.
+
+   The unicode-range per face is verbatim from the gstatic css2 response (Fraunces v38 /
+   Newsreader v26 / Fira Code v27), so the browser fetches only the subset a glyph needs
+   (the latin face for ASCII, the latin-ext face only when an extended glyph appears).
+   Fraunces + Newsreader are VARIABLE (the opsz + wght axes live in ONE woff2 per style —
+   font-weight states the wght range the file spans, so the existing opsz/wght utilities
+   resolve against the self-hosted file). Fira Code is variable on wght (400..600 in ONE
+   file per range), so the three weight requests (400/500/600) all resolve from the same
+   woff2 — declared once as a 400..600 range, no per-weight duplication.
+
+   ZERO runtime font-loader dep (no fontsource/webfontloader/fontaine) — this is static
+   woff2 + @font-face only. The faces ship via public/fonts/** (copied verbatim into
+   dist/fonts/ by Vite), the _headers /fonts/* block long-caches them immutable, and the
+   _headers font-src is tightened to 'self' (the gstatic admission dropped). */
+
+/* ─────────────────────────────  FRAUNCES (display · optional)  ──────────────────── */
+
+@font-face {
+    font-family: "Fraunces";
+    font-style: normal;
+    font-weight: 300 700;
+    font-display: optional;
+    src: url("/fonts/fraunces-normal-latin.woff2") format("woff2");
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+        U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+        U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: "Fraunces";
+    font-style: normal;
+    font-weight: 300 700;
+    font-display: optional;
+    src: url("/fonts/fraunces-normal-latin-ext.woff2") format("woff2");
+    unicode-range:
+        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+        U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+        U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+    font-family: "Fraunces";
+    font-style: italic;
+    font-weight: 300 600;
+    font-display: optional;
+    src: url("/fonts/fraunces-italic-latin.woff2") format("woff2");
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+        U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+        U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: "Fraunces";
+    font-style: italic;
+    font-weight: 300 600;
+    font-display: optional;
+    src: url("/fonts/fraunces-italic-latin-ext.woff2") format("woff2");
+    unicode-range:
+        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+        U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+        U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ─────────────────────────────  NEWSREADER (body · swap)  ──────────────────────── */
+
+@font-face {
+    font-family: "Newsreader";
+    font-style: normal;
+    font-weight: 300 600;
+    font-display: swap;
+    src: url("/fonts/newsreader-normal-latin.woff2") format("woff2");
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+        U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+        U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: "Newsreader";
+    font-style: normal;
+    font-weight: 300 600;
+    font-display: swap;
+    src: url("/fonts/newsreader-normal-latin-ext.woff2") format("woff2");
+    unicode-range:
+        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+        U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+        U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+    font-family: "Newsreader";
+    font-style: italic;
+    font-weight: 300 500;
+    font-display: swap;
+    src: url("/fonts/newsreader-italic-latin.woff2") format("woff2");
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+        U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+        U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: "Newsreader";
+    font-style: italic;
+    font-weight: 300 500;
+    font-display: swap;
+    src: url("/fonts/newsreader-italic-latin-ext.woff2") format("woff2");
+    unicode-range:
+        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+        U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+        U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ─────────────────────────────  FIRA CODE (figure mono · swap)  ─────────────────── */
+
+@font-face {
+    font-family: "Fira Code";
+    font-style: normal;
+    font-weight: 400 600;
+    font-display: swap;
+    src: url("/fonts/firacode-latin.woff2") format("woff2");
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+        U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+        U+FEFF, U+FFFD;
+}
+@font-face {
+    font-family: "Fira Code";
+    font-style: normal;
+    font-weight: 400 600;
+    font-display: swap;
+    src: url("/fonts/firacode-latin-ext.woff2") format("woff2");
+    unicode-range:
+        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+        U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+        U+2113, U+2C60-2C7F, U+A720-A7FF;
+}

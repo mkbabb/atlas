@@ -1,0 +1,49 @@
+/* platform/design/fonts.css — the editorial-atlas face corpus (FD1 §1.6 / §2.0).
+   Off the critical path: declared here, the @import lands last in index.css.
+
+   The three platform voices are Fraunces (display), Computer-Modern Serif (prose),
+   Fira Code (figures). glass-ui already ships Fraunces + Fira Code and registers
+   --font-display / --font-mono (theme.css:98,101); this file adds ONLY the one face
+   FD1 introduces — Computer-Modern — as a family-stack token.
+
+   No @font-face here: the CM woff2 corpus is not yet co-located in usf/web/public/
+   (it lives in the slides repo, public/fonts/cm/). Declaring @font-face against
+   absent assets would register a broken face. So this file carries the family-stack
+   TOKEN alone; the woff2 import + the --font-serif re-home is a later retune (the
+   pixel-changing step), not this inert locus. CM ships 400/700 only — when wired,
+   hierarchy comes from SIZE + ITALIC, the paper idiom (slides cm.css header note). */
+
+/* The Computer-Modern serif stack as an additive token (NOT --font-serif — that is
+   a glass-ui @theme namespace, theme.css:99; overriding it would re-render every
+   serif element and break the inert proof). A later wave promotes --font-serif to
+   read this once the woff2 corpus lands in public/fonts/. */
+:root {
+    --font-stack-serif-cm: "Computer Modern Serif", "Latin Modern Roman", "CMU Serif",
+        Georgia, "Times New Roman", serif;
+
+    /* The Fraunces variable axes (FD1 §2.0) — the editorial "wink." WONK 1 leans the
+       g/a terminals into their swashier forms (the display character the atlas wants);
+       opsz is render-size-driven (optical-size honesty, FD1 §2.2.3 — the 352px hero
+       takes display optics, the 28px title text optics); SOFT 0 keeps the terminals
+       crisp at display sizes. Minted as a font-variation-settings token the display
+       recipes (the apex rungs, the dropped-cap) bind, so the axes turn on only where
+       Fraunces sets large editorial type, never across body prose. */
+    --font-display-vs: "WONK" 1, "SOFT" 0;
+
+    /* The masthead opsz-pin (K-PAPER-COVER · ARM A) — the towering cover-line forced to DISPLAY
+       optics (opsz 120) regardless of render-px. The subset (public/fonts/fraunces-normal-latin.woff2)
+       carries opsz(9-144)+wght ONLY (fonttools-verified) — so opsz 120 is IN-RANGE (no re-subset),
+       and this is opsz-ONLY by construction (naming WONK/SOFT would be a silent no-op against the
+       absent axes). Lives HERE, the optical-sizing locus, NOT tokens.css (the §HIERARCHY tokens are
+       the ink/scale register; optics is fonts.css's). Bound on @utility masthead-headline ONLY
+       (recipes.css §6) with `font-optical-sizing: none`, so the :root `auto` below cannot re-drive
+       opsz by render-px (the clamp 44->88px would otherwise self-tune opsz to ~44-88, TEXT optics). */
+    --font-masthead-vs: "opsz" 120;
+}
+
+/* Drive Fraunces's opsz by render size everywhere it sets display type — the
+   optical-size honesty axis (FD1 §2.2.3). One global declaration; the variable face
+   self-tunes contrast/aperture to the glyph's actual size. */
+:root {
+    font-optical-sizing: auto;
+}

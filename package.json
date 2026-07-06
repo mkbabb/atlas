@@ -128,6 +128,7 @@
     "pinia": "^3.0.4",
     "publint": "^0.3.0",
     "tailwindcss": "^4.3.0",
+    "tw-animate-css": "^1.2.5",
     "typescript": "^5.9.0",
     "vite": "^7.3.0",
     "vitest": "^4.1.0",

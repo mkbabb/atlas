@@ -1,0 +1,42 @@
+/* @mkbabb/atlas · design/index.css — THE platform aggregate root the package ships as `./styles`
+   (src-rearchitecture §A.5). O-B2 relocated this from the monorepo `platform/design/index.css` and
+   DECOMPOSED the 1,444-LOC `tokens.css` monolith into the `./tokens/{color,type,space,motion,
+   elevation,radius}.css` family split — a PURE FILE re-split preserving every live token value
+   byte-for-byte (the C2 H-3 ordering rule; proof: exec/evidence/O-B2). The cascade order is verbatim
+   from the monorepo root: the bootstrap, then base.css (the global reset/cascade leads), then the
+   fonts, then the token families (was `tokens.css`, itself led by map-draw + breakpoints), then the
+   recipes / overlays.
+
+   TWO cross-module @imports from the monorepo root are DEFERRED to their owning module-move waves and
+   are NOT re-added here (they resolve against modules that have not landed in the library yet):
+     · `../charts/placement.css` — added by the charts move (WG-B B3/B4).
+     · the `@source` globs for `dashboards/**` + `chrome/**` colocated recipes — added by the chrome
+       move + the consumer flip (O-B11).
+   Order is load-bearing (the retired styles/index.css:2 invariant, preserved): bootstrap, then
+   base.css FIRST, then the locus files in dependency order — tokens before recipes (recipes read the
+   registered namespaces), variants last. */
+
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@mkbabb/glass-ui/styles"; /* token cascade + scoped SFC CSS (carries the font corpus) */
+@source "../../node_modules/@mkbabb/glass-ui/dist"; /* REQUIRED — else glass-ui utilities purged */
+@variant dark (&:where(.dark, .dark *));
+
+@import "./foundations/base.css"; /* the global reset/cascade (html/body/#app overflow + min-height, the scroll-engine `clip` token, the warm-ground paint, focus rings, PRM) — FIRST, before tokens; order is load-bearing */
+@import "./fonts/fonts-primary.css"; /* the 10 self-hosted primary faces (Fraunces · Newsreader · Fira Code) — the UNION with fonts.css below */
+@import "./fonts/fonts.css"; /* the Computer-Modern family-stack token (the one added face) */
+@import "./overlays/map-draw.css"; /* the per-feature map draw-on locus (C.W4.3) — @keyframes + the [data-reveal-beat] view-timeline host; led tokens.css, carries no @theme */
+@import "./foundations/breakpoints.css"; /* the §V mobile-register DRY home (J-MOBILE C8): @custom-media --phone/--compact/--narrow/--touch/--no-hover + the --bp-* property tokens + the @theme variant mirror */
+@import "./tokens/color.css"; /* @theme: the 3 data scales + the engraved grounds/silver + brand + grain/grid + route-identity + the paired-ink cure + selection */
+@import "./tokens/type.css"; /* the §A apex/figure-slug rungs + the reading-register golden ladder + the font-stack pins */
+@import "./tokens/space.css"; /* the chrome widths + control-spacing + the figure-rank ladder + the spot-graphic budget + the control-plane widths/measures */
+@import "./tokens/motion.css"; /* the popover spring + corridor recede + the §MOTION ease/dur set + §AFFORDANCE + §LIQUID-REVEAL */
+@import "./tokens/elevation.css"; /* the §Z-LADDER paint order + the §HIERARCHY z-of-attention weight ladder */
+@import "./tokens/radius.css"; /* the §D radius ladder (plate/control/pill/mark) */
+@import "./recipes/recipes.css"; /* @utility: the φ type ladder · surfaces · chart-rungs · touch-target */
+@import "./recipes/affordance.css"; /* the ONE affordance recipe sheet (K-ANIM A5.c) — [data-afd] cursor/focus/press signifiers reading the §AFFORDANCE tokens */
+@import "./recipes/variants.css"; /* @custom-variant: raised · dimmed · aggregate */
+@import "./overlays/scroll-driven.css"; /* the native view() per-beat reveal (C.W5.1) — binds [data-reveal-beat] to --beat-tl */
+@import "./overlays/spot-graphics.css"; /* the injected SPOT-GRAPHICS vocabulary (J-PAPER arm b §2) — static CSS marks within the --spot-graphic-max budget, warm ink only */
+@import "./overlays/measure.css"; /* the dock-aware ASYMMETRIC measure (J-STORY §8/§9/§13) — .dashboard-body outer figure track + the ~70ch prose clamp */
+@import "./overlays/chrome-overlays.css"; /* UNSCOPED chrome the body-teleported overlays see (D2.b) — the right filter-lens geometry + the floating tier + the grip kill */

@@ -1,0 +1,165 @@
+/* @mkbabb/atlas · design/tokens/motion.css — the MOTION family, split byte-for-byte from tokens.css
+   at O-B2. Holds the popover spring re-point, the corridor recede register, the §MOTION ease/duration
+   token set, the §AFFORDANCE signifier vocabulary, and the §LIQUID-REVEAL envelope. */
+
+/* §D — the engraved-atlas grounds (FD1 §1.1, §7.2; C.W1.a WG-1/WG-2/WG-3/WG-7). The
+   warm-ground retune, now landing the keystone values verbatim from the verified palette
+   (audit/fd-warm-ground-palette.md §1.4/§2.3): ONE warm hue spine — paper 47° · plate 55° ·
+   ink 55° (light), espresso 55° · plate 57° · ivory ink 80° (dark). Chroma is lifted above
+   the near-white JND so the warmth READS (the C 0.008 below-JND defect retired); L is dropped
+   off the 0.985 ceiling so --card SEPARATES (the C1 engraved plate). The dark stock is re-hued
+   OUT of cool-250 onto warm 55–80° so ground and ivory ink share ONE temperature ("an atlas
+   printed on dark stock with ivory ink," D1 §3.2). Overriding glass-ui's
+   --background/--card/--foreground/--muted-foreground here recolors the page warm; glass-ui's
+   glass-tier tokens (--glass-*) read these grounds, so the chrome warms in lockstep. */
+:root {
+    /* §POPOVER-MOTION — the SPRING RE-POINT (f-vizoptions §2.2/§5 · E5a). glass-ui 3.11's
+       `popover-animate` utility (styles/utilities.css) exposes FOUR custom properties as the
+       documented consumer seam — "override per host, never fork the utility":
+         --popover-enter-ease / --popover-enter-duration   (the open bloom)
+         --popover-exit-ease  / --popover-exit-duration    (the dismissal)
+       The library DEFAULT enter is `--spring-snappy` (a crisper overshoot). The atlas register
+       wants the popover to MATERIALIZE on `--spring-smooth` (the ~0.5% whisper-overshoot — the
+       lens condensing into being, not a snap), blooming over `--duration-fast` (0.2s). The exit
+       is a DISMISSAL — fast, never overshoot — so it keeps the library `--ease-out` default at
+       `--duration-instant`. PRM is the utility's own internal fence (1ms both directions), so the
+       spring lives only in the full-motion arm. This is the CONSUMER token override the e0f
+       proof:popover-spring gate reads (`--popover-enter-ease` resolving to a `linear()` spring);
+       NO @keyframes is hand-rolled on the panel (that would re-fork the primitive — the A3 anti-
+       move). One re-point at :root → every atlas popover (options, hover-popover, select) blooms. */
+    --popover-enter-ease: var(--spring-smooth);
+    --popover-enter-duration: var(--duration-fast);
+}
+
+/* §CORRIDOR — the between-beat shared-element corridor register (N.WB1 · compositor-only, D7-safe;
+   P2-B Ruling 2, values verbatim). FELT, never SEEN: breathing room + receded type — no runway rules,
+   no band tint (a drawn corridor promotes chrome over data). The band is a STATIC interstitial reserve
+   inserted at LAYOUT time when the arriving chapter declares `transition.kind === "shared-element"`
+   (CLS-safe, reserved whether or not a flight is active); the prose-recede is ONE opacity write on the
+   arriving masthead cluster, applied INLINE by the story director off `recedeStyle()` (opacity + a
+   ≤0.25rem translate — compositor-only, no layout write at any t). These tokens MIRROR
+   `platform/story/corridor.ts` — the single source the director AND the `n0-render-corridor` gate arm
+   read; the prose-floor sits one rung below `--attn-chrome` (0.46) so receded type reads as
+   margin-class structure while marks hold `--attn-data` (0.92). */
+:root {
+    /* N.WP-sci · WB1 --corridor-band adjudication: DELETED (N1 adopt-or-delete). The band reserve had
+       ZERO consumers (no var() read, no `corridor.ts` JS mirror, no parity gate) — unlike the recede
+       tokens below, which back the live `recedeStyle()` engine. Its sole would-be consumer is the
+       landed sci-equity shared-element flight, which is browser/GPU-gated (N.WB2) and not in this lane;
+       the reserve re-derives from `Chapter.transition` beside its witnessed consumer when the flight
+       lands, so deleting the dead token loses nothing and clears a landed-but-unused honesty smell. */
+    --corridor-prose-floor: 0.35; /* the masthead-cluster recede floor — one rung below --attn-chrome */
+    --corridor-recede-in: 0.12; /* the plateau tent RISE edge (fully receded by t=0.12) */
+    --corridor-recede-out: 0.88; /* the plateau tent FALL edge (releases from t=0.88) */
+}
+
+/* §MOTION — THE EASE/DUR TOKEN REGISTER (SM-10 · design-suffusion §3/§5 / audit-anim-motion
+   FOLD-A). The ONE locus the chrome's hand-authored cubic-bezier() literals collapse onto, so
+   "the eases are tokenized" is one source of truth — the inverse grep-gate (SM-10) bans a raw
+   `cubic-bezier()` ANYWHERE but here. The named bezier set:
+     • --ease-engrave  the atlas's strong-decelerate (ease-out-quint, 0.22 1 0.36 1) — the
+       crest/spine/wordmark settle: a confident arrival that decelerates HARD into rest, the
+       engraved-instrument register (BrandMark scale, ControlPlaneSpine barometer fade, the dock
+       year-fade). This is the atlas's OWN ease — glass-ui ships no quint — so it is minted here.
+     • --ease-overshoot  the press-back (ease-out-back, 0.34 1.56 0.64 1) — a deft tactile
+       overshoot on a press/scale, the dock step's "pressed-then-settles" feel. Glass-ui's spring
+       linear()s are the interactive-transform register; this bezier is the one back-curve the dock
+       authored, declared here so the Dock lane CONSUMES var(--ease-overshoot) (the sibling-owned
+       Dock.vue keeps the only off-register literal until it re-points — SM-10's named residue).
+     • --ease-expo  the strong entry-decelerate (ease-out-expo, 0.16 1 0.3 1) — ALIASED straight to
+       glass-ui's own `--ease-out-expo` (the library already ships this exact curve), the gallery
+       card hover + the gallery-rise reveal. Consuming the library token, not re-minting it.
+   Durations alias glass-ui's `--duration-*` (one source); these are the eases the atlas owns. */
+:root {
+    --ease-engrave: cubic-bezier(
+        0.22,
+        1,
+        0.36,
+        1
+    ); /* the atlas strong-decelerate settle (quint) */
+    --ease-overshoot: cubic-bezier(
+        0.34,
+        1.56,
+        0.64,
+        1
+    ); /* the deft press-back (out-back) */
+    --ease-expo: var(
+        --ease-out-expo
+    ); /* the strong entry-decelerate — glass-ui's exact curve */
+    --ease-morph: cubic-bezier(
+        0.65,
+        0,
+        0.35,
+        1
+    ); /* the symmetric in-out the morph mechanism reuses (D4.5 · SM-10) — draw/path reuse --ease-expo */
+    /* §MOTION (K-ANIM A4 · proto/A4-stack.md §6) — the lettering ζ-0.62 settle's CSS-tier twin: the
+       `springTimingFunction({response:0.42, dampingFraction:0.62})` curve, sampled to a linear() stop
+       list (springLinearStops, the keyframes.js export) so a CSS-tier consumer can reference it. The JS
+       tier resolves the SAME curve via the EASE_TOKENS register (motion-catalog.ts), the SM-10 one-locus
+       law. `useScrollLettering`'s inline spring retires into this one home. */
+    --motion-glyph-spring: linear(
+        0,
+        0.32154 4%,
+        0.77477 8%,
+        1.02484 12%,
+        1.08352 16%,
+        1.05598 20%,
+        1.01829 24%,
+        0.99773 28%,
+        0.99303 32%,
+        0.99538 36%,
+        0.99852 40%,
+        1.00021 44%,
+        1 48%,
+        1 100%
+    );
+    /* §MOTION — THE CONTROL MICRO-TRANSITION (N.WG1 Arm D · SM-10). The ONE duration+ease the
+       chrome CONTROL register's color/background/border-color fades collapse onto — the dock foot
+       controls (`.usf-dock__ctl`, the selection chip + dot, the range/save/filter pills) and the
+       filter year-scrubber pips. A generic `ease` (NOT an engraved-instrument settle): these are
+       quiet hover/press tints, not arrivals — the curve is deliberately the plain keyword. Consumed
+       as `transition: color var(--transition-control), background var(--transition-control), …` so
+       the 160ms control literal lives in ONE home (the DockFoot/YearScrubber raw-triplet fold). */
+    --transition-control: 160ms ease;
+}
+
+/* §AFFORDANCE — THE ONE SIGNIFIER VOCABULARY (K-ANIM A5.c · proto/A5-afford.md §3.1 · Norman
+   affordance→signifier). ONE home for the cursor / focus / grip / negative signifiers — collapsing the
+   17 ad-hoc `cursor:pointer` loci + the 15 divergent `focus-visible` recipes. The SELECT / ACTIVE /
+   FILTER signifiers keep their reactive composables; this register OWNS their token aliases so the whole
+   vocabulary reads from ONE place. NO `--rank-motion-*` token (amplitude is A3's RANK_INTENSITY). */
+:root {
+    /* the STATIC signifiers (no reactive read — pure cursor/focus recipes) */
+    --afd-click: pointer; /* clickable — the cursor that MUST back a real handler (no-false-affordance) */
+    --afd-grab: grab; /* draggable at rest */
+    --afd-grabbing: grabbing; /* draggable in-flight */
+    --afd-disabled: not-allowed; /* the NEGATIVE affordance — paired with --afd-disabled-veil */
+    --afd-disabled-veil: 0.42; /* the disabled opacity floor — greyed, present, not gone */
+    /* the FOCUS halo — the ONE :focus-visible recipe (retires the 15 re-spellings). Defaults to the
+       SHIPPED focus ring `--ring`, NOT `--sel-selected-ring`: focus and select are DISTINCT signifiers
+       (coupling them violates A5's one-signifier-per-affordance law). The gilt loci keep their gold ring
+       as a NAMED variant ([data-afd-focus="gilt"]), not a divergent recipe. */
+    --afd-focus-ring: var(--ring, oklch(0.6 0.15 250));
+    --afd-focus-width: 2px;
+    --afd-focus-offset: 2px;
+    --afd-focus-radius: var(--radius-mark, 2px);
+    /* the FILTERABLE dial signifier — the active-control route tint. */
+    --afd-dial: var(--attn-chrome); /* the dial rail/thumb at the chrome recession rung */
+}
+
+/* §LIQUID-REVEAL — THE ONE liquid-glass reveal envelope (I5 §9 · I7's single motion authority).
+   The card in/out, the veil reveal/hue-crossfade/select-sweep, the I7 filter inner-strata, the
+   VizOptions popover, and the chapter reveal all ride ONE named curve — the DEFINE-ONCE law (no
+   second liquid cubic-bezier authority anywhere). I7 OWNS the canonical definition; until that wave
+   lands these alias FALLBACK-FIRST off the SHIPPED glass-ui register (the `--spring-smooth` ~0.5%
+   whisper-overshoot the popover already materializes on + `--duration-fast`), so I7 re-points the
+   alias in ONE place with zero consumer change. The card consumes `var(--liquid-reveal-*)` and is
+   correct today; it does NOT re-mint the curve. */
+:root {
+    --liquid-reveal-ease: var(
+        --spring-smooth
+    ); /* the iOS-control reveal curve (I7 re-points) */
+    --liquid-reveal-duration: var(
+        --duration-fast
+    ); /* the reveal clock — the lens condensing in */
+}

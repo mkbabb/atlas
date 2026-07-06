@@ -1,3 +1,6 @@
-/* @mkbabb/atlas — the platform aggregate root. O-B0 genesis scaffold: the recipes + the folded
-   SFC component layer land with the O-B2–B9 module moves. Empty-but-valid so build:css emits a
-   near-empty dist/style.css. The token layer is compiled separately (styles/tokens.css). */
+/* @mkbabb/atlas — the platform aggregate build entry (compiled to dist/style.css, shipped as
+   `./styles`). O-B2 filled the O-B0 scaffold: the real aggregate root is `src/design/index.css`
+   (the design-module home per src-rearchitecture §A.5); this build entry is the thin door
+   build-styles.mjs compiles through the Tailwind pipeline. The folded per-component SFC layer
+   lands with the later component-move waves. */
+@import "../src/design/index.css";

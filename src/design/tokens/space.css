@@ -1,0 +1,206 @@
+/* @mkbabb/atlas · design/tokens/space.css — the SPACE family, split byte-for-byte from tokens.css
+   at O-B2. Holds the chrome widths (§CHROME --filter-w), the control-spacing rhythm, the figure-rank
+   scale ladder (§RANK), the spot-graphic proportion budget, and the control-plane widths/measures. */
+
+/* §D — the engraved-atlas grounds (FD1 §1.1, §7.2; C.W1.a WG-1/WG-2/WG-3/WG-7). The
+   warm-ground retune, now landing the keystone values verbatim from the verified palette
+   (audit/fd-warm-ground-palette.md §1.4/§2.3): ONE warm hue spine — paper 47° · plate 55° ·
+   ink 55° (light), espresso 55° · plate 57° · ivory ink 80° (dark). Chroma is lifted above
+   the near-white JND so the warmth READS (the C 0.008 below-JND defect retired); L is dropped
+   off the 0.985 ceiling so --card SEPARATES (the C1 engraved plate). The dark stock is re-hued
+   OUT of cool-250 onto warm 55–80° so ground and ivory ink share ONE temperature ("an atlas
+   printed on dark stock with ivory ink," D1 §3.2). Overriding glass-ui's
+   --background/--card/--foreground/--muted-foreground here recolors the page warm; glass-ui's
+   glass-tier tokens (--glass-*) read these grounds, so the chrome warms in lockstep. */
+:root {
+    /* §CONTROL-SPACING — the systematized popover/control stack rhythm (f-vizoptions §2.3).
+       The VizOptions popover carried ad-hoc magic numbers (16px pad, 14px gaps, an 11px crest);
+       these promote them to ONE scale the panel reads, so the popover reads as "the filter drawer
+       at plate scale" (the C-AESTHETIC cohesion law). The crest→rows gap is ONE rung larger than
+       the inter-row gap (the eyebrow-to-body rhythm). */
+    --control-pad: 1rem; /* the overlay-panel inset (the popover's own gutter) */
+    --control-stack-gap: 0.875rem; /* the inter-row gap inside a control stack */
+    --control-crest-gap: 1.125rem; /* crest → first row — one rung up (the eyebrow rhythm) */
+    --control-row-gap: 0.4rem; /* a row's label → its control */
+}
+
+/* §CHROME — the platform shell's structural spine + the z-ladder (S2·7, DL5 §2.2).
+   PURE ADDITIONS (glass-ui ships none of these bare terms): the grid track width
+   and the floating-filter width.
+
+   THE AX.W06 --dock-icon-padding BRIDGE IS RETIRED on the published 4.1.0 cut (J-GLASS arm a).
+   The bridge was the C8.3 fallback for the in-dock `<DarkModeToggle size="dock">` glyph swelling
+   edge-to-edge (the AX.W06 defect) because the pre-4.1.0 `> svg` glyph-size carve did not reach
+   the atlas's `size="dock"` toggle SVG. The published 4.1.0 dock-control register now OWNS that
+   toggle padding via its `[data-size="dock"]` glyph-size carve, so the consumer bridge is inert
+   and DELETED — no fallback-first survivor where the primitive now ships. The AX.W06 row closes
+   on the re-pin; see `docs/tranches/C/letters/glass-ui-AX.W06.md`. */
+:root {
+    --filter-w: 21rem; /* the floating-filter inline-size (B2b.2 consumes) */
+}
+
+/* §RANK — the figure-rank SCALE ladder (the K-C hierarchy keystone). Rank governs SIZE (it
+   re-points `--type-figure-slug` via the cap-box `min(rung, track-fit)` idiom, recipes.css §1);
+   `--attn-*` governs INK (the sibling §HIERARCHY SUFFUSION system above — rank is to SIZE as attn
+   is to INK). The three rungs are the graded successor to the deleted binary `/1.3` divisor
+   (DashboardHero.vue, the magic number K-C tokenizes); the ONLY new values this wave mints (NO new
+   type clamp — re-minting a clamp forks the C2-4/HD-11 cohesion keystone, §A above).
+
+   --rank-scale-support is `calc(1 / 1.3)` — a TRUE BYTE-EQUIVALENCE to the deleted `/1.3` divisor
+   (it resolves to the EXACT `0.769230…` the old `var(--type-display-audacious) / 1.3` produced), so
+   any figure that holds the OLD recession does NOT move a pixel (i11-cover-rerank stays GREEN by
+   construction). --rank-scale-ancillary is `0.59` — a CHOSEN recession ratio (NOT a derived law; the
+   doc cannot claim both "byte-equivalent to 1/1.3" AND "φ-adjacent" — the K-FEEDBACK-2 §A·K-C
+   critique correction). The `support` rung is PROVISIONAL pending a real 4+-figure lockup (no live
+   route uses a graded middle yet — the fenced signable, K-C-HIER §7). */
+:root {
+    --rank-scale-lede: 1; /* the CROWN — the page thesis at the full audacious rung */
+    --rank-scale-support: calc(1 / 1.3); /* the graded middle (PROVISIONAL) — byte-= the old /1.3 divisor */
+    --rank-scale-ancillary: 0.5; /* GP5 (N.WG1) — the recessed flank deepened 0.59→0.5 against the landed BANNER/ROW states (the 390px readback) */
+    /* the crown's track-claim — the lede figure claims more of the flex row (replaces the literal
+       `flex-grow` at DashboardHero.vue) so its wider slug seats without crowding the flanks. */
+    --rank-grow-lede: 2; /* GP5 (N.WG1) — the crown's track-claim widened 1.6→2 (the ranked-4 BANNER crown reads as the row's clear lede) */
+}
+
+/* §SPOT-GRAPHIC — the proportion BUDGET for the injected illustrative spot-graphics (J-PAPER
+   §approach-2, C47 — the VC money-stack energy). The genuinely-NEW design delta: a static CSS/SVG
+   illustrative mark (a stacked-coins motif, a building/setting silhouette, a wire spool) ride the
+   figure margins/headers as a FELT visual pulse. The discipline is rung ⑤ of the §HIERARCHY
+   z-of-attention above — the spot-graphic is ATMOSPHERE ("FELT, never seen"), NOT data: it
+   energizes the column WITHOUT crowding the figure. So its size is governed not by a per-component
+   px guess (the IC-5 escape-hatch) but by ONE proportion budget — the spot-graphic occupies AT MOST
+   this fraction of its column's inline-size, subordinate to the data BY CONSTRUCTION.
+
+   --spot-graphic-max is the load-bearing relation the j0-paper-spot-graphic-proportion gate reads
+   (a SIZE-relation against the column, FELT not seen): the spot-graphic vocabulary (the arm-b CSS
+   marks) bounds its rendered extent to `min(natural, var(--spot-graphic-max) of the column)`, so a
+   spot-graphic that tries to DOMINATE the column (a hero illustration crowding the figure — the
+   gate's catching negative control) is structurally clamped back into the margin. 0.22 = the felt-
+   not-seen band: large enough to read as a money-stack pulse at the figure's edge, an order below
+   the figure's own track so the data still does the talking (rung ② out-weighs rung ⑤). A
+   PROPORTION, never a magic px — theme-agnostic, viewport-agnostic; it scales with whatever column
+   the spot-graphic rides. The spot-graphic is STATIC paint (no live shader / no canvas boil — the
+   J-HANDMARK §3 motion-budget discipline holds); this token governs only its SIZE, not its motion. */
+:root {
+    --spot-graphic-max: 0.22; /* ⑤ the injected spot-graphic's max fraction of its column — FELT not seen */
+}
+
+/* §CONTROL-PLANE REGISTER — the --cp-* namespace (C.W3.1, C-AESTHETIC §2.1 L270-294).
+   A NEW carved block sitting ON the §D warm ground (the C1 arms above are NOT touched).
+   This is the visual register of the floating glass INSTRUMENT: the dock breathes as a
+   pill (72→88px) floating off the left margin, the right filter is a live-behind lens
+   drawer, the spine is a net-retention timeline with an achromatic playhead. Authored
+   ONCE here so C3.2 (the GlassDock + spine), C3.3 (the right Drawer), C3.4 (the per-viz
+   expand), and C3.5 (the crest) all CONSUME one source of truth — never re-derive a
+   width/frost/accent per surface. The §CHROME --dock-w grid track is RETIRED
+   (wave F4 via the F0 legacy-survivor census, audit-commits FOLD-3): its stated
+   precondition — C3.2 re-founding Dock.vue on GlassDock — was met at E2 (4ded10e),
+   and Dock.vue reads --cp-dock-w directly; no straggler var(--dock-w,…) fallback
+   survives in the tree. These --cp-* terms are the one source of truth. */
+:root {
+    /* the breathing vertical pill (C-AESTHETIC §2.1). A floating instrument — never a
+       grid track. --cp-dock-inset is the float gap off the viewport edge so paper grain
+       shows AROUND it (the single most important "this floats" signal).
+
+       ── THE RAIL WIDTH ──────────────────────────────────────────────────────────────
+       --cp-dock-w is the EXPANDED vertical rail's fixed column width (the Roman rungs +
+       the year/save/filter controls + the dark-toggle foot). --cp-dock-tab-w is the
+       COLLAPSED-tab footprint — the narrow margin SLIVER the floating dock leaves to clear
+       past the reading column when it overlaps the page margin (the J-DOCK collapse machine
+       re-enabled per C26). It is NOT the collapsed control DIAMETER (the dock floats OVER its
+       own width — only the sliver that must not occlude the prose is reserved); pinned so
+       --cp-inset + --cp-dock-tab-w nests AT the 2rem `max()` reserve floor (the float-overlap
+       measure resolves to the floor, not a 92px in-flow rail). The DESKTOP reserve gutter
+       reserves the FULL expanded rail again (N.WG1 · M.W1 D1 — the F9 occlusion fix restores a
+       static 112px gutter so no hero ink runs under the rail); only the PHONE floor re-bases to
+       the inset + collapsed tab (the dock rests collapsed there). The H9 collapse-split tokens
+       (--cp-dock-rail-w / --cp-dock-expanded / --cp-deck-dot-size) are retired with the prior
+       collapse machine. */
+    --cp-dock-w: 4.5rem; /* the EXPANDED vertical rail width (72px) — Roman rungs + controls + foot */
+    --cp-dock-tab-w: 0.75rem; /* the COLLAPSED-tab margin sliver (12px) — the floating dock's clear-past footprint */
+    --cp-inset: 1.25rem; /* the float gap off the viewport edge — grain shows around it */
+    --cp-radius: 1.75rem; /* the pill corner — iOS Now-Playing register */
+    /* THE TRUE EXPANDED-RAIL RESERVE (N.WG1 · M.W1 D1 — the F9 occlusion fix, superseding the
+       J-DOCK C25 reclaim). The content stage's inline-start gutter reserves the FULL floating
+       rail — the inset gap + the expanded rail column + the inset gap again — so NO hero ink is
+       ever laid in the dock's track (x < 112px). The J-DOCK reclaim (reserve === inset + tab)
+       let the prose/figures flow UNDER the floating rail toward `innerWidth − inset − tab`,
+       which is exactly what clipped the five heroes (P095/P115/P124/P162 "chopped off at the
+       top", "sitting on top of the container"): a full-bleed masthead ran under the rail. D1
+       reverses it — a static 7rem/112px gutter at EVERY desktop width and dock state; ≥1550px
+       the body re-centres in the non-dock track via `.dashboard-body`'s `margin-inline: auto`.
+       The phone re-bases to the collapsed-tab floor (the dock rests collapsed there —
+       PlatformShell's `@media (--phone)`); the gate asserts the RELATION
+       (reserve === inset + dock-w + inset), not a magic px. */
+    --cp-dock-reserve: calc(var(--cp-inset) + var(--cp-dock-w) + var(--cp-inset));
+    /* ── THE DOCK-AWARE ASYMMETRIC MEASURE (J-STORY §8 · C25 the measure half) ──────────────────
+       The keystone SPACE transposition: the figure reclaims the width the prose does not need.
+       Two measures, ONE grid (the route body is the column track):
+         --measure-prose  the ~70ch reading column — body text, deks, captions, eyebrows. NEVER
+                          re-cut (legibility is the floor); it is the editorial spine's measure.
+         --measure-figure the post-dock available width — the figure track BREAKS OUT toward what
+                          the (J-DOCK-reclaimed) reserve leaves: the route-body cap (--bp-read)
+                          GREW to the wider figure ceiling, so a plate fills the route width while
+                          the prose stays at its reading measure. The cap is the OUTER track; the
+                          prose is the INNER clamp. J-DOCK owns the reserve (the floating-dock
+                          margin overlap); J-STORY's measure RIDES the reclaimed width, never
+                          re-bases the reserve.
+       The asymmetric measure is a max-inline-size pair the `.dashboard-body` grid consumes (the
+       byte-identical `mx-auto max-w-[var(--bp-read)]` symmetric cap × five routes is RETIRED — the
+       figure track no longer shares the prose's ~70ch reading cap). The figure ceiling clamps to
+       the dock-reclaimed viewport so the breakout never overruns the inline-end pad. */
+    --measure-prose: 72ch; /* the ~70ch reading column (prose stays here; never re-cut) */
+    --measure-figure: min(
+        100%,
+        92rem
+    ); /* the figure track breakout ceiling (post-dock width; ~1472px cap) */
+    /* THE SINGLE-COLUMN READING MEASURE — the platform content-contract width (MB-0/MB-1 ·
+       C.W7.a · F1). Routed HERE from the retired styles/index.css root by L3-CSS (the spacing
+       token locus is its home; the `text-section-fluid` recipe that reads it routes to
+       recipes.css §MEASURE). The phone is ONE warm-paper single-column atlas plate RE-SET for
+       the 358px measure: the 390 − 32 = 358px floor (the <main> px-4 gutter, PlatformShell.vue;
+       iPhone safe-area-inset-left/right = 0 in portrait, so the 16px is the real measure-setting
+       term). fluid: the 358px phone floor up to the ~72ch desktop measure, so ONE token governs
+       both registers and the heading recipe never widens past the column at any width. */
+    --measure: clamp(22.375rem, 92vw, 72ch); /* 358px floor · 72ch desktop cap */
+    /* the right lens drawer width — Drawer has NO size="dock" prop, so the width is an
+       EXPLICIT term the C3.3 Drawer re-seat consumes (do NOT block on a size token). */
+    --cp-drawer-w: 22rem; /* the right lens drawer (352px) */
+    /* the timeline spine rail — fat enough to read as a RAIL, not the old 2px hairline. */
+    --cp-rail-w: 3px; /* the ContinuousTimeline spine width */
+    /* the floating-tier GLASS — the frost/saturate that keeps cream reading CREAM through
+       the blur (1.35× saturate pulls the warm hue back; else the glass goes slate, D1). */
+    --cp-glass-bg: color-mix(
+        in oklab,
+        var(--card) 78%,
+        transparent
+    ); /* 22% transparency */
+    --cp-glass-blur: 18px; /* the floating-tier frost (GlassPanel owns the apply) */
+    --cp-glass-sat: 1.35; /* warm saturate so the cream reads THROUGH the frost */
+    --cp-glass-rim: oklch(
+        1 0 0 / 0.55
+    ); /* the top specular catch-light rim — the lit edge */
+    /* the CHROME-ONLY accent — NCSU red on the active figure-rung chip + the crest anomaly
+       node ONLY (never a data fill; the three-red law, §BRAND). */
+    --cp-accent: var(
+        --ncsu-red
+    ); /* NCSU red — CHROME-ONLY active rung + crest anomaly */
+    --cp-accent-ink: oklch(0.99 0.01 60); /* ivory text on the red active chip */
+    /* the spine FILL poles (the net-retention barometer Layer A) + the achromatic PLAYHEAD
+       (Layer B, riding the scroll fraction). C3.2's ControlPlaneSpine re-consumes
+       ctx.barometerRamp for the live fill; these are the static pole anchors. */
+    --cp-spine-receiver: var(
+        --viz-diverging-low
+    ); /* warm — pay-IN (barometer Layer A) */
+    --cp-spine-payer: var(--viz-diverging-high); /* cool — draw-OUT */
+    --cp-playhead: var(
+        --foreground
+    ); /* the achromatic scroll-position fill (Layer B) */
+}
+
+.dark {
+    /* the dark-stock glass: a touch more opaque (72%) so the deep espresso ground reads,
+       and an ivory rim at low alpha (the lit edge on dark stock, not a blown specular). */
+    --cp-glass-bg: color-mix(in oklab, var(--card) 72%, transparent);
+    --cp-glass-rim: oklch(0.92 0.01 70 / 0.14);
+}

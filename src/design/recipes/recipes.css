@@ -1,0 +1,662 @@
+/* platform/design/recipes.css — the @utility recipes (FD1 §2.1, DL5 §4.2; mirrors
+   slides/deck-theme.css §2-4). The φ type ladder, the surface bundles, the chart-host
+   rungs, the touch floor — each a composable utility that bundles the SAME declarations
+   the inline cluster spells out, so adoption is byte-isomorphic (CQ5-1).
+
+   INERT contract: every @utility here is DECLARED, applied to no element. Tailwind v4
+   tree-shakes unused utilities, so an unconsumed @utility emits zero CSS into the
+   bundle — the locus is provably inert against the stable app. The recipes reference
+   var(--font-display/serif/mono), which resolve to glass-ui's existing values; no
+   token is overridden. Names avoid every glass-ui @layer-components class (the
+   section-label trap, DL5 §4.0b) — text-section / text-panel-title, never section-label. */
+
+/* §1 — the typography ladder (the three voices x the φ rungs, FD1 §2.1). */
+
+/* The two APEX rungs (FD1 §2.1) — the top of the φ ladder, above text-hero. text-audacious
+   is the C0 Fund-Ledger hero count (Fira Code tabular figures at the 352px peak — a number
+   never set in Fraunces, FD1 §12.7); text-mega is the dropped-capital / figure-number rung
+   (Fraunces with the WONK/SOFT wink, the <FigureInitial> signature). Both read the §A rung
+   tokens + line-height 1 so the colossal glyph sits tight to its box. */
+@utility text-audacious {
+    font-family: var(--font-mono);
+    font-feature-settings:
+        "tnum" 1,
+        "lnum" 1;
+    font-size: var(--type-display-audacious);
+    font-weight: 600;
+    line-height: 1;
+    @apply text-foreground;
+}
+@utility text-mega {
+    font-family: var(--font-display);
+    font-variation-settings: var(--font-display-vs);
+    font-size: var(--type-display-mega);
+    font-weight: 340;
+    line-height: 1;
+    @apply text-foreground;
+}
+
+/* THE TITLE-DISPLAY rung (F6.1 / design-typography · f6-breakout-titles §2.2 — the audacious
+   cover-line). The NEW display register that sits BETWEEN text-audacious (the Fira figure
+   register, forbidden for titles) and text-hero (the 36px serif step): the straddle band's
+   plate-title set in Fraunces OPTICAL DISPLAY at a true cover-line size. This is F6.1's
+   "bigger, larger, more audacious in STYLE" made a real rung — the audacity is the Fraunces
+   SOFT/WONK display axis (the editorial wink, `--font-display-vs`) + the cover-line size, NOT
+   a heavier weight: weight 560 keeps the serif title BELOW the thesis figure's mono-600 ink
+   claim even at 2× its size (the inversion law held by FACE + WEIGHT separation, not by a size
+   cap — design-typography R5/T3). Tight lh (0.95) seats the cover-line to its box; the −2%
+   track tightens the display optics. The anti-move (recipes.css:15-17): a title is NEVER set
+   in the mono figure register — the figure SHOUTS in Fira, the title SINGS in Fraunces. */
+@utility text-headline {
+    font-family: var(--font-display);
+    font-variation-settings: var(--font-display-vs);
+    font-size: var(--type-display-headline);
+    font-weight: 560;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    @apply text-foreground;
+}
+
+/* THE PAGE-TITLE rung — O-C2 THE TITLE LAW (design-canon §A3). Mirrors text-headline's
+   Fraunces optical-display voice (the same face / display-vs wink / tight cover-line optics)
+   and now binds the LARGE --type-page-title cover-line rung: the page-hero <h1> RESTS LARGE
+   (72/52/44) so h1 > h2 on every route (closing the D6 inversion). It stays a DISTINCT utility
+   from text-headline precisely so the page-title carries its OWN scroll-shrink lockup (§1a)
+   WITHOUT dragging the shared plate question-titles (the Zeisz interrogatives, still on
+   text-headline). Consumed by .dashboard-hero__title (DashboardHero.vue) + .speedtest-hero__title
+   (SpeedtestHero.vue) — the shared page-h1 recipe, so the Title law lands route-generically. */
+@utility text-page-title {
+    font-family: var(--font-display);
+    font-variation-settings: var(--font-display-vs);
+    font-size: var(--type-page-title);
+    /* rest weight 560 holds the serif title BELOW the mono-600 figure (the inversion law by
+       FACE + WEIGHT, not size); the scrub lifts it 560→600 as it shrinks (§1a keyframe). */
+    font-weight: 560;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    @apply text-foreground;
+}
+
+/* §1a — THE TITLE SCROLL-SHRINK LOCKUP (O-C2 · design-canon §A3; ANSWERS Q-8/Q-10/Q-11).
+   The page-hero <h1> rests LARGE and scroll-scrubs to a compact sticky wayfinding label — a
+   NATIVE scroll-scrubbed keyframe on the root scroller, user-driven + bijective, NO scrolljack
+   (L23 lean-native doctrine; Safari 26 ships scroll-driven CSS). The h1 is `position: sticky;
+   top: 0` inside its hero band, so the shrunk label doubles as a chapter locator; its paper
+   backing (var(--background) — the ground, NOT glass) keeps it readable as content scrolls
+   under it, and its content-rung z keeps it BELOW the dock + FILTERS pill (the L12/L13 chrome
+   stacking contract — --z-dock 40 / --z-panel 45 both float over the content-z title). */
+.text-page-title {
+    position: sticky;
+    top: var(--title-sticky-top, 0px);
+    /* a content-rung stacking context above the sibling series, far below --z-dock (40): the
+       dock + FILTERS pill clear the sticky title (chrome stacking contract, L12/L13). */
+    z-index: 1;
+    /* the paper wayfinding backing — the ground colour, so scrolling content passes cleanly
+       UNDER the compact label (invisible at rest: paper on paper). NOT glass (§A3 no-glass). */
+    background: var(--background);
+    padding-block: 0.12em;
+    /* the strip hugs the reading measure (DashboardHero caps it at 36ch), never full-bleed —
+       content to its flank stays visible; it is a label, not a masthead bar. */
+}
+
+/* The scroll-scrubbed shrink — LINEAR 72→30 over the first 320px of root scroll (tablet rides
+   320; phone 200 below). DOUBLE-FENCED: the outer @media means under PRM the animation NEVER
+   binds, so the h1 rests at its LARGE recipe size (the PRM-sane un-animated title — the O-C2
+   live-review gate owns any swap to a static compact state); the inner @supports means the JS
+   fallback owns environments without scroll() timelines. `both` HOLDS the from-frame (large)
+   before 0 and the to-frame (compact) past 320 — the rest and terminal states are structural. */
+@keyframes title-compact {
+    from {
+        font-size: var(--type-page-title);
+        font-weight: 560;
+    }
+    to {
+        font-size: var(--type-page-title-compact);
+        font-weight: 600;
+    }
+}
+@media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+        .text-page-title {
+            animation: title-compact linear both;
+            animation-timeline: scroll(root);
+            animation-range: 0px var(--title-scrub-range, 320px);
+        }
+        @media (--phone) {
+            .text-page-title {
+                --title-scrub-range: 200px;
+            }
+        }
+    }
+}
+
+/* §1b — THE COMPACT WAYFINDING KICKER (O-C2 point 3 · ANSWERS Q-11: the compact band DOUBLES as a
+   chapter locator). The sticky title band carries the route's ONE kicker INLINE beside the shrunk
+   h1, so the scrolled band names WHERE the reader is. The kicker rides INSIDE the sticky <h1> (an
+   `aria-hidden` inline-block, so the heading's accessible name stays the title ALONE — no
+   accessible-name regression), sits at a CONSTANT compact rung (the mono tracked-caps eyebrow
+   voice; it does NOT scrub with the title), and REVEALS over the TAIL of the SAME native
+   `scroll(root)` timeline the title-compact keyframe rides — no JS scroll listener. At rest
+   (scrollY 0) it has ZERO footprint (`max-inline-size: 0` + `opacity: 0` under `overflow: clip`),
+   so it is ABSENT from the rest state and can neither wrap nor overflow the large title; it fades +
+   expands in as the title reaches its compact terminal. It inherits `--title-scrub-range` from the
+   parent h1, so the phone's shorter 200px transit re-times the reveal automatically. Consumed by
+   .dashboard-hero__title (reads `coverKicker`) + .speedtest-hero__title (reads the eyebrow) — the
+   shared page-h1 wayfinding, route-generic, never a per-route fork. Under PRM the title rests LARGE
+   (no compact state), so the double-fence keeps the kicker hidden — there is no band to locate. */
+.page-title-wayfind {
+    display: inline-block;
+    vertical-align: baseline;
+    overflow: clip;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+    /* the leading separator + gap live INSIDE the clipped box, so the rest footprint is truly 0. */
+    padding-inline-start: 0.6em;
+    max-inline-size: 0;
+    opacity: 0;
+}
+.page-title-wayfind::before {
+    content: "·";
+    margin-inline-end: 0.5em;
+}
+@keyframes page-title-wayfind-in {
+    from {
+        max-inline-size: 0;
+        opacity: 0;
+    }
+    to {
+        /* a generous ceiling — any route kicker fits; overflow:clip is the backstop. */
+        max-inline-size: 24ch;
+        opacity: 1;
+    }
+}
+@media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+        .page-title-wayfind {
+            animation: page-title-wayfind-in linear both;
+            animation-timeline: scroll(root);
+            /* the reveal rides the TAIL of the title scrub — fully in as the title lands compact. */
+            animation-range: calc(var(--title-scrub-range, 320px) * 0.55)
+                var(--title-scrub-range, 320px);
+        }
+    }
+}
+
+/* THE FIGURE-SLUG recipe (FD1 §1.3, C.W2.1; the four laws L1–L4). ONE contained
+   audacious register the hero + HoverCard + axis all reach, so overflow/occlusion is
+   STRUCTURALLY impossible (master H-7). The line-box IS the cap-height (line-height
+   = --slug-cap, L1) with --slug-lead clearing the descender; the box cannot be pushed
+   by its glyph (contain:layout, L3) and clips as the hard backstop the sweep asserts
+   (overflow:clip, L3); tabular + slashed-zero figures align the IN-vs-OUT read (L4).
+   max-inline-size:9ch is fitted to "$8.92B" + breathing room. Three sizes: slug (the
+   audacious register), axis (the tick rung), card (the HoverCard fact).
+
+   L2 (the cqw reference frame) — D1.3 ROOT FIX: `container-type: inline-size` is NO
+   LONGER on the slug element. A slug that is its OWN cq frame sizes inline-size
+   containment "as if it had no contents" → as a flex item (the HoverCard value lane)
+   its auto basis resolves to 0px and `overflow: clip` then erases the ink (the blank
+   `<dd>` the user saw — D14/D22 §b). The cq frame belongs to the slug's consuming TRACK,
+   not the slug: the `slug` register's hosts ALREADY declare a container (`.fund-ledger`
+   `container: fund-ledger / inline-size`, `.choro-hero` `container: choro-hero / inline-size`),
+   so its `17cqw` resolves against the FLANK, the slug scaling WITH its track exactly as
+   L2 intends. The `card`/`axis` rungs drop the cq frame entirely — their tokens are
+   rem-floored clamps (tokens.css §A), so a card fact figure needs no ancestor container.
+   The self-referential, as-if-empty blockification is dead platform-wide. */
+@utility figure-slug {
+    font-family: var(--font-mono); /* Fira Code 600 */
+    font-weight: 600;
+    font-feature-settings:
+        "tnum" 1,
+        "lnum" 1,
+        "ss03" 1; /* tabular + slashed zero (L4) */
+    font-variant-numeric: tabular-nums slashed-zero;
+    /* ── THE CH-4 ONE-REGISTER RECONCILE (I2.a · DESIGN §3.1 / I-PATH §5 CH-4) ──────────────────
+       The clipped/bigger-headline-figure chronic (six rounds across five arcs): C `f8-clipped-
+       numbers` → F `f6-clipping-units` (the cap-box shear + the 9ch inline cap) → H10's lifted-
+       but-unreconciled clamp → the I-arc sibling collision at ≤430px. The slug/cap-box, the
+       fit-to-track box, and the H10 lifted clamp were THREE registers (the recipe capped at a
+       STATIC `9ch` + `overflow-x: clip` while FigureSlug.vue layered a `max-inline-size:100%` +
+       `overflow-x:visible` override ON TOP — a forked line-box regime: two files, two contracts
+       for one box). The reconcile FOLDS them into ONE register, AUTHORED HERE (the fork in
+       FigureSlug.vue retires), so a figure's ink can neither SHEAR (the cap-box) nor COLLIDE with
+       a sibling (the flex-track) at any viewport.
+
+       THE `min(rung, track-fit)` TERM (the keystone — DESIGN §3.1). The font is sized
+       `min(var(--type-figure-slug), <track-fit>)`: the H10 lifted `cqw` clamp (THE RUNG — the
+       figure stays audacious at every wide track) AND a track-fit ceiling that ONLY bites when the
+       rung would overrun a genuinely narrow flank. The ceiling is the inline track (`100cqi`)
+       divided across the member's ch-count (`--slug-num-track`) at the Fira-Code advance width
+       (~0.6em/ch) PLUS generous headroom, so on any normal track the rung wins (the `min` is a
+       no-op) and ONLY a sibling-collision-narrow flank shrinks the glyph just enough to fit — never
+       the aggressive shrink that would drop the crown below its register. The box takes the FULL
+       track (`max-inline-size: 100%`, the F6.4 fit-to-track); with the font bounded by the
+       track-fit term there is nothing to clip — `overflow-x: visible` retires the shear (the unit
+       suffix `B` rides INSIDE the fitted box, never sheared). ONE recipe, ONE register, every track. */
+    /* the longest ROW member's ch-count (the cap-line, DESIGN §3.1). A figure ROW host (the hero
+       triad, a boundary pair) SETS this to its longest member so the row shares ONE cap-line; the
+       default (8) is the typical lone audacious figure measure (`−$324.1M`/`$8.92B`/`24.34×`), so a
+       lone slug rides at its track-fitted rung without a host needing to declare it. (Was 9, tuned
+       down so a lone short figure is not over-shrunk — I-COMPOSE.scale; the advance divisor that
+       pairs with this measure is the signed-currency 0.62 corrected below — I17 figure-clip.)
+
+       THE HOST RE-POINT LAW (N5 design consult · the dead-var fix). The default rides as a var()
+       FALLBACK in the font-size term below, NEVER a local declaration here: a custom property
+       declared ON the slug element BLOCKS inheritance, so every host cap-line re-point
+       (DashboardHero's series/per-figure `--slug-num-track`, the D10 ranked cap-line) was silently
+       inert — every cover slug rendered at the default-8 track regardless of what the host set
+       (the two route-local forks that re-declare their own font-size, SpeedtestHero + WindowArcBeat,
+       are the workarounds that dead var bred). With the fallback form the host's inherited value
+       applies and a lone slug still rides the 8-track default. */
+    /* the track-fit ceiling: the inline track (`100cqi`) divided across the member's ch-count at the
+       MEASURED Fira-Code advance (the font-SIZE at which the ink exactly fills the track), so the
+       `min()` is a NO-OP on any normal track (the rung wins — the figure stays audacious) and the
+       ceiling bites ONLY when the rung font would genuinely overrun the track (a collapsed flank, OR
+       a LONG member of an audacious row — the I-COMPOSE lift exposed `−$324.1M` (8ch) overrunning at
+       the bumped rung while `$8.92B` (6ch) fit). The divisor is the EMPIRICALLY-measured advance
+       (the font-SIZE at which the ink exactly fills the track), with a hair of headroom.
+
+       THE SIGNED-CURRENCY ADVANCE CORRECTION (I17 re-gate · figure-clip · i0-num-clip /
+       i0-composed-no-clip / i11-ch4-invariant). The 0.55 divisor was tuned to the DIGIT-only advance
+       (~0.516 em/ch), but the dominant crown `−$324.1M` (8ch) is a SIGNED-CURRENCY-MAGNITUDE glyph
+       mix — the minus (U+2212), the `$`, the `.`, the `M` advance WIDER than a bare tabular digit, so
+       the true rendered advance is ~0.589 em/ch, not 0.516. At 0.55 the track-fit therefore
+       UNDER-estimated the ink: the computed font ran ~7% too large and the crown overran its
+       content-box (measured at :5173 — 1440: ink 316px > box 295px ratio 1.071; 768: 191>178 ×1.073;
+       390: 268>250 ×1.072 — exactly the ~7% the under-estimate predicts). Raising the divisor to the
+       TRUE mixed-glyph advance (0.589) PLUS a small safety margin → 0.62 makes `min(rung, track-fit)`
+       BITE ~7% sooner, so the crown's ink seats inside its box at every breakpoint + route while the
+       short rung-bound figures (`$8.92B`/`52.7%`/`$722` — 6ch and under, never at track-fit) keep the
+       full audacious rung untouched. The OLD 0.12 was mis-tuned — `100cqi/(9*0.12)=92.6cqi` is ~93% of
+       the track AS A FONT SIZE, far above any real glyph, so track-fit was a near no-op and the bumped
+       rung's long member sheared. 0.62 is the TRUE signed-currency Fira advance + margin: track-fit now
+       protects the crown by construction (I2 min(rung,track-fit)). */
+    font-size: min(
+        var(--type-figure-slug),
+        calc(100cqi / (var(--slug-num-track, 8) * 0.62))
+    );
+    line-height: var(--slug-cap); /* the LINE-BOX = cap-height (L1) */
+    padding-block-end: var(
+        --slug-lead
+    ); /* the descender pad — clears the next row (L1) */
+    letter-spacing: -0.01em;
+    /* the box is the FULL track (F6.4 fit-to-track) — not a guessed `9ch` cap. The font is already
+       bounded by the `min(rung, track-fit)` term above, so the box fits BY CONSTRUCTION. */
+    max-inline-size: 100%;
+    contain: layout; /* the box cannot be pushed by its glyph (L3) */
+    /* THE CROWN-SAFE, SHEAR-FREE OVERFLOW (E4 §3 · CH-4). The inline `overflow-x: clip` backstop
+       retires: with the font bounded by the track-fit term the ink CANNOT overrun the box, so the
+       clip (and the shear it caused — the far-right OUT flank's `$8.38B` lost its `B`) is dead.
+       Both axes stay VISIBLE — the crown is never sheared, the unit suffix never cut. The
+       track-fit term is the structural guarantee the box fits; the visible overflow is now safe. */
+    overflow-x: visible; /* shear-free — the track-fit term bounds the ink, nothing to clip (CH-4) */
+    overflow-y: visible; /* the crown is NEVER sheared (E4 §3) */
+    @apply text-foreground;
+}
+@utility figure-slug-axis {
+    font-size: var(--type-figure-axis);
+    line-height: 1;
+}
+@utility figure-slug-card {
+    font-size: var(--type-figure-card);
+    line-height: 1.05;
+    max-inline-size: 14ch;
+    white-space: nowrap;
+}
+
+@utility text-hero {
+    font-family: var(--font-display);
+    @apply text-3xl md:text-4xl text-foreground;
+}
+/* §MEASURE — THE FLUID HEADING RECIPE (MB-1 · the section-heading seam). Routed HERE from the
+   retired styles/index.css root by L3-CSS (a `@utility` belongs in the recipe locus; the
+   `--measure` token it reads routes to tokens.css §spacing). ONE shared section-heading recipe
+   the DashboardBody.vue / DashboardEssay <h2> seam adopts (replacing the fixed text-hero step,
+   which has no fluid floor and no wrap policy — the source of every mobile heading CLIP). It is a
+   SUPERSET of text-hero (the Fraunces display family + the foreground ink), so it stands ALONE on
+   the heading. The clamp + balance-wrap is the whole fix:
+   - clamp(1.5rem, 4.2vw + 0.6rem, 2.6rem): the 1.5rem (24px) floor is calibrated so the LONGEST
+     title's longest line (~15ch @ 24px Fraunces ≈ 248px) fits inside the 358px measure with margin;
+     4.2vw scales; 2.6rem caps the desktop register (above the old md:text-4xl rung).
+   - text-wrap: balance — 2–3 BALANCED lines, never the one-word ladder.
+   - overflow-wrap: break-word — the long-word safety net (no glyph runs off the edge).
+   - max-inline-size: var(--measure) — never wider than the single column.
+   - hyphens: none — editorial, no mid-word hyphenation. */
+@utility text-section-fluid {
+    font-family: var(--font-display); /* Fraunces — the display register, = text-hero */
+    /* O-C1 — the h2 register reads the TOKEN-OWNED rung (tokens.css §A.LADDER), not an inline
+       clamp literal: cap holds the measured 41.6→42px, floor rises 24→30px so the phone h2 clears
+       the h3 rung beneath it (the monotone ladder, §A3). balance-wrap + break-word below keep the
+       taller floor from clipping the longest chapter title in the prose measure. */
+    font-size: var(--type-heading-section);
+    line-height: 1.12; /* room for descenders across 2–3 wrapped lines, no clip */
+    text-wrap: balance; /* 2–3 BALANCED lines — never the one-word ladder */
+    overflow-wrap: break-word; /* the long-word safety net */
+    max-inline-size: var(--measure); /* never wider than the single-column measure */
+    hyphens: none; /* editorial — no mid-word hyphens */
+    @apply text-foreground; /* the ink — = text-hero's text-foreground */
+}
+/* THE h3 SUB-HEADING rung (O-C1 · design-canon §A3, G3). The dashboards SKIP the middle rung
+   today (h3 count 0 on /speedtest) — the reading ladder jumps h2 (42px) straight to body (21px)
+   with no sub-heading register between. This recipe GIVES the ladder its real middle rung: the
+   Fraunces display face one step below text-section-fluid, bound to `--type-heading-sub` (26-28px),
+   floored so h3 ≥ 1.2×prose holds at all three breakpoints. A reading-flow beat that wants a
+   sub-heading binds `text-subheading`; it is INERT (Tailwind tree-shakes) until a beat adopts it —
+   the WG-D route waves seat it. It is DISTINCT from the small control/panel h3 titles (filter
+   headings, table sub-labels), which stay their own control register. */
+@utility text-subheading {
+    font-family: var(--font-display); /* Fraunces — the display register, one rung below h2 */
+    font-size: var(--type-heading-sub);
+    line-height: 1.15; /* tighter than prose, room for 2 wrapped lines */
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+    @apply text-foreground;
+}
+@utility text-section {
+    font-family: var(--font-display);
+    @apply text-2xl text-foreground;
+}
+@utility text-subsection {
+    font-family: var(--font-display);
+    @apply text-lg text-foreground;
+}
+@utility text-panel-title {
+    font-family: var(--font-display);
+    @apply text-base text-foreground;
+}
+/* O-C1 — the reading registers read the TOKEN-OWNED ladder (tokens.css §A.LADDER), not a
+   hardcoded Tailwind step: prose grows +1 √φ rung to 21px (was text-[1.125rem]=18px), lh
+   compensates DOWN to 1.5 (was leading-relaxed=1.625); caption grows +1 to 14-15px (was
+   text-xs=12px). The bump is token-owned so the whole platform rises from ONE locus. */
+@utility text-prose {
+    font-family: var(--font-serif);
+    font-size: var(--type-prose);
+    line-height: var(--type-prose-lh);
+    @apply text-foreground;
+}
+@utility text-prose-muted {
+    font-family: var(--font-serif);
+    @apply text-sm text-muted-foreground;
+}
+@utility text-caption {
+    font-family: var(--font-serif);
+    font-size: var(--type-caption);
+    @apply text-muted-foreground;
+}
+/* The eyebrow / kicker — the mono tracked-caps that open every plate (FD1 §2.2.1). It
+   carries THE single most recognizable shared tell: the red leading-rule (FD1 §2.2 /
+   §4), a --ncsu-red bar set in the margin before the caps. The rule is L3 brand
+   chrome (red on the margin, never a data fill — the three-red law, FD1 §4.1), so it
+   reads as the editorial "look here" stroke on the kicker of USF, SCI, ECF alike.
+
+   EM-RELATIVE (d-hierarchy IC-3): the rule's width + height + leading gap are em-relative,
+   not a fixed pixel stroke — so the leading-rule stays PROPORTIONATE across the eyebrow rung
+   it opens (on a mega FigureInitial beat it would read as a vestigial tick if pinned to
+   1.5rem/2px; em ties it to the eyebrow's own cap-measure). The rule declares its strata rung
+   via --attn-chrome (§HIERARCHY) — the editorial mark recedes by a TOKEN, never a per-surface
+   alpha guess; the recession keeps it the margin's "look here," never out-weighing its title. */
+@utility eyebrow {
+    /* GP5 (N.WG1 · arm F) — the doubled `@utility eyebrow` (base rule + the `::before`
+       leading-rule fork) MERGED into ONE block; two `@utility` of the same name is the
+       fork the one-root gate forbids (a second declaration silently shadowing the first). */
+    font-family: var(--font-mono);
+    font-size: var(--type-kicker); /* O-C1 — the kicker reads the token ladder: +1 √φ to 14px / 13px phone floor (was text-xs=12px) */
+    @apply relative inline-flex items-center uppercase tracking-wide text-muted-foreground;
+    &::before {
+        content: "";
+        display: inline-block;
+        width: 1.5em; /* tracks the eyebrow type (was a fixed 1.5rem stroke) */
+        height: 0.18em; /* tied to the cap-stroke, not a fixed 2px (IC-3) */
+        margin-right: 0.5em; /* the leading gap, em-relative (was 0.625rem) */
+        flex: none;
+        background: var(--ncsu-red, #cc0000);
+        opacity: var(
+            --attn-chrome
+        ); /* the editorial-mark recession rung (§HIERARCHY) */
+    }
+}
+/* THE PLAIN EYEBROW — the eyebrow TYPE without the red leading-rule (I-COMPOSE.orphan-dash).
+   The §2.2 eyebrow's red `::before` bar is the editorial "look here" stroke in the LEFT MARGIN of a
+   plate kicker. On a CENTERED figure caption (the decade crown unit, the cliff crown unit, the
+   fused NET label) that same bar floats to the LEFT of a centered word and reads as a confusing
+   standalone "— NET" / "— the surplus" orphan dash (no left margin to anchor it). A centered crown
+   unit wants the eyebrow's mono tracked-caps register but NOT the margin rule — so it binds this
+   plain variant: the same caps, no leading bar. The minus in a signed figure (−$324.1M) stays a
+   proper sign on the slug, untouched; this only retires the DECORATIVE rule that orphaned. */
+@utility eyebrow-plain {
+    font-family: var(--font-mono);
+    font-size: var(--type-kicker); /* O-C1 — same kicker token rung as `eyebrow` (14px / 13px phone floor) */
+    @apply inline-flex items-center uppercase tracking-wide text-muted-foreground;
+}
+@utility figure {
+    font-family: var(--font-mono);
+    font-feature-settings:
+        "tnum" 1,
+        "lnum" 1;
+}
+
+/* §2 — surface recipes — RETIRED (d-hierarchy IC-2 / DESIGN §4 — the CO-6 close).
+   The legacy `surface-floating` (rounded-lg · bg/85 · shadow-xl) and `surface-frosted`
+   (rounded-xl · bg/60 · no shadow) were TWO floating recipes that disagreed on radius AND
+   opacity AND elevation — so "floating" never read as ONE material. They carried ZERO
+   consumers (the GlassPanel five-rung ladder owns every frost value — C-AESTHETIC §4.4),
+   so the divergent pair dies WHOLE here rather than reconciling onto a phantom. The
+   radius-tier inverse-gate keeps a hand-rolled frosted surface from regrowing the split. */
+
+/* §3 — chart-host rungs (CQ5-3.3: the ad-hoc h-[NNNpx] hosts, named) + the touch floor. */
+@utility chart-h-sm {
+    @apply h-[340px] sm:h-[420px];
+}
+@utility chart-h-md {
+    @apply h-[380px] sm:h-[460px];
+}
+@utility chart-h-lg {
+    @apply h-[560px] sm:h-[640px];
+}
+@utility touch-target {
+    @apply min-h-[44px] min-w-[44px];
+}
+
+/* §4 — section scroll-anchor (every <section id>, so the dock offset clears the head). */
+@utility section-anchor {
+    scroll-margin-top: 2rem;
+}
+
+/* §4b/§4c — THE FIGURE-MOUNT + COVER-HERO CLS RESERVATIONS — RELOCATED (L3-CSS · Fork 12).
+   The two J-PERF figure-mount reservations (`#crossover` / `#speedtest-map` `contain-intrinsic-size`)
+   and the two J-CLOSE cover-hero box reservations (`.dashboard-hero__series` / `.speedtest-hero`
+   `min-block-size`) were CLS belonging to specific figures, parked in this platform-wide recipe
+   sheet keyed to specific section ids. L3 RELOCATED each onto the dashboard/component that OWNS it,
+   re-derived via intrinsic sizing on the figure's own scoped CSS (the SAME figure-accurate measured
+   values, so the CLS number does not move). The reject of the invented `.skeleton.vue` ceremony
+   stands — CLS is the figure's own first-paint contract, not a fabricated placeholder. The new homes:
+     · `#crossover`            (demand-mobile 1960 · desktop 1480)  → src/dashboards/demand/DashboardBody.vue
+                               (the body composes the essay's `#crossover` beat; reached via `.dashboard-body :deep(#crossover)`)
+     · `#speedtest-map`        (mobile 1050 · desktop 580)          → src/dashboards/speedtest/DashboardBody.vue (renders the `#speedtest-map` <section> directly)
+     · `.dashboard-hero__series` (phone 460 · desktop 128)          → src/platform/editorial/DashboardHero.vue (owns the audacious series; serves demand/sci/ecf)
+     · `.speedtest-hero`       (phone 680 · desktop 590)            → src/dashboards/speedtest/features/hero/SpeedtestHero.vue (owns the cover header)
+   The ⚠️ MEASURED LIMIT (the §4b carry) is unchanged: the dominant demand-mobile / sci-desktop /
+   ecf-desktop CLS is the cover-settle the §4c reserves address; the residual rides the i0-perf.gate.ts
+   CARRIED_RED_PERF desktop-CLS floor + the live i0-perf observable arm. */
+
+/* §5 — THE GHOST CHAPTER NUMERAL (D3.a / augment 14 — `ds2-medium` M9b). The Roman
+   chapter figure as recessive TYPE, set at the --type-display-hero rung (the platform's
+   largest editorial register, peak ~287px) in Fraunces with the WONK/SOFT editorial wink
+   — the same display voice the <FigureInitial> illuminated dropped-cap wears, so the two
+   read as one family (the filled, distribution-weighted KEY ↔ this quiet large-scale
+   WATERMARK twin). It is a manuscript watermark, the asymmetric beat's TYPOGRAPHIC
+   counterweight: D3.a owns the TYPE only (face · scale · ghost ink · the tight cap-box),
+   D3.d composes the POSITION (the alternating margin, the z-stacking behind the plate,
+   the wide-viewport-only gate) — so this recipe imposes NO margin / position / z-index,
+   keeping the numeral self-contained for D3.d to seat. The ghost ink is the --ghost-numeral-ink
+   token (a low-alpha foreground watermark that warms with the §D ground on both arms);
+   line-height:1 + the tabular Roman figures keep the glyph tight to its box. Decorative +
+   aria-hidden at the call site (it duplicates the FigureInitial's announced chapter label). */
+@utility text-ghost-numeral {
+    font-family: var(--font-display); /* Fraunces — one family with the dropped-cap */
+    font-variation-settings: var(--font-display-vs); /* the WONK/SOFT editorial wink */
+    font-feature-settings:
+        "tnum" 1,
+        "lnum" 1; /* tabular lining figures — the Roman glyph sits even */
+    font-size: var(--type-display-hero); /* the platform's largest rung (~287px peak) */
+    font-weight: 340; /* the display weight the FigureInitial glyph carries */
+    line-height: 1; /* the colossal glyph sits tight to its box */
+    letter-spacing: -0.02em;
+    color: var(--ghost-numeral-ink); /* the recessive watermark ink (warms per arm) */
+    user-select: none;
+    pointer-events: none; /* a watermark never intercepts the pointer */
+}
+
+/* §6 — THE AUDACIOUS MASTHEAD LOCKUP (J-PAPER ARM c · C47 · the §approach-3 two-register display
+   lockup + the grain-on-HEADLINE consume). The Visual Capitalist masthead move: a WHISPERED
+   script/italic eyebrow seated OVER a SHOUTED towering Fraunces serif — the audacity is the SCALE
+   contrast (a small optical eyebrow over a colossal cover-line) + the optical-size shift, NOT a
+   foreign script face (J-PAPER §open-q-3 — the eyebrow rides the shipped Fraunces ITALIC, so the
+   lockup reads as ONE coherent display family). J-PAPER owns the lockup LAYOUT/recipe (the two
+   registers + their seat); J-STORY owns the masthead PLACEMENT in the page flow (the divider/crown
+   frame, `J-STORY §1/§11`); J-HANDMARK §6 owns the grain-clip mark-register the headline rung SEATS
+   (`masthead-headline-grain` below CITES it, consumes the shipped `--paper-aged-texture`, does NOT
+   re-author the grain recipe). */
+
+/* THE MASTHEAD-EYEBROW rung — the whispered script/italic register that opens the lockup. The
+   shipped Fraunces ITALIC at a SMALL optical size (the audacity is the scale + optical contrast
+   against the towering serif beneath it, never a foreign script-face font load — J-PAPER §open-q-3
+   recommendation). It rides the display family (var(--font-display)) so the two registers read as
+   ONE voice; the WONK/SOFT display wink + the italic axis give the editorial script feel. Tracked a
+   hair open + muted so it reads as the masthead's quiet kicker, the cover-line's foil — NOT the §2.2
+   `eyebrow` mono tracked-caps with the red margin rule (that is a PLATE kicker; the masthead lockup's
+   eyebrow is a script/italic DISPLAY register, the magazine standfirst). */
+@utility masthead-eyebrow {
+    font-family: var(--font-display);
+    font-variation-settings: var(--font-display-vs);
+    font-style: italic; /* the Fraunces true italic — the script/italic eyebrow register */
+    font-size: clamp(1.05rem, 2.25vw, 1.6rem); /* small against the towering serif — the SCALE contrast */
+    font-weight: 380;
+    line-height: 1.1;
+    letter-spacing: 0.005em;
+    @apply text-muted-foreground; /* whispered — the cover-line shouts, the eyebrow murmurs */
+}
+
+/* THE MASTHEAD-HEADLINE rung — the SHOUTED towering Fraunces serif (the cover-line the eyebrow seats
+   over). Rides the SHIPPED display register: it carries the optical-display Fraunces voice (the same
+   face / WONK-SOFT wink / tight cover-line optics as text-headline, recipes.css:50) but at a TOWERING
+   masthead size (a fluid clamp that fills the cover's upper register the way a magazine sets its
+   wordmark, scaling with the viewport without clipping the phone measure). Weight 560 keeps the serif
+   title in the display register (the audacity is FACE + SCALE, not a heavier weight — design-typography
+   R5/T3). This is the LAYOUT rung; the GRAIN it wears is `masthead-headline-grain` below (J-HANDMARK §6,
+   composed, not re-authored). */
+@utility masthead-headline {
+    font-family: var(--font-display);
+    /* THE OPSZ-PIN (K-PAPER-COVER · ARM A) — the towering cover-line takes DISPLAY optics (opsz 120),
+       NOT the render-px-driven TEXT optics the inherited `:root font-optical-sizing: auto` (fonts.css)
+       would self-tune at the clamp (44->88px → opsz ~44-88). `--font-masthead-vs` is opsz-ONLY by the
+       verified subset (the WONK/SOFT wink retires here — both axes are absent, a silent no-op); the
+       `font-optical-sizing: none` below FORCES the pin (without it the inherited `auto` re-drives opsz
+       by render-px, voiding the pin). Only this TOWERING rung pins opsz — the masthead-eyebrow stays
+       on --font-display-vs (a SMALL optical register where render-px opsz is the honest choice). */
+    font-variation-settings: var(--font-masthead-vs);
+    font-optical-sizing: none;
+    font-size: clamp(2.75rem, 8vw, 5.5rem); /* the TOWERING cover-line — fluid, phone-safe (UNCHANGED — WCAG 1.4.4) */
+    font-weight: 560;
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    @apply text-foreground; /* THE SOLID-INK BASE — the fallback fill (see the grain recipe) */
+}
+
+/* THE GRAIN-ON-HEADLINE consume (J-HANDMARK §6 — `J-HANDMARK-HEADLINE-GRAIN`, the grain-clip
+   mark-register; J-PAPER's masthead lockup SEATS it, does NOT re-author it). The shipped aged
+   paper-grain texture (`--paper-aged-texture` — glass-ui scale-paper.css's 5-octave feTurbulence
+   fractalNoise; the J-PAPER/J-GLASS-ROOT paper chassis ships it) is clipped to the HEADLINE glyph
+   fill via `background-clip:text`, so the towering display serif wears the paper's tooth WITHIN its
+   letterforms (the audacious masthead grain). The three hard fences (J-HANDMARK §6):
+
+   (1) HEADLINE-ONLY — this recipe resolves on the masthead/headline display rung ONLY, NEVER on
+       prose (the §1 text-prose / text-prose-muted body recipes keep their SOLID-INK fill; the grain
+       is a SPARING audacious display flourish, not a uniform texture — J-PAPER §open-q-4).
+   (2) FALLBACK-FIRST — the `masthead-headline` rung above already paints the glyphs in SOLID INK
+       (`@apply text-foreground`). This recipe LAYERS the grain ON TOP via `background-clip:text`;
+       where `background-clip:text` is unsupported the `@supports` fence is FALSE, the rule is skipped
+       ENTIRELY, and the glyph keeps its solid-ink fill (NEVER an empty/transparent glyph). The grain
+       is composited OVER the espresso ink (the texture is a low-alpha tooth, the ink reads through),
+       so even WHERE supported the headline never goes hollow.
+   (3) STATIC/CSS RASTER — `--paper-aged-texture` is a STATIC data-URI (no live shader, perf-safe —
+       the `J-HANDMARK §3` motion-budget discipline; a grain-clip is a static raster, never a boil). */
+@utility masthead-headline-grain {
+    @supports (background-clip: text) or (-webkit-background-clip: text) {
+        /* layer the espresso ink UNDER the aged grain so the glyph reads as inked-paper, never hollow:
+           the foreground ink is the base, the grain texture sits over it, BOTH clip to the glyph. */
+        background-image: var(--paper-aged-texture),
+            linear-gradient(var(--foreground), var(--foreground));
+        background-size: cover, cover;
+        background-position: center, center;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent; /* let the clipped bg paint the glyph (ink base shows through) */
+        color: transparent;
+    }
+}
+
+/* recipes.css — the grain-only paper FELT (K-PAPER-GRAIN, P5). CONSUMES the shipped aged
+   stock `--paper-aged-texture` (glass-ui scale-paper.css:132 — a 5-octave fractalNoise,
+   opacity 0.06 BAKED) through a `::after` overlay, exactly as the §12 comment licenses
+   (scale-paper.css:124-130: "layer a wrapper element with its own opacity:/mix-blend-mode:
+   atop"). ZERO inline feTurbulence (no second noise authored); ZERO `filter` (a filter here
+   would clip a descendant glass plate's backdrop sample — the k-paper-no-filter hazard).
+   SIBLING/OVERLAY law: this is the PAGE-GROUND felt, a layer BENEATH the glass plates — it
+   MUST NOT wrap a `.plate` (ChartFrame.vue:530 `isolation:isolate` backdrop-root). The
+   @utility is INERT on declaration (recipes.css:6 — Tailwind v4 tree-shakes an unconsumed
+   @utility to zero CSS) until a page-host wears it (the fenced :4319 seating signable). */
+@utility paper-aged-surface {
+    position: relative;        /* the overlay's containing block — NOT `isolation`, NOT `filter` */
+
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 0;            /* the felt sits at the ground; content/plates stack above */
+        pointer-events: none;  /* the felt never intercepts a hit (the plates own interaction) */
+        background-image: var(--paper-aged-texture);  /* the SHIPPED token — the ONE noise source */
+        background-repeat: repeat;                     /* the tile lattices the page */
+        /* THE STATIC FIX (K-PAPER-GRAIN, P5): the shipped `--paper-aged-texture` is a 200×200
+           baseFrequency=0.5 fractalNoise — ~2px features that, painted at the native tile size,
+           lattice the page PER-PIXEL = literal gray TV-static. UPSCALE the tile so each noise
+           feature spreads into a soft paper-tooth speckle (≈3× the native cell) rather than a
+           pixel-grid hiss. The exact px is the felt dial of record. */
+        background-size: 560px 560px;
+        /* ELEMENT-OPACITY DAMP: the token bakes opacity 0.06 INTO the SVG rect, but multiplied
+           page-wide that still reads loud; a ~0.4 element opacity pulls the felt to the
+           perceptual floor (paper, not noise) without authoring a second alpha into the token. */
+        opacity: 0.4;
+        mix-blend-mode: multiply;  /* light/cream ground: the tooth DARKENS like ink into stock */
+    }
+
+    /* DARK: the same noise as a gentle fiber sheen — `screen` (NOT `soft-light`, which collapses
+       to IDENTITY on the near-black ink pole, the self-cancelling defect glass-ui's own paper.css
+       avoids by using `screen` for the dark grain arm). Fiber catches light off the ink → lighten. */
+    .dark &::after {
+        mix-blend-mode: screen;
+    }
+
+    /* A11Y REVERT 1 — reduced transparency: drop the translucent flourish (zero info loss;
+       the felt is the `--attn-atmosphere` 0.06 perceptual floor, tokens.css:790). */
+    @media (prefers-reduced-transparency: reduce) {
+        &::after {
+            opacity: 0;
+        }
+    }
+    /* A11Y REVERT 2 — forced colors: the system paints its own canvas; an SVG-noise overlay
+       is meaningless decoration there and must vacate (WCAG 1.4.3/1.4.11 carve-out). */
+    @media (forced-colors: active) {
+        &::after {
+            display: none;
+        }
+    }
+}

@@ -1,0 +1,137 @@
+/* platform/design/map-draw.css — the per-feature MAP DRAW-ON (C.W4.3 · map-animation-dark
+   §2-§4). The choropleth outline draws as a pen stroke, then its fill blooms up from the
+   paper; the point field stipples each dot up — feature by feature, extremes-first, the
+   argument inking itself. The PRODUCER (the --rank / --len / .geo-shape--draw markup) lands
+   in this wave; the SCROLL-CLOCK bind (the native view() timeline arming) is W5's engine
+   adoption. Two consumers, ONE rank order, two clocks (load Sequence · scroll view()).
+
+   THE THREE LAWS this locus obeys (the motion tenets, made concrete — C-FOLD-MAD-7):
+   1. COMPOSITOR-ONLY. Only fill-opacity + stroke-dashoffset animate — never r / d / width
+      / layout. No will-change (a bound view()/Sequence segment promotes its own layer).
+   2. ONE RANK, two clocks. --rank is the extremes-first order, PRODUCER-TIME and FROZEN
+      (hover-independent — a hover never re-keys it, or 2374 animations re-arm). The native
+      path expresses the stagger as an animation-range START offset (a per-rank slice of the
+      entry window — a progress timeline ignores a time delay); the @supports fallback
+      expresses the SAME order as an animation-delay (a time offset).
+   3. ONE outer PRM fence. Every @keyframes here sits under
+      @media (prefers-reduced-motion: no-preference), so under reduced motion the terminal
+      state renders instantly — the map is simply DRAWN (fill-opacity:1, dashoffset:0), full
+      information parity, never a flat void. */
+
+/* The beat <section> names its own view-timeline; the features inside scrub off THEIR
+   plate's view-progress, not the document's — so the data draws AS the plate settles into
+   the viewport. The W5 engine adoption writes [data-reveal-beat] onto the host sections;
+   this declares the contract so the producer markup has a clock to find. */
+[data-reveal-beat] {
+    view-timeline-name: --beat-tl;
+    view-timeline-axis: block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    /* ── The NATIVE path — keyed to the beat's named view() timeline, the stagger an
+       animation-range START offset (NOT a time delay; a progress timeline ignores time). ── */
+    @supports (animation-timeline: view()) and (animation-range: entry) {
+        /* THE MARK DRAW-ON WIPE (`clock="scroll"` HandMark / AnimatedRule / WindowArcBeat) — the
+           clip-path inset wipe the hand-mark scroll-scrub binds (`animation: crayon-wipe …`). It is
+           DEFINED HERE, in this atlas-owned, index-imported, UNSCOPED sheet (the sibling of
+           geo-draw/dot-draw), so the literal `crayon-wipe` reference resolves document-wide for every
+           scoped binding site — `@keyframes` are global, and Vue leaves the `animation:` name literal
+           when the SFC does not also DEFINE the frames. (It is NOT a glass-ui global: 4.2.0 ships a
+           `crayon` brush KIND but no `crayon-wipe` @keyframes — the prior "shipped in animations.css"
+           prose was false.) The reveal clips the SVG from the right (un-drawn) to a full draw, so the
+           mark LOOKS drawn as the figure scrolls into view; `clip-path` is compositor-eligible and
+           filter-STABLE (the seeded grain filter rasters ONCE, untouched per frame). The PRM/@supports
+           fences are the SAME structural pair every binding site carries: under reduced motion (or a
+           non-supporting engine) the wipe never attaches and the mark rests at its terminal DRAWN
+           state (`inset(0 0 0 0)` = the `to` frame). */
+        @keyframes crayon-wipe {
+            from {
+                clip-path: inset(0 100% 0 0);
+            }
+            to {
+                clip-path: inset(0 0 0 0);
+            }
+        }
+
+        /* CHOROPLETH — the outline draws first (stroke-dashoffset len → 0), the fill blooms
+           in behind it (fill-opacity 0 → 1). Reads as the map being inked feature-by-feature. */
+        @keyframes geo-draw {
+            from {
+                fill-opacity: 0;
+                stroke-dashoffset: var(--len, 0);
+            }
+            to {
+                fill-opacity: 1;
+                stroke-dashoffset: 0;
+            }
+        }
+        .geo-shape--draw {
+            stroke-dasharray: var(--len, 0); /* the outline draw needs the dash set */
+            animation: geo-draw auto linear both;
+            /* BIND to the beat's named view() timeline (C.W5.4). Reference it LITERALLY (a
+               `<dashed-ident>`, NOT `var(--beat-tl)`): `view-timeline-name: --beat-tl` (declared
+               on the [data-reveal-beat] host above) mints a timeline NAME, not a
+               custom-property value — so `var(--beat-tl)` substitutes to nothing and
+               `animation-timeline` silently falls back to `auto` (the draw never arms). The
+               literal resolves the named timeline (the SAME fix scroll-driven.css carries for
+               the reveal — one vocabulary, one writer of the host axis). */
+            animation-timeline: --beat-tl;
+            /* extremes-first: rank 0 (the most opinionated feature) starts first. ~0.4% of the
+               entry phase per rank, so a ≤100-feature map finishes inside the entry-anchored
+               window (F6 §2.4 recut — the draw lands at `entry 24%`, the v-only entry span). */
+            animation-range: calc(entry 6% + var(--rank, 0) * 0.4%) entry 24%;
+        }
+
+        /* POINT FIELD — fill-opacity only (a dot has no meaningful outline draw). Dense
+           register (entry 4% → entry 20%, the F6 §2.4 entry-anchored span); a tiny per-rank
+           slice fits 2374 dots in-window. */
+        @keyframes dot-draw {
+            from {
+                fill-opacity: 0;
+            }
+            to {
+                fill-opacity: var(--dot-op, 0.5);
+            }
+        }
+        .ink-dot--draw {
+            animation: dot-draw auto linear both;
+            /* The literal named timeline, NOT `var(--beat-tl)` (C.W5.4 bind — see geo-draw). */
+            animation-timeline: --beat-tl;
+            animation-range: calc(entry 4% + var(--rank, 0) * 0.02%) entry 20%;
+        }
+    }
+
+    /* ── The FALLBACK — no view() support (Firefox today, jsdom, SSR). The SAME rank order,
+       now a TIME delay armed once when the beat enters ([data-inview], one IntersectionObserver
+       edge the W5 reveal fallback owns — never per frame). Fires once, no reverse. This is the
+       ONLY place animation-delay appears (the charge's `calc(var(--rank)*Nms)` form). ── */
+    @supports not ((animation-timeline: view()) and (animation-range: entry)) {
+        @keyframes geo-draw-fb {
+            from {
+                fill-opacity: 0;
+                stroke-dashoffset: var(--len, 0);
+            }
+            to {
+                fill-opacity: 1;
+                stroke-dashoffset: 0;
+            }
+        }
+        @keyframes dot-draw-fb {
+            from {
+                fill-opacity: 0;
+            }
+            to {
+                fill-opacity: var(--dot-op, 0.5);
+            }
+        }
+        .geo-shape--draw[data-inview] {
+            stroke-dasharray: var(--len, 0);
+            animation: geo-draw-fb 600ms ease both;
+            animation-delay: calc(var(--rank, 0) * 12ms);
+        }
+        .ink-dot--draw[data-inview] {
+            animation: dot-draw-fb 500ms ease both;
+            animation-delay: calc(var(--rank, 0) * 3ms);
+        }
+    }
+}

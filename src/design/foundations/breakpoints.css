@@ -1,0 +1,82 @@
+/* platform/design/breakpoints.css — THE ONE DRY HOME FOR THE §V MOBILE REGISTER
+   (J-MOBILE ARM-a · C8 · i0-mobile-breakpoint-dry).
+
+   ───────────────────────────────────────────────────────────────────────────────
+   THE BUILD-CONFIG DECISION, MADE ONCE (C8's open adjudication — J-MOBILE.md §4):
+   ───────────────────────────────────────────────────────────────────────────────
+   The project ships `@tailwindcss/vite` (Tailwind v4, vite.config.ts) and has NO
+   `postcss.config` and NO `postcss-custom-media` dependency. `@custom-media` is a
+   PostCSS-only feature — Tailwind v4's engine does NOT resolve bare `@custom-media`
+   at-rules, and Vue SFC `<style>` blocks are processed in ISOLATION (they never see
+   this file's `@theme`/`@custom-media` context), so neither `theme(--breakpoint-*)`
+   NOR a stray `@custom-media` resolves inside a scoped style.
+
+   J-MOBILE.md §4 framed two lawful homes: (A) `postcss-custom-media` (one dev dep +
+   a PostCSS pass), or (B) migrate every `@media (max-width: 767.98px)` block to a
+   `max-md:` utility (the built-in `md` = 768px ≈ 767.98 — a VALUE SHIFT, and a
+   template rewrite of multi-rule scoped blocks: not a behavior-preserving re-point).
+
+   THE DECISION (a synthesis of A, ZERO new dep): a tiny LOCAL zero-dep PostCSS
+   plugin — `vite/postcss-custom-media.mjs`, registered in `postcss.config.mjs` —
+   that resolves the `@custom-media` at-rules DECLARED BELOW by textual substitution
+   across EVERY CSS module (SFC scoped styles included). This mirrors the established
+   local-plugin precedent (`vite/critical-css.mjs`, the inline `apiSnapshotPreview` —
+   "ZERO new heavy dep"). It keeps the `@media (--phone)` author-surface READABLE,
+   preserves EVERY breakpoint VALUE EXACTLY (no 767.98→768 drift), and single-sources
+   the seam HERE. The JS mirror is `breakpoints.ts` (the one home for the `767.98`
+   constant); the 8 `useMediaQuery` probes consolidate behind `useMobileRegister()`.
+
+   This file + `breakpoints.ts` are the ONLY two allow-listed homes for the breakpoint
+   literals (`i0-mobile.gate.ts` BREAKPOINT_ALLOWLIST). Every other src/ file references
+   the seam through `@media (--phone)` / `@container … (--compact)` / `var(--bp-*)` /
+   `useMobileRegister()` — never a bare literal.
+
+   ───────────────────────────────────────────────────────────────────────────────
+   THE SIX LIVE SEAMS (the J-FEEDBACK-2 §4 full census — all behavior-PRESERVING):
+   ───────────────────────────────────────────────────────────────────────────────
+     --phone    767.98px  the primary phone register (the ×18 product sites)
+     --compact  640px     the dense-grid / fund-ledger @container seam
+     --narrow   430px     the sub-phone narrow-sheet seam (ReadoutSheet)
+     --touch    coarse     the coarse-pointer reach register
+     --no-hover  none      the hover-none reveal-path register
+     --deck     700px     the gallery 3-up seam (min-width — J-STORY re-cuts the VALUE)
+   plus the property-form seams that custom-media CANNOT carry (a media FEATURE can't
+   read a custom property, but a `max-width` PROPERTY can) — the `--bp-*` token row:
+     --bp-read    1024px   the route-body `max-w-5xl` content cap (J-STORY re-bases)
+     --bp-gallery 1080px   the gallery max-width  (J-STORY widens →~1320)
+   The `--bp-read` / `--bp-deck` / `--bp-gallery` desktop+gallery VALUES are RE-BASED
+   later by J-DOCK (the reserve) + J-STORY (the asymmetric measure / gallery widen) —
+   J-MOBILE owns the token HOME + the gate FENCE here, not the desktop measure. */
+
+/* THE CONDITION-FORM SEAMS — resolved by vite/postcss-custom-media.mjs into the
+   EXACT same-value `@media`/`@container` condition. Authored ONCE; consumed as
+   `@media (--phone)` etc. across every scoped style. */
+@custom-media --phone (max-width: 767.98px);
+@custom-media --compact (max-width: 640px);
+@custom-media --narrow (max-width: 430px);
+@custom-media --touch (pointer: coarse);
+@custom-media --no-hover (hover: none);
+@custom-media --deck (min-width: 700px);
+
+/* THE TAILWIND VARIANT MIRROR — registering the seams in @theme makes Tailwind emit
+   `phone:` / `compact:` / `narrow:` variants at the EXACT value for any template
+   utility that wants them (the `max-w-5xl` → `max-w-[var(--bp-read)]` re-point reads
+   the property token below; these are the variant generators, not consumers). */
+@theme {
+    --breakpoint-phone: 767.98px;
+    --breakpoint-compact: 640px;
+    --breakpoint-narrow: 430px;
+}
+
+/* THE PROPERTY-FORM TOKENS — for the `max-width:`/`min-width:` PROPERTY seams a media
+   feature cannot carry, and the single-sourced safe-area floor (§approach-4: the ONE
+   `max()` retiring the per-surface env(safe-area-inset-bottom) re-derivations). The
+   `--bp-read`/`--bp-deck`/`--bp-gallery` VALUES are J-DOCK/J-STORY's to RE-BASE. */
+:root {
+    --bp-phone: 767.98px; /* the primary phone register (property form) */
+    --bp-compact: 640px; /* the dense-grid seam (property form) */
+    --bp-narrow: 430px; /* the sub-phone narrow-sheet seam (property form) */
+    --bp-read: 1024px; /* the route-body content cap (the `max-w-5xl` re-point; J-STORY re-bases) */
+    --bp-deck: 700px; /* the gallery 3-up seam (property form; J-STORY re-cuts) */
+    --bp-gallery: 1320px; /* the gallery max-width (J-STORY §11 widen 1080→1320 — the card grid breathes; the 360px/25% dead gutter at 1440 reclaimed) */
+}

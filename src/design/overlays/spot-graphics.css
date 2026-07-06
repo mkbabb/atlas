@@ -1,0 +1,137 @@
+/* platform/design/spot-graphics.css — THE INJECTED SPOT-GRAPHICS VOCABULARY (J-PAPER arm b,
+   §approach-2 · C47 · the genuinely-NEW delta, zero hits across J).
+
+   THE VC MONEY-STACK ENERGY, made perf-safe. The Visual Capitalist north-star gives a figure
+   its VISUAL pulse with an illustrative spot-graphic — a stacked-coins motif, a building
+   silhouette, a wire spool — that reads as the column's character WITHOUT crowding the data.
+   This file authors that illustrative vocabulary as STATIC CSS marks: NO live shader, NO canvas
+   animation, NO @keyframes (the `J-HANDMARK §3` motion-budget discipline holds — a spot-graphic
+   is a static painted mark, not a boil). The whole point is FELT not seen: the mark energizes
+   the figure's edge, subordinate to the data, never a hero illustration.
+
+   THE PROPORTION BUDGET (the load-bearing relation, j0-paper-spot-graphic-proportion). Every
+   mark is bounded by `--spot-graphic-max` — a fraction of its column's inline track (arm a mints
+   the token in tokens.css; we CONSUME it here, with a fallback so the vocabulary paints
+   parallel-safely until the token lands). The mark sizes `min(--spot-graphic-max-of-its-track,
+   a rem ceiling)` so it stays subordinate at every width and never blows past its budget on a
+   wide flank — the size-relation the gate asserts, not a magic px.
+
+   THE NO-GRAY LAW (j0-paper-no-gray-residual — the cool-band check on the chrome/ground delta
+   surfaces). The spot-graphics are a NEW design-delta surface, so they must introduce ZERO new
+   cool-gray (the `i0-theme.gate.ts:47-56` cool-250/260 hue band 235-275° stays clear). Every
+   ink here is drawn OFF the warm-paper register — the espresso `--foreground`, the warm
+   `--muted-foreground`, or the consuming route's own accent token mixed toward transparent — so
+   the marks warm with the §D ground in lockstep on both theme arms (espresso-on-paper light ↔
+   ivory-on-espresso dark) and NO gray default is ever authored. The marks ride at low alpha (a
+   FELT visual pulse, never a competing figure), so they sit below the AA text floor BY DESIGN —
+   they are decorative, aria-hidden manuscript marks, NOT body text.
+
+   USAGE. A narrative column seats a mark by composing a `spot-graphic` base utility with ONE
+   motif modifier on an `aria-hidden` decorative element at the figure's edge, scoping the ink to
+   the route's accent via the `--spot-ink` custom property (defaulting to the espresso ink). The
+   element is absolutely positioned within its `position:relative` figure host so it occupies its
+   budgeted edge without displacing the data. INERT contract (recipes.css:6): an unconsumed
+   @utility tree-shakes to ZERO CSS. */
+
+/* ── THE PROPORTION-BUDGET SEAM ───────────────────────────────────────────────────────────────
+   Arm a OWNS `--spot-graphic-max` — minted at `:root` in tokens.css (the named proportion of the
+   column the mark may occupy). This file does NOT mint or @property-register it (that is arm a's
+   token ownership); it CONSUMES it via `var(--spot-graphic-max, 0.18)` so arm a's root value
+   wins and the 0.18 fallback (a conservative 18% of the track — FELT not seen) only applies
+   parallel-safely until/if the token is absent. */
+
+/* The ink seam — a consumer scopes `--spot-ink` to the route accent (the USF receiver-teal, the
+   SCI green, …); it DEFAULTS to the warm espresso `--foreground` so an unscoped mark still reads
+   on the warm register (never a cool-gray default — the no-gray law). The alpha the marks paint
+   AT is held in `--spot-ink-alpha` (the FELT register — low, so the mark whispers). */
+@utility spot-graphic {
+    /* the ink seam (parallel-safe fallbacks). The BUDGET token `--spot-graphic-max` is arm a's —
+       minted at `:root` in tokens.css (0.22); we do NOT redeclare it here (that would SHADOW the
+       root token), we CONSUME it via `var(--spot-graphic-max, 0.18)` in the box calc below, so
+       arm a's root value wins and the 0.18 fallback applies only until/if the token is absent. */
+    --spot-ink: var(--foreground);
+    --spot-ink-alpha: 0.1;
+
+    /* the budgeted box — `min(budget-of-track, a rem ceiling)`: the mark scales with its column's
+       inline track via `cqi` BUT can never exceed the rem ceiling on a wide flank, so it stays a
+       FELT edge-pulse at every width (the size-relation the gate asserts), bounded by the arm-a
+       `--spot-graphic-max` proportion. The host declares the container; the mark reads its track. */
+    inline-size: min(calc(var(--spot-graphic-max, 0.18) * 100cqi), 9rem);
+    block-size: min(calc(var(--spot-graphic-max, 0.18) * 100cqi), 9rem);
+    aspect-ratio: 1;
+
+    /* the FELT placement — absolutely positioned at the figure's edge so it occupies its budgeted
+       corner WITHOUT displacing the data; the host is `position: relative`. */
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    /* the static paint sits BELOW the data ink (a recessive edge-pulse, never over the figure). */
+    z-index: 0;
+    opacity: var(--spot-ink-alpha);
+    /* belt-and-suspenders motion fence — a spot-graphic is STATIC by construction (no @keyframes
+       authored here), but if a future consumer wraps it in a transition the PRM arm stills it. */
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* ── MOTIF 1 · THE MONEY-STACK (the VC signature — stacked ledger strata) ─────────────────────
+   The Visual Capitalist money-stack: a column of stacked coin/ledger strata that reads as
+   "dollars accumulated." Painted STATICALLY with a `repeating-linear-gradient` (the stacked
+   strata — alternating ink band / paper gap, the felt registry rule) + a single soft `radial-
+   gradient` glint at the top-left (the struck-coin specular catch, mirroring the §SILVER
+   `--silver-specular` register). NO animation — the stack is a static engraved mark. The strata
+   warm off `--spot-ink` so the whole motif sits on the §D warm spine (no cool-gray). */
+@utility spot-graphic--money-stack {
+    background-image:
+        /* the struck-coin specular glint (the top-left catch-light) */
+        radial-gradient(
+            ellipse 60% 40% at 28% 22%,
+            color-mix(in oklab, var(--spot-ink) 26%, transparent),
+            transparent 70%
+        ),
+        /* the stacked strata — alternating ink rule / paper gap, the ledger-coin stack */
+        repeating-linear-gradient(
+            to bottom,
+            color-mix(in oklab, var(--spot-ink) 90%, transparent) 0,
+            color-mix(in oklab, var(--spot-ink) 90%, transparent) 0.5cqi,
+            transparent 0.5cqi,
+            transparent 2.4cqi
+        );
+    /* the stack reads as a rounded coin-column — the strata clipped to an elliptical coin mass */
+    -webkit-mask-image: radial-gradient(
+        ellipse 46% 50% at 50% 60%,
+        #000 62%,
+        transparent 78%
+    );
+    mask-image: radial-gradient(
+        ellipse 46% 50% at 50% 60%,
+        #000 62%,
+        transparent 78%
+    );
+}
+
+/* ── MOTIF 2 · THE LEDGER-RULE (the registry strata — a felt accounting margin) ───────────────
+   The accountant's column rule: a tight set of warm ruled lines fading off into the margin (the
+   "ledger paper" register the atlas already speaks). A static `repeating-linear-gradient` of
+   warm hairlines masked to fade toward the edge — the felt margin-of-the-ledger pulse. The
+   companion to the money-stack: where the stack says "dollars," the ledger-rule says "the
+   account." Static, no animation, warm ink only. */
+@utility spot-graphic--ledger-rule {
+    background-image: repeating-linear-gradient(
+        to bottom,
+        color-mix(in oklab, var(--spot-ink) 80%, transparent) 0,
+        color-mix(in oklab, var(--spot-ink) 80%, transparent) 0.4cqi,
+        transparent 0.4cqi,
+        transparent 2cqi
+    );
+    /* the ruled lines fade off into the margin — the felt edge, never a hard block */
+    -webkit-mask-image: linear-gradient(
+        to right,
+        #000 0,
+        transparent 100%
+    );
+    mask-image: linear-gradient(to right, #000 0, transparent 100%);
+    aspect-ratio: auto;
+}
