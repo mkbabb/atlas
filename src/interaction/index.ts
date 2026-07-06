@@ -62,6 +62,20 @@ export type {
     VizContextHubDeps,
 } from "@/platform/context/hub";
 
+// ── v1.0.2 (O-B10 re-cut) — THE HUB PER-VIZ READER, UNDER AN HONEST DISTINCT NAME ──────────────
+// v1.0.1 re-exported the hub PROVIDER surface (above) but had to OMIT the hub's own per-viz reader,
+// `useVizContext(vizId, opts)`, because a bare re-export collides with the O-A6 MOTION `useVizContext`
+// (`vizId, host, sources`) exported at the top of this barrel — two DISTINCT composables that shared a
+// name at distinct source paths. The two are NOT complements to fold (different signatures, different
+// return surfaces — the motion one feeds `useMotionDirector` with the six `MotionDrivers` edges; the
+// hub one is the ONE injected plate context: `.route/.accent/.colorKind/.palette/.selection/.readout/
+// .filter/.readiness/.isActive/.isExpanded`). So the hub reader lands here under a NON-colliding name,
+// `useVizHubContext` — additive (v1.0.1 consumers still resolve every prior symbol; the bare
+// `useVizContext` name stays the motion export). A plate reading the N-era hub context imports
+// `useVizHubContext` from `@mkbabb/atlas/interaction` (its silent SSR/gallery half, `useOptionalVizContext`,
+// already lands unaliased above). RankedStrip / RainbowStack / ConsultantsRankedBar re-point to this.
+export { useVizContext as useVizHubContext } from "@/platform/context/hub";
+
 // The readiness contract the hub folds each source phase through (`SourcePhase` — a route store's
 // per-source `{loading, error, resolved}` shape it registers via `hub.registerSource`).
 export type { Readiness, SourcePhase } from "@/platform/context/readiness";

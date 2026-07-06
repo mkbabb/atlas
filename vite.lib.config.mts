@@ -146,7 +146,17 @@ export default defineConfig({
                 preserveModules: true,
                 preserveModulesRoot: resolve(ROOT, "src"),
                 entryFileNames: "[name].js",
-                assetFileNames: "assets/[name][extname]",
+                // The single `cssCodeSplit:false` SFC aggregate MUST land at the documented
+                // `assets/core.css` (build-styles.mjs folds THAT path into `@layer atlas.components`).
+                // Vite otherwise names the lib CSS after the package (`atlas.css`), so the fold silently
+                // missed the 68 SFC <style> blocks (232 KB of scoped component CSS never reached
+                // dist/style.css → consumer plates rendered unstyled). Pin the CSS name so the stated
+                // core.css contract holds; every other asset keeps its `[name]` (the worker rides its
+                // own hashed worker-pipeline naming, untouched by this asset rule).
+                assetFileNames: (info): string => {
+                    const name = info.names?.[0] ?? info.name ?? "";
+                    return name.endsWith(".css") ? "assets/core.css" : "assets/[name][extname]";
+                },
             },
         },
     },
