@@ -10,9 +10,10 @@
 // lands the two leaves whose upstream it carries: `useYearScope` (→ `composables/useUrlState`) and
 // `routeUniverse` (→ `stores/useSelection` + `charts/selection-contract`). Two members still hold at
 // the monorepo source, DEFERRED (the library must stay green; NO dangling imports):
-//   · `minimapMark.ts`     → `charts/geo/` (a chart mark, not a feed concern)                    ==> O-B4R.
 //   · `useFilteredRows.ts` → `charts/lib/filter-algebra` (O-B4R) + `useFilterDimensions` (O-B5R) +
 //                            `useViewParams` (O-B4R via the stores SCC)                          ==> O-B4R/B5R.
+// (`minimapMark.ts` was a data-plane leaf until O-A12 FOLDED it into `charts/glyph/resolveEntityIcon`
+//  — the grain-aware resolver is a chart mark, so it homes in the glyph family, not the feed layer.)
 
 // — the feed contract + loader (+ the data-saver seam the loader reads) —
 export * from "./contract";
@@ -35,6 +36,7 @@ export * from "./multiYear";
 export * from "./useYearScope";
 export * from "./routeUniverse";
 
-// — O-B4R (the SCC closure): the filtered-rows selector + the minimap mark leaf —
+// — O-B4R (the SCC closure): the filtered-rows selector —
+//   (`minimapMark` FOLDED into `charts/glyph/resolveEntityIcon` at O-A12 — the grain-aware resolver
+//   generalized from 2 to 4 variants; the mini-map now consumes `resolveEntityIconForSelection`.)
 export * from "./useFilteredRows";
-export * from "./minimapMark";
