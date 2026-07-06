@@ -1,0 +1,300 @@
+/* The dock is the CONSUMED GlassDock composite (C3-2) — glass-ui paints the floating plate, the
+   rim-light, the vertical layout, and the position:fixed float. We carve the INNER register: the
+   plate geometry, the liquid-glass surface tokens, and the #default 3-band column layout. The
+   per-band INNER skins (crest / stepper / rungs / foot) moved WITH their sub-components (K-H-ARCH).
+
+   ── THE :deep REACH (I6-FIX) ────────────────────────────────────────────────────────
+   The 4.0 BB cut wraps the dock in a `.glass-dock-frame` (the rail-chip escape). Vue's scoped
+   `data-v` auto-falls-through to THAT frame root, while glass-ui forwards our `class="usf-dock"` to
+   the INNER dock box — which therefore carries NO `data-v`, so a plain `.usf-dock {…}` scoped rule
+   no longer matches. We reach the box through the frame's `data-v` with `:deep(.usf-dock)`. */
+:deep(.usf-dock) {
+    /* the floating pill width + the off-margin inset (the "this floats" signal) — the --cp-*
+       register C3.1 carved. The GlassDock rail consumes these as its plate geometry. */
+    --dock-w: var(--cp-dock-w, 4.5rem);
+    /* CP-9 / C3-4 (the MEASURED ≥44px hitbox). `size="dock"` resolves the toggle box to
+       `var(--dock-control-size, var(--size-icon-btn))`; glass-ui 3.9.0 leaves `--dock-control-size`
+       UNSET, so it falls back to `--size-icon-btn` = 2.5rem = 40px — BELOW WCAG 2.5.5's 44px. We
+       assign the dock-control register to 2.75rem (44px) so the dock toggle measures ≥44px. */
+    --dock-control-size: 2.75rem;
+    /* E2 (audit-e/e-dock R1) · the DockSeparator width — pinned to a FIXED 1.5rem (24px): a centred
+       50% of the 48px collapsed rail (and a calm 33% of the 72px expanded rail, still ≤60%) — so the
+       half-dock hairline holds in BOTH register states. */
+    --dock-separator-height: 1.5rem;
+    /* D2.a (the hug + governor) · the SHORT-VIEWPORT cap — the inset-aware anchor the rail contract
+       invites consumers to set, so the plate never overruns the screen and the theme-toggle foot
+       stays reachable via internal scroll at ≤700px tall. */
+    --dock-max-block-size: calc(100dvh - 2 * var(--cp-inset, 1.25rem));
+    /* THE RAIL WIDTH — one fixed column width (the Roman rungs + the foot controls at their
+       label-bearing room). */
+    inline-size: var(--cp-dock-w, 4.5rem);
+    /* THE LEFT-MARGIN ANCHOR · CLEAR glass-ui's bottom-centre placement. glass-ui's
+       `position="fixed"` dock emits `bottom-(--dock-pos) left-1/2 -translate-x-1/2` UNCONDITIONALLY.
+       A LEFT vertical rail is top-and-left anchored, so we (a) pin top + left to the inset, (b)
+       RELEASE the inherited bottom + right pins to `auto` (both block insets pinned would
+       over-constrain `height:auto` into a top↔bottom stretch), and (c) null the `-translate-x-1/2`
+       that would otherwise shift the rail half its width off the left edge. */
+    inset-block-start: var(--cp-inset, 1.25rem);
+    inset-block-end: auto;
+    inset-inline-start: var(--cp-inset, 1.25rem);
+    inset-inline-end: auto;
+    translate: none;
+    /* a column flex of crest / stepper / foot, centred on the dock axis. */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    /* C7.c (FIX 5) · the iOS SAFE-AREA inset — the floating dock's foot clears the home indicator /
+       gesture bar at the bottom of a notched phone. `max()` keeps the 1rem desktop pad as the floor
+       and grows it by the env() inset (0 on every non-notched surface). */
+    padding-block: 1rem;
+    padding-block-end: max(1rem, env(safe-area-inset-bottom));
+    /* SINGLE RADIUS/CLIP AUTHORITY (O-D1 · dock-chrome §3 · L34 §4.1.43). The atlas no longer
+       writes `border-radius` on the glass box (the dual-authority fork that desynced the rim
+       box-shadow, the `::after` grain, `contain:paint`, and the `overflow:clip` aperture from the
+       plate corner — the bottom-edge artifact). Instead we THEME glass-ui's ONE corner mechanism:
+       the dock now rides `shape="card"`, whose shell.css `.glass-dock.vertical.shape-card` rule
+       LERPS `border-radius` on the `--dock-expand-t` scalar between `--radius-pill` (collapsed → the
+       perfect DISC, L34 §4.1.44) and `--dock-card-radius` (expanded → the shell). We pin the
+       expanded shell to the atlas corner (`--cp-radius` 28px, look-preserving) via `--dock-card-radius`
+       — ONE authority, so the rim / `::after` grain / `contain:paint` / `overflow:clip` corners all
+       track it. (`shape="pill"` could NOT be themed: shell.css hardwires it to `--radius-pill` at a
+       specificity `--radius-dock` cannot beat — see findings.) This is the STOP-WRITE edge of the
+       3-step `--cp-radius` relay (O-D1 stop-write → O-C6 re-point → O-B8b delete); the token is NOT
+       deleted here. */
+    --dock-card-radius: var(--cp-radius, 1.75rem);
+    /* THE COLLAPSED DISC (L34 §4.1.44) — glass floors `.dock-layer--summary` to a perfect circle at
+       this token (default `--dock-layer-height`); pin it to the 4rem (64px) dome-hugging disc the
+       `#collapsed` silhouette (`DockSummary`) paints into. */
+    --dock-collapsed-summary-min-size: 4rem;
+}
+
+/* ── THE DOCK LIQUID-MORPH GLASS SURFACE (C3-desktop · J-GLASS §5 — the DESKTOP glass SURFACE) ──
+   J-GLASS owns ONLY the dock's glass SURFACE (the rim light / plate-bg on the `--dock-morph-t`
+   scalar) — a STABLE vertical-rail token-swap. These surface tokens are set on the `.usf-dock`
+   plate and CASCADE to the sub-component rungs/controls (the rung's resting fill reads
+   `--dock-plate-bg`). The plate-bg + rim tokens are STATIC surface tunes (info-parity preserved). */
+:deep(.usf-dock) {
+    /* the stable morph scalar — 1 (the expanded surface). */
+    --dock-morph-t: 1;
+    /* THE EVEN-PLATE FLOOR (J-CLOSE re-gate · arm b) — the sanctioned `--glass-opacity-dock`
+       consumer pin so the rail is opaque enough that the aurora's left-third gradient cannot light
+       its centre (the plate reads EVEN, not a radial spotlight). */
+    --glass-opacity-dock: 0.74;
+    /* THE PLATE-BG — the liquid glass plate, lifted by the morph scalar so the surface reads as a
+       single material membrane. The sub-component rungs read this below (cascaded). */
+    --dock-plate-bg: color-mix(
+        in oklab,
+        var(--cp-glass-bg, var(--card)) calc(62% + 8% * var(--dock-morph-t)),
+        transparent
+    );
+    /* THE RIM LIGHT — the liquid rim brightens with the morph scalar. */
+    --dock-rim-strength: calc(0.5 + 0.5 * var(--dock-morph-t));
+}
+
+/* THE #default LAYER IS A 3-BAND COLUMN (J-DOCK §approach-3). glass-ui wraps the #default slot in
+   `.dock-layer--full` and lays it out as a ROW by default — the atlas body is a vertical STACK of
+   TWO bands: the `DockStepperRender` SCROLL-MIDDLE (flex-grow) and the `DockFoot` STICKY FOOT. We
+   re-seat the full layer as a column flex with a fixed block-extent so the middle can scroll and the
+   foot can stick to its block-end. The layer fills the rail's available height between the crest
+   (band 1, #persistent) and the rail base. */
+:deep(.dock-layer--full) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    inline-size: 100%;
+    /* the layer fills the rail's content box so the scroll-middle has a height to scroll within and
+       the sticky foot has a block-end to pin to. */
+    flex: 1 1 auto;
+    min-block-size: 0;
+}
+
+/* ── THE COLLAPSED SILHOUETTE — the DESKTOP register (O-D1 · L34 §4.1.44) ─────────────────────────
+   On the desktop register the dock rests EXPANDED and SCROLL-collapses (O-A21) to the `#collapsed`
+   disc (`DockSummary`, floored to the 64px circle by glass's `.dock-layer--summary` rule + the
+   `--dock-collapsed-summary-min-size` token above). The persistent crest is the EXPANDED-state home
+   mark; when collapsed it YIELDS so the disc is the SOLE dome (not stacked below the crest — the
+   glass grid renders `.dock-persistent` above `.dock-layers`). A scroll-up / at-top re-expands the
+   rail (A21), restoring the crest — so the collapsed disc needs no separate keyboard toggle. This is
+   SCOPED OUT of the phone register (`:not(.usf-dock--phone)`): on phone the crest-BUTTON stays the
+   collapsed pill (the a11y menu toggle) and the layers/summary are hidden by the phone rule below. */
+:deep(.usf-dock.collapsed:not(.usf-dock--phone) .dock-persistent) {
+    display: none;
+}
+
+/* ══ THE PHONE REGISTER (M.W1 D2, ratified · N.WG1 Arm B — the I-MOBILE law) ══════════════════
+   ONE responsive dock, two machine states restyled — never a bottom/horizontal fork:
+   · COLLAPSED — the rail condenses INTO the TIL crest (the lone gilt dome pill; the empty deck
+     stub dies so the pill hugs the dome and the D1 phone block-reserve clears it).
+   · EXPANDED — the SAME instrument morphs into the top-left RULED SECTION-MENU SHEET: labeled
+     rows ≥2.75rem parted by the engrave hairline, the active row on the chrome accent, the home
+     row first, the foot band beneath. Geometry per D2: min(20rem, 100vw − 2·inset) wide,
+     viewport-capped by the rail's own `--dock-max-block-size` token, radius --cp-radius. */
+@media (--phone) {
+    /* the collapsed pill HUGS the crest dome (collapse-into-the-TIL-logo). */
+    :deep(.usf-dock--phone.collapsed) {
+        padding-block: 0.5rem;
+        gap: 0;
+    }
+    /* the collapsed deck is hidden so the phone pill HUGS the persistent crest dome (the a11y menu
+       toggle IS the collapsed pill — collapse-into-the-TIL-logo). The `#collapsed` summary silhouette
+       is authored + measured on the DESKTOP register (above); on phone the crest is the pill and the
+       layers rest hidden (this atlas collapse machine is O-B8b's to delete on the glass-morph
+       consume — O-D1 keeps it). */
+    :deep(.usf-dock--phone.collapsed .dock-layers) {
+        display: none;
+    }
+
+    /* THE MORPH — O-D1 STOPS WRITING the `inline-size` WIDTH TRANSITION on the glass box (the
+       vertical-dock corner desync, dock-chrome §3.4): animating WIDTH on a dock whose glass engine
+       morphs on the BLOCK axis / center-scale drove the atlas box a sub-pixel off glass's rim /
+       `::after` grain / clip corner mid-collapse. The rail↔sheet WIDTH now snaps to its endpoint
+       (the geometry is still the `min(20rem…)` below) and glass owns the morph clock; the smooth
+       width morph is the O-D2 glass-consume. (The PRM opacity print below is untouched.) */
+
+    /* THE SHEET — the expanded phone dock. Rides ABOVE the scrim (one rung over --z-overlay). */
+    :deep(.usf-dock--phone:not(.collapsed)) {
+        inline-size: min(20rem, calc(100vw - 2 * var(--cp-inset, 1.25rem)));
+        z-index: calc(var(--z-overlay) + 1);
+        align-items: stretch;
+    }
+
+    /* the sheet's stepper column — full-measure ruled rows, top-aligned (a MENU, not a centred
+       rail); the vertical spine is RAIL furniture (the scroll playhead) — the sheet is ruled by
+       its rows, so the spine rests. */
+    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__stepper) {
+        align-items: stretch;
+        justify-content: flex-start;
+        inline-size: 100%;
+        gap: 0;
+        padding-block: 0.25rem;
+    }
+    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__spine) {
+        display: none;
+    }
+    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__scroll) {
+        align-items: stretch;
+    }
+
+    /* A RULED ROW — the same rung, re-registered: full width, the Roman (or the home glyph) as
+       the leading mark, the section label as the word, the engrave hairline as the rule between
+       rows (the ruled-menu ink), ≥2.75rem (the D2 row floor; the 44px tap floor still binds). */
+    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step) {
+        /* display/align restated here because the HOME row renders in the stepper's scope —
+           DockNavItem's rail skin never reaches it; the sheet row is fully carved by this rule. */
+        display: flex;
+        align-items: center;
+        inline-size: 100%;
+        justify-content: flex-start;
+        gap: 0.75rem;
+        min-block-size: 2.75rem;
+        padding-inline: 0.75rem;
+        border: 0;
+        /* the resting row is RULED, not boxed — square ends so the engrave rule runs true;
+           the active fill below re-rounds to the control radius. */
+        border-radius: 0;
+        background: transparent;
+        border-block-end: 1px solid var(--engrave);
+        scale: none;
+        color: var(--foreground);
+        cursor: pointer;
+        text-decoration: none;
+    }
+    /* the home ROW renders in the stepper's own scope (no DockNavItem skin reaches it) — the
+       sheet cascade carries the one interaction mark it needs beyond the shared row rule. */
+    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step:focus-visible) {
+        outline: 2px solid var(--ring, currentColor);
+        outline-offset: -2px;
+    }
+    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step-num) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        /* wide enough for `VIII` at the rung size — the label column stays aligned to one edge. */
+        inline-size: 2rem;
+        flex: none;
+        color: var(--muted-foreground);
+    }
+    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step-label) {
+        display: block;
+        flex: 1 1 auto;
+        min-inline-size: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: start;
+        font-size: 0.875rem;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+    }
+    /* the ACTIVE row — the chrome accent bar (--cp-accent fill, --cp-accent-ink word; the D2
+       active-row voice — the same wayfinding singleton the rail's raised pill speaks). */
+    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step--active) {
+        background: var(--cp-accent, var(--foreground));
+        color: var(--cp-accent-ink, var(--background));
+        border-block-end-color: transparent;
+        border-radius: var(--radius-control);
+        box-shadow: none;
+    }
+    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step--active .usf-dock__step-num) {
+        color: inherit;
+    }
+
+    /* THE ROW STAGGER (D2) — the rows rise on the snappy spring, 40ms×i down the column, replayed
+       on every open (the selector newly matches when `.collapsed` drops, so the animation
+       restarts). Scoped keyframes — DockNavItem's rail-mount rise is a different clock. */
+    @media (prefers-reduced-motion: no-preference) {
+        :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step) {
+            animation: usf-dock-sheet-row-rise var(--spring-snappy-duration, 0.4s)
+                var(--spring-snappy, ease) both;
+            animation-delay: calc(var(--rivet-i, 0) * 40ms);
+        }
+    }
+
+    /* PRM — the morph + stagger become a 120ms opacity-only print (D2); geometry snaps. */
+    @media (prefers-reduced-motion: reduce) {
+        :deep(.usf-dock--phone),
+        :deep(.usf-dock--phone.collapsed) {
+            transition: opacity 120ms ease;
+        }
+        :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step) {
+            animation: none;
+        }
+    }
+}
+
+@keyframes usf-dock-sheet-row-rise {
+    from {
+        opacity: 0;
+        transform: translateY(0.375rem);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* THE SCRIM (D2) — the paper wash under the raised sheet; a tap dismisses. `--z-overlay` (the
+   sheet rides one rung above). Fixed, so it veils the whole page behind the menu. */
+.usf-dock-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-overlay);
+    background: color-mix(in oklab, var(--background) 55%, transparent);
+}
+.dock-scrim-enter-active,
+.dock-scrim-leave-active {
+    transition: opacity 200ms var(--ease-out, ease);
+}
+.dock-scrim-enter-from,
+.dock-scrim-leave-to {
+    opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+    .dock-scrim-enter-active,
+    .dock-scrim-leave-active {
+        transition: opacity 120ms ease;
+    }
+}
