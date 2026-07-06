@@ -1,9 +1,11 @@
 // charts/contract/index.ts — the CONTRACT family barrel (§A.1) · PARTIAL at O-B4.
 //
-// The chart-family type contracts. This wave lands the two SELF-CONTAINED, clean members
-// (`selection-contract`, `aggregate`); the entangled trio — `viz-contract` (motion/variant-spec
-// + composables/useVizOptions), `scene-contract` (stores), `chartRecipe` (TimeSeries.vue) — is
-// DEFERRED to the wave that lands its stores/motion/composables closure (see the O-B4 PACK
-// deferral ledger). The barrel drops the deferred members, exactly as the O-B3 data barrel did.
+// The chart-family type contracts. O-B4 landed the two SELF-CONTAINED clean members
+// (`selection-contract`, `aggregate`); O-B4R (the SCC closure) lands `viz-contract`
+// (motion/variant-spec + composables/useVizOptions) + `scene-contract` (stores + the top-level
+// `@/contract`) once their stores/motion/composables closure lands. `chartRecipe` (→ `TimeSeries.vue`
+// → the marks family) rides the marks-subtree landing; the barrel drops it until then.
 export * from "./selection-contract";
 export * from "./aggregate";
+export * from "./viz-contract";
+export * from "./scene-contract";
