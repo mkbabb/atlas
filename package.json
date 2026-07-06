@@ -35,7 +35,7 @@
       "import": "./dist/provenance.js"
     },
     "./filter": {
-      "types": "./types/platform/filter/index.d.ts",
+      "types": "./types/filter/index.d.ts",
       "import": "./dist/filter.js"
     },
     "./story": {

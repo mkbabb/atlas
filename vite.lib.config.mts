@@ -34,7 +34,7 @@ const entries = {
     chrome: src("platform/chrome/index.ts"),
     charts: src("charts/index.ts"),
     provenance: src("platform/provenance/index.ts"),
-    filter: src("platform/filter/index.ts"),
+    filter: src("filter/index.ts"),
     story: src("platform/story/index.ts"),
     motion: src("platform/motion/index.ts"),
     editorial: src("platform/editorial/index.ts"),
