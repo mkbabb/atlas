@@ -24,6 +24,11 @@ export * from "./dataSaver";
 export * from "./geometry";
 export * from "./entityGeometry";
 
+// — O-A14: the school-point supply loader (the C1 point-in-district dot; the injected `schoolPoint` /
+//   `districtOf` resolvers the school grain consumes). The `glyphs/school-points.json` asset stays
+//   deep-path data — this LOADER is the exposed surface. —
+export * from "./schoolPoints";
+
 // — the raw NC district topology glyph (v1.0.1 · O-B10): the ONE synchronously-bound topology asset
 //   (the SCI school map's `GeoChoropleth :topology`), exposed by name past the deep-path boundary —
 export * from "./districtTopology";

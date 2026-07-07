@@ -25,10 +25,10 @@ const DRAW_RADIUS = 46;
 // `entityGeometry`'s `SIZE_LOD` (unchanged). The ICON scale — a 16–24px dropdown/inline mark — needs
 // a NEW coarsest tier below `coarse`: a 16px NC district at `coarse` fidelity is jagged mush; at the
 // `icon` tier it is a clean recognizable pebble. `pxToLod` is the band function that ROUTES an
-// arbitrary px box to its tier; the `icon` tier itself is BAKED by O-A14 (this wave authors only the
-// router). Until that bake lands, an `icon` band FLOORS to `coarse` at resolution (the coarsest
-// tier that exists today — see `glyphSizeForPx` in `resolveEntityIcon`), a graceful degrade, never a
-// void-ring. The bands are the icon-facility §2.4 contract, verbatim.
+// arbitrary px box to its tier. O-A14 BAKED the `icon` tier (`{grain}.icon.json`, the additive-lazy
+// registries) + wired it through `resolveEntityIcon`'s `tierForSize` → `entityGeometry.lodOf`, so an
+// `icon` band now resolves the true `icon` geometry (the A12 `coarse`-floor degrade is RETIRED). The
+// bands are the icon-facility §2.4 contract, verbatim.
 
 /** A committed detail tier — the three baked tiers plus the O-A14 `icon` floor the band routes to. */
 export type IconLod = "icon" | "coarse" | "med" | "fine";

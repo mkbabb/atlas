@@ -28,7 +28,12 @@ import {
 } from "@/data/entityGeometry";
 import type { GlyphGrain } from "@/charts/glyph/Glyph.vue";
 import type { SelectionKey, SelectionKind } from "@/charts/contract/selection-contract";
-import { pxToLod, viewBoxCenter, type IconPoint } from "@/charts/glyph/iconPrimitives";
+import {
+    pxToLod,
+    viewBoxCenter,
+    type IconPoint,
+    type IconLod,
+} from "@/charts/glyph/iconPrimitives";
 
 // ── The grain taxonomy (icon-facility §1) ───────────────────────────────────────────────────────
 
@@ -194,23 +199,18 @@ export interface ResolveEntityIconOptions {
 // ── The Class-A geometry resolution (the size → tier → rung mapping) ─────────────────────────────
 
 /**
- * Map a mark size to the `GlyphSize` rung the Class-A resolvers consume. A named rung passes through;
- * a px number routes through `pxToLod` (icon-facility §2.4) then floors the tier to the coarsest rung
- * that BAKES it today — `icon`→`sm` (the O-A14 `icon` tier is not yet baked, so an icon-scale mark
- * reads the `coarse` geometry `sm` selects; O-A14 rewires this when the tier lands), `coarse`→`sm`,
- * `med`→`md`, `fine`→`hero`. A graceful degrade, never a void-ring.
+ * Map a mark size to the tier the Class-A resolvers consume. A named `GlyphSize` rung passes through
+ * (the resolver maps it via `SIZE_LOD`); a px number routes through `pxToLod` (icon-facility §2.4) to
+ * a DIRECT `Lod` — `≤18 → icon`, `≤32 → coarse`, `≤64 → med`, else `fine` — which the grain resolvers
+ * accept alongside `GlyphSize` (`entityGeometry.lodOf` discriminates the disjoint token sets).
+ *
+ * O-A14 REWIRE (the A12 degrade flip): the `icon` tier is now BAKED (`{grain}.icon.json`), so an
+ * icon-scale (≤18px) mark reads the true `icon` geometry — a clean pebble — instead of the former
+ * `coarse` floor (the jagged mush the A12 comment flagged as "rewires this when the tier lands"). The
+ * `coarse`/`med`/`fine` bands are unchanged; only the `≤18px` band moved coarse → icon.
  */
-function glyphSizeForPx(size: GlyphSize | number): GlyphSize {
-    if (typeof size !== "number") return size;
-    switch (pxToLod(size)) {
-        case "icon":
-        case "coarse":
-            return "sm";
-        case "med":
-            return "md";
-        case "fine":
-            return "hero";
-    }
+export function tierForSize(size: GlyphSize | number): GlyphSize | IconLod {
+    return typeof size === "number" ? pxToLod(size) : size;
 }
 
 /** Resolve a Class-A silhouette (state/county/district/charter). The `district`/`charter` grains both
@@ -220,7 +220,7 @@ function glyphSizeForPx(size: GlyphSize | number): GlyphSize {
 function resolveClassA(
     grain: EntityGrain,
     id: string,
-    size: GlyphSize,
+    size: GlyphSize | IconLod,
 ): { grain: GlyphGrain; geom: GlyphGeom } | null {
     switch (grain) {
         case "state": {
@@ -285,7 +285,7 @@ export function resolveEntityIcon(
     // to the district box centre (the `"district-centroid"` seed).
     if (grain === "school") {
         const leaKey = opts.districtOf?.(entityKey) ?? entityKey;
-        const resolved = resolveClassA("district", leaKey, glyphSizeForPx(size));
+        const resolved = resolveClassA("district", leaKey, tierForSize(size));
         const geom = resolved?.geom ?? null;
         const supplied = opts.schoolPoint?.(entityKey);
         const point = supplied ?? viewBoxCenter(geom?.viewBox);
@@ -300,7 +300,7 @@ export function resolveEntityIcon(
     }
 
     // Class A — the baked silhouettes (state/county/district/charter).
-    const resolved = resolveClassA(grain, entityKey, glyphSizeForPx(size));
+    const resolved = resolveClassA(grain, entityKey, tierForSize(size));
     if (resolved) {
         return {
             mark: "glyph",

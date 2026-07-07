@@ -138,8 +138,11 @@ export interface GlyphGeom {
 /** The figure-primacy size rung — drives both the painted scale AND the LOD tier. */
 export type GlyphSize = "sm" | "md" | "lg" | "hero";
 
-/** The committed I-GLYPH detail tiers. */
-type Lod = "coarse" | "med" | "fine";
+/** The committed detail tiers — the three fidelity tiers plus the O-A14 `icon` floor (the COARSEST,
+ *  ~8–14 verts, for a 16–24px dropdown/inline mark; icon-facility §2.4). `icon` is an additive-LAZY
+ *  tier (never in the eager floor) reachable ONLY via the px path (`resolveEntityIcon`'s `pxToLod`
+ *  band) — the named `GlyphSize` rungs still map to coarse/med/med/fine (`SIZE_LOD`, unchanged). */
+type Lod = "icon" | "coarse" | "med" | "fine";
 
 /**
  * The size→LOD map: a strip/dot-cloud `sm` reads the cheap `coarse` geometry, the scatter
@@ -152,6 +155,19 @@ const SIZE_LOD: Readonly<Record<GlyphSize, Lod>> = {
     lg: "med",
     hero: "fine",
 };
+
+/**
+ * Resolve a size rung OR a DIRECT tier to a `Lod`. A named `GlyphSize` (`sm`/`md`/`lg`/`hero`) maps
+ * through `SIZE_LOD`; a `Lod` token (`icon`/`coarse`/`med`/`fine` — the px-band `resolveEntityIcon`
+ * selects via `pxToLod`) passes THROUGH. The two token sets are DISJOINT, so the discriminator is
+ * unambiguous — and the `icon` tier stays reachable ONLY through the px path (a named `sm` strip is
+ * still the eager `coarse`, never the lazy icon; icon-facility §2.4).
+ */
+function lodOf(size: GlyphSize | Lod): Lod {
+    return size === "icon" || size === "coarse" || size === "med" || size === "fine"
+        ? size
+        : SIZE_LOD[size];
+}
 
 /** A grain label keyed into the registry tables. */
 type Grain = "state" | "county" | "district" | "charter";
@@ -185,17 +201,25 @@ const EAGER_TIERS: Readonly<Record<Grain, Partial<Record<Lod, Registry>>>> = {
 // an entry means the tier is eager (resolved from `EAGER_TIERS`). The `import()` specifiers are STATIC
 // string literals so Rollup can see + split each registry into its own async chunk.
 type Loader = () => Promise<{ default: unknown }>;
+// The O-A14 `icon` tier is registered here for EVERY Class-A grain — it is additive-LAZY (a dynamic
+// `import()` off every route's eager closure), so the icon facility does NOT grow the eager floor
+// (icon-facility §3.3). An icon-scale dropdown/inline mark loads its tier on interaction, re-resolving
+// reactively via `glyphRegistryVersion` exactly as the `fine`/charter tiers already do.
 const LAZY_LOADERS: Readonly<Partial<Record<Grain, Partial<Record<Lod, Loader>>>>> = {
     state: {
+        icon: () => import("./glyphs/us-state.icon.json", { with: { type: "json" } }),
         fine: () => import("./glyphs/us-state.fine.json", { with: { type: "json" } }),
     },
     county: {
+        icon: () => import("./glyphs/nc-county.icon.json", { with: { type: "json" } }),
         fine: () => import("./glyphs/nc-county.fine.json", { with: { type: "json" } }),
     },
     district: {
+        icon: () => import("./glyphs/nc-district.icon.json", { with: { type: "json" } }),
         fine: () => import("./glyphs/nc-district.fine.json", { with: { type: "json" } }),
     },
     charter: {
+        icon: () => import("./glyphs/nc-charter.icon.json", { with: { type: "json" } }),
         coarse: () => import("./glyphs/nc-charter.coarse.json", { with: { type: "json" } }),
         med: () => import("./glyphs/nc-charter.med.json", { with: { type: "json" } }),
         fine: () => import("./glyphs/nc-charter.fine.json", { with: { type: "json" } }),
@@ -309,8 +333,8 @@ function toGeom(grain: string, lod: Lod, id: string, entry: RegistryEntry): Glyp
  * `null` for an out-of-registry key (a territory absent from some feed frame — the caller
  * paints no-data). The default `size` is the scatter-grain `md`.
  */
-export function stateGlyph(fips: string, size: GlyphSize = "md"): GlyphGeom | null {
-    const lod = SIZE_LOD[size];
+export function stateGlyph(fips: string, size: GlyphSize | Lod = "md"): GlyphGeom | null {
+    const lod = lodOf(size);
     const key = String(fips).padStart(2, "0");
     const registry = syncTier("state", lod);
     if (!registry) {
@@ -325,8 +349,8 @@ export function stateGlyph(fips: string, size: GlyphSize = "md"): GlyphGeom | nu
  * The county silhouette for a 5-char NC FIPS (`"37183"` → Wake County). Returns `null`
  * for an out-of-registry key. The county grain is never a proxy — it IS the true cell.
  */
-export function countyGlyph(fips5: string, size: GlyphSize = "md"): GlyphGeom | null {
-    const lod = SIZE_LOD[size];
+export function countyGlyph(fips5: string, size: GlyphSize | Lod = "md"): GlyphGeom | null {
+    const lod = lodOf(size);
     const key = String(fips5);
     const registry = syncTier("county", lod);
     if (!registry) {
@@ -357,9 +381,9 @@ export function countyGlyph(fips5: string, size: GlyphSize = "md"): GlyphGeom | 
  */
 export function districtGlyph(
     leaNumber: string | number,
-    size: GlyphSize = "md",
+    size: GlyphSize | Lod = "md",
 ): GlyphGeom | null {
-    const lod = SIZE_LOD[size];
+    const lod = lodOf(size);
     const registry = syncTier("district", lod);
     if (!registry) {
         void loadGlyphRegistry("district", lod); // warm the memo; re-resolves on `glyphRegistryVersion`.
@@ -403,9 +427,9 @@ export function districtGlyph(
  */
 export function charterGlyph(
     leaNumber: string | number,
-    size: GlyphSize = "md",
+    size: GlyphSize | Lod = "md",
 ): GlyphGeom | null {
-    const lod = SIZE_LOD[size];
+    const lod = lodOf(size);
     const key = String(leaNumber).trim().toUpperCase();
     const registry = syncTier("charter", lod);
     if (!registry) {
