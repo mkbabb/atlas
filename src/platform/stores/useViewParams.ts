@@ -253,6 +253,73 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         url.setList(SEL_KEY, [...keys]);
     }
 
+    // ── THE DRILL-AND-FILTER PROMOTION (O-A11 · [ANSWERS Q-45] · the un-filter seam) ──────────────────
+    // The drill panel's `[Filter to these ▸]` promotes the selection into the route's PERSISTENT filter
+    // state, URL-persisted as `?filto=<k1>,<k2>,…` — the promoted set of composite `{kind}:{id}` keys.
+    // DISTINCT from `?sel` by design: `?sel` is the TRANSIENT selection that drives the drill panel and
+    // clears on dismiss/Esc; `?filto` is the co-filter the promote verb LIFTS OUT of it — it PERSISTS
+    // across a selection clear, round-trips (shareable / reload-stable), and is reversed ONLY by the
+    // explicit `[✕ un-filter]` affordance, so the filter is never a one-way trap. It is the FIRST-CLASS
+    // home the route folds into its `matchByKey` co-filter (`promotedIdsOf(grain)`) — NOT an overload of
+    // an unrelated param (`?fig` is the plate-expand home; the promotion owns its OWN key). Rides the SAME
+    // `url` bag + the ONE list codec (a platform through-line, not a dashboard's vocab); the READ drops
+    // legacy-bare / foreign keys via `parseSelKey` (the migration guard, twinning `selKeys`).
+    const FILTO_KEY = "filto";
+
+    /** The PARSED promoted co-filter set off `?filto` — every token resolved to `{kind,id,key}`,
+        legacy-bare / foreign keys DROPPED (`parseSelKey` returns null). Reactive: a reload / route change
+        re-reads the one URL bag (the `?sel` twin). */
+    const promotedFilterKeys: ComputedRef<SelectionKey[]> = computed(() =>
+        url
+            .getList(FILTO_KEY)
+            .map(parseSelKey)
+            .filter((s): s is SelectionKey => s !== null),
+    );
+
+    /** True when a DRILL-AND-FILTER co-filter is LIVE — drives the `SelectionDrilldownPanel` `filtered`
+        prop (hence the persistent `[✕ un-filter]` affordance). The post-drop count, so a `?filto` of only
+        legacy-bare / foreign tokens reads false (no phantom filter). */
+    const filterPromoted: ComputedRef<boolean> = computed(
+        () => promotedFilterKeys.value.length > 0,
+    );
+
+    /**
+     * The promoted co-filter's NATIVE-grain ids the route folds into `matchByKey` (mirrors
+     * `useSelection.selectedIdsOf` · I5 §10): a route lensing `grain` reads ONLY its own grain's ids, so a
+     * foreign-grain promoted key (a `state:37` carried into /sci) is INVISIBLE — never in
+     * `promotedIdsOf("school")`. The returned ids are the RAW grain ids (the kind stripped), exactly what
+     * the route's membership test compares against.
+     */
+    function promotedIdsOf(kind: SelectionKind): Set<string> {
+        const out = new Set<string>();
+        for (const item of promotedFilterKeys.value) {
+            if (item.kind === kind) out.add(item.id);
+        }
+        return out;
+    }
+
+    /**
+     * PROMOTE the drill selection of `grain` to the persistent co-filter (`[Filter to these ▸]`) — the
+     * producer path: encode each native id to its `{grain}:{id}` composite then write the set to `?filto`
+     * (the SAME wire form `?sel` speaks, so a promoted key and a selection key are byte-identical). An
+     * empty `ids` CLEARS the param (promoting nothing is the un-filter by construction). The route then
+     * folds `promotedIdsOf(grain)` as one more `matchByKey` AND-clause; the coordinator-engine route pairs
+     * this with `drilldownClause(field, ids)` (the `source:"drilldown"` clause) — same set, same reverse.
+     */
+    function promoteFilter(grain: SelectionKind, ids: readonly string[]): void {
+        url.setList(
+            FILTO_KEY,
+            ids.map((id) => encodeSelKey(grain, id)),
+        );
+    }
+
+    /** UN-FILTER — reverse the drill co-filter (`[✕ un-filter]`), clearing `?filto`. The persistent
+        reverse the promotion's one-way-trap guard requires; the transient `?sel` selection is untouched
+        (the two channels are independent — un-filter drops the filter, not the drill panel). */
+    function clearPromotedFilter(): void {
+        url.setList(FILTO_KEY, []);
+    }
+
     // ── THE `?at` NARRATIVE ANCHOR + THE `?fig` CODEC (K-ANIM A1) ───────────────────────────────────
     // Both ride the SAME shared `url` bag (NOT in `registeredKeys` — platform through-lines, so a
     // `resetParams()` KEEPS the reader's place + the open figure). The `?at` write is the dock's ONE
@@ -336,6 +403,13 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         // O-A11 — the `?sel` selection-set round-trip (parse-guarded read + the single-writer setter).
         selKeys,
         setSel,
+        // O-A11 · [ANSWERS Q-45] — the DRILL-AND-FILTER promotion (`?filto`): the persistent co-filter the
+        // panel's `[Filter to these ▸]` writes + the `[✕ un-filter]` reverses (the first-class un-filter seam).
+        promotedFilterKeys,
+        filterPromoted,
+        promotedIdsOf,
+        promoteFilter,
+        clearPromotedFilter,
         // K-ANIM A1 — the `?at` narrative anchor + the `?fig` one-bag fold.
         narrativeAt,
         setNarrativeAt,

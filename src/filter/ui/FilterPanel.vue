@@ -281,7 +281,24 @@ function cancelSave(): void {
                 />
 
                 <div class="cp-drawer__body">
-                    <component :is="filterBody" />
+                    <!-- TRANSPARENT SLOT-FORWARD (O-A11 residue · the band-0 reach): the shell is a
+                         generic wrapper, so it FORWARDS every slot it is handed straight through to the
+                         injected `body` component. This is the idiomatic Vue transparent-wrapper pattern
+                         (`v-for (_, name) in $slots` → a re-emitted `#[name]`), and it is what makes the
+                         body's own named slots CONSUMABLE from the route — e.g. `UnifiedFilterPanel`'s
+                         band-0 `#algebra` band: a route mounts `<FilterPanel :body="UnifiedFilterPanel">`
+                         and paints `<template #algebra>…</template>` on the SHELL, which lands in the
+                         panel's algebra band. ADDITIVE: no slots handed ⇒ `$slots` empty ⇒ the forward
+                         renders nothing, byte-identical to the prior bare `<component :is>`. -->
+                    <component :is="filterBody">
+                        <template
+                            v-for="(_, name) in $slots"
+                            :key="name"
+                            #[name]="scope"
+                        >
+                            <slot :name="name" v-bind="scope ?? {}" />
+                        </template>
+                    </component>
                 </div>
 
                 <!-- The drawer foot — the save-view + cross-links + freshness cluster, the

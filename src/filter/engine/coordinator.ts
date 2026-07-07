@@ -30,7 +30,7 @@
 
 import { signal, computed, type Signal } from "./signals";
 import { isIdentity, type Predicate } from "./predicate";
-import type { Selection } from "./selection";
+import type { Selection, Clause } from "./selection";
 import {
     cellToConstraint,
     type DimPredicateSpec,
@@ -120,6 +120,38 @@ export function dimsToPredicate<Row>(dims: readonly DeclaredDim<Row>[]): Predica
     if (kids.length === 0) return { op: "any" };
     if (kids.length === 1) return kids[0];
     return { op: "and", kids };
+}
+
+// ── THE DRILL-AND-FILTER CLAUSE ([ANSWERS Q-45] · the promote / un-filter seam) ──────────────────
+//
+// The drill panel's `[Filter to these ▸]` promotes the current spatial selection into the fleet's
+// filter state AS a coordinator clause — the SAME `source`-authored `Selection.update` edge a dim or a
+// brush writes, so the promoted filter is crossfilter-safe (leave-one-out omits it for its own client)
+// and reversible by a single `clear(source)` (the persistent `[✕ un-filter]` affordance). This is the
+// LIBRARY half the route needs so it never re-derives the clause shape (nor overloads an unrelated URL
+// param): `drilldownClause(field, ids)` builds the `oneOf` leaf over the grain's accessor, stamped with
+// the shared `DRILLDOWN_SOURCE`; the un-filter is `selection.clear(DRILLDOWN_SOURCE)`.
+
+/** The shared `source` id the drill-AND-filter clause is authored under — ONE constant so the promote
+    (`update`) and the un-filter (`clear`) name the exact same clause (never a drifting string literal). */
+export const DRILLDOWN_SOURCE = "drilldown";
+
+/** Build the DRILL-AND-FILTER clause — the promoted set of native-grain `ids` as a `source:"drilldown"`
+    `oneOf` leaf over the grain's `field` accessor (the same accessor the route folds on). `key` labels
+    the leaf for `explain`/introspection (defaults to the source). An EMPTY `ids` yields the identity
+    `{op:"any"}` predicate — the CLEAR form (`Selection.update` drops an identity clause), so promoting an
+    empty set is the un-filter by construction. Feed the result to `selection.update(…)`; reverse with
+    `selection.clear(DRILLDOWN_SOURCE)`. Grain-agnostic (the caller owns the accessor + the id extraction),
+    so it serves every co-filterable grain the panel promotes. */
+export function drilldownClause<Row>(
+    field: DimAccessor<Row>,
+    ids: Iterable<string>,
+    key: string = DRILLDOWN_SOURCE,
+): Omit<Clause<Row>, "seq"> {
+    const values = new Set(ids);
+    const predicate: Predicate<Row> =
+        values.size === 0 ? { op: "any" } : { op: "oneOf", field, values, key };
+    return { source: DRILLDOWN_SOURCE, predicate, value: [...values] };
 }
 
 // ── THE CLIENT + THE COORDINATOR ─────────────────────────────────────────────────────────────
