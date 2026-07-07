@@ -228,6 +228,31 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         return f ? resolveFocusToGrain(f, target) : null;
     }
 
+    // ── THE `?sel` SELECTION-SET ROUND-TRIP (O-A11 · C.W4.2 · the drill-down deep link) ──────────────
+    // The sticky selection SET, URL-persisted as `?sel=<k1>,<k2>,…` — the comma-joined composite
+    // `{kind}:{id}` keys the store already holds. Like `?focus`, it rides the SAME shared `url` bag but
+    // owns its own key (a platform through-line, not a dashboard's vocab), reusing the ONE list codec
+    // (`getList`/`setList` — the USF `regions` round-trip's codec). The READ drops legacy-bare / foreign
+    // keys via `parseSelKey` (the migration guard), so a stale token never mis-grains a mark. The store's
+    // URL bridge (`useSelection`) is the SOLE writer (single-writer preserved).
+    const SEL_KEY = "sel";
+
+    /** The PARSED selection set off `?sel` — every token resolved to `{kind,id,key}`, legacy-bare /
+        foreign keys DROPPED (`parseSelKey` returns null). The single/multi determination is post-drop:
+        `?sel=state:48,37,cell:x` parses to `[state:48, cell:x]` (the bare `37` gone). Reactive. */
+    const selKeys: ComputedRef<SelectionKey[]> = computed(() =>
+        url
+            .getList(SEL_KEY)
+            .map(parseSelKey)
+            .filter((s): s is SelectionKey => s !== null),
+    );
+
+    /** Write the selection set to `?sel` (comma-joined composite keys); an empty set CLEARS the param.
+        The list codec left VERBATIM — each token is already the Set member (`SelectionKey.key`). */
+    function setSel(keys: Iterable<string>): void {
+        url.setList(SEL_KEY, [...keys]);
+    }
+
     // ── THE `?at` NARRATIVE ANCHOR + THE `?fig` CODEC (K-ANIM A1) ───────────────────────────────────
     // Both ride the SAME shared `url` bag (NOT in `registeredKeys` — platform through-lines, so a
     // `resetParams()` KEEPS the reader's place + the open figure). The `?at` write is the dock's ONE
@@ -308,6 +333,9 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         focusKey,
         setFocus,
         focusForGrain,
+        // O-A11 — the `?sel` selection-set round-trip (parse-guarded read + the single-writer setter).
+        selKeys,
+        setSel,
         // K-ANIM A1 — the `?at` narrative anchor + the `?fig` one-bag fold.
         narrativeAt,
         setNarrativeAt,

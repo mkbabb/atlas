@@ -37,6 +37,21 @@ export * from "./useActiveViz";
 export { default as HoverCard } from "./HoverCard.vue";
 export { default as ReadoutDrill } from "./ReadoutDrill.vue";
 
+// ── v1.0.6 (O-A11) — THE CHRONIC DRILL-DOWN VIEW: the viz-agnostic `SelectionDrilldownPanel` (single =
+// the hover card docked, multi = mini-map + aggregate + per-grain dropdown ladder) + the bounded
+// mini-map extent helper. The panel reads `useSelection.selectedItems` (content) + the beat-tracked
+// `useSelectionStat` single/aggregate resolvers + `EntityIcon` (O-A12) for the rows; writes nothing
+// beyond the selection it dismisses. Consumed per-route (usf/sci/ecf placements + the abrogation).
+export { default as SelectionDrilldownPanel } from "./SelectionDrilldownPanel.vue";
+export type { DrilldownPlacement } from "./SelectionDrilldownPanel.vue";
+export {
+    parseViewBox,
+    unionExtent,
+    extentToViewBox,
+    boundedMinimapViewBox,
+    type ExtentBox,
+} from "./minimapExtent";
+
 // ── v1.0.1 (O-B10 re-cut) — THE VIZ-CONTEXT HUB PROVIDER SURFACE ───────────────────────────────
 // The N.WD1 hub (`platform/context/hub.ts`) rides no barrel of its own, so v1.0.0 tree-shook the
 // provider factory out of dist (only `VIZ_HUB_KEY` + `useOptionalVizContext` survived, dragged in by

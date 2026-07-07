@@ -55,9 +55,27 @@ export type SelectionStatResolver = (
     grain: SelectionKey["kind"],
 ) => SelectionStat | null;
 
+/**
+ * O-A11 — a beat's AGGREGATE resolver: given the selected items OF ONE GRAIN (the `SelectionDrilldownPanel`
+ * pre-groups by kind) and that grain, return the beat's WHOLE-SELECTION aggregate stat — or `null` when
+ * the beat has no summable facts for the grain (a firm with no public totals, an un-registered grain).
+ * The resolver reduces the beat's OWN store extensives/intensives through the AGGREGATE LAW compute
+ * (`charts/contract/aggregate.ts` — `Σ` for extensives, `pooled`+`median` for intensives, [ANSWERS Q-38]
+ * both reported), returning the SAME `{ label, facts }` grammar `statFor` does so the panel renders it
+ * through one `<ReadoutFacts>`. This is the MULTI-only twin of `statFor` (single-item) — the two share
+ * the beat-tracked registry discipline, never a plain mean of a ratio (the Simpson trap is unreachable).
+ */
+export type AggregateResolver = (
+    items: readonly SelectionKey[],
+    grain: SelectionKey["kind"],
+) => SelectionStat | null;
+
 export const useSelectionStat = defineStore("platform:selection-stat", () => {
     /** The beat-id → resolver registry. One resolver per beat; a beat may register/replace its own. */
     const resolvers = ref<Map<string, SelectionStatResolver>>(new Map());
+    /** The beat-id → AGGREGATE-resolver registry (O-A11 · MULTI-mode). Twin of `resolvers`, same
+        disposer discipline — a beat registers BOTH its single + aggregate resolver on mount. */
+    const aggregateResolvers = ref<Map<string, AggregateResolver>>(new Map());
 
     const activeBeat = useActiveBeat();
     const readout = useHoverReadout();
@@ -104,5 +122,49 @@ export const useSelectionStat = defineStore("platform:selection-stat", () => {
         return null;
     }
 
-    return { resolvers, register, statFor };
+    /**
+     * REGISTER a beat's AGGREGATE resolver (O-A11 · the per-route writer, MULTI-mode). Returns a
+     * DISPOSER that removes THIS resolver iff the slot still holds it (the same handoff-safe discipline
+     * as `register`, so a re-mount that replaced the resolver is never evicted by the prior scope's
+     * dispose). A re-register of the same beat id REPLACES its resolver.
+     */
+    function registerAggregate(
+        beatId: string,
+        resolver: AggregateResolver,
+    ): () => void {
+        const next = new Map(aggregateResolvers.value);
+        next.set(beatId, resolver);
+        aggregateResolvers.value = next;
+        return () => {
+            if (aggregateResolvers.value.get(beatId) !== resolver) return;
+            const after = new Map(aggregateResolvers.value);
+            after.delete(beatId);
+            aggregateResolvers.value = after;
+        };
+    }
+
+    /**
+     * Resolve the WHOLE-SELECTION aggregate for one grain's items, TRACKING THE ACTIVE BEAT (the twin
+     * of `statFor`). Reads the active beat off `useActiveBeat`, runs its registered `AggregateResolver`
+     * for the grouped `items`+`grain`, and returns the `{ label, facts }` — or `null` when no aggregate
+     * resolver is registered for the active beat / it returns null (the panel then FALLS BACK to a
+     * count-only roll-up, never a blank). No pinned-facts fallback here — an aggregate has no single
+     * pinned payload; the count roll-up is the panel's floor.
+     */
+    function aggregateFor(
+        items: readonly SelectionKey[],
+        grain: SelectionKey["kind"],
+    ): SelectionStat | null {
+        const resolver = aggregateResolvers.value.get(activeBeat.activeBeatId);
+        return resolver?.(items, grain) ?? null;
+    }
+
+    return {
+        resolvers,
+        aggregateResolvers,
+        register,
+        statFor,
+        registerAggregate,
+        aggregateFor,
+    };
 });

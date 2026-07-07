@@ -103,3 +103,56 @@ export function chunkByRank<T>(sorted: readonly T[], size: number): T[][] {
     }
     return out;
 }
+
+// ── THE SELECTION-AGGREGATE COMPUTE (O-A11 · the drill-down's honest reduce) ─────────────────────
+//
+// [CH-A H5] The reduce-op VOCABULARY (`ReduceOp`/`MeasureKind`/`AggregateResult`) is owned by the
+// shared `platform/provenance/aggregate-contract.ts` (O-B7 — the cycle-breaker so O-A9b's label and
+// this compute both read one enum). THIS is O-A11's COMPUTE against that contract: the pure folds the
+// `SelectionDrilldownPanel` aggregate block runs over a selected grain's members. A route's registered
+// `AggregateResolver` (in `useSelectionStat`) reduces its OWN store's extensives/intensives through
+// these — so the math is authored ONCE, honest by construction, and the Simpson trap is unrepresentable
+// (there is no `mean-of-ratios` fold to call).
+
+import type {
+    AggregateResult,
+    MeasureKind,
+    ReduceOp,
+} from "@/platform/provenance/aggregate-contract";
+
+/**
+ * THE LAW's pure op selection (the fence): an EXTENSIVE measure folds via `Σ`; an INTENSIVE measure
+ * folds via `pooled` (`Σnum/Σden`) — NEVER a plain mean of a ratio. No data needed — the measure's
+ * physical KIND dictates the op. This is the `AggregateResolver.reduceOpFor` shape (O-B7 contract).
+ */
+export function reduceOpForKind(kind: MeasureKind): ReduceOp {
+    return kind === "extensive" ? "Σ" : "pooled";
+}
+
+/**
+ * Reduce an EXTENSIVE measure (dollars, counts, enrollment) — the ONLY honest fold is the SUM. No
+ * median rides an extensive (`median: null` — a Σ has no "typical member" the way a rate does); the
+ * count is the folded cardinality. An empty set → `{ value: 0, n: 0 }` (a Σ of nothing is zero).
+ */
+export function reduceExtensive(values: readonly number[]): AggregateResult {
+    let sum = 0;
+    for (const v of values) sum += v;
+    return { op: "Σ", value: sum, median: null, n: values.length };
+}
+
+/**
+ * Reduce an INTENSIVE measure (a ratio / rate / per-capita) the honest way — the POOLED `Σnum/Σden`
+ * (the dollar-/enrollment-weighted "merged super-entity", the ONLY legal ratio-aggregate) WITH the
+ * order-statistic MEDIAN of the member ratios reported ALONGSIDE ([ANSWERS Q-38]: the fleet's rate vs
+ * the typical member's rate answer different questions — the median rides beside the pool, NEVER
+ * instead of it). Reuses `aggregateRatioBand` (the shipped Σnum/Σden + median band), so the Simpson
+ * trap (`mean(ratios)`) is unrepresentable — there is no arithmetic-mean fold to reach for. An empty
+ * set → `{ value: NaN, median: NaN, n: 0 }`; a zero-denominator pool → `value: NaN` (a ratio with no
+ * denominator cannot pool).
+ */
+export function reduceIntensive(
+    members: readonly RatioMember[],
+): AggregateResult {
+    const band = aggregateRatioBand(members);
+    return { op: "pooled", value: band.pooled, median: band.median, n: band.n };
+}

@@ -22,7 +22,7 @@
 // and frames off `selectedKeys`, the conflation the prior scalar-fallback forced gone.
 
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import {
     encodeSelKey,
@@ -31,6 +31,7 @@ import {
     type SelectionKind,
 } from "@/charts/contract/selection-contract";
 import { markColorFor } from "@/charts/scale/ColorScale";
+import { useViewParams } from "@/platform/stores/useViewParams";
 
 export const useSelection = defineStore("platform:selection", () => {
     /** The transiently-hovered entity key, or null when the pointer is off the marks. */
@@ -317,6 +318,21 @@ export const useSelection = defineStore("platform:selection", () => {
         }
         return selectedKeys.value.size ? "var(--route-accent)" : null;
     });
+
+    // ── THE `?sel` URL BRIDGE (O-A11 · selection-drilldown §A.4) — the store OWNS `?sel` (single-writer).
+    // SEED-ONCE: a deep-link `?sel=<k1>,<k2>,…` with NO live selection reconstructs the set (parse-guarded
+    // — legacy-bare / foreign tokens already dropped by `useViewParams.selKeys`); a within-session select
+    // is never clobbered (the seed runs only on the empty set). WRITE: every select/selectMany/clear flows
+    // the set to `?sel` (flush:post so the set has settled), so the drill-down deep-link round-trips for
+    // free (the panel is a pure projection of `?sel`). Browser-guarded (no `window` in the node specs).
+    if (typeof window !== "undefined") {
+        const view = useViewParams();
+        const seed = view.selKeys.map((k) => k.key);
+        if (seed.length && selectedKeys.value.size === 0) {
+            selectedKeys.value = new Set(seed);
+        }
+        watch(selectedKeys, (set) => view.setSel(set), { flush: "post" });
+    }
 
     return {
         hoveredKey,
