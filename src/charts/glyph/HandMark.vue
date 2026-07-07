@@ -21,7 +21,7 @@
 // word width — the engine lays ONE `.hm__svg` over the whole clause box, so a strip mis-sizes a
 // wrapping verdict). The aspect strip-pin stays an UNDERLINE-only concern (the hull is a wide slab
 // EXEMPT from aspect-tracking — `isAspectTracked` would FALSE-FAIL it).
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import {
     InkMark,
     BRUSHES,
@@ -168,12 +168,57 @@ const WASH_INK: DarkLiftPair = {
 };
 const pair: DarkLiftPair = props.variant === "highlighter" ? WASH_INK : RED_INK;
 // THE HERO BOIL is active only on the `load` clock (the load-arrival escalation; `scroll`/`static`
-// rest drawn, the frame-guard intact).
+// rest drawn, the frame-guard intact). This is the boil MOUNT INTENT — it keys `data-boil` (the
+// per-route budget gate counts intent, not scroll position) and is stable for the mark's lifetime.
 const boilActive = computed(() => props.boil && props.clock === "load");
+
+// O-A4-R — THE IDLE-ZERO VISIBILITY PARK (the RED-LEDGER B.11 recurrence · AG1 · the O-A4 bar).
+// The `draw-then-boil` living line is a PERPETUAL pencil-boil singleton-rAF subscriber: glass-ui
+// enrols `useLineBoil` with a frame count > 1 for as long as the mark boils, and the shared
+// `schedulerTick` reschedules `requestAnimationFrame` while any subscriber is active — so a hero mark
+// scrolled OFF-SCREEN keeps a core warm forever (the ~98 fps idle heartbeat the A18 verifier measured
+// on the data routes). "Idle" IS "nothing visibly animating": an off-screen mark must PARK. The gate
+// resolves the boil clock to `draw-then-boil` ONLY while the mark intersects the viewport; off-screen
+// it parks to `draw-on` (present, fully drawn, un-boiled), which collapses glass-ui's boil frame count
+// to 1 → `useLineBoil` withdraws its subscriber → pencil-boil's set EMPTIES → the singleton rAF chain
+// HALTS to zero. Re-entering the viewport re-arms it (park = unregister, resume = re-register). The
+// observer mirrors `useCountUp`'s one-shot re-entry IO (deferred observe, disconnect on unmount); an IO
+// carries NO rAF, so the gate itself costs zero idle burn.
+//
+// `boilVisible` DEFAULTS true so a boil mark MOUNTS with `draw-then-boil` — glass-ui binds the LIVE
+// `useLineBoil` subscription at setup (its ternary is evaluated once), and the reactive frame-count
+// getter then enrols/withdraws on this flag. The masthead hero mounts on-screen, so the default is
+// also its true state; the IO only ever parks it later.
+//
+// ROOT ASK (owner packet): the loop-never-halts-on-inactive-set defect is INTERNAL to the READ-ONLY
+// `@mkbabb/pencil-boil` 0.4.1 singleton — its `schedulerTick` reschedules UNCONDITIONALLY and never
+// self-halts when the set holds no active subscriber (fixed at 0.6.0, which calls `maybeStopScheduler`
+// in the tick tail). This atlas park is the lawful consumer-side cure: it makes the set EMPTY so the
+// loop dies even on 0.4.1. The full fix is the consumer bumping pencil-boil ≥ 0.6.0.
+const boilVisible = ref(true);
+if (boilActive.value && typeof IntersectionObserver !== "undefined") {
+    let io: IntersectionObserver | null = null;
+    // Defer the observe one microtask so the `rootEl` ref has resolved its node (the useCountUp seam).
+    void Promise.resolve().then(() => {
+        const el = rootEl.value;
+        if (!el) return;
+        io = new IntersectionObserver(
+            (entries) => {
+                for (const entry of entries) boilVisible.value = entry.isIntersecting;
+            },
+            { threshold: 0 },
+        );
+        io.observe(el);
+    });
+    onBeforeUnmount(() => io?.disconnect());
+}
+/** The LIVE boil edge — the mount intent AND the mark on-screen. Feeds the clock; when it drops the
+    boil parks to `draw-on` and pencil-boil's subscriber set empties (the singleton rAF halts). */
+const boilLive = computed(() => boilActive.value && boilVisible.value);
 const { appear, animation, resolveInkColor } = useHandMarkClock(
     () => props.clock,
     pair,
-    () => boilActive.value,
+    () => boilLive.value,
 );
 const inkColor = resolveInkColor(() => props.color);
 
