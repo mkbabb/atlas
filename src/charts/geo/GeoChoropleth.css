@@ -66,6 +66,15 @@
     stroke: var(--background);
     stroke-width: 2px;
 }
+/* O-A22 · THE SIGHTED-COLORBLIND VALUE-LABEL CHANNEL — when the density decision routes a frame to
+   the value-label channel (a continuous / sparse district set), the words are the RESTING redundant
+   channel and must be legible without hue, so the layer lifts off the near-invisible GAP-5 rest
+   opacity to a quiet-but-readable engraving (the paper halo below keeps it seated on any fill). The
+   forced-colors rule still wins over this where the OS flattens the palette. */
+.geo-value-labels--redundant .geo-value-label {
+    opacity: 0.6;
+}
+
 /* Under `forced-colors: active` the OS flattens every fill to a handful of system colours, so the
    colour ramp's magnitude is LOST — the value WORD becomes the channel that carries the meaning,
    forced to a fully-legible CanvasText. The H7 ContractCliff guarantee, applied per feature. */
@@ -76,4 +85,22 @@
         stroke: Canvas;
         forced-color-adjust: none;
     }
+}
+
+/* O-A22 · THE TIER-TEXTURE INK (the sighted-colorblind data channel). Each tier `<pattern>` paints
+   its colour background rect, then a hue-independent ink over it — `--foreground` so the texture
+   reads on ANY hue and in BOTH themes (and survives a full grayscale strip, the O-A22 proof). Held
+   below full opacity so the untextured tile keeps the tier colour showing through (the redundant
+   channel AUGMENTS the hue, it does not replace it). The set is DISJOINT from the 45° absence hatch:
+   dots · straight/grid/chevron lines · checker · rings · cross-mesh — never the lone diagonal. */
+.geo-data-stroke {
+    stroke: var(--foreground);
+    stroke-width: 0.85;
+    fill: none;
+    opacity: 0.7;
+}
+.geo-data-fill {
+    fill: var(--foreground);
+    stroke: none;
+    opacity: 0.7;
 }

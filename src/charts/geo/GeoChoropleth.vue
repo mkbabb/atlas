@@ -46,6 +46,18 @@ import {
     isCoherent,
     type GeoCoherenceSample,
 } from "@/charts/geo/geo-coherence";
+// O-A22 — the sighted-colorblind redundant channel (the a11y P3 pattern/value-label fallback). The
+// PURE mechanism (the tier-bin math + the density decision + the disjointness law) lives beside the
+// SFC so the component and the O-A22 gate read ONE source (no drift), the geo-coherence precedent.
+import {
+    buildDataFillBins,
+    resolveRedundantChannel,
+    patternIdForBin,
+    DATA_PATTERNS,
+    DATA_PATTERN_TILE,
+    type RedundantChannel,
+    type ResolvedChannel,
+} from "@/charts/geo/redundant-channel";
 
 // The choropleth joins on a feed's entity key — the value under `FeedMeta.keyField`
 // (a zero-padded FIPS, an LEA number, an entity id). Binding the type to the
@@ -125,6 +137,19 @@ const props = withDefaults(
          * and made visible under `forced-colors: active` where the colour fails.
          */
         valueLabel?: (key: string) => string;
+        /**
+         * O-A22 — THE SIGHTED-COLORBLIND REDUNDANT CHANNEL (a11y P3). A data fill encodes its tier in
+         * HUE ALONE; this adds a redundant NON-hue channel so a colour-blind reader tells the tiers
+         * apart without hue discrimination. `'auto'` (the DEFAULT — the O-A7 inheritance-breadth law:
+         * EVERY choropleth inherits it, no per-plate wiring) chooses by density: a tiered / dense grid
+         * (few distinct fill colours) gets a tier-indexed TEXTURE (an SVG `<pattern>` per tier, its
+         * background the tier colour + a hue-independent ink), a continuous / sparse district set (many
+         * distinct colours) gets the on-mark VALUE-LABEL (the `valueLabel` word, made legible at rest).
+         * `'pattern'` / `'value-label'` force a channel; `'none'` disables it (colour-only — the NEG).
+         * The texture set is visually DISJOINT from the reserved absence/dim hatch, and tier k's texture
+         * carries tier k's colour (the pattern's own background), so the two channels can never disagree.
+         */
+        redundantChannel?: RedundantChannel;
         ariaLabel?: string;
     }>(),
     {
@@ -142,6 +167,7 @@ const props = withDefaults(
         kbdActiveKey: null,
         valueFormat: undefined,
         valueLabel: undefined,
+        redundantChannel: "auto",
         ariaLabel: "Geographic choropleth",
     },
 );
@@ -173,6 +199,13 @@ interface Shape {
     cy: number;
     /** GAP-5 — the per-feature value word (the forced-colors text channel); "" ⇒ no label. */
     label: string;
+    /** O-A22 — the RESOLVED data fill (the `fillOf` result, computed once) — the ONE shared bin
+        source the redundant tier-texture keys off (tier k's texture carries tier k's colour). */
+    fill: string;
+    /** O-A22 — whether this feature carries a DATA value (vs a no-data absence cell). Keys off the
+        GAP-5 empty-`valueLabel` convention ("" ⇒ no-data); with no `valueLabel` every cell is data.
+        An absence cell mints NO tier bin + gets NO redundant channel (it reads as ABSENT). */
+    hasValue: boolean;
 }
 
 const drawOn = computed(() => props.rank != null);
@@ -225,8 +258,13 @@ const shapes = computed<Shape[]>(() => {
     return features.map((f) => {
         const key = keyOf(f);
         // GAP-5 — the centroid the forced-colors value LABEL is seated at, measured off the SAME
-        // path generator the fill draws through (one projection, one coordinate frame).
+        // path generator the fill draws through (one projection, one coordinate frame). O-A22 needs
+        // the centroid whenever a channel MAY seat a value-label there, so it is measured whenever a
+        // label source (`valueLabel`) exists, not only under the resting forced-colors posture.
         const [cx, cy] = labelOf ? draw.centroid(f) : [0, 0];
+        // O-A22 — the label word ("" ⇒ no-data), the RESOLVED fill (the shared bin source), and the
+        // absence flag, computed ONCE here so the redundant channel and the fill read one truth.
+        const label = labelOf ? labelOf(key) : "";
         return {
             key,
             d: draw(f) ?? "",
@@ -236,10 +274,59 @@ const shapes = computed<Shape[]>(() => {
             rank: rankOf ? rankOf(key) : undefined,
             cx,
             cy,
-            label: labelOf ? labelOf(key) : "",
+            label,
+            fill: fillOf(key),
+            // A cell is DATA unless a label source marks it absent with the GAP-5 empty convention.
+            hasValue: labelOf == null || label !== "",
         };
     });
 });
+
+// ── O-A22 · THE SIGHTED-COLORBLIND REDUNDANT CHANNEL (a11y P3) ──────────────────────────────────
+// The redundant NON-hue channel keyed off the ONE shared bin source — the RESOLVED data fill colour
+// (`shapes[].fill`). Distinct data colours are ordered into tier bins (`buildDataFillBins`); the
+// channel `auto` resolves to per density: a tiered / dense grid (few colour bins) → a tier TEXTURE,
+// a continuous / sparse district set (many bins) → the on-mark VALUE-LABEL. Because a tier's texture
+// is a `<pattern>` whose OWN background rect is that tier's colour, tier k's texture literally
+// carries tier k's colour — the two channels can never disagree (the O-A22 agreement, by construction).
+
+/** The distinct-DATA-fill → tier-bin map (absence cells excluded — they mint no bin). */
+const fillBins = computed(() =>
+    buildDataFillBins(shapes.value.filter((s) => s.hasValue).map((s) => s.fill)),
+);
+
+/** Whether an on-mark VALUE-LABEL channel is available (the word text comes from `valueLabel`). */
+const hasLabelSource = computed(() => props.valueLabel != null);
+
+/** The channel `redundantChannel` resolves to for this frame — the density decision's output. */
+const resolvedChannel = computed<ResolvedChannel>(() =>
+    resolveRedundantChannel(props.redundantChannel, fillBins.value.size, hasLabelSource.value),
+);
+
+/** The tier TEXTURE `<pattern>` defs (built only under the pattern channel): one per distinct data
+    colour, its background rect the tier colour + the bin's hue-independent ink on top. Emitted into
+    `<defs>` and referenced by `url(#geo-data-pattern-{bin})` — the agreement source is the pattern
+    ITSELF (its background is the tier fill), so no fixture can pull the texture off its colour. */
+const patternDefs = computed(() => {
+    if (resolvedChannel.value !== "pattern") return [];
+    return [...fillBins.value.entries()].map(([color, bin]) => ({
+        id: patternIdForBin(bin),
+        fill: color,
+        geom: DATA_PATTERNS[bin % DATA_PATTERNS.length],
+    }));
+});
+
+/** The per-shape fill — under the PATTERN channel a DATA cell fills through its tier texture
+    (`url(#…)`, the colour + ink), else the plain resolved fill. A DIMMED or ABSENT cell keeps the
+    plain fill so the reserved dim/absence hatch reads on it (the disjointness law: a receded cell is
+    never a data texture). */
+function fillFor(s: Shape): string {
+    if (resolvedChannel.value === "pattern" && s.hasValue && !isDimmed(s.key)) {
+        const bin = fillBins.value.get(s.fill);
+        if (bin != null) return `url(#${patternIdForBin(bin)})`;
+    }
+    return s.fill;
+}
 
 /** GAP-5 — whether the forced-colors per-feature TEXT channel is active (the `valueLabel` prop is
     supplied). When true, each shape with a non-empty label paints a centroid `<text>` so the
@@ -260,7 +347,19 @@ const labelsOn = computed(() => props.valueLabel != null);
 // is never windowed or collision-skipped; every feature keeps its word). A live `matchMedia` (the
 // useReducedMotion idiom) so an OS contrast toggle mounts/unmounts the channel reactively.
 const forcedColorsActive = useMediaQuery("(forced-colors: active)");
-const labelsMounted = computed(() => labelsOn.value && forcedColorsActive.value);
+// O-A22 extends the mount trigger: the layer also mounts when the redundant channel RESOLVES to
+// `value-label` (a continuous / sparse district set the density decision routes to the word channel)
+// — there the words are the SIGHTED-colorblind channel and must be legible AT REST (not only under
+// forced-colors), so the layer carries the `--redundant` rest visibility below. The GAP-5
+// completeness law is unchanged: a mounted layer keeps EVERY feature's word (never windowed).
+const labelsMounted = computed(
+    () =>
+        (labelsOn.value && forcedColorsActive.value) ||
+        resolvedChannel.value === "value-label",
+);
+/** O-A22 — the layer is the resting SIGHTED-colorblind channel (visible at rest), not the quiet
+    forced-colors-only overlay, exactly when the density decision routed this frame to value-label. */
+const labelsRedundant = computed(() => resolvedChannel.value === "value-label");
 
 // K-D-GEO §4.A — THE STATIC-DASH MIGRATION. The polygon-life draw-in rides a STATIC `pathLength="1"`
 // literal (on the `.geo-shape` <path>) so the dash math collapses to the constants
@@ -397,6 +496,53 @@ const tableRows = computed(() =>
                         opacity="0.7"
                     />
                 </pattern>
+                <!-- O-A22 · THE TIER TEXTURES (the sighted-colorblind data channel). One `<pattern>`
+                     per distinct DATA tier: its background rect IS the tier colour, a hue-independent
+                     ink (dots / lines / grid / checker / chevron / rings / cross-mesh) drawn over it —
+                     so a colour-blind reader tells the tiers apart by TEXTURE, and tier k's texture
+                     literally carries tier k's colour (the agreement is the pattern itself). The set
+                     is DISJOINT from the 45° absence hatch above. Built only under the pattern channel;
+                     a continuous / sparse map uses the value-label layer instead. -->
+                <pattern
+                    v-for="p in patternDefs"
+                    :key="p.id"
+                    :id="p.id"
+                    :width="DATA_PATTERN_TILE"
+                    :height="DATA_PATTERN_TILE"
+                    patternUnits="userSpaceOnUse"
+                >
+                    <rect
+                        :width="DATA_PATTERN_TILE"
+                        :height="DATA_PATTERN_TILE"
+                        :fill="p.fill"
+                    />
+                    <line
+                        v-for="(l, i) in p.geom.lines ?? []"
+                        :key="`ln-${i}`"
+                        :x1="l.x1"
+                        :y1="l.y1"
+                        :x2="l.x2"
+                        :y2="l.y2"
+                        class="geo-data-stroke"
+                    />
+                    <circle
+                        v-for="(c, i) in p.geom.circles ?? []"
+                        :key="`ci-${i}`"
+                        :cx="c.cx"
+                        :cy="c.cy"
+                        :r="c.r"
+                        :class="c.ring ? 'geo-data-stroke' : 'geo-data-fill'"
+                    />
+                    <rect
+                        v-for="(r, i) in p.geom.rects ?? []"
+                        :key="`re-${i}`"
+                        :x="r.x"
+                        :y="r.y"
+                        :width="r.width"
+                        :height="r.height"
+                        class="geo-data-fill"
+                    />
+                </pattern>
             </defs>
             <g>
                 <template v-for="s in shapes" :key="s.key">
@@ -406,7 +552,7 @@ const tableRows = computed(() =>
                     <path
                         :d="s.d"
                         pathLength="1"
-                        :fill="fillOf(s.key)"
+                        :fill="fillFor(s)"
                         :data-key="s.key"
                         :data-raised="isRaised(s.key) ? 'true' : undefined"
                         :data-dimmed="isDimmed(s.key) ? 'true' : undefined"
@@ -437,7 +583,12 @@ const tableRows = computed(() =>
                  overlay, near-invisible at rest (the colour ramp is the resting channel); the
                  `forced-colors` rule below makes them fully legible exactly when the colour fails.
                  Drawn ONLY when the caller supplies `valueLabel` (the legacy posture has no text). -->
-            <g v-if="labelsMounted" class="geo-value-labels" aria-hidden="true">
+            <g
+                v-if="labelsMounted"
+                class="geo-value-labels"
+                :class="{ 'geo-value-labels--redundant': labelsRedundant }"
+                aria-hidden="true"
+            >
                 <text
                     v-for="s in shapes"
                     v-show="s.label"
