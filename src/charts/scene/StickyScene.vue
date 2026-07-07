@@ -206,7 +206,7 @@ function Prose(p: { prose: ChapterTitle }): VNodeChild {
     <div
         ref="sceneRootEl"
         class="sticky-scene"
-        :class="`sticky-scene--pin-${side}`"
+        :class="scene.focal ? 'sticky-scene--focal' : `sticky-scene--pin-${side}`"
         :data-anchor="scene.anchor ?? 'centre'"
     >
         <!-- THE PINNED GRAPHIC — plain position:sticky (scoped CSS). A type-free VizContract routes
@@ -232,7 +232,11 @@ function Prose(p: { prose: ChapterTitle }): VNodeChild {
                 :data-active-step="i === activeIndex ? '' : undefined"
                 :aria-current="i === activeIndex ? 'true' : undefined"
             >
-                <Prose :prose="step.prose" />
+                <!-- The prose CHIP. Non-focal: `display:contents` — no box, the prose lays out exactly
+                     as before (byte-identical). Focal: the floating scrim-chip card (O-A17). -->
+                <div class="sticky-scene__chip">
+                    <Prose :prose="step.prose" />
+                </div>
             </li>
         </ol>
     </div>
@@ -291,6 +295,11 @@ function Prose(p: { prose: ChapterTitle }): VNodeChild {
     display: flex;
     flex-direction: column;
 }
+/* THE PROSE CHIP WRAPPER — `display: contents` generates NO box, so a non-focal scene's prose lays out
+   exactly as it did before (byte-identical). The focal path (below) turns it into the scrim-chip card. */
+.sticky-scene__chip {
+    display: contents;
+}
 .sticky-scene__step {
     min-block-size: 72svh; /* ~one viewport per step — one idea per scroll. svh (the STATIC small-
        viewport unit) not dvh: a pinned scroll-story step measured against the DYNAMIC viewport
@@ -341,6 +350,98 @@ function Prose(p: { prose: ChapterTitle }): VNodeChild {
     }
     .sticky-scene__step {
         min-block-size: 64svh;
+    }
+}
+
+/* ── THE MAP-PRIMACY FOCAL STAGE (O-A17 · the owner Map-primacy law, ruling 2) ─────────────────────
+   The focal viz takes the FULL stage — a SINGLE track, the 50/50 split-pane is BANNED — and the steps
+   STEP OVER the map as floating scrim-chips (Q-29: one at a time, hugging a dead-space corner, never a
+   reserved side column). Purely ADDITIVE: every rule is under `.sticky-scene--focal`; a non-focal scene
+   is byte-identical. The pin stays plain `position: sticky` (the shared `.sticky-scene__graphic` rule —
+   NO JS pin-spacer). The `--pin-left/right` side register never applies (the host emits no pin class). */
+@media (min-width: 1024px) {
+    /* KILL the desktop `grid-template-columns: 1fr 1fr` — one track, the map owns the whole width. */
+    .sticky-scene--focal {
+        grid-template-columns: 1fr;
+    }
+    /* STACK the graphic + the steps in ONE cell (grid-row/column 1) so the chips OVERLAY the pinned
+       map — never a beside-it column. The graphic is the stable full-stage anchor beneath; the steps
+       float above (z-index), and the steps lane lets scroll+hover pass THROUGH to the live map. */
+    .sticky-scene--focal .sticky-scene__graphic,
+    .sticky-scene--focal .sticky-scene__steps {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    .sticky-scene--focal .sticky-scene__graphic {
+        z-index: 0;
+        /* the map takes the FULL stage (the pin caps it at the viewport via the shared graphic rule). */
+        max-inline-size: none;
+    }
+    .sticky-scene--focal .sticky-scene__steps {
+        z-index: 1;
+        /* the scrim-chip LANE hugs the dead-space corner — a contained width, never the half-stage. */
+        justify-self: end;
+        inline-size: min(30rem, 38vw);
+        padding-inline-end: clamp(1rem, 3vw, 3rem);
+        pointer-events: none; /* the map beneath stays interactive; the active chip re-enables below */
+    }
+}
+/* THE SCRIM-CHIP (both viewports). The `<li>` step stays a TALL, TRANSPARENT scroll block (it keeps
+   its scroll height so the IO still fires the active-step crossing — no JS pin-spacer) and merely
+   CENTRES its chip; the visible card is the inner `.sticky-scene__chip`. The step's own dim/rim
+   affordance (the base `opacity: 0.35` + the `[data-active-step]` rim) is NEUTRALIZED here — the focal
+   register speaks through the chip's opacity instead. */
+.sticky-scene--focal .sticky-scene__step {
+    opacity: 1;
+    padding: 0;
+    box-shadow: none;
+}
+/* THE CHIP CARD — a floating scrim over the map's dead space, backdrop blur so the prose reads over ANY
+   map tint. Q-29 ONE AT A TIME: recessive chips go FULLY transparent (step-over, NOT the ambient 0.35
+   dim); the active chip alone reads. The 320ms opacity ease (inherited from the step transition, and
+   dropped under PRM by the shared rule) carries the swap. */
+.sticky-scene--focal .sticky-scene__chip {
+    display: block;
+    opacity: 0; /* one at a time — a recessive focal chip is GONE, not merely dimmed */
+    pointer-events: none;
+    padding: 1.25rem 1.5rem;
+    border-radius: var(--radius-card, 12px);
+    background: color-mix(in oklab, var(--surface-card, Canvas) 82%, transparent);
+    backdrop-filter: blur(10px) saturate(1.1);
+    -webkit-backdrop-filter: blur(10px) saturate(1.1);
+    box-shadow: 0 8px 28px -12px color-mix(in oklab, CanvasText 40%, transparent);
+    border: 1px solid color-mix(in oklab, CanvasText 12%, transparent);
+    transition: opacity 320ms var(--ease-out-expo, ease-out);
+}
+.sticky-scene--focal .sticky-scene__step[data-active-step] .sticky-scene__chip {
+    opacity: 1;
+    pointer-events: auto; /* the LIVE chip re-enables interaction; the map owns the rest of the stage */
+}
+@media (prefers-reduced-motion: reduce) {
+    .sticky-scene--focal .sticky-scene__chip {
+        transition: none; /* de-animate the chip swap under PRM (scale-down, don't delete) */
+    }
+}
+/* ── FOCAL PHONE — the map still owns the full stage; the chip overlays anchored to the BOTTOM (the
+   legible mobile map-scrolly position), one at a time. Single-column already; force the OVERLAY. ── */
+@media (max-width: 1023px) {
+    .sticky-scene--focal .sticky-scene__graphic,
+    .sticky-scene--focal .sticky-scene__steps {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    .sticky-scene--focal .sticky-scene__graphic {
+        z-index: 0;
+        max-block-size: calc(100svh - 2 * var(--scene-pin-top)); /* the FULL phone stage, not 56svh */
+    }
+    .sticky-scene--focal .sticky-scene__steps {
+        z-index: 1;
+        padding-inline: 1rem;
+        pointer-events: none;
+    }
+    .sticky-scene--focal .sticky-scene__step {
+        justify-content: flex-end; /* the chip rides the map's FOOT — the thumb-safe mobile read band */
+        padding-block-end: 10svh;
     }
 }
 </style>

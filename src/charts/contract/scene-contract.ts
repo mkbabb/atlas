@@ -67,8 +67,15 @@ export interface ChapterScene {
     graphic: Component | VizContract;
     /** The narrated STEPS — the discrete text blocks that scroll past the pinned graphic. */
     steps: SceneStep[];
-    /** Which side the graphic pins (D2). Omit ⇒ 'auto' (zebra by the chapter index). */
+    /** Which side the graphic pins (D2). Omit ⇒ 'auto' (zebra by the chapter index). IGNORED when
+        `focal` is set (the focal path retires the side register — the map owns the full stage). */
     side?: SceneSide;
+    /** THE MAP-PRIMACY FOCAL STAGE (O-A17 · the owner Map-primacy law). When set, the graphic takes
+        the FULL stage (a single track, no 50/50 split-pane) and the `steps` STEP OVER it as floating
+        scrim-chips (Q-29: one at a time, hugging the map's dead-space corner — never a reserved side
+        column). The `side` register retires. Omit ⇒ the two-column split-pane scene (byte-identical
+        default — the existing sticky-scene geometry). */
+    focal?: boolean;
     /** The trigger-line register (L4). Omit ⇒ 'centre'. */
     anchor?: SceneAnchor;
     /** The DISCRETE step → world effect (KISS). The host runs this whenever the ACTIVE STEP changes

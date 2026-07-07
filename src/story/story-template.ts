@@ -113,6 +113,30 @@ export const STORY_TEMPLATES = {
             "scene->close": { kind: "crossfade" },
         },
     },
+    /** THE MAP-PRIMACY FOCAL STAGE (O-A17 · the owner Map-primacy law, ruling 2). The focal viz takes
+        the FULL stage — a single `establish` scene pins full-stage (`scene.focal`, no reserved side
+        column) — and the narration is N REPEATABLE `narrate` overlay beats that STEP OVER the map as
+        scrim-chips (Q-29: one at a time, never a 50/50 split-pane). Each `narrate` beat carries the
+        camera FOCUS grammar (`pan`/`scale` + `highlight`/`isolate`/`zoom`) against the sticky map's
+        `MarkStageHandle`, lerped on the beat's own entry scrub (bijective — NO scrolljack). The arc:
+        `cover → establish(the full-stage map) → [narrate ×N] → conclude`; cover→establish crossfades,
+        establish→narrate + narrate→narrate hand the scrub off (the chip step-over), narrate→conclude
+        crossfades. This is the sticky+focus Closeread grammar mapped onto the existing focus union. */
+    "focal-stage": {
+        id: "focal-stage",
+        roles: [
+            { id: "cover", kind: "cover" },
+            { id: "establish", kind: "scene" },
+            { id: "narrate", kind: "reveal", repeat: true },
+            { id: "conclude", kind: "conclude", reveal: { tier: "tail" } },
+        ],
+        transitions: {
+            "cover->establish": { kind: "crossfade" },
+            "establish->narrate": { kind: "scrub-handoff" },
+            "narrate->narrate": { kind: "scrub-handoff" },
+            "narrate->conclude": { kind: "crossfade" },
+        },
+    },
 } as const satisfies Record<string, StoryTemplate>;
 
 export type StoryTemplateId = keyof typeof STORY_TEMPLATES;

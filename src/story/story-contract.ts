@@ -77,12 +77,27 @@ export interface BeatTransition {
 
 /** A beat's declarative FOCUS EFFECT — fired as the beat becomes active, eased on the beat's own
     entry scrub, reversed on scroll-up. Focus effects are DATA the director interprets against the
-    beat's `MarkStageHandle`; a figure never hand-wires them. */
+    beat's `MarkStageHandle`; a figure never hand-wires them.
+
+    THE FOCAL-STAGE MOTION ARM (O-A17 · the map-primacy focus grammar) — `pan` + `scale` are the two
+    Closeread camera moves the full-stage sticky map answers to on its narrate beats. Both are LERPED
+    on the beat's own entry scrub `t` (0 ⇒ the settled establish pose, 1 ⇒ the beat's target pose) so
+    a scroll-up REWINDS them clean (bijective — NO scrolljack, the owner law). A handle honours them
+    in `applyFocus(effects, t)` by composing ONE camera transform on its stage; omit the arm and the
+    prior `highlight | isolate | zoom | annotate` grammar is byte-identical. */
 export type FocusEffect =
     | { kind: "highlight"; marks: MarkKey[] }
     | { kind: "isolate"; marks: MarkKey[]; floor?: number }
     | { kind: "zoom"; domain: { x?: [number, number]; y?: [number, number] } }
-    | { kind: "annotate"; at: MarkKey; note: string };
+    | { kind: "annotate"; at: MarkKey; note: string }
+    /** PAN — translate the stage toward a focal point as the beat scrubs in. `to` is the target
+        centre in NORMALIZED stage coords (0..1 of the stage box; omit an axis ⇒ hold it). The handle
+        lerps the current centre → `to` on `t`, so scroll-up pans back to origin (bijective). */
+    | { kind: "pan"; to: { x?: number; y?: number } }
+    /** SCALE — zoom the stage about `origin` (normalized 0..1, default centre {0.5,0.5}) by `factor`
+        at full `t` (t=0 ⇒ 1×, t=1 ⇒ factor×; the lerp is bijective so scroll-up rewinds clean). A
+        camera scale about a focal point, distinct from `zoom` (which re-domains the data scales). */
+    | { kind: "scale"; factor: number; origin?: { x?: number; y?: number } };
 
 // ── The morph-participation seam (the D5 no-overfit law at the motion grain) ──────────────────────
 
@@ -121,7 +136,11 @@ export interface MarkStageHandle {
         0<t<1 the CLONES are the marks; at the poles the stages own them). `keys` omitted ⇒ all marks
         (a CSS toggle on the chart host, ~0ms); a subset ⇒ per-key hide, once-per-edge, off the tick. */
     setMarksHidden(hidden: boolean, keys?: readonly MarkKey[]): void;
-    /** Apply a focus treatment (attn recession / gilt highlight) at scrub `t` — the FocusEffect target. */
+    /** Apply a focus treatment at scrub `t` — the FocusEffect target. The mark arm (`highlight` /
+        `isolate` / `annotate`) is attn recession / gilt highlight; the camera arm (`pan` / `scale`,
+        O-A17) composes ONE bijective stage transform lerped on `t` (t=0 ⇒ the settled pose, so a
+        scroll-up rewinds it clean — NO scrolljack). A handle that renders no camera reads only the
+        mark arm; the effects it ignores are inert. */
     applyFocus?(effects: readonly FocusEffect[], t: number): void;
 }
 
