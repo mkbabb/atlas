@@ -22,11 +22,19 @@
 import { computed } from "vue";
 import { useProvenance, type ProvenanceSources } from "./useProvenance";
 import type { ProvenanceFacet } from "./provenance-contract";
+import { appendixAnchorId } from "./appendix";
+import {
+    sourceLine as sourceLineOf,
+    measureLine as measureLineOf,
+    methodParts as methodPartsOf,
+    scopeParts as scopePartsOf,
+} from "./provenance-lines";
 
 const {
     facet,
     vizId,
     sources = {},
+    appendix = false,
 } = defineProps<{
     /** the declared per-viz provenance facet (VizPlate's `#provenance` slot prop). */
     facet: ProvenanceFacet;
@@ -35,38 +43,28 @@ const {
     /** the route-supplied algebra seams (predicate / labels / count / grain / aggregation); inert by
         default so a filterless route renders an honest static-only block. */
     sources?: ProvenanceSources;
+    /** [O-A9b] when the route renders a `ProvenanceAppendix`, set `true` to CROSS-LINK this bar to its
+        appendix row (`#appendixAnchorId(vizId)`) — the two surfaces read ONE provenance. Default off
+        (a route with no appendix shows no dangling link). */
+    appendix?: boolean;
 }>();
 
 const resolved = useProvenance(vizId, () => facet, sources);
 
+// SOURCE / MEASURE / METHOD / SCOPE — derived in the SHARED `provenance-lines` module so this inline
+// bar and the `ProvenanceAppendix` never diverge (single-derivation; [ANSWERS Q43]).
 /** SOURCE — dataset · sections (the always-present static head). */
-const sourceLine = computed<string>(() => {
-    const p = resolved.value;
-    return p.sections.length ? `${p.dataset} · ${p.sections.join(" · ")}` : p.dataset;
-});
+const sourceLine = computed<string>(() => sourceLineOf(resolved.value));
 /** MEASURE — the forthright x-vs-y encoding ("net retention vs year"); null when undeclared. */
-const measureLine = computed<string | null>(() => {
-    const e = resolved.value.encoding;
-    return e ? `${e.y} vs ${e.x}` : null;
-});
+const measureLine = computed<string | null>(() => measureLineOf(resolved.value));
 /** METHOD — analysis · yearRange · vintage (the transform + span + the derived "data as of …"). */
-const methodParts = computed<string[]>(() => {
-    const p = resolved.value;
-    const parts: string[] = [];
-    if (p.analysis) parts.push(p.analysis);
-    if (p.yearRange) parts.push(p.yearRange);
-    if (p.vintage) parts.push(p.vintage.asOf);
-    return parts;
-});
+const methodParts = computed<string[]>(() => methodPartsOf(resolved.value));
 /** SCOPE — the live aggregation level (O-A9b's resolver populates; [ANSWERS Q43] — re-renders as the
     filter narrows). The grains join to "FY2016–2026 · all states · 1,150 districts · pooled". */
-const scopeParts = computed<string[]>(() => {
-    const a = resolved.value.aggregationLevel;
-    if (!a) return [];
-    return [a.yearGrain, a.spatialGrain, a.entityGrain, a.reduceOp].filter(
-        (g): g is string => g != null,
-    );
-});
+const scopeParts = computed<string[]>(() => scopePartsOf(resolved.value));
+/** [O-A9b] the appendix cross-link target (`#provenance-appendix-<vizId>`) — the SHARED anchor the
+    `ProvenanceAppendix` row derives, so a link ALWAYS resolves to its row. */
+const appendixHref = computed<string>(() => `#${appendixAnchorId(vizId)}`);
 </script>
 
 <template>
@@ -86,6 +84,20 @@ const scopeParts = computed<string[]>(() => {
         <div v-if="scopeParts.length" class="provenance-bar__rung" data-testid="provenance-bar-scope">
             <dt>Scope</dt>
             <dd>{{ scopeParts.join(" · ") }}</dd>
+        </div>
+        <!-- APPENDIX cross-link (O-A9b) — present only when the route renders a `ProvenanceAppendix`;
+             resolves to this viz's appendix row via the SHARED anchor. -->
+        <div v-if="appendix" class="provenance-bar__rung" data-testid="provenance-bar-appendix">
+            <dt>Full record</dt>
+            <dd>
+                <a
+                    class="provenance-bar__appendix-link"
+                    :href="appendixHref"
+                    data-testid="provenance-bar-appendix-link"
+                >
+                    see appendix ↴
+                </a>
+            </dd>
         </div>
         <!-- FILTER — PRESENT-WHEN-ACTIVE (absent on the identity predicate; no dead "0 filters" rung). -->
         <div
@@ -140,5 +152,14 @@ const scopeParts = computed<string[]>(() => {
 .provenance-bar__count {
     color: var(--muted-foreground);
     white-space: nowrap;
+}
+.provenance-bar__appendix-link {
+    color: var(--muted-foreground);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: color-mix(in oklab, currentColor, transparent 55%);
+}
+.provenance-bar__appendix-link:hover {
+    color: var(--foreground);
 }
 </style>

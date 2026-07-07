@@ -20,6 +20,7 @@ import { computed } from "vue";
 import { useActiveBeat } from "@/platform/stores/useActiveBeat";
 import { useProvenance, type ProvenanceSources } from "./useProvenance";
 import type { ProvenanceFacet } from "./provenance-contract";
+import { scopeParts as scopePartsOf } from "./provenance-lines";
 
 const {
     facet,
@@ -39,8 +40,14 @@ const resolved = useProvenance(vizId, () => facet, sources);
 
 /** THE ONE-CHIP GATE — this viz is the centre-argmin active viz (exactly one at a time). */
 const isActive = computed<boolean>(() => beat.activeVizId === vizId);
-/** Present ONLY when active AND filtered (the leave-one-out slice is non-empty). */
-const visible = computed<boolean>(() => isActive.value && resolved.value.filterActive);
+/** [O-A9b · ANSWERS Q43] the live aggregation SCOPE ("FY2025 · NC · single district") — re-resolves
+    as the filter narrows, so the chip's scope migrates with the view. `[]` when un-aggregated. */
+const scopeText = computed<string>(() => scopePartsOf(resolved.value).join(" · "));
+/** Present when active AND the plate has SOMETHING to say — an active filter slice OR a live
+    aggregation scope (a route that aggregates but has no filter still shows how the fleet is folded). */
+const visible = computed<boolean>(
+    () => isActive.value && (resolved.value.filterActive || scopeText.value.length > 0),
+);
 </script>
 
 <template>
@@ -51,10 +58,19 @@ const visible = computed<boolean>(() => isActive.value && resolved.value.filterA
         data-testid="provenance-chip"
         aria-hidden="true"
     >
-        <span v-if="resolved.filteredCount != null" class="provenance-chip__count">
-            {{ resolved.filteredCount.toLocaleString("en-US") }} {{ resolved.grainNoun }}
+        <span
+            v-if="scopeText"
+            class="provenance-chip__scope"
+            data-testid="provenance-chip-scope"
+        >
+            {{ scopeText }}
         </span>
-        <span class="provenance-chip__phrases">{{ resolved.filterPhrases.join(" · ") }}</span>
+        <template v-if="resolved.filterActive">
+            <span v-if="resolved.filteredCount != null" class="provenance-chip__count">
+                {{ resolved.filteredCount.toLocaleString("en-US") }} {{ resolved.grainNoun }}
+            </span>
+            <span class="provenance-chip__phrases">{{ resolved.filterPhrases.join(" · ") }}</span>
+        </template>
     </div>
 </template>
 
@@ -73,6 +89,10 @@ const visible = computed<boolean>(() => isActive.value && resolved.value.filterA
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+.provenance-chip__scope {
+    color: color-mix(in oklab, var(--foreground), transparent 25%);
+    white-space: nowrap;
 }
 .provenance-chip__count {
     font-weight: 600;

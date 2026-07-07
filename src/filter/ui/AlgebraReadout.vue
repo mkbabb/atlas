@@ -26,12 +26,14 @@ import {
     IDENTITY_DIM_LABELS,
     type DimLabels,
 } from "@/platform/provenance/predicate-prose";
+import type { AggregationLevel } from "@/platform/provenance/provenance-contract";
 
 const {
     predicate = null,
     labels = IDENTITY_DIM_LABELS,
     count = null,
     grainNoun = "items",
+    aggregation = null,
 } = defineProps<{
     /** the GLOBAL resolved predicate (`selection.resolved()()` — no client arg). `null`/identity ⇒
         the band self-gates absent. */
@@ -42,6 +44,9 @@ const {
     count?: number | null;
     /** the route-declared grain noun ("districts" / "schools" / …). */
     grainNoun?: string;
+    /** [O-A9b · ANSWERS Q43] the CURRENT aggregation level (O-A9b's resolver populates); `null` when
+        un-aggregated. The band prints it as a SCOPE line that RE-RENDERS as the view narrows. */
+    aggregation?: AggregationLevel | null;
 }>();
 
 const emit = defineEmits<{ (e: "clear-all"): void }>();
@@ -52,16 +57,37 @@ const active = computed<boolean>(() => !isIdentity(predicate));
 const phrases = computed<string[]>(() =>
     active.value ? humanizePredicate(predicate, labels) : [],
 );
+/** [O-A9b] the SCOPE grains ("FY2016–2026 · all states · pooled") — re-derives as the level
+    re-resolves (the Q43 migration). `[]` when un-aggregated. */
+const scopeParts = computed<string[]>(() => {
+    const a = aggregation;
+    if (!a) return [];
+    return [a.yearGrain, a.spatialGrain, a.entityGrain, a.reduceOp].filter(
+        (g): g is string => g != null,
+    );
+});
+/** The band shows when EITHER a filter clause is live OR an aggregation scope is present. */
+const shown = computed<boolean>(
+    () => (active.value && phrases.value.length > 0) || scopeParts.value.length > 0,
+);
 </script>
 
 <template>
     <div
-        v-if="active && phrases.length"
+        v-if="shown"
         class="algebra-readout"
         data-testid="algebra-readout"
     >
-        <h3 class="algebra-readout__crest">Active filter</h3>
-        <p class="algebra-readout__phrases">{{ phrases.join(" · ") }}</p>
+        <h3 class="algebra-readout__crest">{{ active && phrases.length ? "Active filter" : "View scope" }}</h3>
+        <p v-if="active && phrases.length" class="algebra-readout__phrases">{{ phrases.join(" · ") }}</p>
+        <!-- SCOPE (O-A9b · Q43) — the live aggregation level; re-renders as the view narrows. -->
+        <p
+            v-if="scopeParts.length"
+            class="algebra-readout__scope"
+            data-testid="algebra-readout-scope"
+        >
+            {{ scopeParts.join(" · ") }}
+        </p>
         <div class="algebra-readout__foot">
             <span v-if="count != null" class="algebra-readout__count">
                 {{ count.toLocaleString("en-US") }} {{ grainNoun }} match
@@ -102,6 +128,13 @@ const phrases = computed<string[]>(() =>
     font-size: 0.8rem;
     line-height: 1.45;
     color: var(--foreground);
+    text-wrap: pretty;
+}
+.algebra-readout__scope {
+    margin: 0;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: var(--muted-foreground);
     text-wrap: pretty;
 }
 .algebra-readout__foot {

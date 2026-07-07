@@ -1,146 +1,146 @@
 {
-  "name": "@mkbabb/atlas",
-  "version": "1.0.7",
-  "description": "@mkbabb/atlas — the Connectivity Atlas rendering engine (platform charts / chrome / story / motion + the dashboard contract + the Vite preset). Extracted from mkbabb/sci-report at the O-arc reformation; ships BUNDLER-ONLY via the born-clean subpath exports map. O-B0 genesis: buildable + publishable scaffold, empty of source until the O-B2–B9 module-move waves fill it.",
-  "type": "module",
-  "license": "MIT",
-  "author": "Mike Babb",
-  "sideEffects": [
-    "**/*.css"
-  ],
-  "engines": {
-    "node": ">=22"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mkbabb/atlas.git"
-  },
-  "exports": {
-    ".": {
-      "types": "./types/contract/index.d.ts",
-      "import": "./dist/contract.js"
+    "name": "@mkbabb/atlas",
+    "version": "1.0.8",
+    "description": "@mkbabb/atlas — the Connectivity Atlas rendering engine (platform charts / chrome / story / motion + the dashboard contract + the Vite preset). Extracted from mkbabb/sci-report at the O-arc reformation; ships BUNDLER-ONLY via the born-clean subpath exports map. O-B0 genesis: buildable + publishable scaffold, empty of source until the O-B2–B9 module-move waves fill it.",
+    "type": "module",
+    "license": "MIT",
+    "author": "Mike Babb",
+    "sideEffects": [
+        "**/*.css"
+    ],
+    "engines": {
+        "node": ">=22"
     },
-    "./contract": {
-      "types": "./types/contract/index.d.ts",
-      "import": "./dist/contract.js"
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/mkbabb/atlas.git"
     },
-    "./chrome": {
-      "types": "./types/platform/chrome/index.d.ts",
-      "import": "./dist/chrome.js"
+    "exports": {
+        ".": {
+            "types": "./types/contract/index.d.ts",
+            "import": "./dist/contract.js"
+        },
+        "./contract": {
+            "types": "./types/contract/index.d.ts",
+            "import": "./dist/contract.js"
+        },
+        "./chrome": {
+            "types": "./types/platform/chrome/index.d.ts",
+            "import": "./dist/chrome.js"
+        },
+        "./charts": {
+            "types": "./types/charts/index.d.ts",
+            "import": "./dist/charts.js"
+        },
+        "./provenance": {
+            "types": "./types/platform/provenance/index.d.ts",
+            "import": "./dist/provenance.js"
+        },
+        "./filter": {
+            "types": "./types/filter/index.d.ts",
+            "import": "./dist/filter.js"
+        },
+        "./story": {
+            "types": "./types/story/index.d.ts",
+            "import": "./dist/story.js"
+        },
+        "./motion": {
+            "types": "./types/motion/index.d.ts",
+            "import": "./dist/motion.js"
+        },
+        "./editorial": {
+            "types": "./types/editorial/index.d.ts",
+            "import": "./dist/editorial.js"
+        },
+        "./interaction": {
+            "types": "./types/interaction/index.d.ts",
+            "import": "./dist/interaction.js"
+        },
+        "./data": {
+            "types": "./types/data/index.d.ts",
+            "import": "./dist/data.js"
+        },
+        "./stores": {
+            "types": "./types/platform/stores/index.d.ts",
+            "import": "./dist/stores.js"
+        },
+        "./composables": {
+            "types": "./types/platform/composables/index.d.ts",
+            "import": "./dist/composables.js"
+        },
+        "./lib": {
+            "types": "./types/lib/index.d.ts",
+            "import": "./dist/lib.js"
+        },
+        "./vite": {
+            "types": "./types/vite/preset.d.ts",
+            "import": "./dist/vite.js"
+        },
+        "./styles": "./dist/style.css",
+        "./styles/tokens": "./dist/tokens.css",
+        "./styles/breakpoints": "./dist/breakpoints.css"
     },
-    "./charts": {
-      "types": "./types/charts/index.d.ts",
-      "import": "./dist/charts.js"
+    "files": [
+        "dist",
+        "types"
+    ],
+    "scripts": {
+        "build": "npm run build:js && npm run build:dts && npm run build:css",
+        "build:js": "vite build -c vite.lib.config.mts",
+        "build:dts": "vue-tsc -p tsconfig.dts.json --declaration --emitDeclarationOnly && node scripts/repoint-dts.mjs",
+        "build:css": "node scripts/build-styles.mjs",
+        "typecheck": "vue-tsc --noEmit",
+        "lint:pub": "attw --pack . --profile esm-only --exclude-entrypoints ./styles ./styles/tokens ./styles/breakpoints --ignore-rules internal-resolution-error && publint .",
+        "test": "vitest run",
+        "gates": "vitest run tests/gates",
+        "prepare": "test -f dist/contract.js || npm run build",
+        "prepublishOnly": "npm run typecheck && npm run build && npm run lint:pub && npm run test && npm run gates",
+        "release": "bash scripts/release.sh"
     },
-    "./provenance": {
-      "types": "./types/platform/provenance/index.d.ts",
-      "import": "./dist/provenance.js"
+    "peerDependencies": {
+        "@mkbabb/glass-ui": "^4.2.0",
+        "@mkbabb/keyframes.js": "^5",
+        "@mkbabb/pencil-boil": "^0.4.1",
+        "@mkbabb/value.js": "^1.2.0",
+        "vue": "^3.5",
+        "vue-router": "^4.5",
+        "pinia": "^2.3 || ^3.0"
     },
-    "./filter": {
-      "types": "./types/filter/index.d.ts",
-      "import": "./dist/filter.js"
+    "dependencies": {
+        "@lucide/vue": "^1.16",
+        "@vueuse/core": "^14.0",
+        "class-variance-authority": "^0.7",
+        "clsx": "^2.0",
+        "d3-geo": "^3",
+        "echarts": "^6",
+        "h3-js": "^4.4.0",
+        "reka-ui": "^2.9",
+        "topojson-client": "^3",
+        "us-atlas": "^3",
+        "vue-echarts": "^8"
     },
-    "./story": {
-      "types": "./types/story/index.d.ts",
-      "import": "./dist/story.js"
-    },
-    "./motion": {
-      "types": "./types/motion/index.d.ts",
-      "import": "./dist/motion.js"
-    },
-    "./editorial": {
-      "types": "./types/editorial/index.d.ts",
-      "import": "./dist/editorial.js"
-    },
-    "./interaction": {
-      "types": "./types/interaction/index.d.ts",
-      "import": "./dist/interaction.js"
-    },
-    "./data": {
-      "types": "./types/data/index.d.ts",
-      "import": "./dist/data.js"
-    },
-    "./stores": {
-      "types": "./types/platform/stores/index.d.ts",
-      "import": "./dist/stores.js"
-    },
-    "./composables": {
-      "types": "./types/platform/composables/index.d.ts",
-      "import": "./dist/composables.js"
-    },
-    "./lib": {
-      "types": "./types/lib/index.d.ts",
-      "import": "./dist/lib.js"
-    },
-    "./vite": {
-      "types": "./types/vite/preset.d.ts",
-      "import": "./dist/vite.js"
-    },
-    "./styles": "./dist/style.css",
-    "./styles/tokens": "./dist/tokens.css",
-    "./styles/breakpoints": "./dist/breakpoints.css"
-  },
-  "files": [
-    "dist",
-    "types"
-  ],
-  "scripts": {
-    "build": "npm run build:js && npm run build:dts && npm run build:css",
-    "build:js": "vite build -c vite.lib.config.mts",
-    "build:dts": "vue-tsc -p tsconfig.dts.json --declaration --emitDeclarationOnly && node scripts/repoint-dts.mjs",
-    "build:css": "node scripts/build-styles.mjs",
-    "typecheck": "vue-tsc --noEmit",
-    "lint:pub": "attw --pack . --profile esm-only --exclude-entrypoints ./styles ./styles/tokens ./styles/breakpoints --ignore-rules internal-resolution-error && publint .",
-    "test": "vitest run",
-    "gates": "vitest run tests/gates",
-    "prepare": "test -f dist/contract.js || npm run build",
-    "prepublishOnly": "npm run typecheck && npm run build && npm run lint:pub && npm run test && npm run gates",
-    "release": "bash scripts/release.sh"
-  },
-  "peerDependencies": {
-    "@mkbabb/glass-ui": "^4.2.0",
-    "@mkbabb/keyframes.js": "^5",
-    "@mkbabb/pencil-boil": "^0.4.1",
-    "@mkbabb/value.js": "^1.2.0",
-    "vue": "^3.5",
-    "vue-router": "^4.5",
-    "pinia": "^2.3 || ^3.0"
-  },
-  "dependencies": {
-    "@lucide/vue": "^1.16",
-    "@vueuse/core": "^14.0",
-    "class-variance-authority": "^0.7",
-    "clsx": "^2.0",
-    "d3-geo": "^3",
-    "echarts": "^6",
-    "h3-js": "^4.4.0",
-    "reka-ui": "^2.9",
-    "topojson-client": "^3",
-    "us-atlas": "^3",
-    "vue-echarts": "^8"
-  },
-  "devDependencies": {
-    "@arethetypeswrong/cli": "^0.18.2",
-    "@mkbabb/glass-ui": "4.2.0",
-    "@mkbabb/keyframes.js": "^5.1.0",
-    "@mkbabb/pencil-boil": "^0.4.1",
-    "@mkbabb/value.js": "^1.2.0",
-    "@tailwindcss/vite": "^4.3.0",
-    "@types/d3-geo": "^3",
-    "@types/geojson": "^7946",
-    "@types/node": "^22.19.0",
-    "@types/topojson-client": "^3",
-    "@types/topojson-specification": "^1",
-    "@vitejs/plugin-vue": "^6.0.7",
-    "pinia": "^3.0.4",
-    "publint": "^0.3.0",
-    "tailwindcss": "^4.3.0",
-    "tw-animate-css": "^1.2.5",
-    "typescript": "^5.9.0",
-    "vite": "^7.3.0",
-    "vitest": "^4.1.0",
-    "vue": "^3.5.35",
-    "vue-router": "^4.6.4",
-    "vue-tsc": "^2.2.12"
-  }
+    "devDependencies": {
+        "@arethetypeswrong/cli": "^0.18.2",
+        "@mkbabb/glass-ui": "4.2.0",
+        "@mkbabb/keyframes.js": "^5.1.0",
+        "@mkbabb/pencil-boil": "^0.4.1",
+        "@mkbabb/value.js": "^1.2.0",
+        "@tailwindcss/vite": "^4.3.0",
+        "@types/d3-geo": "^3",
+        "@types/geojson": "^7946",
+        "@types/node": "^22.19.0",
+        "@types/topojson-client": "^3",
+        "@types/topojson-specification": "^1",
+        "@vitejs/plugin-vue": "^6.0.7",
+        "pinia": "^3.0.4",
+        "publint": "^0.3.0",
+        "tailwindcss": "^4.3.0",
+        "tw-animate-css": "^1.2.5",
+        "typescript": "^5.9.0",
+        "vite": "^7.3.0",
+        "vitest": "^4.1.0",
+        "vue": "^3.5.35",
+        "vue-router": "^4.6.4",
+        "vue-tsc": "^2.2.12"
+    }
 }

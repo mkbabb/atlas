@@ -19,3 +19,14 @@ export * from "./predicate-prose";
 export * from "./useProvenance";
 export { default as ProvenanceBar } from "./ProvenanceBar.vue";
 export { default as ProvenanceChip } from "./ProvenanceChip.vue";
+
+// ── v1.0.8 (O-A9b) — THE Q-43 FACILITY: the aggregation-level resolver + the per-route appendix +
+// the all-items coverage census (the MECHANISM). The resolver POPULATES `ResolvedProvenance.
+// aggregationLevel` off the live filter/selection (year × spatial × entity × reduce-op); the appendix
+// renders a route's full provenance reference, the inline bar cross-linking to it via `appendixAnchorId`;
+// the census holds the WG-D route covers accountable to "0 un-sourced items on EVERY route" [CH-A H2/H4/H5].
+export * from "./aggregation";
+export * from "./coverage";
+export * from "./appendix";
+export * from "./provenance-lines";
+export { default as ProvenanceAppendix } from "./ProvenanceAppendix.vue";
