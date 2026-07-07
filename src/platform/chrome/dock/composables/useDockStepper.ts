@@ -26,6 +26,7 @@ import { useReducedMotion } from "@/motion/useReducedMotion";
 import { useActiveBeat } from "@/platform/stores/useActiveBeat";
 import { useViewParams } from "@/platform/stores/useViewParams";
 import { toRoman } from "@/platform/composables/useRomanNumeral";
+import { scrollToSection } from "@/platform/chrome/dock/scroll-anchor";
 import type { DashboardContext } from "@/contract";
 
 /** The stepper's reactive surface — the dock composes this into its template. */
@@ -126,10 +127,10 @@ export function useDockStepper(
         { immediate: true },
     );
 
+    // The rung-click scroll — the shared O-A3 anchor machinery (`scrollToSection`), the SAME primitive
+    // `DockTOC`'s row click routes through, so a beat lands identically from either view-mode (O-A23).
     function scrollTo(id: string) {
-        document
-            .getElementById(id)
-            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        scrollToSection(id);
     }
 
     // ── THE `?at` NARRATIVE ANCHOR — the ONE debounced writer + the restore (K-ANIM A1·§3.B) ──────

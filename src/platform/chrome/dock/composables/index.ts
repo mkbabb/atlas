@@ -5,6 +5,7 @@
 // global (§A.7). Moved AS-IS: the collapse machine behaviour is untouched (its DELETE is O-B8b).
 export * from "./useDockCollapse";
 export * from "./useDockStepper";
+export * from "./useDockViewMode";
 export * from "./useDockGear";
 export * from "./useDockDataState";
 export * from "./useScrollChrome";

@@ -43,12 +43,15 @@ import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { GlassDock } from "@mkbabb/glass-ui/dock";
 import DockCrest from "./components/DockCrest.vue";
 import DockStepperRender from "./components/DockStepperRender.vue";
+import DockTOC from "./components/DockTOC.vue";
 import DockFoot from "./components/DockFoot.vue";
 import DockSummary from "./components/DockSummary.vue";
 import {
     useDockCollapse,
     type DockExposed,
 } from "@/platform/chrome/dock/composables/useDockCollapse";
+import { useDockViewMode } from "@/platform/chrome/dock/composables/useDockViewMode";
+import { scrollToSection } from "@/platform/chrome/dock/scroll-anchor";
 import { useMobileRegister } from "@/platform/composables/useMobileRegister";
 import { useScrollChrome } from "@/platform/chrome/dock/composables/useScrollChrome";
 import { DASHBOARD_KEY } from "@/contract";
@@ -131,6 +134,32 @@ watch(scrollCollapsed, (edge) => {
     else expand();
 });
 
+// ── THE VIEW-MODE REGISTER (O-A23 · useDockViewMode · the stepper ⇄ TOC toggle) ───────────────────
+// The dock's scroll-middle band carries TWO wayfinding view-modes: the default figure-number STEPPER
+// and the scrollable clickable latex-paper TABLE OF CONTENTS the owner twice asked for (R-008). The
+// TOC is a SECOND mode TOGGLED beside the stepper, never a replacement — `DockStepperRender` stays
+// MOUNTED under it (`v-show`), so the dock's ONE beat-observer keeps writing the active beat `DockTOC`
+// reads (no second observer). `DockFoot` renders the toggle (desktop register) + emits `toggle-viewmode`.
+const {
+    mode: viewMode,
+    isTOC,
+    toggle: viewModeToggle,
+} = useDockViewMode();
+// DESKTOP-ONLY: the phone register already IS a labelled clickable section index (the crest→ruled
+// SHEET — `DockStepperRender` in its `:sheet` register). So the TOC view-mode is the DESKTOP counterpart
+// that fills the icon-rail's no-labels gap; on phone the sheet serves and the TOC stays dormant (the
+// foot toggle is a `!isPhone` control), so a mode left on `toc` across a desktop→phone resize simply
+// yields to the sheet rather than double-rendering a section index.
+const showTOC = computed(() => isTOC.value && !isPhone.value);
+
+/** A TOC row was chosen — route the deep-link INTENT through the SAME O-A3 anchor machinery the
+    stepper's rung click uses (`scrollToSection`), so a beat lands within ≤4px from either view-mode.
+    The mode is NOT auto-flipped: the reader opened the TOC explicitly; the still-live beat-observer
+    updates the TOC's active-row mark as the page scrolls in, so staying in the TOC is coherent. */
+function onTocSelect(id: string): void {
+    scrollToSection(id);
+}
+
 // ── THE PHONE SHEET (M.W1 D2 · N.WG1 Arm B — the I-MOBILE law made code) ──────────────────────
 // The crest-BUTTON fires the EXISTING collapse machine into the top-left ruled section-menu SHEET
 // (crest→ruled-sheet, NEVER a bottom/horizontal fork): `DockStepperRender` at a register, the
@@ -212,7 +241,7 @@ onBeforeUnmount(() => {
         overflow="scroll"
         :start-collapsed="isPhone"
         class="usf-dock"
-        :class="{ 'usf-dock--phone': isPhone }"
+        :class="{ 'usf-dock--phone': isPhone, 'usf-dock--toc': showTOC }"
         aria-label="Section navigation"
         data-testid="dock"
     >
@@ -236,17 +265,32 @@ onBeforeUnmount(() => {
              does NOT scroll away (the idiomatic block-END anchor — R-FOOT-2). On the phone the SAME
              two bands render inside the SHEET register (D2) — labeled ruled rows + the foot. -->
         <template #default>
-            <DockStepperRender
-                :ctx="ctx"
-                :ramp="props.ramp"
-                :sheet="sheetOpen"
-                @close="closeSheet"
-            />
+            <!-- band 2 — THE TWO TOGGLED VIEW-MODES (O-A23). The STEPPER stays MOUNTED under the TOC
+                 (`v-show`), so the dock's ONE beat-observer (owned by `DockStepperRender`) keeps
+                 writing the active beat the TOC reads — no second observer. The TOC animates IN/OUT
+                 over it off the shared motion tokens (the `.dock-toc-*` <Transition> in Dock.css —
+                 CSS-only, PRM-gated: 0 `preventDefault`, sticky/CSS only, the AG8 no-scroll-jack law). -->
+            <div v-show="!showTOC" class="usf-dock__viewport">
+                <DockStepperRender
+                    :ctx="ctx"
+                    :ramp="props.ramp"
+                    :sheet="sheetOpen"
+                    @close="closeSheet"
+                />
+            </div>
+            <Transition name="dock-toc">
+                <!-- `DockTOC`'s own `.usf-toc` root fills + grows the band (flex:1, min-block:0); no
+                     wrapper needed. Its single root inherits Dock.vue's scope-id, so the `.dock-toc-*`
+                     <Transition> classes above bind to it. -->
+                <DockTOC v-if="showTOC" :ctx="ctx" @select="onTocSelect" />
+            </Transition>
             <DockFoot
                 :ctx="ctx"
                 :disable-transitions="props.disableTransitions"
                 :collapsed="collapsed"
+                :view-mode="viewMode"
                 @toggle-collapse="collapseToggle"
+                @toggle-viewmode="viewModeToggle"
             />
         </template>
 
