@@ -33,6 +33,7 @@
 import { computed, ref, watch } from "vue";
 import VizPlate from "@/charts/frame/VizPlate.vue";
 import type { VizContract } from "@/charts/contract/viz-contract";
+import type { ProvenanceFacet } from "@/platform/provenance/provenance-contract";
 import { useHoverReadout, type HoverReadout } from "@/platform/stores/useHoverReadout";
 import { useGeoPaletteEpoch } from "@/charts/composables/useGeoPaletteEpoch";
 
@@ -172,6 +173,12 @@ defineSlots<{
     legend(): unknown;
     /** The plate's title rung override (passed straight through to VizPlate's `#title`). */
     title(): unknown;
+    /** The `#provenance` facet slot (J-VOICE's source lockup) — forwarded straight through to
+        VizPlate's `#provenance` WITH its scope so a GEO plate paints the provenance bar via the SAME
+        slot a VizPlate plate does. Without this, the five geo plates (ecf DistrictChoropleth, sci
+        SchoolMap, speedtest HexMapPlate, usf NetRetentionMap, usf-integrity WfaMap) could not fill
+        the bar through the slot — the /speedtest GeoPlate-only route painted no bar (the O-A9 residue). */
+    provenance(props: { provenance: ProvenanceFacet; contractId: string }): unknown;
     /** Pre-host content (a status label / a control row) — a SIBLING of the host div inside the viz
         body, rendered BEFORE the layer (the NormalizationFlip status label's exact DOM position). */
     prelude(): unknown;
@@ -193,6 +200,12 @@ defineSlots<{
         <template v-if="$slots.title" #title><slot name="title" /></template>
         <template v-if="$slots.legend" #legend><slot name="legend" /></template>
         <template v-if="$slots.actions" #actions><slot name="actions" /></template>
+        <!-- Forward the #provenance facet slot WITH its scope (the O-A9 residue close). VizPlate
+             invokes it ONLY when the contract declares a provenance facet; a geo plate now paints the
+             J-VOICE source bar through the SAME slot a VizPlate plate does. -->
+        <template v-if="$slots.provenance" #provenance="slotProps">
+            <slot name="provenance" v-bind="slotProps" />
+        </template>
 
         <!-- Pre-host content (a status label / control row) — a SIBLING of the host div, the exact
              DOM position the NormalizationFlip status label held inside the viz body. -->
