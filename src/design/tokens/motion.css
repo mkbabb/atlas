@@ -51,6 +51,8 @@
     --corridor-prose-floor: 0.35; /* the masthead-cluster recede floor — one rung below --attn-chrome */
     --corridor-recede-in: 0.12; /* the plateau tent RISE edge (fully receded by t=0.12) */
     --corridor-recede-out: 0.88; /* the plateau tent FALL edge (releases from t=0.88) */
+    --corridor-translate: 0.25rem; /* the settle nudge cap (corridor.ts CORRIDOR_TRANSLATE_REM) — the
+        native `corridor-recede` keyframe's plateau translateY; the JS `recedeTranslateRem` mirror */
 }
 
 /* §MOTION — THE EASE/DUR TOKEN REGISTER (SM-10 · design-suffusion §3/§5 / audit-anim-motion

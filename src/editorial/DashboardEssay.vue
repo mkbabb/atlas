@@ -139,11 +139,22 @@ if (director) {
         if (el) director.registerAnchor(c.id, el);
     });
 }
+/** Which chapters host a shared-element corridor edge (a director + a resolvable edge) — the ONLY
+    beats whose masthead recedes. The native CSS `corridor-recede` keyframe (scroll-driven.css) is
+    GATED to these via the `data-corridor-recede` stamp (below); an un-staged route stamps nothing. */
+const hasCorridorEdge = storyChapters.map(
+    (c) => !!director && director.edgeFor(c.id) !== null,
+);
+
 /** The per-chapter corridor recede — the arriving masthead cluster damps to `--corridor-prose-floor`
-    across its shared-element edge (0 at the poles). `{}` when no edge / not active / no director. */
+    across its shared-element edge (0 at the poles). O-A18 MIGRATION: EMPTY under the native `view()`
+    engine (the compositor `corridor-recede` keyframe is the single writer off `--beat-tl` — the same
+    hand-off `revealStyles` makes) OR PRM (`recedeStyle({prm})` already returns `{}`; the beat rests at
+    opacity 1, information parity). The JS `recedeStyle` survives ONLY as the `@supports` fallback
+    writer (Firefox/jsdom/SSR), reading the director's `edge.t` per frame — one writer per environment. */
 const recedeStyles = storyChapters.map((c) =>
     computed<Record<string, string>>(() => {
-        if (!director) return {};
+        if (!director || supportsViewTimeline()) return {};
         const edge = director.edgeFor(c.id);
         if (!edge || !edge.active.value) return {};
         return recedeStyle(edge.t.value, { prm: reduced.value });
@@ -271,6 +282,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                 <div
                     class="essay-masthead-cluster space-y-3"
                     :style="recedeStyles[i]?.value"
+                    :data-corridor-recede="hasCorridorEdge[i] ? '' : undefined"
                 >
                     <!-- SM-1 — the eyebrow carries the chapter's nav icon, tinted in the route data hue
                          (the "pops live in the icons" site). The TEXT stays muted ink (fill-vs-label). -->
