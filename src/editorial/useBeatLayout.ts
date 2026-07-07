@@ -12,10 +12,12 @@
 // the publishable `DashboardEssay` assembler — so the essay host + its placement resolver are ONE
 // core-clean editorial unit (the type dep now points at the core contract, not `@/dashboards`).
 
-import type { BeatLayout, Chapter } from "@/contract";
+import type { BeatLayout, Chapter, TitlePole } from "@/contract";
 
 export type ResolvedLayout = {
-    title: "left" | "right";
+    /** The resolved title pole — `left|center|right` (the O-A15 `center` third pole, spent
+        sparingly; a `center` masthead centres its block and rises vertically on reveal). */
+    title: TitlePole;
     numbers: "top" | "bottom";
     dock: "left" | "right";
     scrollIn: "left" | "right" | "up";
@@ -31,7 +33,10 @@ export function hasMasthead(c: Chapter): boolean {
     return c.viz !== "hero" && c.viz !== "colophon";
 }
 
-const opposite = (s: "left" | "right"): "left" | "right" => (s === "left" ? "right" : "left");
+/** The dock COUNTERWEIGHT — opposite the title margin. A `center` title has no opposite side, so the
+    dock rests at its default RIGHT corner (the balance is symmetric; the corner is a stable default). */
+const counterweight = (s: TitlePole): "left" | "right" =>
+    s === "left" ? "right" : s === "right" ? "left" : "right";
 
 /** First concrete (non-`auto`, defined) candidate wins — the override-beats-default precedent. */
 function pick<T extends string>(...candidates: (T | "auto" | undefined)[]): T | undefined {
@@ -49,16 +54,21 @@ export function resolveLayout(chapter: Chapter, phase: number): ResolvedLayout {
     const asideTitle: "right" | undefined = chapter.reveal?.aside ? "right" : undefined;
     const even = phase % 2 === 0;
 
-    const title = pick<"left" | "right">(
+    // The title pole admits the O-A15 `center` third pole (via `L.title`) — an explicit `center`
+    // flows through `pick` first (override-beats-zebra); the zebra default stays L/R alternation
+    // (center is AUTHORED, never auto-picked — it is spent sparingly by the E3 tables/policy).
+    const title = pick<TitlePole>(
         L.title,
         asideTitle,
         even ? "left" : "right",
-    ) as "left" | "right";
+    ) as TitlePole;
     const numbers = pick<"top" | "bottom">(L.numbers, even ? "top" : "bottom") as "top" | "bottom";
-    const dock = pick<"left" | "right">(L.dock, opposite(title)) as "left" | "right";
+    const dock = pick<"left" | "right">(L.dock, counterweight(title)) as "left" | "right";
+    // The reveal-in axis FOLLOWS the title pole (K-EXPRESS D2 · O-A15 ANSWERS Q-21): left slides
+    // from left, right from right, and a `center` title RISES vertically (no margin to slide from).
     const scrollIn = pick<"left" | "right" | "up">(
         L.scrollIn,
-        title === "right" ? "right" : "left",
+        title === "center" ? "up" : title === "right" ? "right" : "left",
     ) as "left" | "right" | "up";
 
     return { title, numbers, dock, scrollIn };

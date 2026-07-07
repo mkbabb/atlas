@@ -33,11 +33,13 @@
 import { computed } from "vue";
 import { InkMark } from "@mkbabb/glass-ui/handmark";
 import { toRoman } from "@/platform/composables/useRomanNumeral";
+import type { RuleVariant } from "./rule-register";
 
 const props = withDefaults(
     defineProps<{
-        /** The escalating expression (default "rule" — the static drawn divider). */
-        variant?: "rule" | "draw" | "numeral";
+        /** The escalating expression (default "rule" — the static drawn divider). The CLOSED register
+            is `rule-register.ts`'s `RuleVariant`; the beat-template orchestrator resolves it per beat. */
+        variant?: RuleVariant;
         /** The demarcation tier — `full` (chapter rule) · `short` (figure rule) · `hero`
             (the heavier page-cover rule below the DashboardHero). */
         weight?: "full" | "short" | "hero";

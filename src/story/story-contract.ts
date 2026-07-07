@@ -14,6 +14,7 @@
 // cross-viz highlight lifts).
 
 import type { Chapter } from "@/contract";
+import type { ResolvedBeatTemplate } from "./beat-template";
 import type { SceneContext } from "@/charts/contract/scene-contract";
 import {
     encodeSelKey,
@@ -135,6 +136,12 @@ export interface ChapterChoreography {
     transition?: EdgeSpec;
     /** The beat's declarative focus effects. Omit ⇒ none. */
     focus?: FocusEffect[];
+    /** O-A15 · THE RESOLVED VARIATION FACET — `expandStory` zips each masthead beat's
+        `ResolvedBeatTemplate` here when the instance carries a `BeatVariationPolicy`, so `DashboardEssay`
+        reads placement/rule/reveal from ONE resolved facet, not `useBeatLayout` + `AnimatedRule` +
+        `resolveVariant` separately. ABSENT on an un-varied route (byte-identical — the essay falls to
+        its legacy per-module reads). Sentinels (hero/colophon) never carry it (they consume no phase). */
+    template?: ResolvedBeatTemplate;
 }
 
 /** The spine-carried form: today's `Chapter` + the two optional choreography facets. This is what

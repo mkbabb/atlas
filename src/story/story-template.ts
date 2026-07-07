@@ -26,6 +26,11 @@ import type {
     FocusEffect,
     StoryChapter,
 } from "@/story/story-contract";
+import {
+    resolveBeatTemplate,
+    type BeatVariationPolicy,
+} from "@/story/beat-template";
+import { hashSeed } from "@/motion/seededVariety";
 
 // ── The role vocabulary (the NARRATIVE kind a beat plays — never a chart kind, D5) ────────────────
 
@@ -144,6 +149,14 @@ export interface StoryInstance<T extends StoryTemplate = StoryTemplate> {
     fills: StoryFills<T>;
     /** Per-edge overrides keyed `"fromId->toId"` (null ⇒ remove the pre-wired edge). */
     transitions?: Record<string, EdgeSpec | null>;
+    /** O-A15 · THE VARIATION POLICY — the authored per-phase pole tuples (the E3 design). When set,
+        `expandStory` zips a `ResolvedBeatTemplate` onto each MASTHEAD chapter (the sentinels consume no
+        phase), so the essay reads placement/rule/reveal from ONE facet. Omit ⇒ no `template` facet
+        (byte-identical — the essay's legacy per-module reads stand). */
+    variation?: BeatVariationPolicy;
+    /** O-A15 · The explicit MICRO-GRAIN seed (overrides `variation.seed`/`hashSeed(id)`) — for the A/B
+        reseed determinism assert (the poles stay fixed; only the grain drifts). */
+    seed?: number;
 }
 
 /** The compiled story — the T1 form. `chapters` is byte-compatible with `DashboardEssay`'s existing
@@ -167,6 +180,13 @@ export function expandStory<T extends StoryTemplate>(
     const fills = inst.fills as Record<string, RoleFill | RoleFill[]>;
     let figure = 0;
     let prev: { roleId: string; chapterId: string } | null = null;
+
+    // O-A15 · THE VARIATION ZIP — the MASTHEAD phase counter (the sentinels consume no phase, so the
+    // first real beat is phase 0), the route micro-grain seed (poles are authored, seed owns grain only).
+    const policy = inst.variation;
+    const routeSeed =
+        (inst.seed ?? policy?.seed ?? (policy ? hashSeed(policy.id) : 0)) >>> 0;
+    let phase = 0;
 
     for (const role of inst.template.roles) {
         const fillOrRun = fills[role.id];
@@ -214,6 +234,21 @@ export function expandStory<T extends StoryTemplate>(
                     });
                     chapter.transition = spec;
                 }
+            }
+            // O-A15 · zip the RESOLVED BEAT TEMPLATE onto each MASTHEAD beat (a sentinel consumes no
+            // phase — it carries no template). The reveal facet the resolver derives (pole-following
+            // layout) merges UNDER the fill's own reveal so an authored `reveal` still wins field-wise.
+            if (policy && !isSentinel) {
+                // The rank rides the policy's authored beat (`AuthoredBeat.rank`), so the resolver reads
+                // it internally — no rank flows through the RoleFill (the fill is CONTENT, not variation).
+                const resolved = resolveBeatTemplate(policy, phase, routeSeed);
+                chapter.template = resolved;
+                chapter.reveal = {
+                    ...resolved.reveal,
+                    ...chapter.reveal,
+                    layout: { ...resolved.reveal.layout, ...chapter.reveal?.layout },
+                };
+                phase += 1;
             }
             chapters.push(chapter);
             prev = { roleId: role.id, chapterId: id };

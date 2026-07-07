@@ -80,7 +80,19 @@ const props = defineProps<{
 // resolved side-set the <Beat> stamps as `data-*` registers + the fallback reveal axis reads. Hoisted
 // here so `revealStyles` reads `layouts[i]` with no temporal-dead-zone hazard.
 const phases = beatPhases(props.chapters);
-const layouts = props.chapters.map((c, i) => resolveLayout(c, phases[i]!));
+// O-A15 · THE ONE-FACET READ (the collapse). When a route carries the resolved variation facet
+// (`chapter.template`, zipped by `expandStory` from its `BeatVariationPolicy`), the beat's PLACEMENT
+// reads from THAT single facet — the title pole + its pole-following scroll-in axis — instead of the
+// separate `resolveLayout` zebra derive. `resolveLayout` still runs (the orchestration law: the
+// template ORCHESTRATES the resolver, it does not replace it — dock/numbers stay its output); the
+// template only OVERRIDES the two poles it authors. Un-varied routes carry no `template` ⇒ byte-identical.
+const layouts = props.chapters.map((c, i) => {
+    const base = resolveLayout(c, phases[i]!);
+    const t = (c as StoryChapter).template;
+    return t
+        ? { ...base, title: t.title, scrollIn: t.reveal.layout?.scrollIn ?? base.scrollIn }
+        : base;
+});
 
 // ── THE REVEAL FACET — one per chapter, mounted ONCE (the §7 `kind:"reveal"` fallback writer) ──
 // The per-beat `<section ref>` the bodies hand-rolled is hoisted here: ONE ref + ONE
@@ -335,9 +347,15 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
              grain determinism is a function of position, never hand-incremented per body with gaps).
              The LAST chapter draws no trailing rule (the colophon closes the page). The hero cover
              takes the heavier `weight="hero"` rule (the band ends, the lead beat begins). -->
+        <!-- O-A15 · THE RESOLVED RULE VARIANT — the divider variant reads from the beat's ONE resolved
+             facet (`template.rule`, the tier-rotated register) instead of the hard-coded static `rule`.
+             ABSENT template ⇒ `rule` (byte-identical to every un-varied route). The ghost numeral binds
+             the current chapter's figure (used only when the resolved variant is `numeral`). -->
         <AnimatedRule
             v-if="i < chapters.length - 1"
+            :variant="storyChapters[i]?.template?.rule ?? 'rule'"
             :weight="chapter.viz === 'hero' ? 'hero' : 'full'"
+            :numeral="chapter.figure"
             :seed="i + 1"
         />
     </template>
@@ -416,6 +434,16 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
         max-inline-size: min(46rem, 70%);
     }
 
+    /* O-A15 · THE CENTER THIRD POLE (the missing middle pole) — the masthead centres its block, the
+       third `justify-self` case. Spent SPARINGLY (cover/summary/synthesis/close, ≤2 C per corridor):
+       a ceremonial pole, so its title/dek centre (unlike the side poles' ragged-left prose — a centred
+       masthead reads as centred). NO `order`, NO DOM reorder — grid placement only (the a11y keystone). */
+    .essay-beat[data-title="center"] :deep(.beat__header) {
+        justify-self: center;
+        max-inline-size: min(46rem, 88%);
+        text-align: center;
+    }
+
     /* THE DROP-CAP COUNTERWEIGHT — the tinted Roman rides the title side's OUTER gutter. title=left ⇒
        cap left (today's default, Beat.vue unchanged); title=right ⇒ cap right. This SUBSUMES the
        retired `.essay-beat--aside` cap-right rule: the aside beat resolves to data-title="right", so
@@ -433,6 +461,28 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
     .essay-beat--aside {
         margin-inline-start: clamp(2rem, 8%, 6rem);
         margin-inline-end: 0;
+    }
+}
+
+/* O-A15 (item 8) · THE TITLE-LAW SCROLL CLAMP — the resolved title couples its size to the SAME
+   `--scroll-tl` the beat reveal rides (the MECHANISM is the template's; the SIZE values are WG-C's —
+   O-C1/O-C2's Title-law ladder). It is INERT this cut: `--title-law-min`/`--title-law-max` default to
+   the `text-section-fluid` size (`--type-heading-section`), so the interpolation is the IDENTITY (the
+   title renders at its normal fluid size, no visual change) until WG-C sets the ladder endpoints. Bound
+   only where `--scroll-tl` is live (`[data-scroll-tl]` beats on the native view() engine); under PRM /
+   no-timeline it never attaches. The mechanism is scroll-driven, ZERO per-frame JS (the compositor
+   reads `--scroll-tl` — the H11 faceted scrub host owns the axis; this only samples it). */
+@media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+        .essay-beat[data-scroll-tl] .essay-masthead-cluster h2 {
+            font-size: calc(
+                var(--title-law-min, var(--type-heading-section)) +
+                    (
+                        var(--title-law-max, var(--type-heading-section)) -
+                        var(--title-law-min, var(--type-heading-section))
+                    ) * var(--scroll-tl, 0)
+            );
+        }
     }
 }
 

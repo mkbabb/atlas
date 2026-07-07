@@ -348,10 +348,18 @@ export interface RevealSpec {
     layout?: BeatLayout;
 }
 
-/** A furniture SIDE (K-EXPRESS D2). `auto` ⇒ the zebra resolver picks by beat phase. masthead/dock
-    resolve to `left|right`; the numbers band resolves to `top|bottom`. All four edges are union
-    members so a future placement is a new member, NOT a host fork (the D5 extensibility law). */
-export type Side = "left" | "right" | "top" | "bottom" | "auto";
+/** A furniture SIDE (K-EXPRESS D2). `auto` ⇒ the zebra resolver picks by beat phase. The masthead
+    title resolves to `left|center|right` (the `center` third pole is O-A15, title-only — spent
+    sparingly: cover/summary/synthesis/close, ≤2 per corridor); the dock resolves to `left|right`;
+    the numbers band resolves to `top|bottom`. All edges are union members so a future placement is a
+    new member, NOT a host fork (the D5 extensibility law). */
+export type Side = "left" | "right" | "top" | "bottom" | "center" | "auto";
+
+/** The masthead TITLE pole — the RESOLVED horizontal placement `resolveLayout` / `resolveBeatTemplate`
+    emit. A superset of the historical `left|right` with the O-A15 `center` third pole (the missing
+    middle pole, spent sparingly per the ≤2-C-per-corridor constraint). The `center` beat rises
+    vertically (its reveal follows the pole ⇒ `scrollIn:"up"`), never sliding from a margin. */
+export type TitlePole = "left" | "center" | "right";
 
 /** The reveal-in AXIS (K-EXPRESS D2). `left|right` slide the beat in horizontally; `up` keeps the
     vertical rise; `auto` ⇒ follows the resolved title side. */
@@ -363,16 +371,17 @@ export type ScrollDir = "left" | "right" | "up" | "auto";
     registers — the side-flip is grid placement only, NEVER `order` (the a11y keystone). */
 export interface BeatLayout {
     /** The masthead (eyebrow · h2 · dek · drop-cap) margin side. Omit ⇒ even=left, odd=right. A
-        HORIZONTAL subset of `Side` (the masthead resolves to left|right) — a future placement
-        extends THIS union, never the host (the D5 extensibility law). */
+        HORIZONTAL subset of `Side` (the masthead resolves to left|center|right — the O-A15 `center`
+        third pole joins as a union member, NOT a host fork; the D5 extensibility law). */
     title?: Exclude<Side, "top" | "bottom">;
     /** The aggregate-stats band POLE. Omit ⇒ even=top, odd=bottom. RESOLVED but NOT stamped this
         cut — the pole-router that consumes it is the DEFERRED vocabulary seam (no consumer ⇒ no
         `data-numbers` stamp; the resolver carries it READY). The VERTICAL subset of `Side`. */
-    numbers?: Exclude<Side, "left" | "right">;
-    /** The three-item dock corner. Omit ⇒ OPPOSITE the resolved title (the balance counterweight).
-        A HORIZONTAL subset of `Side`. */
-    dock?: Exclude<Side, "top" | "bottom">;
+    numbers?: Exclude<Side, "left" | "right" | "center">;
+    /** The three-item dock corner. Omit ⇒ OPPOSITE the resolved title (the balance counterweight; a
+        `center` title has no opposite margin, so the dock rests at its default right corner). A
+        HORIZONTAL subset of `Side` (the dock never centers — it is always a corner counterweight). */
+    dock?: Exclude<Side, "top" | "bottom" | "center">;
     /** The reveal-in axis. Omit ⇒ FOLLOWS the resolved title (left title ⇒ slide from left). */
     scrollIn?: ScrollDir;
 }

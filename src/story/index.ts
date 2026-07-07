@@ -24,3 +24,8 @@ export * from "./story-template";
 export * from "./useStoryDirector";
 export * from "./story-director-provide";
 export { default as StoryCorridor } from "./StoryCorridor.vue";
+
+// ── O-A15 · the variation-axes + template-as-data algebra ─────────────────────────────────────
+export * from "./beat-template";
+export * from "./superlative";
+export * from "./viz-alternates";
