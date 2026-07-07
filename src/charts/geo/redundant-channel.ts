@@ -143,7 +143,10 @@ export function patternIdForBin(bin: number): string {
  * to the SAME colour (the texture never re-shuffles within a frame). Absence colours are EXCLUDED by
  * the caller (it passes only data-shape fills), so a no-data grey never mints a data bin.
  */
-export function buildDataFillBins(dataFills: Iterable<string>): Map<string, number> {
+export function buildDataFillBins(
+    dataFills: Iterable<string>,
+    maxBins?: number,
+): Map<string, number> {
     const distinct: string[] = [];
     const seen = new Set<string>();
     for (const f of dataFills) {
@@ -156,7 +159,17 @@ export function buildDataFillBins(dataFills: Iterable<string>): Map<string, numb
     // set always yields the SAME colour→bin map, so tier k's texture is invariant across re-renders.
     distinct.sort();
     const bins = new Map<string, number>();
-    distinct.forEach((color, i) => bins.set(color, i));
+    const n = distinct.length;
+    // The bin is a UNIQUE rank per colour (0..n-1) by default. When `maxBins` is supplied AND the
+    // distinct colours EXCEED it, the ranks rank/quantile-COLLAPSE into `maxBins` MONOTONE buckets
+    // (rank i → floor(i / n · maxBins)) — the >8 pattern SAFETY-NET (`resolveRedundantChannel`), so a
+    // label-less continuous frame textures into the ≤PATTERN_TIER_MAX set instead of over-subscribing
+    // the texture ids. The bucket stays a pure, deterministic function of the colour's RANK, so the
+    // "tier k's texture == tier k's colour" agreement holds within the collapsed set.
+    const collapse = maxBins != null && n > maxBins;
+    distinct.forEach((color, i) =>
+        bins.set(color, collapse ? Math.floor((i * maxBins!) / n) : i),
+    );
     return bins;
 }
 
@@ -177,10 +190,17 @@ export function resolveRedundantChannel(
     if (mode === "none") return "none";
     if (mode === "pattern") return binCount > 0 ? "pattern" : "none";
     if (mode === "value-label") return hasLabelSource ? "value-label" : "none";
-    // auto — density: few colour bins ⇒ a tiered dense grid ⇒ TEXTURE; many ⇒ a continuous sparse
-    // district set ⇒ VALUE-LABEL (needs a label source; else the honest `none`).
-    if (binCount > 0 && binCount <= PATTERN_TIER_MAX) return "pattern";
-    return hasLabelSource ? "value-label" : "none";
+    // auto — the density decision, now with the >8 SAFETY-NET so it can NEVER emit `none` on a frame
+    // that carries DATA. A truly EMPTY frame (0 data bins) is the SOLE `none`. A FEW-bin frame (≤
+    // PATTERN_TIER_MAX) is a tiered / dense grid ⇒ TEXTURE. A MANY-bin frame is a continuous / sparse
+    // district set: WITH a label source it gets the on-mark VALUE-LABEL; WITHOUT one it falls to the
+    // >8 quantize safety-net — the distinct fills rank-collapse into the ≤PATTERN_TIER_MAX texture
+    // tier-set (`buildDataFillBins(fills, PATTERN_TIER_MAX)`), so it STILL textures rather than going
+    // colour-only. After this net, the auto→none-on-DATA hole is unrepresentable (the O-A22 positive
+    // control): a data-encoding choropleth ALWAYS carries a redundant non-hue channel.
+    if (binCount === 0) return "none";
+    if (binCount <= PATTERN_TIER_MAX) return "pattern";
+    return hasLabelSource ? "value-label" : "pattern";
 }
 
 /**
@@ -240,19 +260,43 @@ export function checkRedundantChannel(): { ok: boolean; failures: string[] } {
     if (idA !== idA2) failures.push("③ the SAME fill produced two texture ids (not a function)");
     if (idA === idB) failures.push("③ DISTINCT fills produced the SAME texture id (a collision)");
 
-    // ④ THE DENSITY DECISION + THE NEG.
+    // ④ THE DENSITY DECISION + THE >8 SAFETY-NET + THE POSITIVE CONTROL + THE NEG.
     if (resolveRedundantChannel("auto", 3, false) !== "pattern") {
         failures.push("④ a FEW-bin frame did not resolve to the pattern channel");
     }
     if (resolveRedundantChannel("auto", PATTERN_TIER_MAX + 50, true) !== "value-label") {
         failures.push("④ a MANY-bin frame with a label source did not resolve to value-label");
     }
-    if (resolveRedundantChannel("auto", PATTERN_TIER_MAX + 50, false) !== "none") {
-        failures.push("④ a MANY-bin frame with NO label source did not resolve to none");
+    // THE >8 SAFETY-NET — a MANY-bin frame with NO label source falls to the quantize PATTERN, NEVER
+    // colour-only `none` (the auto→none-on-data hole, closed at the mechanism root).
+    if (resolveRedundantChannel("auto", PATTERN_TIER_MAX + 50, false) !== "pattern") {
+        failures.push("④ a MANY-bin, label-less DATA frame did not fall to the pattern safety-net");
+    }
+    // ④+ THE POSITIVE CONTROL — `auto` NEVER yields `none` on a frame that carries data (at ANY
+    // density, WITH or WITHOUT a label source). The ONLY auto→none is a truly EMPTY frame (0 bins).
+    for (const n of [1, PATTERN_TIER_MAX, PATTERN_TIER_MAX + 1, 51, 200]) {
+        if (resolveRedundantChannel("auto", n, false) === "none") {
+            failures.push(`④+ auto→none on a DATA frame (binCount ${n}, no label source) — the hole`);
+        }
+        if (resolveRedundantChannel("auto", n, true) === "none") {
+            failures.push(`④+ auto→none on a DATA frame (binCount ${n}, label source) — the hole`);
+        }
+    }
+    if (resolveRedundantChannel("auto", 0, false) !== "none") {
+        failures.push("④+ auto on an EMPTY frame (0 data bins) did not resolve to none");
     }
     // THE NEG CONTROL — the disabled posture is colour-only (fails the distinguishability assert).
     if (resolveRedundantChannel("none", 3, true) !== "none") {
         failures.push("④ NEG: the disabled posture did not resolve to none (colour-only)");
+    }
+    // THE >8 QUANTIZE — the safety-net collapse keeps the pattern tier-set within the texture cap, so
+    // the `auto`-routed label-less continuous frame textures into a distinct-per-tier (≤8) set.
+    const collapsed = buildDataFillBins(
+        Array.from({ length: 51 }, (_, i) => `rgb(${i},0,0)`),
+        PATTERN_TIER_MAX,
+    );
+    if (new Set(collapsed.values()).size > PATTERN_TIER_MAX) {
+        failures.push("④ the >8 quantize did not collapse the distinct fills within PATTERN_TIER_MAX");
     }
 
     return { ok: failures.length === 0, failures };

@@ -55,6 +55,7 @@ import {
     patternIdForBin,
     DATA_PATTERNS,
     DATA_PATTERN_TILE,
+    PATTERN_TIER_MAX,
     type RedundantChannel,
     type ResolvedChannel,
 } from "@/charts/geo/redundant-channel";
@@ -225,7 +226,13 @@ const shapes = computed<Shape[]>(() => {
     const nameOf = props.nameField ?? defaultNameField;
     const draw = path.value;
     const rankOf = props.rank;
-    const labelOf = props.valueLabel;
+    // O-A22 — the on-mark WORD source UNIFIES the two label props: the explicit `valueLabel` WINS,
+    // else the per-key `valueFormat` EVERY data plate already supplies (the offscreen a11y table's
+    // formatter). Deriving the word from `valueLabel ?? valueFormat` is what lets a plate that wires
+    // ONLY `value-format` inherit the redundant word channel with ZERO per-plate wiring (the O-A7
+    // inheritance-breadth law) — a `value-format`-only continuous frame resolves to the value-label
+    // channel instead of colour-only `none` (the O-A22 RED, closed at the library root).
+    const wordOf = props.valueLabel ?? props.valueFormat;
     // K-D-GEO §4.B · THE LOAD-BEARING (topology,projection,viewport) COHERENCE BACKSTOP. A DEV-only
     // diagnostic (dead-code-eliminated in the prod build) evaluated ONCE per geometry change: the
     // WHOLE feature COLLECTION's UNION centroid + bounds — d3-geo's geoPath accepts a
@@ -257,14 +264,13 @@ const shapes = computed<Shape[]>(() => {
     }
     return features.map((f) => {
         const key = keyOf(f);
-        // GAP-5 — the centroid the forced-colors value LABEL is seated at, measured off the SAME
-        // path generator the fill draws through (one projection, one coordinate frame). O-A22 needs
-        // the centroid whenever a channel MAY seat a value-label there, so it is measured whenever a
-        // label source (`valueLabel`) exists, not only under the resting forced-colors posture.
-        const [cx, cy] = labelOf ? draw.centroid(f) : [0, 0];
-        // O-A22 — the label word ("" ⇒ no-data), the RESOLVED fill (the shared bin source), and the
-        // absence flag, computed ONCE here so the redundant channel and the fill read one truth.
-        const label = labelOf ? labelOf(key) : "";
+        // GAP-5 — the centroid the value LABEL is seated at, measured off the SAME path generator the
+        // fill draws through (one projection, one coordinate frame). O-A22 needs the centroid whenever
+        // a channel MAY seat a value-label there, so it is measured whenever a WORD source exists
+        // (`valueLabel` OR `valueFormat`), not only under the resting forced-colors posture.
+        const [cx, cy] = wordOf ? draw.centroid(f) : [0, 0];
+        // O-A22 — the per-cell word, computed ONCE (the redundant channel + the fill read one truth).
+        const word = wordOf ? wordOf(key) : "";
         return {
             key,
             d: draw(f) ?? "",
@@ -274,10 +280,14 @@ const shapes = computed<Shape[]>(() => {
             rank: rankOf ? rankOf(key) : undefined,
             cx,
             cy,
-            label,
+            label: word,
             fill: fillOf(key),
-            // A cell is DATA unless a label source marks it absent with the GAP-5 empty convention.
-            hasValue: labelOf == null || label !== "",
+            // THE ABSENCE ORACLE — a cell is DATA unless the word carries the GAP-5 "" no-data
+            // sentinel. A formatter that renders no-data as "" (formatHhi / a custom valueLabel)
+            // marks the cell ABSENT: it mints NO tier bin AND shows NO word (v-show gates on the "").
+            // This decouples absence from what the ramp painted; a formatter with a GLYPH no-data
+            // face ("—") carries no "" oracle, so its cells read as data (the honest fallback).
+            hasValue: wordOf == null || word !== "",
         };
     });
 });
@@ -290,26 +300,49 @@ const shapes = computed<Shape[]>(() => {
 // is a `<pattern>` whose OWN background rect is that tier's colour, tier k's texture literally
 // carries tier k's colour — the two channels can never disagree (the O-A22 agreement, by construction).
 
-/** The distinct-DATA-fill → tier-bin map (absence cells excluded — they mint no bin). */
-const fillBins = computed(() =>
-    buildDataFillBins(shapes.value.filter((s) => s.hasValue).map((s) => s.fill)),
+/** The DISTINCT data fills (absence cells excluded — they mint no bin), the shared source for BOTH
+    the density signal and the pattern-bin map (one filter/map, no double traversal). */
+const dataFills = computed(() =>
+    shapes.value.filter((s) => s.hasValue).map((s) => s.fill),
 );
 
-/** Whether an on-mark VALUE-LABEL channel is available (the word text comes from `valueLabel`). */
-const hasLabelSource = computed(() => props.valueLabel != null);
+/** The distinct-DATA-fill → UNIQUE tier-bin map. Its SIZE is the density signal the resolve
+    decision reads (raw distinct colour count — NOT the quantized count). */
+const fillBins = computed(() => buildDataFillBins(dataFills.value));
+
+/** Whether an on-mark WORD channel is available — `valueLabel` OR `valueFormat` (the two are ONE
+    label source, O-A22): every data plate supplies at least `valueFormat` (the a11y-table formatter),
+    so `hasLabelSource` is true wherever a redundant word can be seated. */
+const hasLabelSource = computed(
+    () => props.valueLabel != null || props.valueFormat != null,
+);
 
 /** The channel `redundantChannel` resolves to for this frame — the density decision's output. */
 const resolvedChannel = computed<ResolvedChannel>(() =>
     resolveRedundantChannel(props.redundantChannel, fillBins.value.size, hasLabelSource.value),
 );
 
-/** The tier TEXTURE `<pattern>` defs (built only under the pattern channel): one per distinct data
-    colour, its background rect the tier colour + the bin's hue-independent ink on top. Emitted into
-    `<defs>` and referenced by `url(#geo-data-pattern-{bin})` — the agreement source is the pattern
-    ITSELF (its background is the tier fill), so no fixture can pull the texture off its colour. */
+/** The PATTERN-channel bin map — the distinct data fills collapsed into ≤PATTERN_TIER_MAX texture
+    buckets: an IDENTITY (one bin per colour) when the set already fits the 8 textures, the >8
+    quantize SAFETY-NET otherwise (so a label-less continuous frame can texture rather than go colour-
+    only). Keyed off the SAME `buildDataFillBins` rank source, so tier-k-texture == tier-k-colour. */
+const patternBins = computed(() =>
+    buildDataFillBins(dataFills.value, PATTERN_TIER_MAX),
+);
+
+/** The tier TEXTURE `<pattern>` defs (built only under the pattern channel): ONE per tier BIN, its
+    background rect the tier colour + the bin's hue-independent ink on top. In the ≤8 case every
+    distinct colour is its own bin (its exact colour); in the >8 quantize case the bin is a bucket and
+    the FIRST colour that lands in it is the tier representative — so the defs stay ≤PATTERN_TIER_MAX
+    with NO duplicate id. Emitted into `<defs>` and referenced by `url(#geo-data-pattern-{bin})`; the
+    agreement source is the pattern ITSELF (its background is the tier fill). */
 const patternDefs = computed(() => {
     if (resolvedChannel.value !== "pattern") return [];
-    return [...fillBins.value.entries()].map(([color, bin]) => ({
+    const byBin = new Map<number, string>();
+    for (const [color, bin] of patternBins.value) {
+        if (!byBin.has(bin)) byBin.set(bin, color);
+    }
+    return [...byBin.entries()].map(([bin, color]) => ({
         id: patternIdForBin(bin),
         fill: color,
         geom: DATA_PATTERNS[bin % DATA_PATTERNS.length],
@@ -322,17 +355,18 @@ const patternDefs = computed(() => {
     never a data texture). */
 function fillFor(s: Shape): string {
     if (resolvedChannel.value === "pattern" && s.hasValue && !isDimmed(s.key)) {
-        const bin = fillBins.value.get(s.fill);
+        const bin = patternBins.value.get(s.fill);
         if (bin != null) return `url(#${patternIdForBin(bin)})`;
     }
     return s.fill;
 }
 
-/** GAP-5 — whether the forced-colors per-feature TEXT channel is active (the `valueLabel` prop is
-    supplied). When true, each shape with a non-empty label paints a centroid `<text>` so the
-    magnitude survives a `forced-colors: active` / colour-blind user as a WORD (not COLOUR ALONE) —
-    the H7 ContractCliff text-channel precedent extended to the choropleth. */
-const labelsOn = computed(() => props.valueLabel != null);
+/** GAP-5 — whether the forced-colors per-feature TEXT channel is available (a WORD source is
+    supplied — `valueLabel` OR `valueFormat`, the O-A22 unified label source). When true, each shape
+    with a non-empty label paints a centroid `<text>` so the magnitude survives a `forced-colors:
+    active` / colour-blind user as a WORD (not COLOUR ALONE) — the H7 ContractCliff text-channel
+    precedent extended to the choropleth (and now inherited by `value-format`-only plates). */
+const labelsOn = hasLabelSource;
 
 // O-F10 (virtualization §3 R2-c · the dense-`<text>` retirement) — THE GAP-5 LAYER, RETIRED TO
 // ON-DEMAND. The per-feature value words are a forced-colors-ONLY channel: at rest they sit at

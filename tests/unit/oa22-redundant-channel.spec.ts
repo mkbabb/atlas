@@ -59,6 +59,27 @@ describe("O-A22 · the tier-bin AGREEMENT (the one shared bin source)", () => {
     });
 });
 
+describe("O-A22 · the >8 quantize SAFETY-NET (buildDataFillBins maxBins)", () => {
+    it("collapses a >maxBins distinct set into ≤maxBins MONOTONE buckets", () => {
+        const fills = Array.from({ length: 51 }, (_, i) => `rgb(${i},0,0)`);
+        const bins = buildDataFillBins(fills, PATTERN_TIER_MAX);
+        expect(new Set(bins.values()).size).toBeLessThanOrEqual(PATTERN_TIER_MAX);
+        // monotone by rank: the sorted-first colour lands in bucket 0, the sorted-last in the top.
+        expect(bins.get("rgb(0,0,0)")).toBe(0);
+        expect(bins.get("rgb(9,0,0)")).toBe(PATTERN_TIER_MAX - 1); // "rgb(9,..)" sorts LAST of 0..50
+        // deterministic + a pure function of rank (tier-k-texture == tier-k-colour agreement holds).
+        const again = buildDataFillBins(fills, PATTERN_TIER_MAX);
+        expect([...bins.entries()].sort()).toEqual([...again.entries()].sort());
+    });
+
+    it("is an IDENTITY when the distinct set already fits maxBins (each colour its own bin)", () => {
+        const fills = ["rgb(3,0,0)", "rgb(1,0,0)", "rgb(2,0,0)"];
+        const capped = buildDataFillBins(fills, PATTERN_TIER_MAX);
+        const raw = buildDataFillBins(fills);
+        expect([...capped.entries()].sort()).toEqual([...raw.entries()].sort());
+    });
+});
+
 describe("O-A22 · the density decision (auto) + the NEG control", () => {
     it("a FEW-bin frame resolves to the PATTERN channel (a tiered / dense grid)", () => {
         expect(resolveRedundantChannel("auto", 4, false)).toBe("pattern");
@@ -70,8 +91,21 @@ describe("O-A22 · the density decision (auto) + the NEG control", () => {
         expect(resolveRedundantChannel("auto", 100, true)).toBe("value-label");
     });
 
-    it("a MANY-bin frame with NO label source resolves to NONE (an honest non-answer)", () => {
-        expect(resolveRedundantChannel("auto", 100, false)).toBe("none");
+    it("a MANY-bin, label-less DATA frame falls to the PATTERN safety-net (never colour-only)", () => {
+        // The >8 quantize safety-net: a continuous frame with NO word source rank-collapses into the
+        // ≤PATTERN_TIER_MAX texture set rather than resolving to `none` (the auto→none-on-data hole).
+        expect(resolveRedundantChannel("auto", 100, false)).toBe("pattern");
+        expect(resolveRedundantChannel("auto", PATTERN_TIER_MAX + 1, false)).toBe("pattern");
+    });
+
+    it("POSITIVE CONTROL — auto NEVER yields `none` on a DATA frame (the hole is unrepresentable)", () => {
+        for (const n of [1, 4, PATTERN_TIER_MAX, PATTERN_TIER_MAX + 1, 51, 200]) {
+            expect(resolveRedundantChannel("auto", n, false)).not.toBe("none");
+            expect(resolveRedundantChannel("auto", n, true)).not.toBe("none");
+        }
+        // The SOLE auto→none: a truly EMPTY frame (0 data bins) — an honest non-answer, not a data map.
+        expect(resolveRedundantChannel("auto", 0, false)).toBe("none");
+        expect(resolveRedundantChannel("auto", 0, true)).toBe("none");
     });
 
     it("NEG — the disabled posture is colour-only (fails the distinguishability assert)", () => {
@@ -138,5 +172,13 @@ describe("O-A22 · the LIVE GeoChoropleth.vue wiring (the inheritance-breadth la
 
     it("the value-label layer carries the resting redundant-visibility hook", () => {
         expect(SFC).toContain("geo-value-labels--redundant");
+    });
+
+    it("UNIFIES the label source — the on-mark word + hasLabelSource read valueLabel ?? valueFormat", () => {
+        // The RED fix: `value-format` is a WORD source too, so a plate wiring only `:value-format`
+        // inherits the redundant channel (no colour-only `none`). The SFC derives the word from
+        // `valueLabel ?? valueFormat` and `hasLabelSource` accepts EITHER prop.
+        expect(SFC).toContain("props.valueLabel ?? props.valueFormat");
+        expect(SFC).toMatch(/props\.valueLabel != null \|\| props\.valueFormat != null/);
     });
 });
