@@ -13,6 +13,8 @@
 // core-clean editorial unit (the type dep now points at the core contract, not `@/dashboards`).
 
 import type { BeatLayout, Chapter, TitlePole } from "@/contract";
+import { toRoman } from "@/platform/composables/useRomanNumeral";
+import type { EditorialChapter } from "./editorial-contract";
 
 export type ResolvedLayout = {
     /** The resolved title pole — `left|center|right` (the O-A15 `center` third pole, spent
@@ -80,4 +82,22 @@ export function resolveLayout(chapter: Chapter, phase: number): ResolvedLayout {
 export function beatPhases(chapters: readonly Chapter[]): number[] {
     let p = 0;
     return chapters.map((c) => (hasMasthead(c) ? p++ : p));
+}
+
+/** THE FIGURE-LABEL (the EX-44 D21 rider) — the accessible chapter label `<FigureInitial>`
+    announces. A numbered chapter (figure ≥ 1) reads `"Chapter <roman>, <eyebrow>"` (unchanged).
+    The COVER (`viz:"hero"`, `figure:0` — the crown-slot MOUNT INTENT, not a chapter count) is NOT
+    a numbered chapter: `toRoman(0)` is the honest EMPTY numeral (useRomanNumeral's `1..3999`
+    domain floor), and an unmigrated cover carries no eyebrow either — so the naive formula
+    produced the illegible dangling `"Chapter , "` the D21 verifier flagged. A cover names
+    ITSELF, not an ordinal: the declared `hero` facet's own title (the most authoritative name for
+    the page this cover fronts), falling back to the chapter's own `eyebrow` for a route that has
+    not adopted the facet yet, reads as `"<name> — cover"`. PURE + TOTAL, unit-testable without
+    mounting (the `resolveLayout`/`beatPhases` precedent above). */
+export function figureLabelFor(chapter: EditorialChapter): string {
+    if (chapter.viz === "hero") {
+        const name = chapter.hero?.title || chapter.eyebrow;
+        return name ? `${name} — cover` : "Cover";
+    }
+    return `Chapter ${toRoman(chapter.figure)}, ${chapter.eyebrow}`;
 }

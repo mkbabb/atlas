@@ -62,7 +62,7 @@ import StickyScene from "@/charts/scene/StickyScene.vue";
 import { isVizContract, type VizContract } from "@/charts/contract/viz-contract";
 import { isChapterScene, type ChapterScene } from "@/charts/contract/scene-contract";
 import type { Chapter, ChapterTitle } from "@/contract";
-import { resolveLayout, beatPhases, hasMasthead } from "./useBeatLayout";
+import { resolveLayout, beatPhases, hasMasthead, figureLabelFor } from "./useBeatLayout";
 import type { EditorialChapter } from "./editorial-contract";
 import { provideStoryDirector } from "@/story/story-director-provide";
 import { recedeStyle } from "@/story/corridor";
@@ -256,7 +256,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
             :figure="chapter.viz === 'colophon' ? undefined : chapter.figure"
             :color-kind="chapter.colorKind ?? 'diverging'"
             :hinge="chapter.hinge ?? 0.5"
-            :figure-label="`Chapter ${toRoman(chapter.figure)}, ${chapter.eyebrow}`"
+            :figure-label="figureLabelFor(chapter)"
             :reveal="chapter.reveal?.tier ?? 'default'"
             :lift="chapter.reveal?.lift ?? chapter.viz !== 'hero'"
             :testid="chapter.id"

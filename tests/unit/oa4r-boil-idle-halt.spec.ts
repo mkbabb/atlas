@@ -21,9 +21,20 @@
 // the single-chain invariant + the empty-set halt are asserted deterministically.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { effectScope, nextTick, ref } from "vue";
+import { effectScope, nextTick, ref, watch } from "vue";
 import { useLineBoil } from "@mkbabb/pencil-boil";
-import { clockAnimation } from "@/motion/useHandMarkClock";
+import { clockAnimation, type MarkAnimation } from "@/motion/useHandMarkClock";
+
+// EX-44 · THE RE-ARM EXTENSION (Part C, below) — the EX-43 verifier PACK found the O-A4-R park is
+// NOT reversible: glass-ui's `InkMark` clears `boilArmed` in its OWN `watch(() => animation, …)` on
+// EVERY `draw-on ↔ draw-then-boil` flip — including the flip BACK on re-entry — and `appear:"manual"`
+// (`clock="load"`'s mapping) has no auto-replay, so nothing ever re-fires the masthead's one-shot
+// `play()`. Parts A/B (above) predate that fix and still hold (the atlas clock gate + the raw
+// pencil-boil enrol/withdraw mechanics are unchanged). Part C proves the CURE: `HandMark.vue` now
+// watches `boilLive` and re-fires `play()` on the false→true (re-entry) edge — the lawful lever
+// within the pinned glass-ui 4.2.0 API — against a faithful `InkMark` play/armBoil/animation-watch
+// emulation (cross-checked byte-for-byte against the INSTALLED `dist/handmark.js`) wired to the
+// REAL pencil-boil singleton.
 
 // ── Part A — the atlas clock parks the boil off-screen ───────────────────────────────────────────
 //
@@ -163,6 +174,156 @@ describe("O-A4-R · the pencil-boil singleton halts to zero rAF on an empty set"
         frameCount.value = 3; // re-enter the viewport
         await nextTick();
         expect(queue.size).toBe(1); // the shared chain re-armed — exactly one loop
+
+        boil.stop();
+        scope.stop();
+    });
+});
+
+// ── Part C — THE RE-ARM (O-A4-R's RED, now cured): the reverse edge Part B's raw frameCount toggle
+// bypassed. glass-ui's `InkMark` resets `boilArmed` on EVERY animation flip (not just the park), so
+// the frame-count getter (`boils && boilArmed ? BOIL_FRAMES : 1`) stays pinned at 1 forever after the
+// first park unless something RE-FIRES `play()` on re-entry — no matter how many times `boilLive`
+// flips back to true. This is the EX-43 verifier's exact finding. The two tests below share ONE
+// faithful `InkMark` emulation and diverge on a single axis: whether a re-arm watch is wired.
+
+/** A minimal, faithful replica of glass-ui 4.2.0 `InkMark`'s play/armBoil/onDrawEnd/animation-watch
+ *  — cross-checked byte-for-byte against the INSTALLED `node_modules/@mkbabb/glass-ui/dist/handmark.js`
+ *  (`P()` = play, `N()` = armBoil, `F()` = onDrawEnd, and the trailing
+ *  `watch(() => animation, () => { drawn.value = false; boilArmed.value = false })`). `draws` is
+ *  `animation !== "none"`; `boils` is `animation === "boil" || animation === "draw-then-boil"`. The
+ *  CSS `@transitionend` is emulated by `finishDraw()` — this file's established node-safe idiom
+ *  drives the LOGICAL chain, never real DOM/CSS timing (Part B's `pumpFrame`, above, is the same
+ *  idea one layer down). `finishDraw()` is called SEPARATELY from `play()` (not chained
+ *  synchronously) precisely because the real `@transitionend` lands a full `drawMs` AFTER glass-ui's
+ *  own (synchronous, same-flush) animation-watch has already settled the reset — the real timing
+ *  gap that makes the re-arm race-free; collapsing the two into one synchronous call would test a
+ *  watcher-registration-order accident, not the actual mechanism. */
+function makeInkMarkStub(animation: () => MarkAnimation) {
+    const boilArmed = ref(false);
+    const drawn = ref(false);
+    // glass-ui's `boils` is `animation === "boil" || animation === "draw-then-boil"`; the atlas
+    // clock map (`clockAnimation`) never yields `"boil"` (useHandMarkClock's own comment: that value
+    // is a resting-clock non-value, `draw-then-boil` is the ONE hero exception) — narrowed to the
+    // value this stub's `animation` getter can actually produce.
+    const boils = () => animation() === "draw-then-boil";
+    const draws = () => animation() !== "none";
+    function armBoil(): void {
+        if (!boils()) return;
+        boilArmed.value = true;
+    }
+    function play(): void {
+        if (!draws()) {
+            armBoil();
+            return;
+        }
+        drawn.value = false; // the reflow-restart; finishDraw() below is the (later) @transitionend
+    }
+    function finishDraw(): void {
+        drawn.value = true;
+        if (animation() === "draw-then-boil") armBoil();
+    }
+    // glass-ui's OWN watch (installed dist, confirmed byte-for-byte): ANY animation flip clears
+    // drawn + boilArmed — INCLUDING the flip BACK to draw-then-boil on re-entry (the exact defect).
+    watch(animation, () => {
+        drawn.value = false;
+        boilArmed.value = false;
+    });
+    return { play, finishDraw, boilArmed };
+}
+
+describe("O-A4-R · the re-arm — a re-fired play() is the ONLY lawful lever (glass-ui 4.2.0 API)", () => {
+    it("WITHOUT a re-fired play(), re-entry never re-arms — the RED reproduces (0 rAF, permanently)", async () => {
+        const scope = effectScope();
+        const boilLive = ref(true);
+        let ink!: ReturnType<typeof makeInkMarkStub>;
+        let boil!: ReturnType<typeof useLineBoil>;
+        scope.run(() => {
+            const animation = () => clockAnimation("load", boilLive.value);
+            ink = makeInkMarkStub(animation);
+            boil = useLineBoil(
+                () => (ink.boilArmed.value ? 3 : 1),
+                () => 100,
+            );
+        });
+
+        // MOUNT — the masthead's one onMounted play(); the draw completes, the boil arms.
+        ink.play();
+        ink.finishDraw();
+        await nextTick();
+        expect(queue.size).toBe(1); // enrolled
+
+        // PARK — off-screen (the O-A4-R cure, unaffected by this fix).
+        boilLive.value = false;
+        await nextTick();
+        expect(queue.size).toBe(0);
+
+        // RE-ENTRY — animation flips back to draw-then-boil, but NOTHING re-fires play() (the
+        // pre-EX-44 HandMark.vue: appear="manual" has no auto-replay, and MastheadTitle's onMounted
+        // play() already fired once, at mount). glass-ui's own watch still resets boilArmed on the
+        // flip; nothing ever sets it again.
+        boilLive.value = true;
+        await nextTick();
+        expect(ink.boilArmed.value).toBe(false); // disarmed, permanently — the EX-43 finding
+        expect(queue.size).toBe(0); // 0 rAF — the living line is dead until a full reload
+
+        // Settling further changes nothing — no @transitionend will ever arrive (play() was never
+        // re-invoked to schedule one).
+        await nextTick();
+        expect(queue.size).toBe(0);
+
+        boil.stop();
+        scope.stop();
+    });
+
+    it("WITH the atlas re-arm edge (boilLive false→true ⇒ play()), re-entry RE-ARMS — rAF resumes", async () => {
+        const scope = effectScope();
+        const boilLive = ref(true);
+        let ink!: ReturnType<typeof makeInkMarkStub>;
+        let boil!: ReturnType<typeof useLineBoil>;
+        scope.run(() => {
+            const animation = () => clockAnimation("load", boilLive.value);
+            ink = makeInkMarkStub(animation);
+            boil = useLineBoil(
+                () => (ink.boilArmed.value ? 3 : 1),
+                () => 100,
+            );
+            // THE ACTUAL HandMark.vue PREDICATE under test: `watch(boilLive, (isLive, wasLive) => {
+            // if (isLive && !wasLive) void play(); })` — registered here (inside the SAME scope,
+            // AFTER `ink`'s own internal animation-watch, mirroring the real parent-setup-before-
+            // child-setup registration order) so it fires play() on exactly the re-entry edge.
+            watch(boilLive, (isLive, wasLive) => {
+                if (isLive && !wasLive) ink.play();
+            });
+        });
+
+        // MOUNT.
+        ink.play();
+        ink.finishDraw();
+        await nextTick();
+        expect(queue.size).toBe(1);
+
+        // PARK.
+        boilLive.value = false;
+        await nextTick();
+        expect(queue.size).toBe(0);
+
+        // RE-ENTRY — the re-arm watch fires play() on this exact flush; glass-ui's own
+        // animation-watch (registered first) has ALREADY reset boilArmed=false by the time
+        // `nextTick()` resolves — armBoil() has NOT run yet (it awaits the draw transition, below),
+        // so the boil is not yet re-enrolled.
+        boilLive.value = true;
+        await nextTick();
+        expect(ink.boilArmed.value).toBe(false); // not yet — armBoil() awaits @transitionend
+        expect(queue.size).toBe(0); // not yet scheduled
+
+        // THE @transitionend, a `drawMs` later (well past the watch flush above) — glass-ui's
+        // onDrawEnd fires, arming the boil exactly as the first mount did.
+        ink.finishDraw();
+        await nextTick();
+
+        expect(ink.boilArmed.value).toBe(true); // RE-ARMED
+        expect(queue.size).toBe(1); // the rAF chain RESUMES — the boil visibly resumes
 
         boil.stop();
         scope.stop();

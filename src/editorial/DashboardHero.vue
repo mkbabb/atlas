@@ -88,6 +88,13 @@ const props = withDefaults(
     defineProps<{
         /** The page <h1> title (the dashboard's editorial name). */
         title: string;
+        /** THE COVER EYEBROW (the EX-44 D21 rider) — the small kicker word above the <h1> title.
+            Omit ⇒ the title itself renders as the eyebrow (today's byte-identical default — every
+            existing route keeps its title doubled, unchanged). Pass an explicit, DISTINCT kicker
+            (the route's section name, say) so a route stops needing to duplicate its own title
+            node and `display:none` the redundant copy (the D21 find: the usf/usfi/sci covers each
+            hand-built that workaround because no lawful distinct-eyebrow seat existed). */
+        eyebrow?: string;
         /** The Newsreader dek beneath the title. */
         dek: string;
         /** The cover figures — THREE co-equal by default (the rule of three), OR a ranked CROWN +
@@ -240,7 +247,7 @@ function rankNumTrack(f: HeroFigure): Record<string, number> | undefined {
     <!-- The page cover — a semantic <header> carrying the page's ONLY <h1>. NO glass, NO grid:
          the un-gridded headline band on the paper ground (DESIGN §2 BREAK-OUT). -->
     <header class="dashboard-hero" data-testid="dashboard-hero">
-        <p class="eyebrow dashboard-hero__eyebrow">{{ title }}</p>
+        <p class="eyebrow dashboard-hero__eyebrow">{{ eyebrow ?? title }}</p>
         <!-- THE PAGE <h1> — rests LARGE, scroll-scrubs to the compact sticky wayfinding label (§1a).
              In the COMPACT state the route's ONE kicker (coverKicker) rides INLINE beside the shrunk
              title (aria-hidden — the accessible name stays the title alone), so the sticky band
@@ -343,6 +350,13 @@ function rankNumTrack(f: HeroFigure): Record<string, number> | undefined {
                 </figcaption>
             </figure>
         </div>
+
+        <!-- THE PROVENANCE SEAT (the EX-44 D21 rider) — an OPTIONAL slot for the route's inline
+             exact-source provenance line (the usf/usfi/sci covers each hand-mount one today,
+             outside this component's contract, the D21 verifier's flagged find). Absent when
+             unfilled — no default content, no layout reservation for a route that has not
+             adopted it (every existing consumer stays byte-identical). -->
+        <slot name="provenance" />
     </header>
 </template>
 

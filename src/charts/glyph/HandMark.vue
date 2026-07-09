@@ -21,7 +21,7 @@
 // word width — the engine lays ONE `.hm__svg` over the whole clause box, so a strip mis-sizes a
 // wrapping verdict). The aspect strip-pin stays an UNDERLINE-only concern (the hull is a wide slab
 // EXEMPT from aspect-tracking — `isAspectTracked` would FALSE-FAIL it).
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import {
     InkMark,
     BRUSHES,
@@ -242,6 +242,28 @@ function snap(): void {
     mark.value?.play();
 }
 defineExpose({ play, snap });
+
+// O-A4-R · THE RE-ARM (RED-LEDGER B.11's re-entry bar — the EX-43 verifier PACK, verified against
+// the INSTALLED glass-ui 4.2.0 `dist/handmark.js`). The visibility PARK above is not, by itself,
+// reversible: glass-ui's `InkMark` clears `boilArmed` in its OWN `watch(() => animation, …)` on
+// EVERY `draw-on ↔ draw-then-boil` flip — INCLUDING the flip BACK to `draw-then-boil` on re-entry
+// — and `clock="load"` resolves `appear:"manual"` (useHandMarkClock's map), for which glass-ui's
+// `onMounted` creates NO re-play `IntersectionObserver` and never auto-calls its draw `play()`
+// (that replay path exists only for `appear:"visible"`/`"mount"`). `MastheadTitle`'s one
+// `onMounted` `ink.play()` therefore arms the boil exactly once; nothing else ever re-invokes it —
+// the living line was permanently static after the first park.
+//
+// The lawful re-arm lever within the pinned 4.2.0 API is `InkMark`'s OWN exposed `play()`:
+// re-firing the SAME call the masthead makes at mount re-runs its draw transition, whose
+// `@transitionend` calls glass-ui's `onDrawEnd` → `armBoil()` (`boilArmed = true` + `boil.start()`)
+// — so re-entry drives the identical arm path the first mount did. No forked boil, no setTimeout,
+// no glass-ui edit (READ-ONLY family). Fires ONLY on the false→true edge (re-entry): the initial
+// `true` stays silent (the masthead's own onMounted `play()` already owns that first arm) and the
+// true→false edge (park) needs no action here — the animation flip alone already withdraws the
+// pencil-boil subscriber (the park mechanism above).
+watch(boilLive, (isLive, wasLive) => {
+    if (isLive && !wasLive) void play();
+});
 </script>
 
 <template>
