@@ -199,24 +199,15 @@ function cancelSave(): void {
 
 <template>
     <template v-if="hasFilter">
-        <!-- The summon affordance — a single quiet floating trigger that opens the
-             closed-default lens. It is the only chrome-internal door; the A4 dock
-             pull-out (C3.2) drives the SAME `useFilterPane().open`. One trigger at
-             every viewport — the live-behind Drawer dissolved the desktop/mobile fork.
-             Hidden while the drawer is open (the drawer's own close button takes over). -->
-        <Button
-            v-show="!open"
-            variant="glass"
-            size="sm"
-            class="cp-filter-trigger"
-            aria-label="Open filters"
-            :aria-expanded="open"
-            data-testid="mobile-filter-trigger"
-            @click="open = true"
-        >
-            <SlidersHorizontal class="h-5 w-5" aria-hidden="true" />
-            <span class="cp-filter-trigger__label">Filters</span>
-        </Button>
+        <!-- O-D3 — THE FLOATING FILTERS PILL IS KILLED (render-A cross-route; L33 X9). The quiet
+             top-right `.cp-filter-trigger` overlaid the AK inset / legends / readouts on every
+             route (a THIRD door onto the SAME `useFilterPane().open` singleton). Filter entry is
+             now consolidated onto the two LAWFUL doors that already exist and already drive this
+             same open flag: the dock instrument (Dock.vue's desktop pull-out row +
+             DockSettings.vue's phone gear sheet, both `data-testid="dock-filter-pullout"`) and the
+             per-plate icon (VizPlate's `viz-dock__filter-slot` toggle, which pins + opens this
+             SAME drawer). No page-level affordance is re-added — the dock instrument already
+             fills that role at every viewport, so nothing here occludes content on first paint. -->
 
         <!-- The right live-behind filter Drawer — closed by default. `mode="live-behind"`
              bundles `modal:false` + no scale-down; `:show-overlay="false"` drops the
@@ -249,6 +240,10 @@ function cancelSave(): void {
                 data-testid="filter-panel"
                 aria-label="Filters"
             >
+                <!-- O-D3/CH-E-2 SEAM (glass-fenced, carried to WG-E·O-E8): reka's DialogPortal
+                     drops this `data-testid`/`aria-label` on teleport (the name survives only via
+                     reka's OWN internal DialogTitle backstop below); the O-E8 wrapper restores
+                     both, queued behind the 5.0.0 cut — unchanged until then. -->
                 <DrawerTitle class="cp-drawer__title">
                     <SlidersHorizontal class="h-4 w-4" aria-hidden="true" />
                     Filters
@@ -365,42 +360,9 @@ function cancelSave(): void {
     padding: 0 1rem 0.5rem;
 }
 
-/* ── THE SUMMON TRIGGER ────────────────────────────────────────────────────────
-   A single quiet floating affordance to open the closed-default lens, at every
-   viewport (the live-behind Drawer dissolved the desktop/mobile fork). It is the
-   only chrome-internal door; the A4 dock pull-out (C3.2) drives the SAME `open`.
-   The pill SURFACE (rounded frosted bg/blur/rim/hover/focus) is now OWNED by the glass
-   `Button` variant="glass" — the host keeps ONLY the floating placement + the ≥44px tap
-   floor + the mono label/icon-only register. */
-.cp-filter-trigger {
-    position: fixed;
-    inset-inline-end: 1rem;
-    inset-block-start: var(--cp-filter-trigger-top, 4.5rem);
-    /* The tap-target floor (≥44px). The glass Button "sm" rung can fall below 44px, so the
-       host re-asserts the floor (the mobile 44² lands in the @media below). NOTE: the
-       `@apply touch-target` lift does NOT belong here — the `@utility touch-target` is a
-       design-layer custom utility that a Vue scoped-SFC `<style>` block does not resolve. */
-    min-height: 44px;
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    z-index: var(--z-panel, 45);
-}
-.cp-filter-trigger__label {
-    line-height: 1;
-}
-/* < md — drop the label, the icon-only round trigger above the bottom register. */
-@media (--phone) {
-    .cp-filter-trigger {
-        inset-block-start: auto;
-        inset-block-end: 4.25rem;
-        min-width: 44px; /* the icon-only round trigger's second tap axis (the 44² floor) */
-        padding: 0;
-        justify-content: center;
-    }
-    .cp-filter-trigger__label {
-        display: none;
-    }
-}
+/* THE SUMMON TRIGGER IS RETIRED (O-D3 — the floating FILTERS pill kill, render-A cross-route;
+   L33 X9). `.cp-filter-trigger` used to float this drawer's ONE open door at every viewport; it
+   now has two lawful doors instead (the dock instrument's pull-out/gear-sheet row + the per-plate
+   VizPlate filter icon), so the third floating door — and the top-right content collision it
+   caused on every route — is gone, not re-aimed. */
 </style>

@@ -87,7 +87,14 @@ const brandHref = computed(() => props.colophon?.brandHref ?? "https://www.fi.nc
 </script>
 
 <template>
-    <aside
+    <!-- O-D3 PLAT-6 — THE CONTENTINFO LANDMARK. SiteColophon IS the site's closing colophon on
+         every surface it mounts (every dashboard's closing chapter AND the gallery footer, per
+         the doc comment above) — a11y.md's worked example ("a nested `<footer>` … not
+         contentinfo") is this exact block. `<footer role="contentinfo">` — the explicit role
+         registers the landmark regardless of DOM nesting depth (unlike a bare `<footer>`'s
+         IMPLICIT role, which HTML-AAM suppresses once nested inside `main`/`article`/etc.). -->
+    <footer
+        role="contentinfo"
         class="colophon"
         :style="{ '--colophon-accent': accent }"
         aria-label="About this dashboard"
@@ -146,7 +153,7 @@ const brandHref = computed(() => props.colophon?.brandHref ?? "https://www.fi.nc
                 >{{ site.short }} · {{ site.apex }}</a
             >
         </div>
-    </aside>
+    </footer>
 </template>
 
 <style scoped>

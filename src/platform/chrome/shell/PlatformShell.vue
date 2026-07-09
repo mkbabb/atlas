@@ -156,16 +156,28 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onDocKeydown));
              atlas-unified-register law): the position:fixed VERTICAL LEFT rail at every viewport,
              resting collapsed at the phone register where its crest expands the ruled section-menu
              sheet (crest→sheet, never a bottom/horizontal fork). The stage flows UNDER it, its
-             inline-start reserved by the 112px dock gutter (D1) so no hero ink sits under the rail. -->
+             inline-start reserved by the 112px dock gutter (D1) so no hero ink sits under the rail.
 
-        <div class="platform-shell__dock-slot">
+             O-D3 PLAT-6 — THE BANNER LANDMARK. The dock is the ONE persistent site-chrome present
+             at every route (the brand crest + the primary section nav), so it is the shell's
+             `role=banner` (a11y.md: "no route exposes a banner … landmark"). `<header>` carries no
+             layout CSS of its own here — `.platform-shell__dock-slot` still owns the z-rung, and a
+             bare semantic wrapper does not create a new containing block, so the dock's OWN
+             `position:fixed` continues to size against the viewport, unchanged. -->
+        <header role="banner" class="platform-shell__dock-slot">
             <slot name="dock"><Dock /></slot>
-        </div>
+        </header>
 
         <!-- ② The content — the SINGLE full-width stage. No reserved gutter, no inset; the
-             hero is full-bleed under the floating dock at every viewport. -->
+             hero is full-bleed under the floating dock at every viewport.
+
+             O-D3 PLAT-8 — the skip-link's target gets `tabindex="-1"`: today activating "Skip to
+             content" scrolls to `#main-content` but never MOVES focus there (a11y.md: "focus lands
+             on body"). A programmatically-focusable non-interactive landmark is the standard skip-
+             target fix; it does not enter the Tab order (only script-driven `.focus()` reaches it). -->
         <main
             id="main-content"
+            tabindex="-1"
             class="platform-shell__main min-w-0 px-4 pb-28 pt-6 md:px-8 md:pb-24 md:pt-10"
         >
             <slot />

@@ -328,15 +328,6 @@ defineExpose({ archetype });
                 </div>
             </dl>
 
-            <!-- THE B4 KEY-STAT STRIP — the per-viz thesis as numbers, off the contract reducers,
-                 colour-matched to the data. Mounts at the plate footer (travels into expand). The
-                 FLEET aggregate the focused band above reads "beside". -->
-            <VizKeyStats
-                v-if="platePhase === 'figure'"
-                class="viz-plate__keystats"
-                :stats="contract.keyStats()"
-            />
-
             <!-- THE EXPORT / a11y PAYLOAD (E3, one source) — the off-screen ChartDataTable IS the
                  CSV payload AND the screen-reader data table. Mounted here so the rows travel with
                  the plate into expand + export. -->
@@ -347,11 +338,10 @@ defineExpose({ archetype });
                 :value-header="contract.export.valueHeader"
             />
 
-            <!-- J-FRAME · FACET 4 (BOTTOM) + FACET 5 — the host-read seam BELOW the grid (the
-                 outside-the-viz placement). `aggregateStats` (bottom) → J-STORY's top/bottom-
-                 alternating outside-the-grid placement; `provenance` → J-VOICE's source lockup +
-                 x-vs-y declaration. The host READS the declarations and ROUTES each to its owning
-                 wave via a scoped slot — J-FRAME renders NOTHING. Absent when undeclared. -->
+            <!-- J-FRAME · FACET 4 (BOTTOM) — the host-read seam BELOW the grid (the outside-the-
+                 viz placement). `aggregateStats` (bottom) → J-STORY's top/bottom-alternating
+                 outside-the-grid placement. The host READS the declaration and ROUTES it to its
+                 owning wave via a scoped slot — J-FRAME renders NOTHING. Absent when undeclared. -->
             <slot
                 v-if="aggregateStats.length"
                 name="aggregate-stats"
@@ -359,12 +349,34 @@ defineExpose({ archetype });
                 placement="bottom"
                 :contract-id="contract.id"
             />
-            <slot
-                v-if="provenance"
-                name="provenance"
-                :provenance="provenance"
-                :contract-id="contract.id"
-            />
+
+            <!-- O-D3 — THE PLATE-FOOT LEDGER BAND (FACET 5; the always-on-but-QUIET provenance
+                 dock seat, [ANSWERS Q-53]). ONE hairline-ruled foot row, never two registers: the
+                 WG-A `ProvenanceBar` primitive (O-A9) fills the `#provenance` slot when a route
+                 wires it; absent that — every route today, the slot is unfilled platform-wide —
+                 the SAME B4 key-stat strip that used to mount unconditionally above now falls back
+                 into this seat (O-C4's declutter reconcile: "the provenance law and the declutter
+                 law RECONCILE at the foot register, so provenance never opens a second hierarchy
+                 level"). `platePhase==='figure'` guards the stat-band arm only (`keyStats()` wants
+                 ready data); the provenance arm stays phase-independent — an "always-on" dock reads
+                 the same during loading/error/empty as it does once the figure lands. -->
+            <div
+                v-if="provenance || platePhase === 'figure'"
+                class="viz-plate__foot"
+                data-testid="viz-plate-foot"
+            >
+                <slot
+                    v-if="provenance"
+                    name="provenance"
+                    :provenance="provenance"
+                    :contract-id="contract.id"
+                />
+                <VizKeyStats
+                    v-else-if="platePhase === 'figure'"
+                    class="viz-plate__keystats"
+                    :stats="contract.keyStats()"
+                />
+            </div>
         </template>
     </ChartFrame>
 </template>

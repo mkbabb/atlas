@@ -352,6 +352,16 @@
 .frame-expand :deep([data-part="trigger"]) {
     opacity: 0;
     transition: opacity 0.18s ease;
+    /* O-D3 G14 — the 44px WCAG 2.5.5 floor (mobile.md "Expand — 30×30", usfi 39 / sci 37 sub-44
+       counts). The primitive's own classes carry no content-box clip (unlike the dock-control
+       family below), so there is no invisible-padding trick here — the box itself grows to 44px
+       and the 16px glyph (h-4/w-4) re-centers inside it via flex; the frosted corner chip reads
+       modestly larger, honestly, rather than a hidden hit-area mismatch. */
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .plate:hover .frame-expand :deep([data-part="trigger"]),
 .plate:focus-within .frame-expand :deep([data-part="trigger"]) {

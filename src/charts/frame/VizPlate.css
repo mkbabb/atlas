@@ -8,8 +8,19 @@
 .viz-plate__body {
     inline-size: 100%;
 }
-.viz-plate__keystats {
+/* O-D3 — THE PLATE-FOOT LEDGER BAND (the always-on-but-QUIET provenance dock seat, [ANSWERS
+   Q-53]; L34 §1.2.13, R-020 CD-10). The wrapper owns only the top gap (byte-identical to the
+   prior `.viz-plate__keystats` standalone margin); the 1px-ruled row itself is drawn by
+   WHICHEVER child renders — the slotted `ProvenanceBar` already carries its own hairline rule
+   (`platform/provenance/ProvenanceBar.vue`), and the fallback stat band below matches its EXACT
+   recipe (same padding/border tokens) so the foot reads as ONE consistent ruled row regardless
+   of which content is seated. */
+.viz-plate__foot {
     margin-block-start: 1.25rem;
+}
+.viz-plate__keystats {
+    padding-block-start: 0.6rem;
+    border-block-start: 1px solid color-mix(in oklab, var(--foreground), transparent 90%);
 }
 
 /* N.WD1 §4.D1.5 — THE KEYBOARD FOCUS RIM (the platform overlay ring at the focused mark's anchor).
@@ -86,13 +97,25 @@
    @mkbabb/glass-ui/dock — rounded, ≥44px hitbox (the register paints the chrome; the cluster only
    lays the row). Recessive at rest, full ink on plate hover/focus (the expand-trigger doctrine);
    always-visible on touch (the C7 first-class-mobile law — a hover-gated affordance is undiscoverable
-   on a coarse pointer). */
+   on a coarse pointer).
+
+   O-D3 G14 — THE 44PX HIT-FLOOR (WCAG 2.5.5). The comment above CLAIMED the ≥44px hitbox; measured
+   it was not (mobile.md: Filters/Enlarge 24×24, Download 32×24 — usfi 39 / sci 37 sub-44 targets on
+   every dashboard). The compact icon-button + trigger families' OWN published override hooks
+   (dock-controls/icon-button.css `--dock-compact-control-padding`; dock-controls/triggers.css
+   `--dock-trigger-padding-{block,inline}`) size the box as content(16px glyph) + 2×padding, and
+   `background-clip: content-box` (the library's OWN base rule) clips the painted hover/press plate
+   to the CONTENT box — so growing the padding widens only the INVISIBLE hit area; the painted glyph
+   stays put. 0.875rem padding × 2 + the 1rem `.viz-dock__glyph` = 44px, both axes, both families. */
 .viz-dock {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
     opacity: 0.62;
     transition: opacity 0.18s ease;
+    --dock-compact-control-padding: 0.875rem;
+    --dock-trigger-padding-block: 0.875rem;
+    --dock-trigger-padding-inline: 0.875rem;
 }
 :where([data-chart-frame]:hover) .viz-dock,
 :where([data-chart-frame]:focus-within) .viz-dock {

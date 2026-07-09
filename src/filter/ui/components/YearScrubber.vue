@@ -109,8 +109,14 @@ const emit = defineEmits<{
     flex: 1 1 0;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 0.2rem;
     padding: 0.2rem 0.1rem;
+    /* O-D3 G14 — the 44px WCAG 2.5.5 floor on the BLOCK axis (mobile.md "scrub handle 310×33,
+       33px tall — under floor on the vertical axis"; the inline axis is a `flex:1` share of an
+       N-year track and stays as-is, unflagged). The dot + label content is unchanged; the box
+       simply grows to the floor and re-centers it. */
+    min-block-size: 44px;
     background: transparent;
     border: none;
     cursor: pointer;

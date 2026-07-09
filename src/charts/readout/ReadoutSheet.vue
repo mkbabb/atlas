@@ -109,6 +109,10 @@ const snapPoints: number[] = [0.12, 0.5, 1];
             aria-labelledby="readout-sheet-title"
             data-testid="readout-sheet"
         >
+            <!-- O-D3/CH-E-2 SEAM (glass-fenced, carried to WG-E·O-E8): reka's DialogPortal drops
+                 this `aria-labelledby` on teleport, so the sheet is at risk of reaching the SR
+                 unnamed — the fix is the O-E8 reka dialog-name wrapper (queued behind the 5.0.0
+                 cut); this file adopts it once O-E8 lands, unchanged until then. -->
             <template v-if="readout">
                 <DrawerTitle
                     id="readout-sheet-title"

@@ -177,9 +177,11 @@ export const useSelection = defineStore("platform:selection", () => {
      * focused text field must NEVER zero the page selection — the field's Esc is the field's, not
      * the page's. The naive `document.activeElement` read at clear-time is NOT enough: the filter
      * drawer's dismissable-layer consumes the SAME Escape in the CAPTURE/target phase and re-aims
-     * focus to its trigger BEFORE the BUBBLE-phase `keydown` seams (`SelectionPreview`, `PlatformShell`)
-     * run their clear — so by clear-time `activeElement` is already a BUTTON, not the input (measured:
-     * capture active=INPUT#save-view-name → bubble active=BUTTON#mobile-filter-trigger). So the gate is
+     * focus to its opening trigger BEFORE the BUBBLE-phase `keydown` seams (`SelectionPreview`,
+     * `PlatformShell`) run their clear — so by clear-time `activeElement` is already a BUTTON, not
+     * the input (measured pre-O-D3, when the summon door was `BUTTON#mobile-filter-trigger`; the
+     * O-D3 pill-kill retired that door in favor of the dock pull-out / per-plate icon, but the same
+     * capture-vs-bubble focus race holds for whichever button opened the drawer). So the gate is
      * stamped in a CAPTURE-phase listener that runs FIRST, recording whether THIS Escape ORIGINATED in
      * an editable field; the flag is read by `clearSelection` during the same synchronous dispatch and
      * cleared on the next macrotask, so it never leaks into a later programmatic clear. The live
