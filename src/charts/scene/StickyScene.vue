@@ -309,7 +309,11 @@ function Prose(p: { prose: ChapterTitle }): VNodeChild {
     flex-direction: column;
     justify-content: center;
     padding: 1.5rem;
-    border-radius: var(--radius-card, 12px);
+    /* O-DIR-2 — the owner's radius directive: the step's own rim (and the chip card below) read
+       the PLATE register (--radius-plate, 6px), not glass-ui's --radius-card (16px, unset in
+       atlas). The step's border-radius shapes the [data-active-step] gilt rim's box-shadow inset
+       corner even off the focal path, so this stays in lockstep with the chip's own radius. */
+    border-radius: var(--radius-plate, 6px);
     /* the recessive → active ramp — non-active steps dim, the active reads full. ONE 320ms ease on
        opacity + the rim box-shadow (NO `--step-t` scrub — the MVP transition is discrete). */
     opacity: 0.35;
@@ -405,7 +409,10 @@ function Prose(p: { prose: ChapterTitle }): VNodeChild {
     opacity: 0; /* one at a time — a recessive focal chip is GONE, not merely dimmed */
     pointer-events: none;
     padding: 1.25rem 1.5rem;
-    border-radius: var(--radius-card, 12px);
+    /* O-DIR-2 — align the scrim-chip to the plate register (--radius-plate, 6px): the chip floats
+       ON the plate frame, so it reads ONE corner register with it (was --radius-card, 16px — the
+       owner-flagged mismatch). */
+    border-radius: var(--radius-plate, 6px);
     background: color-mix(in oklab, var(--surface-card, Canvas) 82%, transparent);
     backdrop-filter: blur(10px) saturate(1.1);
     -webkit-backdrop-filter: blur(10px) saturate(1.1);

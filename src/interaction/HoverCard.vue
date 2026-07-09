@@ -286,7 +286,7 @@ watch(
             v-if="transientOpen && readout"
             :ref="(el) => setCardRef(el)"
             variant="floating"
-            class="hover-card-readout z-hovercard pointer-events-none max-w-xs rounded-lg px-3 py-2.5 transition-opacity duration-100"
+            class="hover-card-readout z-hovercard pointer-events-none max-w-xs px-3 py-2.5 transition-opacity duration-100"
             :style="style"
             role="tooltip"
             data-testid="hover-card"
@@ -335,6 +335,13 @@ watch(
 </template>
 
 <style scoped>
+/* O-DIR-2 — the owner's radius directive: the cursor-chasing hover card floats ON the plate, so it
+   reads the PLATE register (--radius-plate, 6px) — was Tailwind `rounded-lg` (glass-ui's --radius,
+   0.625rem = 10px, a THIRD register). Scoped + unlayered, so this beats glass-ui's layered utility. */
+.hover-card-readout {
+    border-radius: var(--radius-plate, 6px);
+}
+
 /* O-C7 D5 — the eyebrow tints to the hovered datum's fill as a READABLE INK (the ecf-readout
    disease cure): hue survives, L clamps to the contrast band per theme. The template sets the raw
    datum fill on --readout-accent (a NON-text carrier that still tints the title's leading hairline);

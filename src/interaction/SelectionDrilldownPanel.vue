@@ -609,6 +609,11 @@ function onPanelKeydown(e: KeyboardEvent): void {
     flex-direction: column;
     gap: 0.8rem;
     padding: 0.95rem 1.05rem;
+    /* O-DIR-2 — the owner's radius directive: the drill-down panel floats ON the plate (docked to a
+       corner), so it reads the PLATE register (--radius-plate, 6px) — glass-ui's <Card> defaults
+       its `rounded-card` class to --radius-card (16px), the same mismatch the scrim-chip carried.
+       Scoped + unlayered, so this beats the Card's layered Tailwind utility on its own root node. */
+    border-radius: var(--radius-plate, 6px);
 }
 
 /* ── SINGLE ─────────────────────────────────────────────────────────────────────────────────── */
