@@ -388,10 +388,23 @@ export interface VizContract<Row = ChartDataRow> {
     /** The accessible region label (defaults to `title`). */
     ariaLabel?: string;
     /** E8 — the empty-data signal. When `isEmpty()` is true the host swaps the chart body for a
-        `<PlateVoid reason>` (no blank render, no two-rules-around-empty-space). */
+        `<PlateVoid>` (no blank render, no two-rules-around-empty-space). A plate that owns a
+        BESPOKE multi-face empty state (speedtest's thin-coverage/true-empty split, O-D16) may omit
+        this and manage its own empty visual inside the chart body instead — `isEmpty` stays FALSE
+        so the body always mounts, and the plate composes `<PlateVoid>` itself where it needs it. */
     isEmpty?: () => boolean;
-    /** The void reason copy when `isEmpty()` is true (DESIGN §3.8; I10 names the reasons). */
+    /** The void HEADING (Fraunces 26–28px) when `isEmpty()` is true — falls back to `title`. */
+    voidLabel?: string;
+    /** The void CAPTION when `isEmpty()` is true (DESIGN §3.8; I10 names the reasons). */
     voidReason?: string;
+    /** O-D16 — the error rung's HEADING (readiness `"error"`, a feed-load failure) — falls back to
+        `title` when undeclared (every pre-O-D16 route keeps its current figure-name heading). */
+    errorLabel?: string;
+    /** O-D16 — the error rung's CAPTION — falls back to a generic "could not be drawn" line when
+        undeclared (every pre-O-D16 route keeps its current copy). */
+    errorReason?: string;
+    /** O-D16 — the error rung's retry action label — default `"Try again"`. */
+    retryLabel?: string;
     /** X3-2 — the evidence tag (FACT/HYPOTHESIS/SPECULATION). OPTIONAL on the base contract so the four
         shipped routes compile unchanged (X3-6 flags backfilling them to a later tranche); REQUIRED for
         the WATCHERS route via `WatchersVizContract` below (born-RED via tsc — a figure that omits its

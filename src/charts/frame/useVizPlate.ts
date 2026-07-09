@@ -132,6 +132,18 @@ function onRetry(): void {
     viz?.retry();
 }
 
+// ── O-D16 — THE ERROR RUNG'S PlateVoid PROPS (the ladder's error face, ONE family with `empty`) ──
+// The readiness `"error"` rung now renders `<PlateVoid>` (retired `PlateError` from the LADDER only
+// — `PlateError` still stands as `ChartFrame`'s own onErrorCaptured exception-boundary card, a
+// separate, narrower job). Every pre-O-D16 route keeps its DEFAULT copy unchanged (label = title,
+// caption = the prior generic line, action = "Try again"); a route may now declare
+// `errorLabel`/`errorReason`/`retryLabel` for a bespoke face (speedtest's "The live speed feed
+// didn't answer.").
+const errorAction = computed(() => ({
+    label: props.contract.retryLabel ?? "Try again",
+    onClick: onRetry,
+}));
+
 // ── N.WD1 §4.D1.5 — THE KEYBOARD HOST (opt-in per figure; the intent bus keyboard sink) ────────
 // A declared `nav` makes the figure body an application-mode tab stop. `keyStep` folds each key into
 // { the next nav state, an intent, the focused mark }; the intents are the SAME union the pointer
@@ -401,6 +413,7 @@ watchEffect(() => {
         readiness,
         platePhase,
         onRetry,
+        errorAction,
         hasNav,
         liveSentence,
         focusRim,

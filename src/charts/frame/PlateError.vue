@@ -11,6 +11,11 @@
 // of prose, no stack trace, no alarm — an engraved "this figure could not be drawn" note
 // that reads as part of the atlas, not a framework crash. It carries an OPTIONAL retry so a
 // transient failure (a chunk blip) can be re-attempted without a full reload.
+//
+// O-D16 — this card no longer serves `VizPlate`'s readiness LADDER (a feed-load `"error"` now
+// renders the shared `PlateVoid` family there — ONE way to be empty); it remains ChartFrame's
+// own onErrorCaptured EXCEPTION boundary, a narrower, separate job (a render THROW, not a data
+// phase).
 defineProps<{
     /** The figure's accessible label (the frame's `ariaLabel`), named in the note so the
         reader knows WHICH figure is absent. */
@@ -29,7 +34,7 @@ defineProps<{
         <button
             v-if="onRetry"
             type="button"
-            class="plate-error__retry"
+            class="plate-error__retry touch-target"
             data-testid="plate-error-retry"
             @click="onRetry"
         >

@@ -39,7 +39,6 @@ import ChartLegend from "@/charts/legend/ChartLegend.vue";
 import ChartDataTable from "@/charts/legend/ChartDataTable.vue";
 import PlateVoid from "@/charts/frame/PlateVoid.vue";
 import PlateSkeleton from "@/charts/frame/PlateSkeleton.vue";
-import PlateError from "@/charts/frame/PlateError.vue";
 import { useVizPlate, type VizPlateProps } from "./useVizPlate";
 
 const props = withDefaults(defineProps<VizPlateProps>(), { chart: null, nav: null });
@@ -53,7 +52,7 @@ const {
     onExportCsv,
     onExportImage,
     platePhase,
-    onRetry,
+    errorAction,
     hasNav,
     liveSentence,
     focusRim,
@@ -270,15 +269,22 @@ defineExpose({ archetype });
                  `empty` split (the composition law — a mid-load `rows:[]` reads as `loading`, never a
                  flashed void). No hub ⇒ the legacy `empty`/`figure` split, unchanged. -->
             <PlateSkeleton v-if="platePhase === 'loading'" :label="contract.title" />
-            <PlateError
+            <!-- O-D16 — the error rung rides the SAME `PlateVoid` family as `empty` (retiring
+                 `PlateError` from the LADDER only; it still stands as ChartFrame's own
+                 onErrorCaptured exception-boundary card, a separate job). Every pre-O-D16 route
+                 keeps its default copy (label = title, a generic "could not be drawn" caption,
+                 a "Try again" retry) unless it declares a bespoke `errorLabel`/`errorReason`/
+                 `retryLabel`. -->
+            <PlateVoid
                 v-else-if="platePhase === 'error'"
-                :label="contract.title"
-                :on-retry="onRetry"
+                :label="contract.errorLabel ?? contract.title"
+                :caption="contract.errorReason ?? 'This figure could not be drawn.'"
+                :action="errorAction"
             />
             <PlateVoid
                 v-else-if="platePhase === 'empty'"
-                :reason="contract.voidReason"
-                :label="contract.title"
+                :label="contract.voidLabel ?? contract.title"
+                :caption="contract.voidReason"
             />
             <!-- THE FIGURE (ready). When a `nav` is declared it is the OPERATING tab stop
                  (role=application, opt-in — SR-mode-changing, so opt-in only; the reading path role=img
