@@ -438,12 +438,21 @@
     font-size: var(--type-kicker); /* O-C1 — the kicker reads the token ladder: +1 √φ to 14px / 13px phone floor (was text-xs=12px) */
     @apply relative inline-flex items-center uppercase tracking-wide text-muted-foreground;
     &::before {
+        /* O-A25 (DIR-5 ARM C) — the flush-fix. The rule USED to be an IN-FLOW `inline-flex` first
+           child (`display:inline-block; margin-right:0.5em`), so it CONSUMED ~2em of inline space
+           and pushed the icon/roman/text that far right of the title's edge below. The code's own
+           original intent (see the block comment above) was a bar set in the MARGIN before the
+           caps — so it now renders OUT OF FLOW, positioned relative to the eyebrow's own box
+           (`@apply relative` above), leaving the icon+roman+text as the flex box's ONLY content,
+           flush at column 0 on every pole (left/right/center all inherit this — the pole only
+           moves the BLOCK via `justify-self`; this is purely the WITHIN-block flush). */
         content: "";
-        display: inline-block;
+        position: absolute;
+        inset-inline-start: -2em; /* the vacated 1.5em width + 0.5em gap, now off-flow */
+        top: 50%;
+        translate: 0 -50%;
         width: 1.5em; /* tracks the eyebrow type (was a fixed 1.5rem stroke) */
         height: 0.18em; /* tied to the cap-stroke, not a fixed 2px (IC-3) */
-        margin-right: 0.5em; /* the leading gap, em-relative (was 0.625rem) */
-        flex: none;
         background: var(--ncsu-red, #cc0000);
         opacity: var(
             --attn-chrome
