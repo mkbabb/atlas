@@ -36,8 +36,14 @@ withDefaults(
 <template>
     <!-- THE FACT GRID (extracted from HoverCard) — the universal labelled-row grid. A `divider` row
          rules a hairline spanning both columns before the credentials block. C48: `readout-facts`
-         carries the −1-golden-step token; `gap-y-0.5` tightens the inter-fact rhythm (the spacing arm). -->
-    <dl class="readout-facts mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
+         carries the −1-golden-step token; `gap-y-0.5` tightens the inter-fact rhythm (the spacing arm).
+         O-DIR-3 (the owner's readout-collapse directive): the LABEL column is `minmax(0,1fr)` — the
+         shrinkable, WRAPPING track — and the VALUE column is `auto` — sized to its own content, never
+         squeezed. The prior `[auto_1fr]` order did the reverse (the label hogged max-content width,
+         the value's 1fr track got crushed toward zero), so a long label + a narrow host (the 280px
+         single-select drilldown) wrapped the value one glyph per line. Values never wrap intra-token;
+         labels wrap. -->
+    <dl class="readout-facts mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5">
         <template v-for="f in facts" :key="f.label">
             <!-- The tier divider (d-hover-ecf Move 1) — a hairline spanning both columns
                  before the first credentials row, so the spine reads first. -->
@@ -47,11 +53,12 @@ withDefaults(
                 aria-hidden="true"
             />
             <dt class="text-caption min-w-0">{{ f.label }}</dt>
-            <!-- THE FACT VALUE — the value sizes to FIT the cell (max-w ample for a figure),
-                 wrapping a rare wide value, never clipping at a guessed `ch`. The full string
-                 rides `title=` always (the G-NO-MARQUEE-MOTION reveal: fit/wrap + native tooltip). -->
+            <!-- THE FACT VALUE — the value cell is content-sized and NEVER wraps intra-token
+                 (O-DIR-3): the `auto` column takes exactly the value's own measure, so a long
+                 sibling label can never crush it. The full string rides `title=` always (the
+                 G-NO-MARQUEE-MOTION reveal: fixed measure + native tooltip, zero motion). -->
             <dd
-                class="readout-facts__value flex min-w-0 items-center justify-end gap-1.5"
+                class="readout-facts__value flex items-center justify-end gap-1.5"
                 :title="f.value"
             >
                 <span
@@ -115,10 +122,14 @@ withDefaults(
     /* the readout figure rung — ONE golden step below the card figure token (a token consume). */
     --readout-figure-step: calc(var(--type-figure-card) / 1.618);
 }
-/* THE FACT VALUE — the in-card value-clip reconciliation (H.W1.a · §4). The value sizes to FIT its
-   track (the cell), never a guessed `14ch` cap that shears the answer; the full string still rides
-   `title=`. No marquee — fit/wrap + the native tooltip. C48: the −1 golden step + the kerning feature
-   + the bold VALUE weight (so the demoted unit reads lighter than it). */
+/* THE FACT VALUE — the in-card value-clip reconciliation (H.W1.a · §4), SUPERSEDED by O-DIR-3 (the
+   owner's readout-collapse directive): a value must NEVER wrap intra-token — H.W1.a's `white-space:
+   normal; overflow-wrap: anywhere` let the value's min-content shrink to ~1 glyph, which the `auto`
+   label / `1fr` value column order (since reversed, see the template) then crushed to that minimum
+   beside a long label. The value cell is content-sized (the template's `auto` column) and `nowrap`;
+   the full string still rides `title=`. No marquee — fixed measure + the native tooltip. C48: the
+   −1 golden step + the kerning feature + the bold VALUE weight (so the demoted unit reads lighter
+   than it). */
 .readout-facts__value {
     overflow: visible;
 }
@@ -126,8 +137,7 @@ withDefaults(
     overflow: visible;
     text-overflow: clip;
     max-inline-size: 100%;
-    white-space: normal;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
     text-align: right;
     /* C48 · −1 golden type-step (the token consume) + the kerning font-feature + the VALUE weight. */
     font-size: var(--readout-figure-step);

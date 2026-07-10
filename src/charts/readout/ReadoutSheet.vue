@@ -200,14 +200,21 @@ const snapPoints: number[] = [0.12, 0.5, 1];
     color: var(--muted-foreground);
 }
 
-/* THE FACTS GRID — label / value rows, the value right-aligned, the per-fact accent dot. */
+/* THE FACTS GRID — label / value rows, the value right-aligned, the per-fact accent dot. O-DIR-3
+   (the owner's readout-collapse directive): the LABEL column is `minmax(0,1fr)` (shrinkable,
+   wrapping) and the VALUE column is `auto` (content-sized, never squeezed) — the same fix as the
+   desktop `ReadoutFacts.vue` sibling, on this narrower phone register where a long label would
+   have crushed the value even harder. */
 .readout-sheet__facts {
     margin: 1rem 0 0;
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
     column-gap: 1rem;
     row-gap: 0.4rem;
     align-items: baseline;
+}
+.readout-sheet__facts dt {
+    min-width: 0;
 }
 .readout-sheet__value {
     display: flex;
@@ -216,6 +223,7 @@ const snapPoints: number[] = [0.12, 0.5, 1];
     gap: 0.4rem;
     font-variant-numeric: tabular-nums;
     text-align: end;
+    white-space: nowrap;
 }
 .readout-sheet__dot {
     inline-size: 0.5rem;
