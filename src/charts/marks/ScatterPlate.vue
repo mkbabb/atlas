@@ -166,6 +166,13 @@ defineExpose({ chart, host, highlight, downplay });
         <template v-if="$slots.legend" #legend>
             <slot name="legend" />
         </template>
+        <!-- Forward the #provenance facet slot WITH its scope (the GeoPlate.vue precedent — the
+             same O-A9 residue class: VizPlate invokes it ONLY when the contract declares a
+             provenance facet, so a scatter plate paints the source bar through the SAME slot a
+             VizPlate plate does; absent a consumer fill, nothing changes). -->
+        <template v-if="$slots.provenance" #provenance="slotProps">
+            <slot name="provenance" v-bind="slotProps" />
+        </template>
         <!-- C-FOLD-SCAT-8 (C.W5.4) — the marks FAN IN on beat-entry. A scatter is an ECharts
              CANVAS (animation:false), so the per-mark stagger cannot ride a CSS `view()` timeline
              (no per-mark DOM nodes): the faithful realization is the plate-level marks-fan — the
