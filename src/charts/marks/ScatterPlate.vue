@@ -173,6 +173,13 @@ defineExpose({ chart, host, highlight, downplay });
         <template v-if="$slots.provenance" #provenance="slotProps">
             <slot name="provenance" v-bind="slotProps" />
         </template>
+        <!-- Forward the #foot slot WITH its scope (the EX-70 find): VizPlate renders #foot as an
+             UNCONDITIONAL sibling of the keyStats/provenance ternary, so a consumer can mount an
+             inline source bar here WITHOUT setting `contract.provenance` — both the key-stats
+             band and the provenance foot coexist. Absent a fill, nothing changes. -->
+        <template v-if="$slots.foot" #foot="slotProps">
+            <slot name="foot" v-bind="slotProps" />
+        </template>
         <!-- C-FOLD-SCAT-8 (C.W5.4) — the marks FAN IN on beat-entry. A scatter is an ECharts
              CANVAS (animation:false), so the per-mark stagger cannot ride a CSS `view()` timeline
              (no per-mark DOM nodes): the faithful realization is the plate-level marks-fan — the
