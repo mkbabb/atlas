@@ -33,6 +33,8 @@ const props = withDefaults(
         overSubscriptionX?: number;
         xFormat?: (x: number) => string;
         yFormat?: (y: number) => string;
+        /** THE EXPLICIT X-TICKS (I15 · forwarded through M1). See `TrajectoryPlate`'s `xTicks`. */
+        xTicks?: number[];
         eyebrow?: string;
         ariaLabel?: string;
         size?: "default" | "hero";
@@ -45,6 +47,7 @@ const props = withDefaults(
         overSubscriptionX: undefined,
         xFormat: undefined,
         yFormat: undefined,
+        xTicks: undefined,
         eyebrow: undefined,
         ariaLabel: "Multi-year window trajectory",
         size: "default",
@@ -99,11 +102,13 @@ const forecastX = computed<number | undefined>(() => {
         :over-subscription-x="overSubscriptionX"
         :x-format="xFormat"
         :y-format="yFormat"
+        :x-ticks="xTicks"
         :eyebrow="eyebrow"
         :aria-label="ariaLabel"
         :size="size"
         :fig-id="figId"
     >
         <template v-if="$slots.title" #title><slot name="title" /></template>
+        <template v-if="$slots.foot" #foot><slot name="foot" /></template>
     </TrajectoryPlate>
 </template>

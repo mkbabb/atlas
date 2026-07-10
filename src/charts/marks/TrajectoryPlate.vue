@@ -50,6 +50,14 @@ const props = withDefaults(
         xFormat?: (x: number) => string;
         /** y tick formatter — ROUTE THROUGH THE FORMAT LAW (no raw floats, SYS-7). */
         yFormat?: (y: number) => string;
+        /**
+         * THE EXPLICIT X-TICKS (I15 · forwarded to TimeSeries). A sparse categorical span (the ECF
+         * 3-window arc) would otherwise let ECharts auto-fit FRACTIONAL ticks between the real
+         * endpoints (`W1 · 2021.5 · W2 · 2022.5 · W3`); the caller hands the exact tick x's here so
+         * the axis emits ticks ONLY at those positions. Omit ⇒ the legacy auto-fit (every existing
+         * consumer unchanged).
+         */
+        xTicks?: number[];
         /** The plate eyebrow + title (chapter structure; the prose strings are H3's). */
         eyebrow?: string;
         ariaLabel?: string;
@@ -70,6 +78,7 @@ const props = withDefaults(
         overSubscriptionX: undefined,
         xFormat: undefined,
         yFormat: undefined,
+        xTicks: undefined,
         eyebrow: undefined,
         ariaLabel: "Multi-year trajectory",
         size: "default",
@@ -229,6 +238,10 @@ const contract = computed<VizContract>(() => {
          description / key-stat / export furniture around the trajectory body. -->
     <VizPlate :contract="contract" data-testid="trajectory-plate">
         <template v-if="$slots.title" #title><slot name="title" /></template>
+        <!-- EX-51 · O-D12 residue 2 — the FOOT SLOT forward (mirrors the `#title` forward above).
+             Absent for every consumer that does not fill it (byte-identical); MultiYearFigure's
+             `terminalInFoot` opt-in fills it with the AXIOM-5 recessive terminal annotation. -->
+        <template v-if="$slots.foot" #foot><slot name="foot" /></template>
         <!-- THE TRAJECTORY HOST. The `trajectory`-bearing class + testid is the gate's crown
              read anchor (h0-multiyear.spec.ts:94-96). The DOM crown markers (rivet / void /
              per-point) are aria-hidden, zero-weight nodes mirroring the canvas marks so the
@@ -238,6 +251,7 @@ const contract = computed<VizContract>(() => {
                 :series="series"
                 :x-format="xFormat"
                 :y-format="yFormat"
+                :x-ticks="xTicks"
                 :mark-point="markPoint"
                 :mark-area="markArea"
                 :forecast-boundary-x="forecastBoundaryX"

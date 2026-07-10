@@ -367,7 +367,7 @@ defineExpose({ archetype });
                  ready data); the provenance arm stays phase-independent — an "always-on" dock reads
                  the same during loading/error/empty as it does once the figure lands. -->
             <div
-                v-if="provenance || platePhase === 'figure'"
+                v-if="provenance || platePhase === 'figure' || slots.foot"
                 class="viz-plate__foot"
                 data-testid="viz-plate-foot"
             >
@@ -382,6 +382,13 @@ defineExpose({ archetype });
                     class="viz-plate__keystats"
                     :stats="contract.keyStats()"
                 />
+                <!-- THE FOOT SLOT (EX-51 · O-D12 residue 2) — an ADDITIVE, contract-independent seat
+                     in the SAME ruled row for a consumer-authored fragment (the M-family's recessive
+                     AXIOM-5 terminal annotation). Empty for every plate that does not fill it (every
+                     shipped VizPlate consumer stays byte-identical); the widened outer `v-if` above
+                     lets the row itself appear even when neither provenance nor keyStats would (a
+                     `hideKeyStats` plate whose ONLY foot content is this slot). -->
+                <slot name="foot" :contract-id="contract.id" />
             </div>
         </template>
     </ChartFrame>

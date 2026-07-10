@@ -49,6 +49,13 @@ const props = withDefaults(
         xFormat?: (x: number) => string;
         /** y formatter — ROUTE THROUGH THE FORMAT LAW (no raw floats, SYS-7). */
         yFormat?: (y: number) => string;
+        /**
+         * THE EXPLICIT X-TICKS (I15 · forwarded to the crown). A sparse categorical span (the ECF
+         * 3-window arc) would otherwise let ECharts auto-fit FRACTIONAL ticks between the real
+         * endpoints (`W1 · 2021.5 · W2 · 2022.5 · W3`); the caller hands the exact tick x's here.
+         * Omit ⇒ the legacy auto-fit (every existing consumer unchanged).
+         */
+        xTicks?: number[];
         eyebrow?: string;
         ariaLabel?: string;
         size?: "default" | "hero";
@@ -62,6 +69,13 @@ const props = withDefaults(
         terminalValue?: string;
         /** A short caption for the terminal annotation (e.g. "2025 net"). */
         terminalCaption?: string;
+        /**
+         * THE FOOT-BAND PLACEMENT (EX-51 · O-D12 residue 2). The terminal annotation's lawful home
+         * is the D3 plate-foot ledger band (`.viz-plate__foot`, INSIDE the frame) rather than
+         * floating below it — but existing consumers (the sci capacity-chase) render it OUTSIDE the
+         * frame today, so the move is opt-IN: `false` (default) keeps the standalone render BYTE-
+         * IDENTICAL; `true` seats the SAME annotation in the plate's own foot row instead. */
+        terminalInFoot?: boolean;
         /** DE-SUPERFLUITY (I-COMPOSE): suppress the trajectory plate's auto first/last key-stats
             when the consuming beat already crowns the span endpoints audaciously (the ECF cliff
             crown owns the three window magnitudes). Forwarded to the bare TrajectoryPlate (M1) —
@@ -75,12 +89,14 @@ const props = withDefaults(
         overSubscriptionX: undefined,
         xFormat: undefined,
         yFormat: undefined,
+        xTicks: undefined,
         eyebrow: undefined,
         ariaLabel: "Multi-year figure",
         size: "default",
         figId: undefined,
         terminalValue: undefined,
         terminalCaption: undefined,
+        terminalInFoot: false,
         hideKeyStats: false,
     },
 );
@@ -95,6 +111,13 @@ const lead = computed<string>(() => props.leadMeasure ?? props.measures[0]);
     True ⇒ the WindowArcPlate (bracket + forecast); false ⇒ the bare TrajectoryPlate. The ONE
     convention selecting the crown shape at every depth. */
 const isWindow = computed<boolean>(() => isTrajectoryWindow(points.value, lead.value));
+
+/** EX-51 · O-D12 residue 2 — the terminal annotation seats in the crown's OWN foot band only when
+    BOTH a value is carried AND the consumer opted in (`terminalInFoot`); otherwise it stays the
+    legacy standalone render below the plate (byte-identical default). */
+const showFootTerminal = computed<boolean>(
+    () => Boolean(props.terminalValue) && props.terminalInFoot,
+);
 </script>
 
 <template>
@@ -110,12 +133,21 @@ const isWindow = computed<boolean>(() => isTrajectoryWindow(points.value, lead.v
             :over-subscription-x="overSubscriptionX"
             :x-format="xFormat"
             :y-format="yFormat"
+            :x-ticks="xTicks"
             :eyebrow="eyebrow"
             :aria-label="ariaLabel"
             :size="size"
             :fig-id="figId"
         >
             <template v-if="$slots.title" #title><slot name="title" /></template>
+            <template v-if="showFootTerminal" #foot>
+                <p class="multi-year-figure__terminal multi-year-figure__terminal--foot" data-testid="trajectory-terminal">
+                    <span class="multi-year-figure__terminal-value">{{ terminalValue }}</span>
+                    <span v-if="terminalCaption" class="multi-year-figure__terminal-caption">{{
+                        terminalCaption
+                    }}</span>
+                </p>
+            </template>
         </WindowArcPlate>
         <TrajectoryPlate
             v-else
@@ -128,6 +160,7 @@ const isWindow = computed<boolean>(() => isTrajectoryWindow(points.value, lead.v
             :over-subscription-x="overSubscriptionX"
             :x-format="xFormat"
             :y-format="yFormat"
+            :x-ticks="xTicks"
             :eyebrow="eyebrow"
             :aria-label="ariaLabel"
             :size="size"
@@ -135,15 +168,25 @@ const isWindow = computed<boolean>(() => isTrajectoryWindow(points.value, lead.v
             :hide-key-stats="hideKeyStats"
         >
             <template v-if="$slots.title" #title><slot name="title" /></template>
+            <template v-if="showFootTerminal" #foot>
+                <p class="multi-year-figure__terminal multi-year-figure__terminal--foot" data-testid="trajectory-terminal">
+                    <span class="multi-year-figure__terminal-value">{{ terminalValue }}</span>
+                    <span v-if="terminalCaption" class="multi-year-figure__terminal-caption">{{
+                        terminalCaption
+                    }}</span>
+                </p>
+            </template>
         </TrajectoryPlate>
 
         <!-- THE RECESSIVE TERMINAL ANNOTATION (AXIOM-5). The trajectory's terminal value — the
              string the hero already speaks audaciously — renders HERE as a quiet endpoint label:
              a small rung at ducked opacity, BOTH below the full-ink threshold (opacity ≤ 0.99 OR
              fontSize < the 30px salience floor). So the value-identity stutter never fires: the
-             hero owns the audacious figure, the trajectory terminal recedes. -->
+             hero owns the audacious figure, the trajectory terminal recedes. STANDALONE (below the
+             frame) unless `terminalInFoot` opts the SAME annotation into the crown's own foot band
+             above (EX-51 · O-D12 residue 2) — never both (mutually exclusive with `showFootTerminal`). -->
         <p
-            v-if="terminalValue"
+            v-if="terminalValue && !terminalInFoot"
             class="multi-year-figure__terminal"
             data-testid="trajectory-terminal"
         >
@@ -169,6 +212,16 @@ const isWindow = computed<boolean>(() => isTrajectoryWindow(points.value, lead.v
     align-items: baseline;
     gap: 0.5rem;
     opacity: 0.62;
+}
+/* EX-51 · O-D12 residue 2 — seated in the crown's OWN `.viz-plate__foot` ledger band instead of
+   floating below the frame: the outer margin is the FOOT band's own (`margin-block-start: 1.25rem`
+   on `.viz-plate__foot`), so the standalone top margin is dropped; the top hairline rule matches
+   the EXACT `.viz-plate__keystats` recipe so the row reads as ONE consistent ruled band regardless
+   of which foot content is seated (the VizPlate.css §O-D3 convention — "whichever child renders"). */
+.multi-year-figure__terminal--foot {
+    margin-top: 0;
+    padding-block-start: 0.6rem;
+    border-block-start: 1px solid color-mix(in oklab, var(--foreground), transparent 90%);
 }
 .multi-year-figure__terminal-value {
     font-family: "Fira Code", monospace;

@@ -97,8 +97,10 @@ describe("O-D3 — the plate-foot ledger band ([ANSWERS Q-53]; L34 §1.2.13, R-0
         VIZ_PLATE.indexOf('class="viz-plate__foot"') + 700,
     );
 
-    it("hosts a single always-on-but-quiet band gated on provenance OR the figure phase", () => {
-        expect(foot).toMatch(/v-if="provenance \|\| platePhase === 'figure'"/);
+    it("hosts a single always-on-but-quiet band gated on provenance OR the figure phase OR a filled foot slot", () => {
+        expect(foot).toMatch(
+            /v-if="provenance \|\| platePhase === 'figure' \|\| slots\.foot"/,
+        );
         expect(foot).toContain('data-testid="viz-plate-foot"');
     });
 
@@ -108,6 +110,10 @@ describe("O-D3 — the plate-foot ledger band ([ANSWERS Q-53]; L34 §1.2.13, R-0
 
     it("the stat band (VizKeyStats) is the v-else-if fallback — never co-rendered with provenance", () => {
         expect(foot).toMatch(/<VizKeyStats\s+v-else-if="platePhase === 'figure'"/);
+    });
+
+    it("EX-51 · O-D12 residue 2 — the ADDITIVE #foot slot seats a consumer fragment in the SAME ruled row (empty for every plate that does not fill it)", () => {
+        expect(VIZ_PLATE).toContain('<slot name="foot" :contract-id="contract.id" />');
     });
 
     it("the band draws its own hairline rule (matching ProvenanceBar's own recipe) so either branch reads as ONE ruled row", () => {
