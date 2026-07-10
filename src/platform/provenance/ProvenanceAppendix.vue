@@ -81,7 +81,7 @@ const { entries, heading = "Provenance" } = defineProps<{
 .provenance-appendix__heading {
     margin: 0;
     font-family: var(--font-mono, inherit);
-    font-size: 0.72rem;
+    font-size: var(--type-caption);
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -95,9 +95,11 @@ const { entries, heading = "Provenance" } = defineProps<{
     border-block-start: 1px solid color-mix(in oklab, currentColor, transparent 88%);
     scroll-margin-block-start: 5rem;
 }
+/* O-A24 (DIR-5 ARM B): the ONE rung that must not shrink — glass-ui's raw --type-body
+   (16px) clears the pre-change 0.95rem (15.2px), holding the step-up law. */
 .provenance-appendix__title {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: var(--type-body);
     font-weight: 600;
     line-height: 1.3;
 }
@@ -106,23 +108,27 @@ const { entries, heading = "Provenance" } = defineProps<{
     grid-template-columns: max-content 1fr;
     gap: 0.15rem 0.75rem;
     margin: 0;
-    font-size: 0.78rem;
     line-height: 1.5;
     color: var(--muted-foreground, inherit);
 }
 .provenance-appendix__rung {
     display: contents;
 }
+/* O-A24 (DIR-5 ARM B): the appendix's own second hand-tuned scale (0.62/0.72/0.78/0.95rem)
+   is RETIRED onto the SAME two tokens `ProvenanceBar` uses — one derivation, not two — and
+   the same label/value ink split (dt receded, dd promoted toward foreground). */
 .provenance-appendix__rungs dt {
     font-family: var(--font-mono, inherit);
-    font-size: 0.62rem;
+    font-size: var(--type-micro);
     text-transform: uppercase;
     letter-spacing: 0.12em;
     white-space: nowrap;
-    opacity: 0.85;
+    color: color-mix(in oklab, var(--muted-foreground), transparent 25%);
 }
 .provenance-appendix__rungs dd {
     margin: 0;
+    font-size: var(--type-caption);
+    color: color-mix(in oklab, var(--foreground), transparent 15%);
     text-wrap: pretty;
 }
 </style>

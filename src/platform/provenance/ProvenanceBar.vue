@@ -127,16 +127,18 @@ const appendixHref = computed<string>(() => `#${appendixAnchorId(vizId)}`);
     margin: 0;
     padding-block-start: 0.6rem;
     border-block-start: 1px solid color-mix(in oklab, var(--foreground), transparent 90%);
-    font-size: 0.7rem;
     line-height: 1.45;
     color: var(--muted-foreground);
 }
 .provenance-bar__rung {
     display: contents;
 }
+/* O-A24 (DIR-5 ARM B): the type-ladder rebind — `dt` sits on glass-ui's own raw floor
+   token, `dd` sits on the atlas-overridden caption rung (O-C1's +1 √φ bump), so the pair
+   reads a step bigger AND, paired with the ink split below, a real label < value ladder. */
 .provenance-bar dt {
     font-family: var(--font-mono);
-    font-size: 0.6rem;
+    font-size: var(--type-micro);
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: color-mix(in oklab, var(--muted-foreground), transparent 25%);
@@ -144,6 +146,8 @@ const appendixHref = computed<string>(() => `#${appendixAnchorId(vizId)}`);
 }
 .provenance-bar dd {
     margin: 0;
+    font-size: var(--type-caption);
+    color: color-mix(in oklab, var(--foreground), transparent 15%);
     text-wrap: pretty;
 }
 .provenance-bar__rung--filter dd {
