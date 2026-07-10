@@ -58,10 +58,17 @@ const props = withDefaults(
             `ctx.accent` (the chrome-register default, K6). Omit it and the colophon derives
             its spine from the active dashboard's chrome accent, never a data ramp. */
         accent?: string;
+        /** O-B19 (v1.0.29) — the build-SHA stamp: a subdued registration-mark line, rendered
+            beside the til-mark row in the colophon's OWN caption register (same `text-caption`
+            scale + muted ink as `asOf`/provenance, set in mono for the print-shop "run N" feel —
+            an imprint, not a debug string). Omit ⇒ no stamp (byte-identical to every existing
+            consumer). */
+        buildSha?: string;
     }>(),
     {
         colophon: undefined,
         accent: undefined,
+        buildSha: undefined,
     },
 );
 
@@ -152,6 +159,10 @@ const brandHref = computed(() => props.colophon?.brandHref ?? "https://www.fi.nc
                 rel="noopener noreferrer"
                 >{{ site.short }} · {{ site.apex }}</a
             >
+            <!-- O-B19 — the build-stamp imprint (the closing registration mark). -->
+            <span v-if="buildSha" class="text-caption colophon__build" data-testid="colophon-build-sha">
+                Build {{ buildSha }}
+            </span>
         </div>
     </footer>
 </template>
@@ -205,5 +216,13 @@ const brandHref = computed(() => props.colophon?.brandHref ?? "https://www.fi.nc
 }
 .colophon__brand:hover {
     text-decoration: underline;
+}
+/* O-B19 (v1.0.29) — the build-stamp imprint: the SAME --type-caption scale + muted ink every
+   other colophon caption wears (asOf/provenance), set in mono for the registration-mark feel (a
+   printer's run number sat beside the plate's crest, not a debug string) and one notch fainter
+   still so it never competes with the asOf date it sits beside. */
+.colophon__build {
+    font-family: var(--font-mono);
+    opacity: 0.75;
 }
 </style>

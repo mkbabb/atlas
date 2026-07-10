@@ -405,6 +405,15 @@ export interface VizContract<Row = ChartDataRow> {
     errorReason?: string;
     /** O-D16 — the error rung's retry action label — default `"Try again"`. */
     retryLabel?: string;
+    /** O-D24/EX-65 (v1.0.29) — suppress the error rung's retry action entirely. The compiled
+        ladder used to attach `PlateVoid`'s "Try again" button UNCONDITIONALLY on `error`, with no
+        lever to omit it — a rejection-terminal plate (a permanently-registered secondary source
+        whose designed error face carries no retry mechanism to wire the button to, e.g. the vft
+        fault-beat ladder) could declare bespoke `errorLabel`/`errorReason` prose but never drop
+        the dead action beneath it. `false` ⇒ `PlateVoid` receives no `action` at all (the SAME
+        "absent, not disabled" contract `PlateVoid`'s own `v-if="action"` gate already honours).
+        Default `true` — every existing route keeps its retry, byte-identical. */
+    retryable?: boolean;
     /** X3-2 — the evidence tag (FACT/HYPOTHESIS/SPECULATION). OPTIONAL on the base contract so the four
         shipped routes compile unchanged (X3-6 flags backfilling them to a later tranche); REQUIRED for
         the WATCHERS route via `WatchersVizContract` below (born-RED via tsc — a figure that omits its

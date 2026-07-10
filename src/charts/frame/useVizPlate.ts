@@ -139,10 +139,17 @@ function onRetry(): void {
 // caption = the prior generic line, action = "Try again"); a route may now declare
 // `errorLabel`/`errorReason`/`retryLabel` for a bespoke face (speedtest's "The live speed feed
 // didn't answer.").
-const errorAction = computed(() => ({
-    label: props.contract.retryLabel ?? "Try again",
-    onClick: onRetry,
-}));
+//
+// O-D24/EX-65 (v1.0.29) — `retryable: false` SUPPRESSES the action outright (`undefined`, not a
+// disabled button — `PlateVoid`'s own `v-if="action"` gate then renders nothing), for a
+// rejection-terminal plate whose designed error face has no retry mechanism to wire the button to
+// (a permanently-resolved secondary source, e.g. the vft fault-beat ladder — retrying would just
+// re-resolve the same bundled model). Default (undeclared/`true`) is byte-identical to before.
+const errorAction = computed(() =>
+    props.contract.retryable === false
+        ? undefined
+        : { label: props.contract.retryLabel ?? "Try again", onClick: onRetry },
+);
 
 // ── N.WD1 §4.D1.5 — THE KEYBOARD HOST (opt-in per figure; the intent bus keyboard sink) ────────
 // A declared `nav` makes the figure body an application-mode tab stop. `keyStep` folds each key into

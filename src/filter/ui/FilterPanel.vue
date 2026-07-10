@@ -111,6 +111,17 @@ const activeYear = computed<number>(
     () => yearScope.value?.activeYear.value ?? scrubberYears.value.at(-1) ?? 0,
 );
 
+/** O-LIB-CARRY (v1.0.29) — the scrubber's per-year data-absence notches, read off the active
+    dashboard's own context (mirrors `crossLinks`/`hasMultiYear` above — the panel reads
+    `DASHBOARD_KEY` directly rather than requiring the mount site, `DashboardView.vue`, to
+    prop-drill a dashboard-specific set through the generic chrome). `ctx.dimYears` is a GETTER
+    (not a stored ref, see the contract doc) — calling it here, inside this computed, is what
+    establishes the reactive dependency through whatever live source it closes over. Undefined
+    ⇒ empty (no dimming, byte-identical to every dashboard that doesn't declare one). */
+const dimYears = computed<ReadonlySet<number> | readonly number[]>(
+    () => ctx?.dimYears?.() ?? [],
+);
+
 /** Select a single year — writes `?year=` (the round-trip), the default mode. */
 function pickYear(year: number): void {
     yearScope.value?.setSingle(year);
@@ -271,6 +282,7 @@ function cancelSave(): void {
                     :years="scrubberYears"
                     :mode="yearMode"
                     :active-year="activeYear"
+                    :dim-years="dimYears"
                     @pick="pickYear"
                     @toggle-aggregate="toggleAggregate"
                 />

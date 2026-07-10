@@ -152,6 +152,18 @@ export interface DashboardContext {
     /** Cross-dashboard hand-offs — a URL hand-off carrying the shared selection key
         (e.g. the ECF↔USF `fips` DNA), never a shared store (G10 §7.3). */
     crossLinks?: { label: string; to: string }[];
+    /** O-LIB-CARRY (v1.0.29) — years to render as data-absent NOTCHES on the dashboard's own
+        `FilterPanel`-hosted `YearScrubber` (the O-D10-LIB `dimYears` lever, v1.0.28, threaded the
+        rest of the way): `FilterPanel` reads this field off the injected context and forwards it
+        straight to the scrubber, so a dashboard wires a per-year data-presence set with ONE field
+        on its own `context.ts` — no FilterPanel/DashboardView edit, mirroring `crossLinks`/
+        `hasMultiYear` (the panel already reads THOSE off this same context, never prop-drilled
+        from the mount site). A GETTER, not a stored `Ref` (mirrors `useYearScope`'s own
+        `scrollYearGetter` convention — a function is never auto-unwrapped by Vue's reactive
+        typing; calling it inside a `computed` establishes the dependency through whatever live
+        source it closes over, with no ref-of-ref stored here). Undefined ⇒ no dimming
+        (byte-identical to every dashboard that doesn't declare one). */
+    dimYears?: () => ReadonlySet<number> | readonly number[];
     /** The dashboard's floating-filter BODY — the controls the generic FilterShell
         renders inside its chrome. The chrome owns the frame; the body owns its logic
         (its own reset/apply). Undefined ⇒ the dashboard has no floating filter. */
