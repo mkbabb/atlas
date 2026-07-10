@@ -15,6 +15,8 @@ import {
     oklchToOklab,
     oklabToOklch,
     oklchComponentsToOklab,
+    hexToOklab,
+    rgbStringToOklab,
     wcagContrast,
 } from "./oklab";
 
@@ -188,6 +190,37 @@ export function readVar(name: string, fallback: string): string {
 /** Resolve a `--viz-*` stop to OKLab once (the live oklch token, else the fallback). */
 export function readPole(name: string, fallback: Oklab): Oklab {
     return oklchToOklab(readVar(name, ""), fallback);
+}
+
+// ── X10-LIB — THE CSS-COLOR → OKLAB RESOLVE (the label-vs-A22 reconcile's contrast leg) ────────
+//
+// GeoChoropleth's per-region label gate (`redundant-channel.ts::regionClearsLabelGate`) needs the
+// WCAG contrast between the label ink and its OWN region's resolved fill — but a data fill arrives
+// in any of THREE forms: a ramp-emitted `rgb(r g b)` (every `Scale<V>` factory's own output,
+// `oklabToRgb`), an authored `oklch(…)`/`#hex` stop, or a `var(--viz-category-{k})` reference (the
+// J-COLOR §5.1 coordinated-categorical branch). This is the ONE reverse-resolve a caller needs —
+// composing the pure parsers (`oklab.ts`) with THIS module's DOM-token seam (`readVar`) for the
+// `var()` case — so the gate reads any live fill string without a second colour-resolution path.
+export function cssColorToOklab(color: string, fallback: Oklab): Oklab {
+    const c = color.trim();
+    if (!c) return fallback;
+    if (c.startsWith("#")) return hexToOklab(c);
+    if (/^oklch\(/i.test(c)) return oklchToOklab(c, fallback);
+    const rgb = rgbStringToOklab(c);
+    if (rgb) return rgb;
+    const ref = c.match(/^var\(\s*(--[\w-]+)/i);
+    if (ref) return cssColorToOklab(readVar(ref[1], ""), fallback);
+    return fallback;
+}
+
+/** Resolve the LABEL INK — `--foreground`, the same ink `.geo-value-label` paints (GeoChoropleth.
+    css) — to OKLab once per theme (memoized transitively via `readVar`). The X10-LIB per-region
+    contrast gate measures THIS against a region's own resolved fill. The fallback is the light
+    `--foreground` literal (`oklch(0.255 0.028 55)`, tokens/color.css) — the SSR/jsdom-safe value a
+    live DOM always overrides. */
+export function readLabelInk(): Oklab {
+    const fallback: Oklab = oklchComponentsToOklab(0.255, 0.028, 55);
+    return oklchToOklab(readVar("--foreground", ""), fallback);
 }
 
 /** A scale is a pure value → CSS-colour function; the legend reads its stops. */

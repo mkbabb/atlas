@@ -116,6 +116,21 @@
     --dock-compact-control-padding: 0.875rem;
     --dock-trigger-padding-block: 0.875rem;
     --dock-trigger-padding-inline: 0.875rem;
+    /* X10-LIB rider — THE 44PX TOGGLE FLOOR, a second lawful override hook beside the pair above.
+       glass-ui's `<ToggleGroupItem>` (`toggleVariants`) sizes off the generic `--control-h-{xs,sm,md,
+       lg}` cohort, each a `max(scaled, --control-floor)` clamp (tokens/sizing.css) — `--control-floor`
+       is glass-ui's OWN published WCAG-2.5.5 override seam ("a consumer re-tints … or a scoped
+       region"), globally 0 on a fine pointer and lifted to `--touch-target` only under `@media
+       (pointer: coarse)` — so a mouse-pointer `md` toggle (2.5rem = 40px) clears no floor at all (the
+       D6 verifier's disclosed nit: 40px segments beside this dock's own 44px bar). Mirroring the pair
+       above (a plate-context selector setting the library's OWN hook, unconditional on pointer type —
+       the SAME O-D3 G14 posture: the hit-floor holds regardless of pointer coarseness), `.viz-dock`
+       pins `--control-floor` to the touch target here too, so ANY glass control reading the
+       `--control-h-*` cohort — a nested `<ToggleGroup>` included — clears 44px the moment it is
+       plate-docked. Custom-property inheritance crosses the Vue scope boundary (a DOM concept, not a
+       component one), so a slotted or child-rendered ToggleGroup inherits it with zero per-consumer
+       wiring. */
+    --control-floor: var(--touch-target, 2.75rem);
 }
 :where([data-chart-frame]:hover) .viz-dock,
 :where([data-chart-frame]:focus-within) .viz-dock {

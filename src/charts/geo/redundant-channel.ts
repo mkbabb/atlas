@@ -203,6 +203,37 @@ export function resolveRedundantChannel(
     return hasLabelSource ? "value-label" : "pattern";
 }
 
+// ── X10-LIB · THE PER-REGION LABEL DECLUTTER (the label-vs-A22 reconcile) ──────────────────────
+//
+// THE TENSION (X10, design-usf-sci-ecf.md §X10 · D13-found): the owner's declutter rule says an
+// in-map value label should render ONLY when it clears (a) a SIZE floor — its region's minor axis
+// — AND (b) a WCAG non-text CONTRAST floor against its own fill; a label failing either reads as
+// "texture noise wearing data's clothes" and must not paint. But O-A22's `value-label` channel is
+// deliberately LEGIBLE AT REST for every region of a continuous / sparse district set (the sighted-
+// colorblind channel — §above). Applied FRAME-wide, the two rules collide: X10 would blank labels
+// O-A22 requires to stay a channel.
+//
+// THE RECONCILE: gate PER REGION, not per frame. A region that clears BOTH gates keeps its resting
+// label (X10 satisfied, O-A22 satisfied). A region that fails EITHER gate does not go silent —
+// it falls back to the PATTERN texture, keyed off the SAME tier-bin source every pattern-channel
+// region already uses (`buildDataFillBins`/`patternIdForBin`), so the redundant channel NEVER
+// drops for that region; it only changes FORM (word → texture). The channel-per-region invariant
+// (every data region carries a non-hue channel at rest) survives declutter intact.
+export const LABEL_MINOR_AXIS_FLOOR_PX = 48;
+export const LABEL_CONTRAST_FLOOR = 3.0;
+
+/** THE PER-REGION LABEL GATE — a pure predicate, the X10 declutter rule collapsed to one call.
+    `minorAxisPx` is a region's bounding-box minor axis (SVG user-space px — the SAME space
+    `GeoChoropleth` measures a region's centroid in); `contrastRatio` is the label ink's WCAG
+    contrast against THAT region's own resolved fill (∈[1,21], `wcagContrast` in `./oklab`/
+    `cssColorToOklab` in `./colorRamp`). Both gates must clear for the label to render at rest —
+    a region failing either is NOT rendered label-less; the caller routes it to the pattern
+    fallback instead (`GeoChoropleth`'s per-shape channel decision, below), so a data region never
+    goes colour-only. */
+export function regionClearsLabelGate(minorAxisPx: number, contrastRatio: number): boolean {
+    return minorAxisPx >= LABEL_MINOR_AXIS_FLOOR_PX && contrastRatio >= LABEL_CONTRAST_FLOOR;
+}
+
 /**
  * THE O-A22 EXECUTABLE PROOF (the `checkOrdinalRainbowPassthrough` idiom) — the pure-mechanism
  * teeth the acceptance rides, collapsed into ONE function the spec calls (returns `{ok, failures}`,
@@ -297,6 +328,41 @@ export function checkRedundantChannel(): { ok: boolean; failures: string[] } {
     );
     if (new Set(collapsed.values()).size > PATTERN_TIER_MAX) {
         failures.push("④ the >8 quantize did not collapse the distinct fills within PATTERN_TIER_MAX");
+    }
+
+    return { ok: failures.length === 0, failures };
+}
+
+/**
+ * THE X10-LIB EXECUTABLE PROOF (the `checkRedundantChannel` sibling) — the per-region label-gate
+ * teeth, DOM-less. Proves the size floor, the contrast floor, and their conjunction (a region
+ * clears the gate iff BOTH hold — never an OR), at the exact boundary (the floor itself passes;
+ * one unit under fails), so `regionClearsLabelGate` cannot silently degrade to a single-axis check.
+ */
+export function checkLabelGate(): { ok: boolean; failures: string[] } {
+    const failures: string[] = [];
+
+    // ① the SIZE floor alone: at-floor passes, one px under fails (contrast held fixed, clearing).
+    if (!regionClearsLabelGate(LABEL_MINOR_AXIS_FLOOR_PX, LABEL_CONTRAST_FLOOR)) {
+        failures.push("① a region exactly AT both floors did not clear the gate");
+    }
+    if (regionClearsLabelGate(LABEL_MINOR_AXIS_FLOOR_PX - 1, LABEL_CONTRAST_FLOOR + 5)) {
+        failures.push("① a region 1px UNDER the size floor cleared the gate (size ignored)");
+    }
+    // ② the CONTRAST floor alone: one hundredth under, at a generous size, still fails.
+    if (regionClearsLabelGate(LABEL_MINOR_AXIS_FLOOR_PX + 100, LABEL_CONTRAST_FLOOR - 0.01)) {
+        failures.push("② a region under the contrast floor cleared the gate (contrast ignored)");
+    }
+    // ③ THE CONJUNCTION — clearing ONE axis alone never clears the gate (no OR-degrade).
+    if (regionClearsLabelGate(LABEL_MINOR_AXIS_FLOOR_PX + 200, 1)) {
+        failures.push("③ a huge region at contrast 1 cleared the gate (size alone is not enough)");
+    }
+    if (regionClearsLabelGate(1, 21)) {
+        failures.push("③ a 1px region at max contrast cleared the gate (contrast alone is not enough)");
+    }
+    // ④ a comfortably-clearing region (both well over floor) passes — the positive control.
+    if (!regionClearsLabelGate(LABEL_MINOR_AXIS_FLOOR_PX * 2, LABEL_CONTRAST_FLOOR * 2)) {
+        failures.push("④ a region well clear of both floors did not pass (positive control)");
     }
 
     return { ok: failures.length === 0, failures };

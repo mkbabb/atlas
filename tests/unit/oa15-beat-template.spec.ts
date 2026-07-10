@@ -217,14 +217,19 @@ describe("O-A15 · SuperlativeRegister (Q-48) — the never-incriminate ceiling 
 });
 
 describe("O-A15 · vizAlternates (Q-30) — the registry + expand-menu binding + catalog (facility)", () => {
-    it("the full brainstormed set is declared; the usf pair is built (O-X12 registry truth-up)", () => {
+    it("the full brainstormed set is declared; the usf + ecf pairs are built (O-X12/X10-LIB registry truth-up)", () => {
         expect(VIZ_ALTERNATES.length).toBeGreaterThanOrEqual(7);
         // O-X12: both usf alternates (dumbbell ⇄ usf-ranked-strip, balance-beam ⇄ usf-scatter) are
         // real, wired components — `built:true` now means built in both directions (a shipped
         // component was previously mismarked `false`, an unbuilt one previously mismarked `true`).
+        // X10-LIB: the ecf pair (packed-bars ⇄ ecf-treemap, lollipop ⇄ ecf-bars, O-D14) verified the
+        // same way — ChartersTreemap.vue/ConsultantsRankedBar.vue both wire `useVizAlternates` and
+        // render the real `PackedBars.vue`/`Lollipop.vue` components — flipped true in BOTH directions.
         expect(VIZ_ALTERNATES.filter((a) => a.built).map((a) => a.id)).toEqual([
             "dumbbell",
             "balance-beam",
+            "packed-bars",
+            "lollipop",
         ]);
         expect(VIZ_ALTERNATES.every((a) => a.mobileCompat)).toBe(true); // the 390 compat tooth target
     });

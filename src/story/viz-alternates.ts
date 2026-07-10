@@ -40,15 +40,17 @@ export interface VizAlternate {
 
 /** THE REGISTRY — the full brainstormed alternate set (O-A15 WORK · the ⇄ pairs). Each base viz opens
     to one or more alternates; the speedtest hex opens to TWO (county-choropleth ⇄ dot-density). The
-    usf pair (dumbbell + balance-beam) is `built:true` — both land consumer-side (O-D5/O-D6, the AR-10
-    single-consumer precedent) and are wired live; the rest are their WG-D owners' (declared here so
-    the expand menu + catalog are whole from the facility cut). */
+    usf pair (dumbbell + balance-beam, O-D5/O-D6) and the ecf pair (packed-bars + lollipop, O-D14) are
+    `built:true` — all four land consumer-side (the AR-10 single-consumer precedent) and are wired live
+    (`useVizAlternates("ecf-treemap", …)` in ChartersTreemap.vue, `useVizAlternates("ecf-bars", …)` in
+    ConsultantsRankedBar.vue); the rest are their WG-D owners' (declared here so the expand menu +
+    catalog are whole from the facility cut). */
 export const VIZ_ALTERNATES: readonly VizAlternate[] = Object.freeze([
     { id: "dumbbell", label: "Dumbbell", base: "usf-ranked-strip", mobileCompat: true, owner: "O-D5", built: true },
     { id: "balance-beam", label: "Balance beam", base: "usf-scatter", mobileCompat: true, owner: "O-D6", built: true },
     { id: "beeswarm", label: "Beeswarm", base: "sci-scatter", mobileCompat: true, owner: "O-D10", built: false },
-    { id: "packed-bars", label: "Packed bars", base: "ecf-treemap", mobileCompat: true, owner: "O-D14", built: false },
-    { id: "lollipop", label: "Lollipop", base: "ecf-bars", mobileCompat: true, owner: "O-D14", built: false },
+    { id: "packed-bars", label: "Packed bars", base: "ecf-treemap", mobileCompat: true, owner: "O-D14", built: true },
+    { id: "lollipop", label: "Lollipop", base: "ecf-bars", mobileCompat: true, owner: "O-D14", built: true },
     { id: "county-choropleth", label: "County choropleth", base: "speedtest-hex", mobileCompat: true, owner: "O-D16", built: false },
     { id: "dot-density", label: "Dot density", base: "speedtest-hex", mobileCompat: true, owner: "O-D16", built: false },
 ]);

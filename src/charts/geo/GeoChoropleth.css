@@ -74,6 +74,19 @@
 .geo-value-labels--redundant .geo-value-label {
     opacity: 0.6;
 }
+/* X10-LIB · THE PER-REGION DECLUTTER (the label-vs-A22 reconcile, design-usf-sci-ecf.md §X10). A
+   region whose label FAILS the size (≥48px minor axis) + contrast (≥3:1 vs its own fill) gate does
+   NOT inherit the group's resting-visible lift above — it reverts to the base near-invisible GAP-5
+   rest opacity (its region carries the pattern texture instead, GeoChoropleth's `usesPatternFill`
+   fallback — the redundant channel changes FORM for that region, it never drops). Three classes beat
+   the two-class rule above without an `!important`. Scoped OUT of `forced-colors: active` — there the
+   fill is flattened by the OS and the word is the ONLY surviving channel, so GAP-5 completeness must
+   win regardless of the resting declutter (every feature keeps its word under forced-colors). */
+@media not (forced-colors: active) {
+    .geo-value-labels--redundant .geo-value-label.geo-value-label--gate-fail {
+        opacity: 0.04;
+    }
+}
 
 /* Under `forced-colors: active` the OS flattens every fill to a handful of system colours, so the
    colour ramp's magnitude is LOST — the value WORD becomes the channel that carries the meaning,

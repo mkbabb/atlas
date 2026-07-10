@@ -52,6 +52,7 @@ import {
 import {
     buildDataFillBins,
     resolveRedundantChannel,
+    regionClearsLabelGate,
     patternIdForBin,
     DATA_PATTERNS,
     DATA_PATTERN_TILE,
@@ -59,6 +60,14 @@ import {
     type RedundantChannel,
     type ResolvedChannel,
 } from "@/charts/geo/redundant-channel";
+// X10-LIB — the label-vs-A22 reconcile's CONTRAST leg: resolve the label ink + a region's own
+// resolved fill to OKLab and measure WCAG contrast between them (the `regionClearsLabelGate` size
+// gate's sibling axis). `useGeoPaletteEpoch` is the SAME settle-epoch seam `GeoPlate.vue` owns
+// (idempotent — one subscription per module), so a theme flip re-derives the per-region gate in
+// the post-settle task, not the critical flip frame.
+import { type Oklab, wcagContrast } from "@/charts/scale/oklab";
+import { cssColorToOklab, readLabelInk } from "@/charts/scale/colorRamp";
+import { useGeoPaletteEpoch } from "@/charts/composables/useGeoPaletteEpoch";
 
 // The choropleth joins on a feed's entity key — the value under `FeedMeta.keyField`
 // (a zero-padded FIPS, an LEA number, an entity id). Binding the type to the
@@ -203,6 +212,10 @@ interface Shape {
     /** O-A22 — the RESOLVED data fill (the `fillOf` result, computed once) — the ONE shared bin
         source the redundant tier-texture keys off (tier k's texture carries tier k's colour). */
     fill: string;
+    /** X10-LIB — the region's bounding-box MINOR AXIS (SVG user-space px, the SAME space `cx`/`cy`
+        are measured in) — the label-declutter SIZE gate's input. 0 when no word source exists (the
+        gate is never consulted then). */
+    minorAxis: number;
     /** O-A22 — whether this feature carries a DATA value (vs a no-data absence cell). Keys off the
         GAP-5 empty-`valueLabel` convention ("" ⇒ no-data); with no `valueLabel` every cell is data.
         An absence cell mints NO tier bin + gets NO redundant channel (it reads as ABSENT). */
@@ -269,6 +282,14 @@ const shapes = computed<Shape[]>(() => {
         // a channel MAY seat a value-label there, so it is measured whenever a WORD source exists
         // (`valueLabel` OR `valueFormat`), not only under the resting forced-colors posture.
         const [cx, cy] = wordOf ? draw.centroid(f) : [0, 0];
+        // X10-LIB — the region's bounding-box minor axis, measured off the SAME path generator (one
+        // coordinate frame) whenever a word source exists (the ONLY time the size gate is consulted —
+        // mirrors the centroid's own guard, so a label-less choropleth pays nothing extra).
+        let minorAxis = 0;
+        if (wordOf) {
+            const [[x0, y0], [x1, y1]] = draw.bounds(f);
+            minorAxis = Math.min(x1 - x0, y1 - y0);
+        }
         // O-A22 — the per-cell word, computed ONCE (the redundant channel + the fill read one truth).
         const word = wordOf ? wordOf(key) : "";
         return {
@@ -281,6 +302,7 @@ const shapes = computed<Shape[]>(() => {
             cx,
             cy,
             label: word,
+            minorAxis,
             fill: fillOf(key),
             // THE ABSENCE ORACLE — a cell is DATA unless the word carries the GAP-5 "" no-data
             // sentinel. A formatter that renders no-data as "" (formatHhi / a custom valueLabel)
@@ -322,6 +344,57 @@ const resolvedChannel = computed<ResolvedChannel>(() =>
     resolveRedundantChannel(props.redundantChannel, fillBins.value.size, hasLabelSource.value),
 );
 
+// ── X10-LIB · THE PER-REGION LABEL GATE (the label-vs-A22 reconcile) ────────────────────────────
+// The owner's X10 declutter rule (design-usf-sci-ecf.md §X10): an in-map label renders at rest ONLY
+// where it clears a SIZE floor (its region's minor axis) AND a WCAG CONTRAST floor against its own
+// fill; a region failing either does NOT go blank — it falls back to the PATTERN texture (below),
+// so O-A22's "every data region carries a non-hue channel at rest" invariant survives declutter.
+
+/** The settle-epoch tick (GeoPlate's own seam, `useGeoPaletteEpoch` — idempotent per module) the
+    label-ink read keys reactivity on, so a theme flip re-derives the contrast gate post-settle. */
+const paletteEpoch = useGeoPaletteEpoch();
+/** The label ink (`--foreground`, the SAME ink `.geo-value-label` paints), resolved once per theme. */
+const labelInk = computed<Oklab>(() => {
+    void paletteEpoch.value;
+    return readLabelInk();
+});
+
+/** Per-shape label-gate results — a `key → clears-both-gates` map, evaluated ONLY under the
+    `value-label` channel (the SOLE mode a resting label is ever a candidate) and ONLY for `hasValue`
+    cells (an absence cell carries no word to gate). Memoized so the fill + label-visibility bindings
+    below share ONE contrast evaluation per shape rather than re-deriving it per template access. An
+    unparseable fill resolves its contrast against `labelInk` itself (contrast 1 — a guaranteed FAIL,
+    the conservative default: an unresolvable colour never gets the benefit of the doubt). */
+const labelGateResults = computed<Map<string, boolean>>(() => {
+    const out = new Map<string, boolean>();
+    if (resolvedChannel.value !== "value-label") return out;
+    const ink = labelInk.value;
+    for (const s of shapes.value) {
+        if (!s.hasValue) continue;
+        const contrast = wcagContrast(ink, cssColorToOklab(s.fill, ink));
+        out.set(s.key, regionClearsLabelGate(s.minorAxis, contrast));
+    }
+    return out;
+});
+
+/** Whether `s`'s label clears BOTH the X10 gates (false for anything not evaluated above — a
+    `pattern`/`none` frame, or an absence cell, where the question never arises). */
+function shapeClearsLabelGate(key: string): boolean {
+    return labelGateResults.value.get(key) ?? false;
+}
+
+/** Whether `s` renders through the PATTERN texture rather than its plain resolved fill: the whole
+    frame under the `pattern` channel, OR — the X10-LIB fallback — a `value-label` region whose own
+    label FAILS the size/contrast gate (the channel changes form for that region, it never drops). A
+    DIMMED or ABSENT cell is excluded (the disjointness law: a receded cell keeps the plain fill so
+    the reserved dim/absence hatch reads on it, never a data texture). */
+function usesPatternFill(s: Shape): boolean {
+    if (!s.hasValue || isDimmed(s.key)) return false;
+    if (resolvedChannel.value === "pattern") return true;
+    if (resolvedChannel.value === "value-label") return !shapeClearsLabelGate(s.key);
+    return false;
+}
+
 /** The PATTERN-channel bin map — the distinct data fills collapsed into ≤PATTERN_TIER_MAX texture
     buckets: an IDENTITY (one bin per colour) when the set already fits the 8 textures, the >8
     quantize SAFETY-NET otherwise (so a label-less continuous frame can texture rather than go colour-
@@ -330,14 +403,19 @@ const patternBins = computed(() =>
     buildDataFillBins(dataFills.value, PATTERN_TIER_MAX),
 );
 
-/** The tier TEXTURE `<pattern>` defs (built only under the pattern channel): ONE per tier BIN, its
-    background rect the tier colour + the bin's hue-independent ink on top. In the ≤8 case every
-    distinct colour is its own bin (its exact colour); in the >8 quantize case the bin is a bucket and
-    the FIRST colour that lands in it is the tier representative — so the defs stay ≤PATTERN_TIER_MAX
-    with NO duplicate id. Emitted into `<defs>` and referenced by `url(#geo-data-pattern-{bin})`; the
-    agreement source is the pattern ITSELF (its background is the tier fill). */
+/** The tier TEXTURE `<pattern>` defs — built whenever SOME shape renders through the pattern channel:
+    the whole frame under `pattern`, or the size/contrast-FAILING subset under `value-label` (X10-LIB).
+    ONE def per tier BIN, its background rect the tier colour + the bin's hue-independent ink on top.
+    In the ≤8 case every distinct colour is its own bin (its exact colour); in the >8 quantize case the
+    bin is a bucket and the FIRST colour that lands in it is the tier representative — so the defs stay
+    ≤PATTERN_TIER_MAX with NO duplicate id. Emitted into `<defs>` and referenced by
+    `url(#geo-data-pattern-{bin})`; the agreement source is the pattern ITSELF (its background is the
+    tier fill). */
 const patternDefs = computed(() => {
-    if (resolvedChannel.value !== "pattern") return [];
+    const needed =
+        resolvedChannel.value === "pattern" ||
+        (resolvedChannel.value === "value-label" && shapes.value.some(usesPatternFill));
+    if (!needed) return [];
     const byBin = new Map<number, string>();
     for (const [color, bin] of patternBins.value) {
         if (!byBin.has(bin)) byBin.set(bin, color);
@@ -349,12 +427,11 @@ const patternDefs = computed(() => {
     }));
 });
 
-/** The per-shape fill — under the PATTERN channel a DATA cell fills through its tier texture
-    (`url(#…)`, the colour + ink), else the plain resolved fill. A DIMMED or ABSENT cell keeps the
-    plain fill so the reserved dim/absence hatch reads on it (the disjointness law: a receded cell is
-    never a data texture). */
+/** The per-shape fill — through its tier texture (`url(#…)`, the colour + ink) wherever
+    `usesPatternFill` says so (the whole `pattern` frame, or an X10-LIB gate-failing `value-label`
+    region), else the plain resolved fill. */
 function fillFor(s: Shape): string {
-    if (resolvedChannel.value === "pattern" && s.hasValue && !isDimmed(s.key)) {
+    if (usesPatternFill(s)) {
         const bin = patternBins.value.get(s.fill);
         if (bin != null) return `url(#${patternIdForBin(bin)})`;
     }
@@ -394,6 +471,15 @@ const labelsMounted = computed(
 /** O-A22 — the layer is the resting SIGHTED-colorblind channel (visible at rest), not the quiet
     forced-colors-only overlay, exactly when the density decision routed this frame to value-label. */
 const labelsRedundant = computed(() => resolvedChannel.value === "value-label");
+/** X10-LIB — within a redundant (value-label-channel) frame, whether `s` FAILS its own size/contrast
+    gate and so must NOT inherit the group's resting-visible lift: its region carries the pattern
+    texture instead (`usesPatternFill`), so a label that would be "texture noise wearing data's
+    clothes" never paints at rest — it stays at the base near-invisible GAP-5 opacity (unaffected
+    under `forced-colors: active`, which the CSS `@media not (…)` guard leaves untouched — GAP-5
+    completeness holds: every feature keeps its word there). */
+function labelGateFails(s: Shape): boolean {
+    return labelsRedundant.value && s.hasValue && !shapeClearsLabelGate(s.key);
+}
 
 // K-D-GEO §4.A — THE STATIC-DASH MIGRATION. The polygon-life draw-in rides a STATIC `pathLength="1"`
 // literal (on the `.geo-shape` <path>) so the dash math collapses to the constants
@@ -630,6 +716,7 @@ const tableRows = computed(() =>
                     :x="s.cx"
                     :y="s.cy"
                     class="geo-value-label"
+                    :class="{ 'geo-value-label--gate-fail': labelGateFails(s) }"
                     text-anchor="middle"
                     dominant-baseline="central"
                 >

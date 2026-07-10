@@ -15,17 +15,25 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
     checkRedundantChannel,
+    checkLabelGate,
     buildDataFillBins,
     resolveRedundantChannel,
+    regionClearsLabelGate,
     patternIdForBin,
     DATA_PATTERNS,
     PATTERN_TIER_MAX,
+    LABEL_MINOR_AXIS_FLOOR_PX,
+    LABEL_CONTRAST_FLOOR,
     ABSENCE_HATCH_ID,
     ABSENCE_HATCH_KIND,
 } from "@/charts/geo/redundant-channel";
 
 const SFC = readFileSync(
     fileURLToPath(new URL("../../src/charts/geo/GeoChoropleth.vue", import.meta.url)),
+    "utf8",
+);
+const CSS = readFileSync(
+    fileURLToPath(new URL("../../src/charts/geo/GeoChoropleth.css", import.meta.url)),
     "utf8",
 );
 
@@ -146,6 +154,78 @@ describe("O-A22 · the absence-vs-data disjointness (a no-data region reads as a
                 (p.lines?.length ?? 0) + (p.circles?.length ?? 0) + (p.rects?.length ?? 0);
             expect(n).toBeGreaterThan(0);
         }
+    });
+});
+
+describe("X10-LIB · checkLabelGate — the collapsed executable proof", () => {
+    it("passes every invariant (size floor · contrast floor · conjunction · positive control)", () => {
+        const { ok, failures } = checkLabelGate();
+        expect(failures).toEqual([]);
+        expect(ok).toBe(true);
+    });
+});
+
+describe("X10-LIB · regionClearsLabelGate — the per-region declutter gate (the label-vs-A22 reconcile)", () => {
+    it("clears only when BOTH the size and contrast floors hold", () => {
+        expect(regionClearsLabelGate(LABEL_MINOR_AXIS_FLOOR_PX, LABEL_CONTRAST_FLOOR)).toBe(true);
+        expect(regionClearsLabelGate(200, 10)).toBe(true);
+    });
+
+    it("FAILS on a region under the size floor, however high the contrast", () => {
+        expect(regionClearsLabelGate(LABEL_MINOR_AXIS_FLOOR_PX - 0.01, 21)).toBe(false);
+        expect(regionClearsLabelGate(1, 21)).toBe(false);
+    });
+
+    it("FAILS on a region under the contrast floor, however large the box", () => {
+        expect(regionClearsLabelGate(500, LABEL_CONTRAST_FLOOR - 0.01)).toBe(false);
+        expect(regionClearsLabelGate(500, 1)).toBe(false);
+    });
+
+    it("is a pure, deterministic function (no hidden state)", () => {
+        const a = regionClearsLabelGate(60, 4);
+        const b = regionClearsLabelGate(60, 4);
+        expect(a).toBe(b);
+    });
+});
+
+describe("X10-LIB · the LIVE GeoChoropleth.vue wiring — the label-gate + pattern-fallback invariant", () => {
+    it("imports the pure size/contrast gate off the ONE redundant-channel source (no drift)", () => {
+        expect(SFC).toContain("regionClearsLabelGate");
+        expect(SFC).toMatch(/from\s+"@\/charts\/geo\/redundant-channel"/);
+    });
+
+    it("a value-label region that FAILS its gate routes to the PATTERN fallback, never a blank fill", () => {
+        // `usesPatternFill` is the ONE fill-routing decision `fillFor` reads; it must special-case the
+        // value-label channel's gate-failing subset (the reconcile's core move), not just the `pattern`
+        // channel outright.
+        expect(SFC).toContain("function usesPatternFill(s: Shape): boolean {");
+        expect(SFC).toMatch(
+            /resolvedChannel\.value === "value-label"\) return !shapeClearsLabelGate\(s\.key\)/,
+        );
+    });
+
+    it("the pattern <defs> are built for the value-label channel too, whenever a region needs one", () => {
+        // Regression guard: the O-A22-era `patternDefs` gated SOLELY on `resolvedChannel === "pattern"`,
+        // which would silently starve a gate-failing value-label region of its texture def (a region
+        // routed to `url(#…)` with no matching <pattern> paints transparent — the true "unreadable label
+        // never paints" NEG, generalised to "and its fallback must actually exist").
+        expect(SFC).toMatch(
+            /resolvedChannel\.value === "value-label" && shapes\.value\.some\(usesPatternFill\)/,
+        );
+    });
+
+    it("NEG — a gate-failing label is NOT left resting-visible (reverts off the redundant lift)", () => {
+        expect(SFC).toContain("geo-value-label--gate-fail");
+        expect(SFC).toContain("function labelGateFails(s: Shape): boolean {");
+        // The CSS reversion rule exists and is scoped OUT of forced-colors (GAP-5 completeness: every
+        // feature keeps its word once the OS flattens the palette, regardless of the resting declutter).
+        expect(CSS).toContain(".geo-value-label--gate-fail");
+        expect(CSS).toMatch(/@media not \(forced-colors: active\)/);
+    });
+
+    it("the contrast leg resolves the SAME label ink GeoChoropleth.css paints (--foreground), one source", () => {
+        expect(SFC).toContain("readLabelInk");
+        expect(SFC).toContain("wcagContrast(ink, cssColorToOklab(s.fill, ink))");
     });
 });
 

@@ -206,17 +206,18 @@ export function relightRainbowStopHex(lightStop: string): string {
     return oklabToHex(relightRainbowStop(lab));
 }
 
-/** Parse a `#rrggbb` to OKLab via the canonical inverse matrix (the sRGB→OKLab direction the
-    token-authoring helper needs; the light tiers are authored as hex in tokens.css). */
-export function hexToOklab(hex: string): Oklab {
-    const h = hex.replace("#", "");
+/** sRGB 0-255 bytes → OKLab, via the canonical inverse matrix (the sRGB→OKLab direction).
+    Factored out of `hexToOklab` (X10-LIB) so a SECOND caller — `rgbStringToOklab`, the ramp's own
+    `rgb(r g b)` emit format — shares the ONE inverse-matrix implementation rather than re-deriving
+    it (this module's own "one canonical matrix" law, `oklabToRgb255`'s forward-direction sibling). */
+function srgbToOklab(r255: number, g255: number, b255: number): Oklab {
     const srgb2lin = (n: number): number => {
         const s = n / 255;
         return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
     };
-    const r = srgb2lin(parseInt(h.slice(0, 2), 16));
-    const g = srgb2lin(parseInt(h.slice(2, 4), 16));
-    const b = srgb2lin(parseInt(h.slice(4, 6), 16));
+    const r = srgb2lin(r255);
+    const g = srgb2lin(g255);
+    const b = srgb2lin(b255);
     const l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b;
     const m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b;
     const s = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b;
@@ -228,6 +229,25 @@ export function hexToOklab(hex: string): Oklab {
         a: 1.9779984951 * l_ - 2.428592205 * m_ + 0.4505937099 * s_,
         b: 0.0259040371 * l_ + 0.7827717662 * m_ - 0.808675766 * s_,
     };
+}
+
+/** Parse a `#rrggbb` to OKLab via the canonical inverse matrix (the sRGB→OKLab direction the
+    token-authoring helper needs; the light tiers are authored as hex in tokens.css). */
+export function hexToOklab(hex: string): Oklab {
+    const h = hex.replace("#", "");
+    return srgbToOklab(parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16));
+}
+
+/** Parse a ramp-emitted `rgb(r g b)` / `rgb(r,g,b)` / `rgba(…)` token to OKLab (the sRGB→OKLab
+    inverse of `oklabToRgb` — X10-LIB's label-contrast gate needs to read BACK the colour a
+    `Scale<V>` factory already emitted, since `makeDivergingScale`/`makeSequentialScale` print
+    `rgb()`, not the authored `oklch()` form `oklchToOklab` parses). Returns `null` on a non-match
+    (a `var(--…)` reference or an unrecognised token) so the caller supplies its OWN resolution/
+    fallback rather than this pure parser silently guessing. */
+export function rgbStringToOklab(token: string): Oklab | null {
+    const m = token.trim().match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/i);
+    if (!m) return null;
+    return srgbToOklab(Number(m[1]), Number(m[2]), Number(m[3]));
 }
 
 /** The 14 LIGHT rainbow tiers + the no-tier null, base-green → apex-violet (fd-warm-ground
