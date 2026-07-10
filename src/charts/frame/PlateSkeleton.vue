@@ -24,6 +24,14 @@ defineProps<{
     label?: string;
 }>();
 
+// O-D24/O-LIB-CARRY — THE CAPTION SLOT. Before this the skeleton carried NO visible copy (only the
+// sr-only `label` announcement below) — a route needing in-metaphor loading prose (O-D24's vft
+// fault-beat: "Developing the plate…", its timeout note) could not express it through this shared
+// rung and had to hand-compose the skeleton's own primitives in-route instead of riding this
+// generic ladder (`VizPlate.vue`'s `#loading` passthrough forwards here). ABSENT by default (every
+// existing mount stays byte-identical); a filled slot renders as ONE visible line beneath the plot
+// silhouette, in the SAME quiet muted-prose voice the void family's `caption` prop wears.
+
 /** The resting plot silhouette — a NON-monotone height set (fractions of the 6rem plot band) so the
     pending block reads as a quiet dataset's outline, never a synthetic 40/51/62/73/84 ramp. The
     heights resolve in REM (`calc(--h * 6rem)`), never a percentage: the skeleton's `block-size:100%`
@@ -57,6 +65,9 @@ const SILHOUETTE = [0.62, 0.38, 0.74, 0.5, 0.88] as const;
                 :style="{ '--h': String(h), '--i': i }"
             />
         </div>
+        <p v-if="$slots.caption" class="plate-skeleton__caption text-prose-muted">
+            <slot name="caption" />
+        </p>
     </div>
 </template>
 
@@ -116,6 +127,14 @@ const SILHOUETTE = [0.62, 0.38, 0.74, 0.5, 0.88] as const;
 }
 .plate-skeleton__bar--dek {
     inline-size: 64%;
+}
+/* THE CAPTION SLOT (O-LIB-CARRY) — ONE visible prose line beneath the plot silhouette, absent by
+   default. It mirrors PlateVoid's `.plate-void__caption` register (the void family's quiet prose
+   voice) so a face's copy reads consistently whether the plate is loading or genuinely empty. */
+.plate-skeleton__caption {
+    margin: 0;
+    max-inline-size: 44ch;
+    font-size: 0.9375rem;
 }
 /* The quiet breath — a compositor-only opacity sweep (no layout, no paint of geometry). Each column
    leads its neighbour by a beat (the --i stagger), so the pulse READS left→right across the

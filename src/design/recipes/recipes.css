@@ -132,16 +132,26 @@
    (default `transparent` — a no-op background-color for any OTHER consumer of this keyframe,
    e.g. GalleryMasthead's non-sticky `.masthead__wordmark`, which never re-points it): only
    `.text-page-title` sets it to `var(--background)`, so the opacify-on-stuck behaviour lands on
-   the page <h1> alone. */
+   the page <h1> alone.
+
+   THE `--title-rest-size`/`--title-compact-size`/`--title-*-weight` INDIRECTION (O-D20 EX-63
+   cure). The keyframe is SHARED — `.masthead__wordmark` re-points its endpoints to the cover
+   register (`--type-masthead-headline{,-compact}`) via these four custom properties, exactly as
+   its own comment always claimed. This keyframe now actually READS that indirection (it
+   previously hardcoded the page-title tokens + literal 560/600 unconditionally, so the masthead's
+   re-point was silently dead — the EX-63 find: a cover rested at 72px, never the D20-charted 88).
+   Each var() falls back to `.text-page-title`'s OWN literal, so `.text-page-title` — which sets
+   NONE of these four — is BYTE-IDENTICAL to before this cure; only a consumer that explicitly
+   sets the indirection (GalleryMasthead, or a future cover) re-points the endpoints. */
 @keyframes title-compact {
     from {
-        font-size: var(--type-page-title);
-        font-weight: 560;
+        font-size: var(--title-rest-size, var(--type-page-title));
+        font-weight: var(--title-rest-weight, 560);
         background-color: transparent;
     }
     to {
-        font-size: var(--type-page-title-compact);
-        font-weight: 600;
+        font-size: var(--title-compact-size, var(--type-page-title-compact));
+        font-weight: var(--title-compact-weight, 600);
         background-color: var(--title-scrub-bg-to, transparent);
     }
 }
@@ -600,7 +610,11 @@
        on --font-display-vs (a SMALL optical register where render-px opsz is the honest choice). */
     font-variation-settings: var(--font-masthead-vs);
     font-optical-sizing: none;
-    font-size: clamp(2.75rem, 8vw, 5.5rem); /* the TOWERING cover-line — fluid, phone-safe (UNCHANGED — WCAG 1.4.4) */
+    /* O-D20 EX-63 — TOKENIZED (was a literal `clamp(2.75rem, 8vw, 5.5rem)`, byte-identical value):
+       `--type-masthead-headline` (type.css) is now the ONE source, so `.masthead__wordmark`'s
+       scroll-shrink `--title-rest-size` re-point (below) and this REST declaration can never drift
+       to two different 88px numbers (the DV-1 two-surfaces lesson, applied to the cover ceiling). */
+    font-size: var(--type-masthead-headline); /* the TOWERING cover-line — fluid, phone-safe (WCAG 1.4.4) */
     font-weight: 560;
     line-height: 0.98;
     letter-spacing: -0.02em;

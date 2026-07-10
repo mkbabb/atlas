@@ -36,9 +36,11 @@ const { veilStyle } = useAuroraVeil({ hueSource: null });
 // hard-imports `@/site.config`; the instance installs it at bootstrap.
 const site = useAtlasSite();
 
-// The footer's reveal-stagger index — the gallery passes the count past its cards so
-// the colophon rises last (the slides [data-reveal] cadence carries over).
-defineProps<{ footDelay?: number }>();
+// THE EYEBROW-SUPPRESSION SEAM (O-D20 declutter carry). The kicker row (`site.org`, below)
+// duplicates the crest AND the dek — O-D20's hub declutter law kills it so the masthead reads
+// crest / genre-line / h1 / dek (4 text rows → 3). Default `true` (byte-identical to every
+// existing mount); a consumer complying with the declutter law passes `:show-eyebrow="false"`.
+withDefaults(defineProps<{ showEyebrow?: boolean }>(), { showEyebrow: true });
 
 // THE MASTHEAD PICK-OUT (E11 · e-underlines §1 · d-fd-gallery M3). The picked word
 // ("Connectivity") is a COLOR pick-out, NOT a mark: the <HandUnderline> retired (its un-baselined
@@ -80,8 +82,9 @@ defineProps<{ footDelay?: number }>();
             <!-- THE PROGRAM LINE (F5.5) — the mono tracked-caps program kicker with the red TIL
                  leading-rule (the slides `TECHNOLOGY INFRASTRUCTURE LAB` register). It stays the §2.2
                  `eyebrow` (the editorial margin mark); the LOCKUP's whispered standfirst is the
-                 SEPARATE script/italic register below it. -->
-            <span class="eyebrow">{{ site.org }}</span>
+                 SEPARATE script/italic register below it. SUPPRESSIBLE (O-D20): it duplicates the
+                 crest + the dek, so a hub complying with the declutter law hides it via `showEyebrow`. -->
+            <span v-if="showEyebrow" class="eyebrow">{{ site.org }}</span>
             <!-- THE TWO-REGISTER MASTHEAD LOCKUP (J-PAPER ARM c · C47 · §approach-3). The whispered
                  script/italic eyebrow STANDFIRST seats OVER the towering grained serif wordmark: the
                  audacity is the SCALE contrast (a small Fraunces italic over a colossal cover-line),

@@ -161,6 +161,45 @@ function resolveWindow(spec: FacetSpec): [number, number] {
     return from < to ? [from, to] : [from, Math.min(1, from + 1e-4)];
 }
 
+// ── D30-LIB · THE STANDALONE-HOST REGISTRATION SEAM (the scroll-driven.css enumerated-allowlist
+// cure) ───────────────────────────────────────────────────────────────────────────────────────
+// `scroll-driven.css`'s standalone scrub-host rule binds the native `--scroll-tl` `view()`
+// animation ONLY to a hard-coded class enumeration (`.decade-beat`, `.sci-chase-beat`, the two
+// lettering titles — its own "I17 CLOSE" comment: "A FUTURE standalone scrub host must add BOTH
+// its `data-scroll-tl` attribute AND its root class to this enumerated list"). A consumer OUTSIDE
+// this published package cannot add its class to that list without a library edit — the D30
+// vft-germination find (`useFaultBeatScroll.ts`'s documented local substitute: "`@mkbabb/atlas` is
+// a read-only published package … `.curves-plate` cannot be added there … BOTH atlas paths read a
+// frozen 0 for a host outside the allowlist").
+//
+// Since `useScrollTimeline` already owns `target` and already knows the native path is live
+// (`native`), it REGISTERS the identical binding directly as inline style on mount — a consumer
+// registers simply by CALLING this composable, no CSS enumeration, no library edit, ever again.
+// The declarations are byte-identical to the enumerated CSS rule's own (`scroll-tl-pos auto linear
+// both` / `view()` / `cover 0% cover 100%`); inline style wins the cascade over any class-based
+// rule, so the two mechanisms never double-bind — a PRE-enumerated host (`.decade-beat` etc.) is
+// simply re-asserted to the same values, not doubled. Skipped when `target` ALSO carries
+// `data-reveal-beat` (the COMBINED CSS rule owns that host, riding the beat's own named
+// `--beat-tl` timeline — never a fresh anonymous `view()` mint). PRM is inherited for free: the
+// caller (below) only invokes this after the `reduced.value` early-return, mirroring the CSS
+// rule's own outer `@media (prefers-reduced-motion: no-preference)` fence; `native` mirrors the
+// CSS rule's own `@supports ((animation-timeline: view()) and (animation-range: entry))` fence.
+function bindStandaloneScrollHost(el: HTMLElement): void {
+    if (el.hasAttribute("data-reveal-beat")) return; // the combined CSS rule owns this host.
+    el.style.setProperty("animation", "scroll-tl-pos auto linear both");
+    el.style.setProperty("animation-timeline", "view()");
+    el.style.setProperty("animation-range", "cover 0% cover 100%");
+}
+
+/** Undo {@link bindStandaloneScrollHost} on unmount — never leaves a stray inline animation on a
+    recycled element. A no-op on a fallback/PRM host (never bound) or a null target. */
+function unbindStandaloneScrollHost(el: HTMLElement | null): void {
+    if (!el) return;
+    el.style.removeProperty("animation");
+    el.style.removeProperty("animation-timeline");
+    el.style.removeProperty("animation-range");
+}
+
 /**
  * Bind a keyframes.js `ManualTimeline` to a section's scroll-progress, exposing the ordered
  * FACET MAP. `target` is the section element (the `[data-reveal-beat]` host) the timeline
@@ -273,6 +312,7 @@ export function useScrollTimeline(
         // Native hosts expose their element so the registry can read `--scroll-tl`; the fallback
         // host carries no element (it pushes reactively) but still registers so it feeds the argmin.
         record.el = native ? target.value : null;
+        if (native && target.value) bindStandaloneScrollHost(target.value);
         unregister = registerScrubHost(record);
     });
 
@@ -280,6 +320,7 @@ export function useScrollTimeline(
         // The registry self-halts on the next frame once its last host leaves (the empty check).
         unregister?.();
         stopFallbackWatch();
+        unbindStandaloneScrollHost(target.value);
     });
 
     // ── THE FACET MAP (readers of the one progress scalar) ─────────────────────────────────

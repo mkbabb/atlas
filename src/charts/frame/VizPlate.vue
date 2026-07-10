@@ -268,7 +268,20 @@ defineExpose({ archetype });
                  hub's pure readiness fold picks the rung, and `isEmpty()` is read ONLY at the `figure`/
                  `empty` split (the composition law — a mid-load `rows:[]` reads as `loading`, never a
                  flashed void). No hub ⇒ the legacy `empty`/`figure` split, unchanged. -->
-            <PlateSkeleton v-if="platePhase === 'loading'" :label="contract.title" />
+            <!-- O-LIB-CARRY (O-D24 find) — THE LOADING/ERROR/EMPTY SLOT PASSTHROUGH. Before this the
+                 ladder rendered `PlateSkeleton`/`PlateVoid` with ZERO passthrough for a route's own
+                 in-metaphor content, so a consumer needing bespoke loading/void copy or a bespoke
+                 ghost had to compose the primitives directly in-route instead of riding this generic
+                 ladder (the O-D24 vft fault-beat's documented gap). Each `<slot>` is GATED on the
+                 named slot actually being filled (`slots.loading`/`.error`/`.empty`) — an unfilled
+                 slot renders NO node at all, so `PlateSkeleton`'s `$slots.caption` check (and
+                 `PlateVoid`'s own `$slots.default` ghost gate) see a genuinely absent slot, not an
+                 empty-but-present one; every existing consumer of VizPlate stays byte-identical. -->
+            <PlateSkeleton v-if="platePhase === 'loading'" :label="contract.title">
+                <template v-if="slots.loading" #caption>
+                    <slot name="loading" :contract-id="contract.id" />
+                </template>
+            </PlateSkeleton>
             <!-- O-D16 — the error rung rides the SAME `PlateVoid` family as `empty` (retiring
                  `PlateError` from the LADDER only; it still stands as ChartFrame's own
                  onErrorCaptured exception-boundary card, a separate job). Every pre-O-D16 route
@@ -280,12 +293,16 @@ defineExpose({ archetype });
                 :label="contract.errorLabel ?? contract.title"
                 :caption="contract.errorReason ?? 'This figure could not be drawn.'"
                 :action="errorAction"
-            />
+            >
+                <slot v-if="slots.error" name="error" :contract-id="contract.id" />
+            </PlateVoid>
             <PlateVoid
                 v-else-if="platePhase === 'empty'"
                 :label="contract.voidLabel ?? contract.title"
                 :caption="contract.voidReason"
-            />
+            >
+                <slot v-if="slots.empty" name="empty" :contract-id="contract.id" />
+            </PlateVoid>
             <!-- THE FIGURE (ready). When a `nav` is declared it is the OPERATING tab stop
                  (role=application, opt-in — SR-mode-changing, so opt-in only; the reading path role=img
                  on the inner host is untouched). The aria-live region serializes the SAME readout the

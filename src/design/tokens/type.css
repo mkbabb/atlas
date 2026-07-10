@@ -141,6 +141,22 @@
         3.6cqw,
         1.875rem
     ); /* the scrolled sticky wayfinding label — 30/28/24 (O-C2 · §A3; viewport-cqw) */
+    /* THE MASTHEAD-HEADLINE rung — O-C2's TWO-TIER COVER CEILING (§A3; ANSWERS Q-7/Q-10). Covers
+       (the gallery hub, vft, ecf) rest at the 88–100px cover register, ABOVE the 72px dashboard
+       h1 ceiling — the D20 hub ladder charters masthead h1 REST 88. This is the SAME `clamp()`
+       `recipes.css`'s `masthead-headline` @utility already painted as a literal (8vw fluid term,
+       5.5rem=88px cap) — TOKENIZED here (one source, the recipe now reads this) so the shared
+       `title-compact` scroll-shrink keyframe (recipes.css §1a) can ALSO reach it through the
+       `--title-rest-size` indirection `.masthead__wordmark` sets (GalleryMasthead.vue) — the O-D20
+       EX-63 find: the keyframe hardcoded `--type-page-title` regardless of that indirection, so a
+       cover rested at 72px, never the charted 88. */
+    --type-masthead-headline: clamp(2.75rem, 8vw, 5.5rem); /* the towering cover-line — 88px @1440 */
+    /* THE MASTHEAD-HEADLINE COMPACT rung — the cover's scroll-shrunk terminal. Covers "rest larger
+       and shrink gentler (they never fall below the ~44px wayfinding floor)" than a dashboard h1
+       (§A3 existence proof, WAVES-C-D-E.md O-C2 WORK) — so the floor sits at the SAME 2.75rem/44px
+       page-title REST floor (never the dashboard's 30px compact terminal), the cap a touch above it
+       for the wide desktop cover. */
+    --type-masthead-headline-compact: clamp(2.75rem, 4.2cqw, 3.25rem); /* the compact cover-label — 44–52px */
     /* THE TITLE-SHRINK SCROLL RANGE (O-C2 · §A3). The scrub completes over the first
        hero-fold exit: 320px desktop (ANSWERS Q-8, RULED). The phone shortens it to 200px
        (recipes.css §1a re-points under --phone); the tablet rides the desktop range (no

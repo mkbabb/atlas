@@ -36,6 +36,21 @@ export interface VizPlacement {
     /** A fixed pixel offset added after projection (the markLine label's `inside-end-top` nudge). */
     dx?: number;
     dy?: number;
+    /**
+     * O-D10-LIB (§5-A3 carry) — for an AXIS-ONLY placement (the OTHER coordinate omitted), the
+     * reserved-gutter pixel inset along the OMITTED axis, measured from that axis's zero-default
+     * edge (a y-only placement's `gutter` insets rightward from the host's left edge — the
+     * grid's own left pixel margin, `grid.left`, a value the consumer already knows since it
+     * configured the option). Before this field an axis-only placement anchored at the host's
+     * raw edge (pixel 0) with NO notion of the true axis-label margin, so a wide chip grown
+     * `align:"end"` from that anchor could reach past the gutter and overlap plotted marks (the
+     * O-D10 hinge-chip find — "renders the DOM chip much closer to the plot's inner edge than a
+     * true reserved gutter"). Pair `gutter` with `align:"start"` to anchor the chip's FAR edge at
+     * the true gutter boundary, growing AWAY from the plot — the chip then structurally cannot
+     * overlap data, regardless of its own width. `dx`/`dy` still apply as a fine nudge FROM this
+     * anchor. Omit ⇒ 0 (today's host-edge anchor, byte-identical to every existing consumer).
+     */
+    gutter?: number;
 }
 
 const props = withDefaults(
@@ -89,9 +104,11 @@ function reanchor(): void {
             } else if (p.y != null) {
                 const yy = c.convertToPixel({ yAxisIndex: 0 }, p.y) as number | undefined;
                 if (yy != null) py = yy;
+                px = p.gutter ?? 0; // the true left-gutter inset — 0 (the host's raw left edge) if unset.
             } else if (p.x != null) {
                 const xx = c.convertToPixel({ xAxisIndex: 0 }, p.x) as number | undefined;
                 if (xx != null) px = xx;
+                py = p.gutter ?? 0; // the SAME lever on the omitted y-axis — 0 (unchanged) if unset.
             }
             if (px == null && py == null) continue;
             next[p.id] = {

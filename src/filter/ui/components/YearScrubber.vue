@@ -9,19 +9,39 @@
 // BYTE-IDENTICAL to the markup the monolith host carried (the componentize moves code, not
 // pixels). NOTE: I-MOBILE will later @media-re-point this control — the structure is kept
 // clean (one block, one scope) for that re-point.
+import { computed } from "vue";
 import { Button } from "@mkbabb/glass-ui/button";
 import { StatusDot } from "@mkbabb/glass-ui/status-dot";
 import type { YearMode } from "@/data/useYearScope";
 import FilterRow from "./FilterRow.vue";
 
-defineProps<{
-    /** The track domain — the feed's full sorted year list. */
-    years: number[];
-    /** The active mode (single · aggregate) — the toggle + the pip-active gate. */
-    mode: YearMode;
-    /** The active year — the thumb position. */
-    activeYear: number;
-}>();
+const props = withDefaults(
+    defineProps<{
+        /** The track domain — the feed's full sorted year list. */
+        years: number[];
+        /** The active mode (single · aggregate) — the toggle + the pip-active gate. */
+        mode: YearMode;
+        /** The active year — the thumb position. */
+        activeYear: number;
+        /**
+         * O-D10-LIB (§5-A3/WORK item 5 carry) — years with NO data for the consumer's ACTIVE
+         * beat/plate, rendered as DIMMED "data-absent" notches (a per-consumer set this shared
+         * control had no hook for before — the O-D10 find: "`YearScrubber.vue` is library-owned,
+         * exposes no per-year disabled/dimmed prop … reachable from `dashboards/sci/`"). A dimmed
+         * pip stays CLICKABLE (never `disabled`) — picking it is the honest path to the beat's
+         * own empty-state, never a blocked control. Omit ⇒ empty (no dimming, byte-identical to
+         * every existing consumer). */
+        dimYears?: ReadonlySet<number> | readonly number[];
+    }>(),
+    { dimYears: () => [] },
+);
+
+/** `dimYears` normalized to a lookup — accepts either a `Set` (the O(1)-membership idiom the
+    codebase's other per-item lookups use) or a plain array (the terser literal a consumer's
+    template/computed can hand in without minting a `Set`). */
+const dimYearSet = computed<ReadonlySet<number>>(() =>
+    props.dimYears instanceof Set ? props.dimYears : new Set(props.dimYears),
+);
 
 const emit = defineEmits<{
     /** Select a single year — the host writes `?year=` (the round-trip). */
@@ -59,11 +79,14 @@ const emit = defineEmits<{
                 :class="{
                     'year-scrubber__pip--active':
                         mode !== 'aggregate' && y === activeYear,
+                    'year-scrubber__pip--dim': dimYearSet.has(y),
                 }"
                 role="radio"
                 :aria-checked="mode !== 'aggregate' && y === activeYear"
-                :aria-label="String(y)"
+                :aria-label="dimYearSet.has(y) ? `${y} — no data` : String(y)"
+                :aria-disabled="dimYearSet.has(y) ? 'true' : undefined"
                 :data-testid="`year-pip-${y}`"
+                :data-year-absent="dimYearSet.has(y) ? '' : undefined"
                 @click="emit('pick', y)"
             >
                 <StatusDot
@@ -164,6 +187,14 @@ const emit = defineEmits<{
     outline: 2px solid var(--ring);
     outline-offset: 2px;
     border-radius: var(--radius-mark);
+}
+/* O-D10-LIB — THE DATA-ABSENT NOTCH. A dimmed pip stays fully interactive (never `disabled`,
+   [role=radio] + a real click handler survive) — the dim is a HINT, not a gate; picking it is
+   the honest path to the beat's own designed empty-state. The `--attn-chrome` tier (0.46, the
+   §elevation ladder's "dock/filter/eyebrow/editorial mark — the margin" rung) matches every
+   other receded-but-present control notch on the platform. */
+.year-scrubber__pip--dim {
+    opacity: var(--attn-chrome, 0.46);
 }
 @media (prefers-reduced-motion: reduce) {
     .year-scrubber__pip-dot :deep(.status-dot__dot) {
