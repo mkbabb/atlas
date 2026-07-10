@@ -83,19 +83,40 @@
    The page-hero <h1> rests LARGE and scroll-scrubs to a compact sticky wayfinding label — a
    NATIVE scroll-scrubbed keyframe on the root scroller, user-driven + bijective, NO scrolljack
    (L23 lean-native doctrine; Safari 26 ships scroll-driven CSS). The h1 is `position: sticky;
-   top: 0` inside its hero band, so the shrunk label doubles as a chapter locator; its paper
-   backing (var(--background) — the ground, NOT glass) keeps it readable as content scrolls
-   under it, and its content-rung z keeps it BELOW the dock + FILTERS pill (the L12/L13 chrome
-   stacking contract — --z-dock 40 / --z-panel 45 both float over the content-z title). */
+   top: 0` inside its hero band, so the shrunk label doubles as a chapter locator; its content-
+   rung z keeps it BELOW the dock + FILTERS pill (the L12/L13 chrome stacking contract —
+   --z-dock 40 / --z-panel 45 both float over the content-z title).
+
+   THE BACKGROUND SEAM — KILLED (O-DIR-4 ARM 1). The backing used to be a STATIC opaque
+   `background: var(--background)`, painted unconditionally — including AT REST, before the
+   title has scrolled anywhere near "stuck". Atmosphere.vue composites the aurora + paper grain
+   as a page-wide layer BENEATH the content track; a flat opaque swatch sitting over it paints a
+   rectangle with NEITHER the aurora tint NOR the grain tooth, reading as a visibly DIFFERENT flat
+   strip against the surrounding atmosphere-lit paper (the owner's /ecf masthead seam,
+   dir4-ecf-masthead-seam-small-title.png — captured at scrollY 0, i.e. the REST state, where the
+   backing was never functionally needed). The backing is only load-bearing once the title has
+   actually scrolled to its compact, genuinely-sticky terminus (papering over content passing
+   beneath the shrunk label) — so it now RESTS transparent and scrubs to opaque over the SAME
+   native scroll(root) timeline the size scrub already rides (folded into the EXISTING
+   title-compact keyframe below via a re-pointable custom property, the SAME `--title-*-size`
+   indirection idiom GalleryMasthead's `.masthead__wordmark` already uses for its own endpoints —
+   NOT a second `animation-name`: a build-time proof (EVIDENCE.md §ARM1) found that Lightning
+   CSS's shorthand-to-longhand expansion of a MULTI-animation `animation:` shorthand serializes an
+   explicit `animation-duration: 0s` (the CSS Level-1 initial value) where the browser's OWN
+   Level-2 "auto" scroll-timeline default belongs — pinning `getComputedTiming().progress` at 1
+   REGARDLESS of scroll position in the PRODUCTION build (dev-server-only testing never caught
+   this; a single-animation shorthand survives the same pipeline unexpanded). ONE animation name,
+   parameterized, sidesteps the minifier defect entirely.) */
 .text-page-title {
     position: sticky;
     top: var(--title-sticky-top, 0px);
     /* a content-rung stacking context above the sibling series, far below --z-dock (40): the
        dock + FILTERS pill clear the sticky title (chrome stacking contract, L12/L13). */
     z-index: 1;
-    /* the paper wayfinding backing — the ground colour, so scrolling content passes cleanly
-       UNDER the compact label (invisible at rest: paper on paper). NOT glass (§A3 no-glass). */
-    background: var(--background);
+    /* RESTS transparent (the seam kill) — the title-compact keyframe's `to` frame (below)
+       opacifies it via `--title-scrub-bg-to` only once genuinely stuck. NOT glass (§A3 no-glass). */
+    background: transparent;
+    --title-scrub-bg-to: var(--background);
     padding-block: 0.12em;
     /* the strip hugs the reading measure (DashboardHero caps it at 36ch), never full-bleed —
        content to its flank stays visible; it is a label, not a masthead bar. */
@@ -106,15 +127,22 @@
    binds, so the h1 rests at its LARGE recipe size (the PRM-sane un-animated title — the O-C2
    live-review gate owns any swap to a static compact state); the inner @supports means the JS
    fallback owns environments without scroll() timelines. `both` HOLDS the from-frame (large)
-   before 0 and the to-frame (compact) past 320 — the rest and terminal states are structural. */
+   before 0 and the to-frame (compact) past 320 — the rest and terminal states are structural.
+   THE STICKY-BACKING SCRUB (O-DIR-4 ARM 1) rides the SAME keyframe via `--title-scrub-bg-to`
+   (default `transparent` — a no-op background-color for any OTHER consumer of this keyframe,
+   e.g. GalleryMasthead's non-sticky `.masthead__wordmark`, which never re-points it): only
+   `.text-page-title` sets it to `var(--background)`, so the opacify-on-stuck behaviour lands on
+   the page <h1> alone. */
 @keyframes title-compact {
     from {
         font-size: var(--type-page-title);
         font-weight: 560;
+        background-color: transparent;
     }
     to {
         font-size: var(--type-page-title-compact);
         font-weight: 600;
+        background-color: var(--title-scrub-bg-to, transparent);
     }
 }
 @media (prefers-reduced-motion: no-preference) {

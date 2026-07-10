@@ -77,10 +77,21 @@
 :deep(.usf-dock) {
     /* the stable morph scalar — 1 (the expanded surface). */
     --dock-morph-t: 1;
-    /* THE EVEN-PLATE FLOOR (J-CLOSE re-gate · arm b) — the sanctioned `--glass-opacity-dock`
-       consumer pin so the rail is opaque enough that the aurora's left-third gradient cannot light
-       its centre (the plate reads EVEN, not a radial spotlight). */
-    --glass-opacity-dock: 0.74;
+    /* THE EVEN-PLATE FLOOR (J-CLOSE re-gate · arm b · RAISED O-DIR-4 ARM 4) — the sanctioned
+       `--glass-opacity-dock` consumer pin so the rail is opaque enough that content behind it never
+       telegraphs through. Raised 0.74 → 0.90 (within the EXISTING token — no new one): the owner's
+       evidence shot (dir4-dock-toc-blue-seam.png) shows the district CHOROPLETH map's hard brown/blue
+       colour boundary blurring straight through the phone-sheet panel at the prior 0.74; a
+       high-chroma backdrop needs more opacity headroom than the dock's own even-plate use case
+       (aurora bleed alone) required. This is a MATCHED PAIR with the ARM 2 aurora-ceiling lift
+       (useAuroraConfig.ts CEILING_LIGHT/CEILING_DARK 0.10/0.12 → 0.30/0.36) — raising the ceiling
+       without raising this floor would have reopened the exact dock-bleed the prior 0.74 pin closed.
+       INTERIM (WG-E backdrop-attenuation seam): the ROOT lever is glass-ui's — a dedicated backdrop
+       ATTENUATION control (surface tint strength / backdrop luminance clamp, distinct from blur/
+       saturate) so high-chroma content behind ANY glass panel can never paint a hard seam through it
+       (the glass-ui packet, O-DIR-4 owner directive doc). This opacity raise is the atlas-side interim
+       until that primitive lands. */
+    --glass-opacity-dock: 0.9;
     /* THE PLATE-BG — the liquid glass plate, lifted by the morph scalar so the surface reads as a
        single material membrane. The sub-component rungs read this below (cascaded). */
     --dock-plate-bg: color-mix(
@@ -109,16 +120,12 @@
        the sticky foot has a block-end to pin to. */
     flex: 1 1 auto;
     min-block-size: 0;
-    /* O-A23 — the positioning context for the LEAVING TOC (`.dock-toc-leave-active` drops out of flow
-       so the re-shown stepper reclaims the band with no layout jump — see the view-mode block below). */
-    position: relative;
 }
 
-/* ══ THE VIEW-MODE VIEWPORT (O-A23 · the stepper ⇄ TOC band) ═══════════════════════════════════════
-   The scroll-middle holds TWO toggled view-modes. Both fill the band (flex-grow, min-block 0 so the
-   inner FadingScroll scrolls). The STEPPER's wrapper is `v-show`-hidden when the TOC is shown — it
-   stays MOUNTED (display:none, NOT unmounted) so the dock's ONE beat-observer keeps writing the active
-   beat the TOC reads (the single-scroll-scalar discipline; no second observer minted). */
+/* THE SCROLL-MIDDLE VIEWPORT — the stepper's band (the TOC view-mode toggle RETIRED, O-DIR-4 ARM 3;
+   the widen rule + the `.dock-toc-*` <Transition> it drove are removed with it — `DockTOC.vue` +
+   `useDockViewMode.ts` stay on disk, unconsumed, behind the GLASS_TOC_ABSTRACTION_AVAILABLE
+   owner-held seam). Fills the band (flex-grow, min-block 0 so the inner FadingScroll scrolls). */
 .usf-dock__viewport {
     display: flex;
     flex-direction: column;
@@ -126,49 +133,6 @@
     inline-size: 100%;
     flex: 1 1 auto;
     min-block-size: 0;
-}
-
-/* THE TOC WIDEN (O-A23) — the icon-rail is 4.5rem (labels do not fit); when the TOC view-mode is
-   shown the DESKTOP plate widens to a readable paper column so the section titles land. The width
-   SNAPS to its endpoint (no inline-size transition — O-D1's vertical-dock corner-desync law: the
-   TOC CONTENT animates via the `.dock-toc-*` <Transition>, the plate width does not). Scoped out of
-   the phone register (there the crest→sheet already IS the labelled section index) + the collapsed
-   disc. Specificity (0,3,0) beats the base `.usf-dock` (0,1,0), so it overrides the rail width. */
-:deep(.usf-dock--toc:not(.usf-dock--phone):not(.collapsed)) {
-    inline-size: min(18rem, calc(100vw - 2 * var(--cp-inset, 1.25rem)));
-}
-
-/* THE TOC IN/OUT (O-A23 · animation-taxonomy §A1) — a CSS-only reveal off the shared motion tokens
-   (never a JS clock): the paper index fades + slides in from the rail edge on ENTER; on LEAVE it drops
-   to `position:absolute` (out of flow) so the re-shown stepper reclaims the band with no jump, then
-   fades. 0 `preventDefault`, 0 wheel/touch capture — the AG8 no-scroll-jack law (the reveal is opacity/
-   transform only; the native scroll inside the TOC's FadingScroll is untouched). */
-.dock-toc-enter-active,
-.dock-toc-leave-active {
-    transition:
-        opacity 240ms var(--ease-engrave, ease),
-        transform 240ms var(--ease-engrave, ease);
-}
-.dock-toc-enter-from {
-    opacity: 0;
-    transform: translateX(-0.5rem);
-}
-.dock-toc-leave-active {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline: 0;
-}
-.dock-toc-leave-to {
-    opacity: 0;
-}
-@media (prefers-reduced-motion: reduce) {
-    .dock-toc-enter-active,
-    .dock-toc-leave-active {
-        transition: opacity 120ms ease;
-    }
-    .dock-toc-enter-from {
-        transform: none;
-    }
 }
 
 /* ── THE COLLAPSED SILHOUETTE — the DESKTOP register (O-D1 · L34 §4.1.44) ─────────────────────────

@@ -26,15 +26,13 @@
 // so the field breathes with the real scroll and reverses on scroll-up.
 //
 // THE CEILING — the felt-but-DEFT compositing envelope, now OWNED by useAuroraConfig (J-CLOSE
-// re-gate · arm b). `opacityCeiling` is the OUTER compositing envelope glass-ui applies uniformly
-// to the canvas AND the CSS placeholder (via `--aurora-opacity-ceiling`): the maximum opacity the
-// whole aurora surface ever composites at. The atmosphere-aurora gate (render-matrix (b)) clamps the
-// LIGHT envelope to the deft floor (≤ 0.10): on the warm near-white data ground a brighter envelope
-// reads as a wash AND bleeds the warm centre through the translucent floating dock plate, lighting
-// its centre past the Bug-1 radial-glow floor. So the ceiling is 0.10 light / 0.12 dark — FELT at
-// rest yet subliminal: the data plates float on glass with their OWN opaque surface, so the field
-// behind them never darkens a number below its legibility floor, and the dock plate reads as an even
-// glass plate.
+// re-gate · arm b · REBALANCED O-DIR-4 ARM 2, see useAuroraConfig.ts for the full account).
+// `opacityCeiling` is the OUTER compositing envelope glass-ui applies uniformly to the canvas AND
+// the CSS placeholder (via `--aurora-opacity-ceiling`): the maximum opacity the whole aurora
+// surface ever composites at. The PRIOR 0.10/0.12 clamp read as fully invisible at rest (the
+// owner's O-DIR-4 complaint); lifted 3× to 0.30 light / 0.36 dark, paired with the ARM 4 dock
+// opacity raise so the SAME dock-plate bleed the prior clamp guarded against stays closed at the
+// new, brighter envelope (the two levers move together — see Dock.css `--glass-opacity-dock`).
 //
 // THE O-F2 CSS-BAKED DEFAULT (idle-burn fix 1 of 3; motion-arch §2.1 MOVE 1 · §2.4 · §4.2). The field
 // no longer runs a per-frame WebGPU program to paint a subliminal wash. `render-mode` DEFAULTS to
@@ -42,10 +40,11 @@
 // the `useAuroraConfig` nuclei x/y (`auroraFallbackGround(config)`) — 0 live WebGPU contexts, 0 present
 // loop, 0 `writeBuffer` on scroll, near-zero idle. The Tide (nuclei `y` lerp on `p`) survives at parity:
 // the config stays reactive, so a scroll re-lays the CSS radial-gradient stops on the compositor with NO
-// GPU frame — the same breath, off the shader. At the 0.10/0.12 ceiling behind opaque data plates the
-// dropped fBm warp is imperceptible (motion-arch §2.1 "on killing WebGPU"), so this is a visual parity,
-// not a downgrade. WebGPU stays OFF the default path for ANY route; the `shader` prop is the explicit
-// HIGH-TIER opt-in (a future hero/brand moment) that arms `render-mode="webgl"` — never ambient chrome.
+// GPU frame — the same breath, off the shader. At the 0.30/0.36 ceiling behind opaque data plates the
+// dropped fBm warp stays imperceptible (motion-arch §2.1 "on killing WebGPU"), so this is a visual
+// parity, not a downgrade. WebGPU stays OFF the default path for ANY route; the `shader` prop is the
+// explicit HIGH-TIER opt-in (a future hero/brand moment) that arms `render-mode="webgl"` — never
+// ambient chrome.
 //
 // STALE-SPEC NOTE (the TREE governs): the wave + motion-arch premise that `render-mode="auto"` degrades
 // to CSS on low-power/PRM/save-data is OUTDATED — glass-ui's BC.W-VIZ-AURORA (T1) RETIRED those falls;
@@ -53,11 +52,13 @@
 // the CSS default is set EXPLICITLY as `"css"`, not reached through `"auto"`. Reduced-motion is carried
 // by the O-F4 belt (`useAtmosphereActivity`) + glass-ui's live `matchMedia` freeze on the opt-in path.
 //
-// THE PER-SURFACE COMPOSITED TABLE (one ceiling per theme, the deft floor):
+// THE PER-SURFACE COMPOSITED TABLE (one ceiling per theme, O-DIR-4 ARM 2 REBALANCED):
 //   surface  ceiling(L)  ceiling(D)   note
-//   USF/SCI/  .10         .12          the diverging/rainbow data ground — felt, deft, subliminal.
-//   ECF                                The ceiling is per-THEME (dark stock absorbs more) and lives
-//                                      in useAuroraConfig now. What differs per route is the DECLARED
+//   USF/SCI/  .30         .36          the diverging/rainbow data ground — was .10/.12 (invisible
+//   ECF                                at rest); lifted 3× so the field is felt, paired with the
+//                                      ARM 4 dock-opacity raise. The ceiling is per-THEME (dark
+//                                      stock absorbs more) and lives in useAuroraConfig now. What
+//                                      differs per route is the DECLARED
 //                                      DEPOSITION (N.WD2 §4.D2 — the atmosphere facet's
 //                                      granulation/breath/huePath + warm-current elongation, clamped
 //                                      to the D6 envelope), riding the SAME PAPER_WASH_GROUND crayon

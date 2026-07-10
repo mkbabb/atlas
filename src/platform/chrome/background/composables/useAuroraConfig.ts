@@ -147,21 +147,27 @@ const MOTION_PARK_FLOOR = 0.04; // below this the breath rounds to 0 (the loop p
 const MOTION_DECAY_MS = 80; // the decay tick cadence (≈12.5 Hz — a brief settle, then park)
 
 /** THE AURORA OPACITY CEILING — the felt-but-DEFT compositing envelope, owned HERE (J-GLASS re-gate
-    · J-CLOSE arm b). `opacityCeiling` is the OUTER envelope glass-ui applies uniformly to the canvas
-    AND the CSS placeholder (via `--aurora-opacity-ceiling`): the maximum opacity the whole aurora
-    surface ever composites at. It is theme-aware — the dark stock absorbs more, so a higher envelope
-    reads as the same felt depth.
+    · J-CLOSE arm b · REBALANCED O-DIR-4 ARM 2). `opacityCeiling` is the OUTER envelope glass-ui
+    applies uniformly to the canvas AND the CSS placeholder (via `--aurora-opacity-ceiling`): the
+    maximum opacity the whole aurora surface ever composites at. It is theme-aware — the dark stock
+    absorbs more, so a higher envelope reads as the same felt depth.
 
-    THE LIGHT-STOCK CEILING IS THE DEFT FLOOR (atmosphere-aurora gate · render-matrix (b)). The
-    J-GLASS consume's aurora-breath fix gated `breathDepth` on the scroll scalar but left the LIGHT
-    ceiling lifted to 0.14 — ABOVE the 0.1 deft floor the render-matrix clamp cross-check guards. On
-    LIGHT stock the data-plate ground is a warm near-white and the floating dock plate is translucent,
-    so a 0.14 envelope BLEEDS the aurora's warm centre through the dock plate (lighting its centre past
-    the Bug-1 radial-glow floor) and reads as a wash rather than a subliminal felt field. Clamped to
-    0.10 on light: the field stays FELT yet subliminal, the dock plate reads as an even glass plate.
-    Dark HOLDS at 0.12 (gate-pinned — the dark dock-plate luminance gate has no headroom above it). */
-const CEILING_LIGHT = 0.1; // the deft floor on light stock (render-matrix clamp ≤ 0.1)
-const CEILING_DARK = 0.12; // the gate-pinned dark envelope (the dark dock-plate luminance floor)
+    LIFTED OFF THE DEFT FLOOR (O-DIR-4 ARM 2). The owner's live read: "no visible aurora …, too" —
+    at the PRIOR 0.10/0.12 clamp the CSS-baked placeholder (an 8×8 gradient thumbnail stretched via
+    `background-size: cover`) composited so faintly it read as flat paper, not a felt field
+    (confirmed live-pixel: the placeholder's OWN opacity resolves straight from this ceiling with no
+    further attenuation). Lifted 3× to 0.30 light / 0.36 dark — live-pixel-tested as PERCEPTIBLE at
+    rest (a soft warm/cool wash reads across the fold) without dominating the page (the grain rebalance
+    above is what was actually reading as "loud"; the aurora itself was simply inert).
+
+    THE DOCK-BLEED TRADE (render-matrix (b) · the Bug-1 radial-glow floor). The PRIOR 0.10/0.12 clamp
+    existed specifically because a brighter envelope BLEEDS the aurora's warm centre through the
+    translucent floating dock plate (a light-stock 0.14 test lit the plate's centre past its
+    luminance floor). Lifting to 0.30/0.36 reopens that exact bleed UNLESS the dock plate itself is
+    raised to compensate — which O-DIR-4 ARM 4 does in the SAME wave (Dock.css `--glass-opacity-dock`
+    0.74 → 0.90): the two levers are a matched pair, not independent dials. */
+const CEILING_LIGHT = 0.3; // was 0.1 — lifted 3×, paired with the ARM 4 dock-opacity raise
+const CEILING_DARK = 0.36; // was 0.12 — lifted 3×, paired with the ARM 4 dock-opacity raise
 
 /** THE DEVICE-TIER GATES (O-F5 · motion-arch §2.3) — the atmosphere ladder's two levers on the
     field, injected by `Aurora.vue` off the shared `useAtmosphereTier` selector (NOT re-derived here).

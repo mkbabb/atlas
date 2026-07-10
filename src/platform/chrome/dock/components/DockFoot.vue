@@ -28,16 +28,14 @@ import {
     GitCompareArrows,
     SlidersHorizontal,
     PanelLeftClose,
-    TableOfContents,
 } from "@lucide/vue";
 import DockSettings from "../DockSettings.vue";
 import { useFilterPane } from "@/filter/composables/useFilterPane";
 import { useDockGear } from "@/platform/chrome/dock/composables/useDockGear";
 import { useDockDataState } from "@/platform/chrome/dock/composables/useDockDataState";
-import type { DockViewMode } from "@/platform/chrome/dock/composables/useDockViewMode";
 import type { DashboardContext } from "@/contract";
 
-const { ctx, disableTransitions, collapsed, viewMode } = defineProps<{
+const { ctx, disableTransitions, collapsed } = defineProps<{
     /** The active dashboard chrome contract — the data-state register + the filter-body gate read it. */
     ctx: DashboardContext;
     /** Wire glass-ui's no-transition fast-path on the dark toggle (an INSTANT theme re-print). */
@@ -45,16 +43,11 @@ const { ctx, disableTransitions, collapsed, viewMode } = defineProps<{
     /** The live collapse posture (the orchestrator owns `useDockCollapse`; the foot only renders the
         toggle's pressed state — the collapse machine binds the `<GlassDock ref>` upstream). */
     collapsed: boolean;
-    /** The live dock view-mode (O-A23 · the orchestrator owns `useDockViewMode`). The foot renders the
-        stepper ⇄ TOC toggle's pressed state; `"toc"` = the TABLE OF CONTENTS index is shown. */
-    viewMode: DockViewMode;
 }>();
 
 const emit = defineEmits<{
     /** The collapse toggle was pressed — the orchestrator drives the GlassDock expand/collapse. */
     "toggle-collapse": [];
-    /** The view-mode toggle was pressed (O-A23) — the orchestrator flips stepper ⇄ TOC. */
-    "toggle-viewmode": [];
 }>();
 
 // ── The MOBILE-GEAR posture register (J-DOCK · useDockGear) ────────────────────────────────────
@@ -202,29 +195,15 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
                  its own compartment, a visually separate register from the controls. -->
             <DockSeparator />
 
-            <!-- ⑤ The VIEW-MODE toggle (O-A23) + dark-mode toggle + the collapse toggle. The
-                 stepper ⇄ TOC control switches the scroll-middle between the figure-number stepper and
-                 the latex-paper TABLE OF CONTENTS index (the owner's R-008 ask); `aria-pressed` reads
-                 `"toc"`. `size="dock"` routes the theme toggle through the dock-control register;
-                 `:disable-transitions` wires the INSTANT theme re-print. Beside them, the GEAR-TOGGLED
-                 COLLAPSE control (C26) toggling the re-enabled collapse posture (the orchestrator
-                 drives the GlassDock `expand()`/`collapse()`). Fenced into its own zone below the divider. -->
+            <!-- ⑤ The dark-mode toggle + the collapse toggle (the TOC view-mode toggle RETIRED,
+                 O-DIR-4 ARM 3 — the owner's "entirely worthless" verdict on the A23 interim; the
+                 DockTOC code + useDockViewMode stay on disk behind the GLASS_TOC_ABSTRACTION_AVAILABLE
+                 owner-held seam, unconsumed). `size="dock"` routes the theme toggle through the
+                 dock-control register; `:disable-transitions` wires the INSTANT theme re-print. Beside
+                 it, the GEAR-TOGGLED COLLAPSE control (C26) toggling the re-enabled collapse posture
+                 (the orchestrator drives the GlassDock `expand()`/`collapse()`). Fenced into its own
+                 zone below the divider. -->
             <div class="usf-dock__foot">
-                <button
-                    type="button"
-                    class="usf-dock__ctl"
-                    :class="{ 'usf-dock__ctl--on': viewMode === 'toc' }"
-                    :aria-pressed="viewMode === 'toc'"
-                    aria-label="Table of contents"
-                    title="Table of contents"
-                    data-testid="dock-viewmode-toggle"
-                    @click="emit('toggle-viewmode')"
-                >
-                    <TableOfContents
-                        class="usf-dock__ctl-glyph"
-                        aria-hidden="true"
-                    />
-                </button>
                 <DarkModeToggle
                     size="dock"
                     :disable-transitions="disableTransitions"

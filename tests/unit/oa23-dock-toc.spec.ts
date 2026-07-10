@@ -1,17 +1,25 @@
 // tests/unit/oa23-dock-toc.spec.ts — O-A23 ACCEPTANCE teeth at the pure-mechanism + live-source
 // layer (this library's DOM-less test idiom — the pure-composable proof + the gate corpus's "read LIVE
-// source off disk" scan, mirroring oa22-redundant-channel):
+// source off disk" scan, mirroring oa22-redundant-channel).
 //
-//   · useDockViewMode — the stepper ⇄ TOC register: default stepper, toggle flips, setMode, initial.
+// RETIRED FROM THE SERVED DOCK (O-DIR-4 ARM 3) — the owner's "entirely worthless" verdict on the A23
+// TOC interim: the view-mode toggle + render path are REMOVED from Dock.vue/DockFoot.vue. `DockTOC.vue`
+// + `useDockViewMode.ts` STAY on disk, UNCONSUMED, behind the existing `GLASS_TOC_ABSTRACTION_AVAILABLE`
+// owner-held seam (the WG-E glass-abstraction arm's flip revives the wiring). This spec now asserts:
+//
+//   · useDockViewMode — the pure register still behaves (default stepper, toggle flips, setMode,
+//     initial) — the file is UNCHANGED, just unconsumed; the composable itself must still work for the
+//     WG-E revival.
 //   · DockTOC.vue (live source) — the interim list renders the roster + emits the deep-link INTENT;
 //     the OWNER-HELD glass-abstraction flag is a REAL marked seam (const + WG-E comment + it GATES the
 //     list); scroll-jack-free (0 preventDefault, 0 wheel/touch capture, 0 new observer — a pure reader
 //     of the shared active-beat store).
-//   · Dock.vue (live source) — the stepper stays MOUNTED under the TOC (v-show, not v-if unmount); the
-//     TOC is a TOGGLED second mode (<Transition> + v-if showTOC); the deep-link routes through the
-//     shared O-A3 anchor machinery (scrollToSection); the foot toggle is wired.
-//   · DockFoot.vue (live source) — the view-mode toggle control (aria-pressed + testid + emit).
-//   · scroll-anchor.ts — the ONE shared anchor primitive both view-modes consume (the stepper delegates).
+//   · Dock.vue (live source) — the TOC render path + the view-mode wiring are ABSENT (no DockTOC
+//     import/mount, no useDockViewMode consume); the stepper renders unconditionally.
+//   · DockFoot.vue (live source) — the view-mode toggle control is ABSENT (no testid, no viewMode prop,
+//     no toggle-viewmode emit).
+//   · scroll-anchor.ts — the ONE shared anchor primitive the stepper consumes (the TOC no longer does,
+//     retired with the render path; the primitive itself is unchanged for the WG-E revival).
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -109,36 +117,43 @@ describe("O-A23 · DockTOC.vue — scroll-jack-free (AG8) + the single-observer 
     });
 });
 
-describe("O-A23 · Dock.vue — the TOC is a TOGGLED second mode, never a replacement", () => {
-    it("the STEPPER stays MOUNTED under the TOC (v-show, not a v-if unmount)", () => {
-        // v-show keeps DockStepperRender mounted so its ONE beat-observer keeps writing activeBeat.
-        expect(DOCK).toContain("v-show=\"!showTOC\"");
+describe("O-A23 · Dock.vue — the TOC render path is RETIRED (O-DIR-4 ARM 3)", () => {
+    it("mounts NO DockTOC (no import, no template mount)", () => {
+        expect(DOCK).not.toMatch(/import DockTOC/);
+        expect(DOCK).not.toContain("<DockTOC");
+    });
+
+    it("consumes NO useDockViewMode (the register stays unconsumed, file untouched)", () => {
+        expect(DOCK).not.toMatch(/import\s*\{\s*useDockViewMode/);
+        expect(DOCK).not.toContain("useDockViewMode(");
+    });
+
+    it("the stepper renders UNCONDITIONALLY (no showTOC branch)", () => {
         expect(DOCK).toContain("<DockStepperRender");
+        expect(DOCK).not.toMatch(/v-show="!showTOC"/);
+        expect(DOCK).not.toContain("showTOC");
     });
 
-    it("the TOC animates in/out as a toggled overlay (<Transition> + v-if showTOC)", () => {
-        expect(DOCK).toContain("<Transition name=\"dock-toc\">");
-        expect(DOCK).toContain("<DockTOC");
-        expect(DOCK).toContain("v-if=\"showTOC\"");
-    });
-
-    it("the deep-link routes through the SHARED O-A3 anchor machinery (scrollToSection)", () => {
-        expect(DOCK).toContain("scrollToSection");
-        expect(DOCK).toContain("function onTocSelect");
-        expect(DOCK).toContain("@select=\"onTocSelect\"");
-    });
-
-    it("the view-mode toggle is wired down to the foot", () => {
-        expect(DOCK).toContain(":view-mode=\"viewMode\"");
-        expect(DOCK).toContain("@toggle-viewmode=\"viewModeToggle\"");
+    it("the foot is wired with NO view-mode prop/emit", () => {
+        expect(DOCK).toContain("<DockFoot");
+        expect(DOCK).not.toContain(":view-mode=\"viewMode\"");
+        expect(DOCK).not.toContain("@toggle-viewmode");
     });
 });
 
-describe("O-A23 · DockFoot.vue — the stepper ⇄ TOC toggle control", () => {
-    it("renders the toggle (aria-pressed off the mode) + emits toggle-viewmode", () => {
-        expect(FOOT).toContain("data-testid=\"dock-viewmode-toggle\"");
-        expect(FOOT).toContain(":aria-pressed=\"viewMode === 'toc'\"");
-        expect(FOOT).toContain("emit('toggle-viewmode')");
+describe("O-A23 · DockFoot.vue — the stepper ⇄ TOC toggle control is RETIRED (O-DIR-4 ARM 3)", () => {
+    it("renders NO toggle (no testid, no viewMode prop, no toggle-viewmode emit)", () => {
+        expect(FOOT).not.toContain("data-testid=\"dock-viewmode-toggle\"");
+        // the PROP/EMIT wiring is gone (a comment mentioning the retired useDockViewMode composable
+        // by name, e.g. "useDockViewMode stay on disk", is fine — only the live prop/emit signature
+        // matters).
+        expect(FOOT).not.toMatch(/\bviewMode\s*[,:]/);
+        expect(FOOT).not.toContain("toggle-viewmode");
+    });
+
+    it("still renders the dark-mode toggle + the collapse toggle (untouched siblings)", () => {
+        expect(FOOT).toContain("<DarkModeToggle");
+        expect(FOOT).toContain("data-testid=\"dock-collapse-toggle\"");
     });
 });
 

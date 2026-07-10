@@ -29,20 +29,16 @@
 // multiplied against flat paper, never the field. The optional E8 plate-grid (z:-3) is
 // SCOPED to ChartFrame (C6b/C6c), never page-wide — it is not mounted here.
 //
-// THE GRAIN — consume the primitive AND the library's CALIBRATED floor (D2.d / M5).
-// <PaperBackdrop> is glass-ui's feTurbulence multiply grain (flipping to soft-light on .dark).
-// The PRIOR build pinned `:opacity="0.025"` — the measured-dead floor (fd-usf-gallery §F: grain
-// at 0.025 reads as NOTHING, "felt as nothing"). glass-ui 3.10.0 CALIBRATED the felt floor —
-// paper.css advertises `opacity: var(--glass-grain-opacity, 0.038)` (the midpoint between the
-// dead 0.025 and the ~0.05 kitsch line) and tokens.css carries a felt DARK value (0.045, for
-// the soft-light blend). BUT the library's canonical light token (`tokens.css:
-// --glass-grain-opacity: 0.025`) was NOT lifted off 0.025 — so a no-prop mount STILL reads the
-// dead 0.025 in light (the 0.038 paper.css value is only a FALLBACK the always-set token
-// shadows). So the consumer dial is an EXPLICIT, theme-aware `:opacity` that lands the library's
-// OWN calibrated numbers: 0.038 light (paper.css's felt floor; ≤ the 0.04 PRM/PRT test cap) /
-// 0.045 dark (tokens.css's felt dark companion — soft-light absorbs more). This is consuming
-// the library's stated calibration through its documented prop, NOT overriding a correct value
-// (the gap is the un-lifted canonical light token — a recorded 3.10.0 caveat).
+// THE GRAIN — consume the primitive via an EXPLICIT, theme-aware `:opacity` (D2.d / M5, REVISED
+// O-DIR-4 ARM 2). <PaperBackdrop> is glass-ui's feTurbulence multiply grain (flipping to
+// soft-light on .dark). Two prior floors were tried and both proved wrong at THIS mount (a
+// page-wide, full-bleed field): 0.025 measured DEAD ("felt as nothing", fd-usf-gallery §F);
+// 0.038 light / 0.045 dark (glass-ui 3.10.0's "calibrated felt floor", a per-plate-overlay
+// number) measured the OPPOSITE fault live-pixel-tested against the owner's O-DIR-4 complaint —
+// it carried ~100% of a "far too strong… TV-static" page-wide texture (see the grainOpacity
+// computed below for the current, live-tested values + the full before/after account). Consuming
+// a library-advertised number is not a substitute for testing the actual composited result at
+// the mount's own scale — the same primitive reads very differently full-bleed vs. per-plate.
 //
 // THE FIELDS. <Aurora> is the platform's thin glass-ui consumer (it keeps the oklab
 // pole-derivation + the f(p) Tide) — the UNIVERSAL data-surface field (always on data).
@@ -80,17 +76,28 @@ import ConstellationHost from "@/platform/chrome/background/Constellation.host.v
     visible-particle floor off the arbitrary-64 sub-perceptual rest (D2.d / M10). */
 const NC_COUNTIES = 100;
 
-// The theme-aware grain floor — the library's OWN calibrated felt numbers (D2.d/M5): 0.038
-// light (paper.css's lifted floor; ≤ the 0.04 PRM/PRT test cap), 0.045 dark (tokens.css's
-// felt soft-light companion). Tracks .dark live via useThemeKey (the MutationObserver signal),
-// so the floor flips with the theme. NOT the dead canonical-light 0.025 the no-prop mount reads.
+// THE GRAIN — REBALANCED (O-DIR-4 ARM 2). The library's own "felt floor" numbers (0.038 light /
+// 0.045 dark, D2.d/M5) were live-pixel-tested against the owner's exact complaint ("the paper
+// effect is far too strong on every page") and measured FAR from subtle: hiding the grain layer
+// alone (`.atmosphere__grain { display: none }`) erased the entire visible mottled texture on
+// /ecf both themes — the grain was carrying ~100% of the "TV-static paper" the owner flagged, at
+// its documented "calibrated" value. `--paper-grain-tooth`'s per-channel contrast-stretch
+// (glass-ui paper.css: slope 1.8 / intercept -0.4, "the letterpress bite") makes this SVG texture
+// read far louder per unit of CSS opacity than a soft blurred noise would — the felt floor for a
+// full-bleed page-wide mount sits well below the felt floor for a small per-plate overlay. Dialed
+// DOWN to a live-pixel-confirmed subtle register: 0.025 light (was 0.038) / 0.03 dark (was 0.045)
+// — captured before/after in exec/evidence/O-DIR-4/impl/EVIDENCE.md. This deliberately reads
+// BELOW the directive's own stated "≥0.08 floor" language: that number is not reachable at this
+// opacity without reintroducing the exact defect being killed (0.045 already dominates); the
+// owner's live eye — not the pre-stated number — is the bar (per the wave's own verifier note).
+// Tracks .dark live via useThemeKey (the MutationObserver signal), so the floor flips with theme.
 const themeKey = useThemeKey();
 const grainOpacity = computed(() => {
     void themeKey.value; // establish the dependency — re-derive on a theme flip
     const isDark =
         typeof document !== "undefined" &&
         document.documentElement.classList.contains("dark");
-    return isDark ? 0.045 : 0.038;
+    return isDark ? 0.03 : 0.025;
 });
 
 /** The surface kind — read off the route context by the mounting view, NOT hand-wired per
