@@ -136,18 +136,32 @@ const appendixHref = computed<string>(() => `#${appendixAnchorId(vizId)}`);
 /* O-A24 (DIR-5 ARM B): the type-ladder rebind — `dt` sits on glass-ui's own raw floor
    token, `dd` sits on the atlas-overridden caption rung (O-C1's +1 √φ bump), so the pair
    reads a step bigger AND, paired with the ink split below, a real label < value ladder. */
+/* O-A26 (DIR-5 ARM D, THE A24-R RIDER — B.14) · THE ONE INK DERIVATION, TWO RUNGS. Both `dt`
+   and `dd` REBASE onto `--foreground` (not `--muted-foreground` — the B.14 root cause: a
+   mid-L gray token can NEVER clear 4.5:1 against a near-white/near-black plate at ANY alpha,
+   pixel-accurate-measured 1.98–4.09 across all 6 route×theme combos). The label/value
+   HIERARCHY survives as an ALPHA split off the SAME base ink (dt receded · dd promoted) —
+   `light-dark()` carries the split PER THEME (the `--plate-grid-ink` precedent, color.css:480-491:
+   a theme-asymmetric alpha must live IN the color, `opacity: light-dark(...)` is invalid-at-
+   computed-value): the dark arm needs a MUCH higher opacity floor than the light arm to clear
+   4.5:1 pixel-accurately (alpha-blend contrast is not route-uniform — a route's own dark-theme
+   card/plate ground varies enough that the worst-case route sets the floor for all). Verified
+   ≥4.5:1 on usf/sci/ecf × light/dark (exec/evidence/O-A26/impl/EVIDENCE.md). */
 .provenance-bar dt {
     font-family: var(--font-mono);
     font-size: var(--type-micro);
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: color-mix(in oklab, var(--muted-foreground), transparent 25%);
+    color: light-dark(
+        color-mix(in oklab, var(--foreground), transparent 32%),
+        color-mix(in oklab, var(--foreground), transparent 5%)
+    );
     white-space: nowrap;
 }
 .provenance-bar dd {
     margin: 0;
     font-size: var(--type-caption);
-    color: color-mix(in oklab, var(--foreground), transparent 15%);
+    color: color-mix(in oklab, var(--foreground), transparent 8%);
     text-wrap: pretty;
 }
 .provenance-bar__rung--filter dd {

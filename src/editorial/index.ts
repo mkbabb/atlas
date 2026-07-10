@@ -43,3 +43,7 @@ export type { HeroFigure } from "./DashboardHero.vue";
 export { default as Beat } from "./Beat.vue";
 export { default as DashboardEssay } from "./DashboardEssay.vue";
 export * from "./editorial-contract";
+
+// ── O-A26 (DIR-5 ARM D) — the ONCE-classified typewriter title (demand/usf-integrity/vft-
+// germination's ScrollLetteringHeading-equivalent; the 4 lettering routes never mount it) ────────
+export { default as TypewriterTitle } from "./TypewriterTitle.vue";

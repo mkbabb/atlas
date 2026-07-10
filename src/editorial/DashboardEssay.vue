@@ -213,6 +213,16 @@ function renderTitle(t: ChapterTitle): VNodeChild {
     return isTitleFactory(t) ? t() : t;
 }
 
+/** O-A26 (DIR-5 ARM D) · THE `data-reveal-shape` STAMP — present ONLY for the non-default
+    settle/unfold shapes (the CSS default `lift` needs no attribute, mirroring `data-dense`/
+    `data-chrome`'s "attribute present only when non-default" convention). Read directly off
+    `chapter.reveal` — no `hasMasthead` gate needed (a sentinel's `reveal` never carries a
+    variation-zipped `shape`, the same ungated precedent `data-scroll-tl` already sets below). */
+function revealShapeAttr(c: Chapter): string | undefined {
+    const shape = c.reveal?.shape;
+    return shape && shape !== "lift" ? shape : undefined;
+}
+
 /** Is a chapter `viz` a mountable Component (vs a contract or a sentinel)? Anything that is not
     a sentinel string and not a `VizContract` is treated as the feature-plate component the beat
     body mounts (the `<FundLedgerFlow />` form). */
@@ -268,6 +278,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
             :data-scroll-tl="
                 chapter.reveal?.aside || chapter.reveal?.scrub ? '' : undefined
             "
+            :data-reveal-shape="revealShapeAttr(chapter)"
             :data-title="hasMasthead(chapter) ? layouts[i]!.title : undefined"
             :data-dock="hasMasthead(chapter) ? layouts[i]!.dock : undefined"
             :data-scroll-in="hasMasthead(chapter) ? layouts[i]!.scrollIn : undefined"

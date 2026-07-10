@@ -15,6 +15,8 @@ import {
     resolveBeatTemplates,
     checkBeatConstraints,
     figureLadderScalar,
+    rotateRevealShape,
+    REVEAL_SHAPES,
     type BeatVariationPolicy,
 } from "@/story/beat-template";
 import { expandStory, STORY_TEMPLATES } from "@/story/story-template";
@@ -69,6 +71,20 @@ describe("O-A15 · resolveBeatTemplate — authored poles win, cadence fills the
         expect(t.title).toBe("right");
         expect(t.numbers).toBe("bottom");
         expect(RULE_VARIANTS).toContain(t.rule); // tier-rotated, in the closed register
+    });
+
+    it("O-A26 — an unauthored beat's reveal.shape falls to the tier-rotated fallback (in the closed register)", () => {
+        const t = resolveBeatTemplate(policy, 3, 1234);
+        expect(REVEAL_SHAPES).toContain(t.reveal.shape);
+    });
+
+    it("O-A26 — an AUTHORED reveal.shape wins over the fallback", () => {
+        const shaped: BeatVariationPolicy = {
+            id: "test-route-shaped",
+            seed: 1,
+            beats: [{ title: "left", reveal: { shape: "unfold" } }],
+        };
+        expect(resolveBeatTemplate(shaped, 0, 1).reveal.shape).toBe("unfold");
     });
 
     it("the signature flag reads through; the rest default false", () => {
@@ -271,5 +287,29 @@ describe("O-A15 · rotateRuleVariant — restraint-first, tier-offset cadence", 
         const lede = Array.from({ length: 4 }, (_, i) => rotateRuleVariant("lede", i));
         const anc = Array.from({ length: 4 }, (_, i) => rotateRuleVariant("ancillary", i));
         expect(lede).not.toEqual(anc);
+    });
+});
+
+describe("O-A26 · rotateRevealShape — restraint-first, tier-offset cadence (mirrors rotateRuleVariant)", () => {
+    it("`lift` dominates the register (restraint-first — ≥half the beats stay the plain rise)", () => {
+        const seq = Array.from({ length: 8 }, (_, i) => rotateRevealShape("support", i));
+        const lifts = seq.filter((v) => v === "lift").length;
+        expect(lifts).toBeGreaterThanOrEqual(4); // ≥ half stay `lift`
+        expect(seq.every((v) => (REVEAL_SHAPES as readonly string[]).includes(v))).toBe(true);
+    });
+    it("the tier OFFSETS the cadence (lede vs ancillary escalate on different beats)", () => {
+        const lede = Array.from({ length: 4 }, (_, i) => rotateRevealShape("lede", i));
+        const anc = Array.from({ length: 4 }, (_, i) => rotateRevealShape("ancillary", i));
+        expect(lede).not.toEqual(anc);
+    });
+    it("pure + total: the SAME (tier,index) always yields the SAME shape, never random", () => {
+        for (let i = 0; i < 8; i++) {
+            expect(rotateRevealShape("support", i)).toBe(rotateRevealShape("support", i));
+        }
+    });
+    it("both non-lift shapes appear over a sampled run (settle at step 1, unfold at step 3)", () => {
+        const seq = Array.from({ length: 4 }, (_, i) => rotateRevealShape("support", i));
+        expect(seq).toContain("settle");
+        expect(seq).toContain("unfold");
     });
 });

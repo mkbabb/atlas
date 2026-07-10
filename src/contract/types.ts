@@ -341,6 +341,15 @@ export interface RevealSpec {
         ZERO cover hosts). CONSUMES the KEPT `scroll-driven.css` `[data-reveal-beat][data-scroll-tl]`
         register + `useCoverProgress` — it authors no new reveal machinery. */
     scrub?: boolean;
+    /** O-A26 (DIR-5 ARM D) · THE BOUNDED REVEAL-SHAPE AXIS — a closed 3-name register layered
+        onto the SAME `translate3d(...)` the `reveal-beat` keyframe already scrubs
+        (`scroll-driven.css`), compositor-safe by construction (AG7: transform/opacity only, zero
+        new paint properties). `lift` = today's shape (unchanged, the majority default); `settle`
+        = PLUS a gentle `scale()` zoom-in; `unfold` = PLUS a paper-tilt `skewY()` settle. Omit ⇒
+        the tier-rotated fallback (`rotateRevealShape`, `story/beat-template.ts`), restraint-biased
+        (`lift` wins ≥half the slots). An AUTHORED value always wins over the fallback — the same
+        override law every other `RevealSpec` field carries. */
+    shape?: "lift" | "settle" | "unfold";
     /** The PLACEMENT grammar (K-EXPRESS D2). Omit ⇒ the beat auto-zebras by its masthead-phase
         index. An explicit `layout.title` WINS over the retained `aside` alias (override-beats-alias).
         `aside` is RETAINED (it also keys the editorial INSET + the `data-scroll-tl` scalar stamp,
