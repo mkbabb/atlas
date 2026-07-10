@@ -9,6 +9,13 @@
 // This is the family's ONE convention: the same primitives, the same discriminator, every
 // route — never a bespoke per-route window.
 //
+// O-X12 D6 — THE BAND ONLY PAINTS WHEN IT BRACKETS SOMETHING (the full-bleed wash fix). The
+// CONTINUES gate guarantees the real run's trailing edge always reaches the feed's own latest
+// year, so the bracket can only ever encode a genuine distinction on its LEADING edge (a
+// soft-start ramp-up). A dense trajectory (real from the very first year — the USF decade, the
+// SCI chase) has nothing to bracket; the band is suppressed rather than washing the entire
+// plotted domain at zero information (see `windowBand` below).
+//
 // It is a THIN composition over M1: it computes the window span + the forecast boundary off the
 // trajectory and forwards them as the `windowBand` + `forecastBoundaryX` props M1 already wires
 // into TimeSeries' markArea / markLine. The crown anatomy (the rivet, the void stamp, the DOM
@@ -68,13 +75,29 @@ const realYears = computed<number[]>(() =>
     points.value.filter((p) => p.values[lead.value] != null).map((p) => p.year),
 );
 
-/** The cycle-bracket band over the measured window (first real year → last real year). */
+/** The cycle-bracket band over the measured window (first real year → last real year) — but ONLY
+    when that window is a PROPER SUBSET of the feed's own full span (O-X12 D6: the full-bleed
+    wash). `isTrajectoryWindow`'s own CONTINUES gate (the family's ONE routing discriminator into
+    this plate, `MultiYearFigure`) already guarantees the real run's TRAILING edge always reaches
+    the feed's latest year — a stale tail can never route here. So the ONLY genuine window/forecast
+    distinction this bracket can ever draw is a LEADING one: the real run starting LATER than the
+    feed's own first year (a soft-start ramp-up). When the real run is dense from the very first
+    year (the USF decade's 2021 splice is an INTERNAL void, not a leading one; the SCI chase is
+    fully continuous), the band's rectangle would span the ENTIRE plotted domain — a wash encoding
+    nothing — so it is suppressed rather than painted. No prop: the distinction is derivable
+    entirely from the trajectory's own shape, so /usf beat V + /sci beat III clear without a
+    consumer-side opt-out. */
 const windowBand = computed(() => {
     const ys = realYears.value;
     if (ys.length < 2) return undefined;
+    const fromX = Math.min(...ys);
+    const toX = Math.max(...ys);
+    const fullYears = points.value.map((p) => p.year);
+    const fullMin = fullYears.length > 0 ? Math.min(...fullYears) : fromX;
+    if (fromX <= fullMin) return undefined;
     return {
-        fromX: Math.min(...ys),
-        toX: Math.max(...ys),
+        fromX,
+        toX,
         color: palette.value.signal,
         opacity: 0.08,
     };

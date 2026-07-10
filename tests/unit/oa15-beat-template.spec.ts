@@ -217,9 +217,15 @@ describe("O-A15 · SuperlativeRegister (Q-48) — the never-incriminate ceiling 
 });
 
 describe("O-A15 · vizAlternates (Q-30) — the registry + expand-menu binding + catalog (facility)", () => {
-    it("the full brainstormed set is declared; ONE exemplar is built (facility+one-example)", () => {
+    it("the full brainstormed set is declared; the usf pair is built (O-X12 registry truth-up)", () => {
         expect(VIZ_ALTERNATES.length).toBeGreaterThanOrEqual(7);
-        expect(VIZ_ALTERNATES.filter((a) => a.built).map((a) => a.id)).toEqual(["dumbbell"]);
+        // O-X12: both usf alternates (dumbbell ⇄ usf-ranked-strip, balance-beam ⇄ usf-scatter) are
+        // real, wired components — `built:true` now means built in both directions (a shipped
+        // component was previously mismarked `false`, an unbuilt one previously mismarked `true`).
+        expect(VIZ_ALTERNATES.filter((a) => a.built).map((a) => a.id)).toEqual([
+            "dumbbell",
+            "balance-beam",
+        ]);
         expect(VIZ_ALTERNATES.every((a) => a.mobileCompat)).toBe(true); // the 390 compat tooth target
     });
     it("alternatesFor + vizMenuOptions — the base is the default option, alternates follow", () => {

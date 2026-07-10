@@ -31,17 +31,21 @@ export interface VizAlternate {
     /** The named WG-D owner wave that BUILDS the component (deferral contract R4). */
     owner: string;
     /** Whether the COMPONENT ships yet. The facility declares ALL alternates (`built:false` until the
-        owner lands it); the ONE exemplar is `built:true` (the facility+one-example acceptance shape). */
+        owner lands it); `built:true` means a real component is wired via `useVizAlternates` at its
+        base's own beat — never a claim ahead of the code (O-X12 truth-up: `built:true` must mean
+        built, checked both directions — a shipped component marked `false` is as much a lie as an
+        unbuilt one marked `true`). */
     built: boolean;
 }
 
 /** THE REGISTRY — the full brainstormed alternate set (O-A15 WORK · the ⇄ pairs). Each base viz opens
     to one or more alternates; the speedtest hex opens to TWO (county-choropleth ⇄ dot-density). The
-    exemplar (`built:true`) is the ONE alternate this tranche renders selectably; the rest are their
-    WG-D owners' (declared here so the expand menu + catalog are whole from the facility cut). */
+    usf pair (dumbbell + balance-beam) is `built:true` — both land consumer-side (O-D5/O-D6, the AR-10
+    single-consumer precedent) and are wired live; the rest are their WG-D owners' (declared here so
+    the expand menu + catalog are whole from the facility cut). */
 export const VIZ_ALTERNATES: readonly VizAlternate[] = Object.freeze([
     { id: "dumbbell", label: "Dumbbell", base: "usf-ranked-strip", mobileCompat: true, owner: "O-D5", built: true },
-    { id: "balance-beam", label: "Balance beam", base: "usf-scatter", mobileCompat: true, owner: "O-D6", built: false },
+    { id: "balance-beam", label: "Balance beam", base: "usf-scatter", mobileCompat: true, owner: "O-D6", built: true },
     { id: "beeswarm", label: "Beeswarm", base: "sci-scatter", mobileCompat: true, owner: "O-D10", built: false },
     { id: "packed-bars", label: "Packed bars", base: "ecf-treemap", mobileCompat: true, owner: "O-D14", built: false },
     { id: "lollipop", label: "Lollipop", base: "ecf-bars", mobileCompat: true, owner: "O-D14", built: false },
