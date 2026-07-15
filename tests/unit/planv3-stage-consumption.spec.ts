@@ -1,11 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createAtlasEventHub } from "@/events";
 import {
     stageEventsFromHub,
     type ChapterStage,
     type SceneOption,
-} from "@/charts/contract/scene-contract";
+} from "@/stage";
 import { resolveSceneAnchor } from "@/platform/stores/useViewParams";
+
+vi.mock("@/charts/scene/ChapterStage.vue", () => ({ default: {} }));
 
 describe("stageEventsFromHub", () => {
     it("ties every scene encode to the stage grain", () => {
