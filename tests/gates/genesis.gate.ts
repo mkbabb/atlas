@@ -1,6 +1,6 @@
 // tests/gates/genesis.gate.ts — the O-B0 GENESIS GATE. Asserts the born-clean invariants the
 // wave fixes: the name/version identity, the full subpath-exports map, files whitelist, the
-// ABSENCE of publishConfig (private-repo git-dependency consumption), bounded-caret peers, every
+// public scoped-package posture, bounded-caret peers, every
 // export backed by a real src barrel, and the ATLAS_DEV_LINK dev-alias guard staying unset in
 // committed config/CI. Reads live off disk — no fixtures.
 import { describe, it, expect } from "vitest";
@@ -85,9 +85,9 @@ describe("O-B0 genesis — the subpath exports map", () => {
     });
 });
 
-describe("O-B0 genesis — publish posture (private → git-dependency)", () => {
-    it("has NO publishConfig at genesis (Q59-private; the flip sets access at O-B17)", () => {
-        expect(pkg.publishConfig).toBeUndefined();
+describe("O-B0 genesis — publish posture", () => {
+    it("publishes the scoped package publicly", () => {
+        expect(pkg.publishConfig).toEqual({ access: "public" });
     });
     it("composes prepublishOnly = typecheck && build && lint:pub && test && gates", () => {
         const p = pkg.scripts.prepublishOnly as string;

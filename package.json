@@ -1,7 +1,7 @@
 {
     "name": "@mkbabb/atlas",
-    "version": "1.0.32",
-    "description": "@mkbabb/atlas — the Connectivity Atlas rendering engine (platform charts / chrome / story / motion + the dashboard contract + the Vite preset). Extracted from mkbabb/sci-report at the O-arc reformation; ships BUNDLER-ONLY via the born-clean subpath exports map. O-B0 genesis: buildable + publishable scaffold, empty of source until the O-B2–B9 module-move waves fill it.",
+    "version": "1.1.0",
+    "description": "The Connectivity Atlas rendering engine for Vue charts, editorial stories, interactions, dashboard contracts, and Vite integration.",
     "type": "module",
     "license": "MIT",
     "author": "Mike Babb",
@@ -14,6 +14,9 @@
     "repository": {
         "type": "git",
         "url": "git+https://github.com/mkbabb/atlas.git"
+    },
+    "publishConfig": {
+        "access": "public"
     },
     "exports": {
         ".": {
@@ -87,7 +90,7 @@
     "scripts": {
         "build": "npm run build:js && npm run build:dts && npm run build:css",
         "build:js": "vite build -c vite.lib.config.mts",
-        "build:dts": "vue-tsc -p tsconfig.dts.json --declaration --emitDeclarationOnly && node scripts/repoint-dts.mjs",
+        "build:dts": "rm -rf types && vue-tsc -p tsconfig.dts.json --declaration --emitDeclarationOnly && node scripts/repoint-dts.mjs",
         "build:css": "node scripts/build-styles.mjs",
         "typecheck": "vue-tsc --noEmit",
         "lint:pub": "attw --pack . --profile esm-only --exclude-entrypoints ./styles ./styles/tokens ./styles/breakpoints --ignore-rules internal-resolution-error && publint .",
