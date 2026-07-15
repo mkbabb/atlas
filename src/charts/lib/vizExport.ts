@@ -14,6 +14,7 @@
 
 import type { ChartDataRow } from "@/charts/legend/ChartDataTable.vue";
 import type { VizRenderKind } from "@/charts/contract/viz-contract";
+import type { ProvenanceFacet } from "@/platform/provenance/provenance-contract";
 
 /** An ECharts-instance shape with the one method the canvas export reaches for. The host passes
     the live `chart` ref through; we only need `getDataURL` (the native PNG seam). */
@@ -54,17 +55,36 @@ function csvCell(s: string): string {
 }
 
 /** Serialize the a11y rows to a CSV string (the §E3 payload — the `ChartDataTable` rows ARE the
-    export). The header row is the contract's `rowHeader` + `valueHeader`. */
+    export). Declared provenance, when present, leads as a two-column metadata preamble; the blank
+    line keeps the contract's data header + rows byte-for-byte tabular and easy to locate. */
 export function rowsToCsv(
     rows: ChartDataRow[],
     rowHeader: string,
     valueHeader: string,
+    provenance?: ProvenanceFacet | null,
 ): string {
-    const lines = [
+    const data = [
         `${csvCell(rowHeader)},${csvCell(valueHeader)}`,
         ...rows.map((r) => `${csvCell(r.name)},${csvCell(r.value)}`),
     ];
-    return lines.join("\r\n");
+    if (!provenance) return data.join("\r\n");
+
+    const metadata = [
+        ["# Source", provenance.dataset],
+        ["# Sections", provenance.sections?.join(" · ")],
+        ["# Attributes", provenance.attributes?.join(" · ")],
+        ["# Analysis", provenance.analysis],
+        ["# Data range", provenance.yearRange],
+        [
+            "# Encoding",
+            provenance.encoding
+                ? `${provenance.encoding.y} vs ${provenance.encoding.x}`
+                : undefined,
+        ],
+    ]
+        .filter((row): row is [string, string] => Boolean(row[1]))
+        .map(([key, value]) => `${csvCell(key)},${csvCell(value)}`);
+    return [...metadata, "", ...data].join("\r\n");
 }
 
 /** Export the contract rows as a CSV download. */
@@ -73,9 +93,10 @@ export function exportCsv(
     rowHeader: string,
     valueHeader: string,
     filename: string,
+    provenance?: ProvenanceFacet | null,
 ): void {
     triggerDownload(
-        rowsToCsv(rows, rowHeader, valueHeader),
+        rowsToCsv(rows, rowHeader, valueHeader, provenance),
         filename,
         "text/csv;charset=utf-8",
     );

@@ -99,6 +99,7 @@ function onExportCsv(): void {
         props.contract.export.rowHeader,
         props.contract.export.valueHeader,
         `${props.contract.id}.csv`,
+        props.contract.provenance,
     );
 }
 
