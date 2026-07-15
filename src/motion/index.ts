@@ -44,7 +44,6 @@ export * from "./useReducedMotion";
 export * from "./useScrollProgress";
 export * from "./useScrollLettering";
 export * from "./useRankMotion";
-export * from "./useGoldOneShot";
 export * from "./useLoadSequence";
 
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────

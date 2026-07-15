@@ -68,11 +68,13 @@ import { provideStoryDirector } from "@/story/story-director-provide";
 import { recedeStyle } from "@/story/corridor";
 import type { StoryChapter } from "@/story/story-contract";
 import StoryCorridor from "@/story/StoryCorridor.vue";
+import { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
 
 const props = defineProps<{
     /** The narrative as data — the route's chapters, declared in `context.ts` (I3 §1). */
     chapters: Chapter[];
 }>();
+const activeDashboard = useActiveDashboard();
 
 // ── K-EXPRESS D2 — THE AUTO-ZEBRA PLACEMENT (resolved ONCE, the sequence is STATIC per route) ──
 // The masthead-phase index counts MASTHEAD-bearing beats only (the sentinels never consume a zebra
@@ -324,7 +326,11 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                  through <DashboardHero> when declared as DATA, else the body's `#hero` slot (the
                  un-migrated routes, byte-identical). -->
             <template v-if="chapter.viz === 'hero'">
-                <DashboardHero v-if="chapter.hero" v-bind="chapter.hero" />
+                <DashboardHero
+                    v-if="chapter.hero"
+                    v-bind="chapter.hero"
+                    :category="activeDashboard.entry?.category"
+                />
                 <slot v-else name="hero" />
             </template>
             <!-- N.WB3 · THE PAGE FOOT — the `colophon` facet (the hand-built provenance literal made

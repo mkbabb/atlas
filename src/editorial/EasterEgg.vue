@@ -17,7 +17,7 @@
 //   2. THE KONAMI-CLASS KEY (an app-level composable `useDelightKey`, NOT this component) — a
 //      documented key chord that, once, lights the <FigureInitial> series in a one-pass spectral
 //      wipe (the band-cake spectrum) — a colophon wink, not a data change; rides the existing
-//      `useGoldOneShot`-class one-pass-then-recede pattern. PRM: snaps. CANDIDATE — user signs
+//      `CompletionSeal`-class one-pass-then-recede pattern. PRM: snaps. CANDIDATE — user signs
 //      IN/OUT (R-EGGS-3). Lives in `platform/editorial/useDelightKey.ts` if signed in — NOT built
 //      this lane (the in-flow egg is core; the app-level eggs are the assembly lane's, gated).
 //   3. THE DATE-AWARE TELL (an app-level computed in SiteColophon, NOT this component) — on the

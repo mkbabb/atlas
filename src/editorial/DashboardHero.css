@@ -14,6 +14,52 @@
     /* the eyebrow names the page (the small-caps kicker above the cover-line). */
     margin: 0;
 }
+.dashboard-hero__identity {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 0.4rem;
+    margin: 0;
+    color: var(--muted-foreground);
+}
+.dashboard-hero__identity-mark {
+    position: relative;
+    inline-size: 1rem;
+    block-size: 1rem;
+    flex: none;
+    overflow: hidden;
+    border: 1px solid var(--category-accent);
+    color: var(--category-accent);
+}
+.dashboard-hero__identity-mark[data-background="liquid-grid"] {
+    background:
+        linear-gradient(currentColor 1px, transparent 1px),
+        linear-gradient(90deg, currentColor 1px, transparent 1px);
+    background-size: 0.3rem 0.3rem;
+}
+.dashboard-hero__identity-mark[data-background="watercolor-dot"] {
+    background: radial-gradient(circle, currentColor 0 24%, transparent 28%);
+}
+.dashboard-hero__identity-mark[data-background="blob"] {
+    background: radial-gradient(ellipse at 35% 60%, currentColor 0 38%, transparent 42%);
+}
+.dashboard-hero__identity-mark[data-shape="ring"] {
+    border-radius: 50%;
+}
+.dashboard-hero__identity-mark[data-shape="check"]::after {
+    content: "";
+    position: absolute;
+    inset: 0.18rem 0.25rem 0.3rem;
+    border-block-end: 2px solid currentColor;
+    border-inline-end: 2px solid currentColor;
+    transform: rotate(45deg);
+}
+.dashboard-hero__identity-mark[data-shape="wordmark"]::after {
+    content: "";
+    position: absolute;
+    inset: 0.25rem 0.15rem;
+    border-block: 2px solid currentColor;
+}
 .dashboard-hero__title {
     margin: 0;
     /* the page <h1> — the receded quiet label (text-page-title); the recipe owns face/axes/size. */
@@ -226,6 +272,20 @@
     flex-direction: column;
     gap: 0.1rem;
 }
+.dashboard-hero__caption-lead {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.dashboard-hero__seal {
+    inline-size: 1.4rem;
+    block-size: 1.4rem;
+    flex: none;
+}
+.dashboard-hero__seal :deep(.completion-seal__svg) {
+    inline-size: 100%;
+    block-size: 100%;
+}
 .dashboard-hero__unit {
     /* the unit caption — the Fira eyebrow that NAMES the unit (the F6.4 close). */
     margin: 0;
@@ -233,4 +293,15 @@
 .dashboard-hero__context {
     /* the "what / when" line — Newsreader caption, recessive. */
     margin: 0;
+}
+
+@media (forced-colors: active) {
+    .dashboard-hero__identity,
+    .dashboard-hero__identity-mark {
+        color: CanvasText;
+    }
+    .dashboard-hero__identity-mark {
+        border-color: CanvasText;
+        background: Canvas;
+    }
 }

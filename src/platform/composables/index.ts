@@ -6,7 +6,7 @@
 //   · the viz/chart family (`useEChart`, `useViz*`, `useChartSelection`, `useTrendline`,
 //     `useThemeReactiveOption`, `activeViz`) → `charts/composables/` (O-B4/B4R).
 //   · the scroll/motion clocks (`useScroll*`, `useCoverProgress`, `useRankMotion`,
-//     `useMarkMorphology`, `useHandMarkClock`, `useGoldOneShot`, `useLoadSequence`,
+//     `useMarkMorphology`, `useHandMarkClock`, `useLoadSequence`,
 //     `useReducedMotion`) → `motion/` (O-B6).
 //   · the affordance family (`useAffordance`, `useAffordanceHint`, `useSelectionTreatment`)
 //     → `interaction/` (O-B6).

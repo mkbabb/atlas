@@ -29,16 +29,13 @@
 // the chapter cap speak one color).
 //
 // THE REVEAL CLOCK — LOAD (the page's arrival): the series count-ups via the heroes' existing
-// `useCountUp` (NumericAnimation), once. The route's ONE gold one-shot rides the THESIS figure
-// (the loudest of the three — the page apex). PRM: the count snaps to the final value (the
-// rendered text IS the figure — information parity); the gold one-shot is SKIPPED entirely under
-// PRM (no shimmer, the static ink holds).
+// `useCountUp` (NumericAnimation), once. Glass draws the route's ONE CompletionSeal beside the
+// THESIS figure when the count settles. PRM: the count and seal both snap to their final states.
 //
 // THE RING-KILL (H.W1.b · G-MARKS / F7.3 · AXIOM-4 morphology): the editorial DatumRing is RETIRED
 // — the hand-circle was wrong at any weight (the 3-arc chronic), and the audacious figure is found
-// by SIZE + the gold MEDAL, never circled. The gold one-shot — formerly co-rooted on `ringIndex` —
-// is re-rooted onto a `thesisIndex` (the figure that wears the page's ONE affirmation seal),
-// disjoint from any ring. One voice each: the figure SHOUTS by size, the gold catches the light once.
+// by SIZE + the gold MEDAL, never circled. The seal is rooted on `thesisIndex`, disjoint from any
+// editorial ring. One voice each: the figure SHOUTS by size, the gold catches the light once.
 //
 // GLASS / GRID: the hero wears NO glass and NO grid (the un-gridded headline band on the paper
 // ground, DESIGN §2). It is closed by `<AnimatedRule weight="hero">` (the assembler seats that
@@ -46,14 +43,15 @@
 import { computed, onMounted, ref } from "vue";
 import FigureSlug from "@/charts/frame/FigureSlug.vue";
 import { useCountUp } from "@/platform/composables/useCountUp";
-import { useGoldOneShot } from "@/motion/useGoldOneShot";
-import { useReducedMotion } from "@/motion/useReducedMotion";
 import type { ColorKind } from "@/charts/scale/colorKind";
+import type { DashboardCategory } from "@/contract";
+import { resolveCategorySkin } from "@/skin/category";
+import { CompletionSeal, resolveCompletionSeal } from "@/design/recipes/completion";
 
 /** One audacious cover figure — the pre-formatted value (routed through format.ts at the
     call site / the manifest, INV-E1), the unit caption (the F6.4 unit/context word), and the
     Newsreader caption beneath. The figure is found by SIZE; the THESIS figure additionally
-    catches the route's ONE gold one-shot seal at the count finish (the ring-kill, H.W1.b).
+    receives the route's ONE CompletionSeal at the count finish (the ring-kill, H.W1.b).
 
     THE COVER RANK (I11 §2 · design-usf §0 ⓪ · K-C-HIER graded). A cover series is not always THREE
     co-equal figures: a route whose thesis is ONE number (USF's −$324.1M net carry) crowns that
@@ -107,6 +105,8 @@ const props = withDefaults(
             one-shot affirmation seal (no ring; the ring-kill, H.W1.b). Default 0: the first figure
             is the page's loudest fact. -1 = no gold seal on the hero (the route spends it elsewhere). */
         thesisIndex?: number;
+        /** The registry category that resolves the compact identity skin. */
+        category?: DashboardCategory;
         /** THE COVER KICKER (K-PAPER-COVER · ARM B) — the small editorial word tucked above the
             audacious cover-line (the reference's "Median"), DERIVED at the call site off the route's
             `thesisSign` via `formatCoverKicker` (NEVER hand-typed here — the cover voice is sourced
@@ -130,8 +130,6 @@ function numericOf(v: string | number): number {
     return m ? Number(m[0]) : 0;
 }
 
-const reduced = useReducedMotion();
-
 // THE COUNT-UP — the page's load arrival (one clock, the heroes' NumericAnimation engine). The
 // display counts from 0 to each figure's numeric crown; the RENDERED text is always the figure's
 // own formatted string at its final value, so a pre-formatted slug ("$8.92B") never loses its
@@ -143,18 +141,28 @@ const targets = computed(() =>
 );
 const { run } = useCountUp(() => targets.value, { autoRecount: false });
 
-// THE GOLD ONE-SHOT — the route's ONE affirmation seal, pressed once at the count finish on the
-// THESIS figure (the loudest of the three — the page apex). Idempotent; PRM-skipped (no shimmer,
-// static ink holds). Re-rooted off the retired `ringIndex` onto `thesisIndex` (H.W1.b ring-kill).
-const gold = useGoldOneShot();
+const categorySkin = computed(() =>
+    props.category ? resolveCategorySkin(props.category) : null,
+);
+const categoryStyle = computed(() =>
+    categorySkin.value ? { "--category-accent": categorySkin.value.accent } : undefined,
+);
+const complete = ref(false);
+const completionSeal = computed(() =>
+    resolveCompletionSeal({
+        complete: complete.value && props.thesisIndex >= 0,
+        label: `${props.title} figures complete`,
+        shape: categorySkin.value?.shape ?? "check",
+    }),
+);
 
 onMounted(async () => {
-    // The page arrival: count the series, then press the gold seal on the thesis figure once.
+    // The page arrival: count the series, then let Glass draw the earned completion seal once.
     await run();
-    if (props.thesisIndex >= 0) gold.fire();
+    complete.value = true;
 });
 
-/** Whether figure `i` is the THESIS figure — the page apex that wears the ONE gold one-shot seal. */
+/** Whether figure `i` is the THESIS figure — the page apex that wears the ONE completion seal. */
 function isThesis(i: number): boolean {
     return i === props.thesisIndex;
 }
@@ -190,9 +198,6 @@ function display(f: HeroFigure): string {
     const s = String(f.value);
     return SIGN_GLYPHS.has(s[0]) ? s.slice(1) : s;
 }
-
-void reduced; // the PRM fence is consumed by useCountUp/useGoldOneShot; touch to keep the import honest
-const seriesEl = ref<HTMLElement | null>(null);
 
 // THE FIGURE-ROW CAP-LINE (DESIGN §3.1 figure-row law · I-COMPOSE.scale). The audacious triad shares
 // ONE cap-line: every member renders at the SAME rung, sized so the LONGEST member fits its track
@@ -246,8 +251,22 @@ function rankNumTrack(f: HeroFigure): Record<string, number> | undefined {
 <template>
     <!-- The page cover — a semantic <header> carrying the page's ONLY <h1>. NO glass, NO grid:
          the un-gridded headline band on the paper ground (DESIGN §2 BREAK-OUT). -->
-    <header class="dashboard-hero" data-testid="dashboard-hero">
+    <header
+        class="dashboard-hero"
+        data-testid="dashboard-hero"
+        :data-category="category"
+        :style="categoryStyle"
+    >
         <p class="eyebrow dashboard-hero__eyebrow">{{ eyebrow ?? title }}</p>
+        <p v-if="categorySkin" class="eyebrow dashboard-hero__identity">
+            <span
+                class="dashboard-hero__identity-mark"
+                :data-background="categorySkin.background"
+                :data-shape="categorySkin.shape"
+                aria-hidden="true"
+            />
+            {{ categorySkin.label }}
+        </p>
         <!-- THE PAGE <h1> — rests LARGE, scroll-scrubs to the compact sticky wayfinding label (§1a).
              In the COMPACT state the route's ONE kicker (coverKicker) rides INLINE beside the shrunk
              title (aria-hidden — the accessible name stays the title alone), so the sticky band
@@ -284,7 +303,6 @@ function rankNumTrack(f: HeroFigure): Record<string, number> | undefined {
              NAMING its unit (F6.4). It declares the rung ⓪ SUFFUSION token `--attn-hero` on the
              series host (data-attn="hero"), the loudest surface on the first fold. -->
         <div
-            ref="seriesEl"
             class="dashboard-hero__series"
             :class="{
                 'dashboard-hero__series--ranked': isRanked,
@@ -321,19 +339,25 @@ function rankNumTrack(f: HeroFigure): Record<string, number> | undefined {
                 :style="rankNumTrack(f)"
             >
                 <!-- THE RING-KILL (H.W1.b): no editorial ring — the figure is found by SIZE, and
-                     the THESIS figure additionally catches the ONE gold one-shot seal at the count
-                     finish (transient; PRM-skipped). Every figure is the bare audacious slug. -->
+                     the THESIS figure receives the ONE Glass completion seal after the count.
+                     Every figure is the bare audacious slug. -->
                 <FigureSlug
                     as="span"
                     class="dashboard-hero__value"
-                    :class="{ 'text-gilt': isThesis(i) && gold.shimmer.value }"
                     :sign="signOf(f)"
                 >
                     {{ display(f) }}
                 </FigureSlug>
 
                 <figcaption class="dashboard-hero__caption">
-                    <span class="dashboard-hero__unit eyebrow">{{ f.unit }}</span>
+                    <span class="dashboard-hero__caption-lead">
+                        <CompletionSeal
+                            v-if="isThesis(i) && completionSeal"
+                            v-bind="completionSeal"
+                            class="dashboard-hero__seal"
+                        />
+                        <span class="dashboard-hero__unit eyebrow">{{ f.unit }}</span>
+                    </span>
                     <span class="dashboard-hero__context text-caption">{{
                         f.caption
                     }}</span>

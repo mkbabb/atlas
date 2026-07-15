@@ -35,6 +35,8 @@ export { default as DashboardHero } from "./DashboardHero.vue";
 // v1.0.1 (O-B10 re-cut) — the `HeroFigure` contract (the hero's figure descriptor a route declares);
 // the `default`-only re-export dropped the named `<script>` type. Re-exported by name from the SFC.
 export type { HeroFigure } from "./DashboardHero.vue";
+export * from "@/skin/category";
+export * from "@/design/recipes/completion";
 
 // ── O-B8a (the chrome-blocked residue closes) — Beat/DashboardEssay/editorial-contract land ────
 // These value-imported the chrome family (Beat → masthead/FigureInitial · DashboardEssay →
