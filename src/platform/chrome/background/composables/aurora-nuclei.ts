@@ -116,14 +116,11 @@ export const SELECTION_LEAN = 0.5; // the emphasis swing a live selection adds (
     the ECF neutral). Warm nuclei (paletteBias < 0.5) deepen toward their pole as `lean`→−1;
     cool nuclei (paletteBias > 0.5) deepen toward theirs as `lean`→+1. */
 export function nucleusAt(s: NucleusSpec, p: number, lean: number, biasCap: number): AuroraNucleus {
-    // The per-nucleus pole direction: warm nuclei sit below 0.5, cool above; the hinge is at
-    // 0.5 (no pole, no drift). `dir` is +1 for cool, −1 for warm, 0 for the hinge.
-    const dir = s.paletteBias > 0.5 ? 1 : s.paletteBias < 0.5 ? -1 : 0;
-    // The drift pushes paletteBias FURTHER from 0.5 when the page leans toward this nucleus's
-    // pole (dir·lean > 0) and pulls it back toward neutral when it leans away. Scaled by the
-    // surface bias-cap (ECF cap 0 → zero drift) and clamped into [0,1] (a valid bias).
+    // The page-level lean shifts every nucleus through the palette in the same direction: negative
+    // deepens the warm half, positive deepens the cool half. A per-nucleus direction multiplier
+    // would cross the warm pair into the cool half at page top. Bias-cap 0 keeps neutral fields still.
     const driftedBias = clamp01(
-        s.paletteBias + dir * lean * SECTION_DRIFT * (biasCap / 0.3),
+        s.paletteBias + lean * SECTION_DRIFT * (biasCap / 0.3),
     );
     return {
         x: s.x,
@@ -140,4 +137,3 @@ export function nucleusAt(s: NucleusSpec, p: number, lean: number, biasCap: numb
         angle: s.angle,
     };
 }
-

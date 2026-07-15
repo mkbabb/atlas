@@ -14,7 +14,7 @@
 // chromatic note on the otherwise paper-toned crest), the "look here / this is home"
 // register. Quiet at rest, a lift-on-hover home affordance like the monogram it replaces.
 
-import { ref } from "vue";
+import { ref, type Component } from "vue";
 import { RouterLink } from "vue-router";
 
 /** The TIL crest, a PUBLIC asset (`public/til-logo.svg`, served from the site root). Bound as a
@@ -46,6 +46,8 @@ const props = withDefaults(
             click target, never a link-inside-a-button nesting), the caller wiring
             `aria-expanded`/`aria-controls`/`@click` through the fall-through attrs. */
         as?: "link" | "button";
+        /** Inline-SVG route crest. Omit to retain the TIL asset. */
+        crest?: Component;
     }>(),
     {
         variant: "crest",
@@ -83,7 +85,14 @@ defineExpose({ focus });
     >
         <!-- The TIL crest (the ~3.5 KB SVG, CONSUMED not re-vendored — J-PERF retires the
              94 KB raster from the LCP-adjacent dock path). -->
+        <component
+            :is="props.crest"
+            v-if="props.crest"
+            class="brand-mark__crest brand-mark__crest--drawn"
+            aria-hidden="true"
+        />
         <img
+            v-else
             class="brand-mark__crest"
             :src="CREST_SRC"
             alt=""
@@ -94,7 +103,7 @@ defineExpose({ focus });
         />
         <!-- The one NCSU-red anomaly node — the single chromatic fleck (the --cp-accent
              chrome anomaly), the "this is home" register. -->
-        <span class="brand-mark__anomaly" aria-hidden="true" />
+        <span v-if="!props.crest" class="brand-mark__anomaly" aria-hidden="true" />
     </component>
 </template>
 
@@ -132,6 +141,24 @@ button.brand-mark {
     pointer-events: none;
 }
 
+.brand-mark__crest--drawn :deep([data-crest-path]) {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset var(--crest-morph-dur, 320ms) var(--ease-engrave);
+}
+
+.brand-mark[data-morph-stage="seed"]
+    .brand-mark__crest--drawn
+    :deep([data-crest-stage]:not([data-crest-stage="1"]) [data-crest-path]) {
+    stroke-dashoffset: 1;
+}
+
+.brand-mark[data-morph-stage="seed"]:hover
+    .brand-mark__crest--drawn
+    :deep([data-crest-stage="2"] [data-crest-path]) {
+    stroke-dashoffset: 0;
+}
+
 /* The single NCSU-red anomaly node — one fleck, the chrome accent (--cp-accent), the
    "look here / home" register. It sits at the crest's corner, quiet but present. */
 .brand-mark__anomaly {
@@ -155,7 +182,7 @@ button.brand-mark {
     scale: 1.15;
 }
 .brand-mark:focus-visible {
-    outline: 2px solid var(--cp-accent, var(--ring, currentColor));
+    outline: 2px solid var(--cp-accent, var(--focus-ring-color, currentColor));
     outline-offset: 2px;
 }
 
@@ -185,6 +212,12 @@ button.brand-mark {
     .brand-mark:hover,
     .brand-mark:hover .brand-mark__anomaly {
         scale: 1;
+    }
+    .brand-mark__crest--drawn {
+        --crest-morph-dur: 0ms;
+    }
+    .brand-mark__crest--drawn :deep([data-crest-path]) {
+        stroke-dashoffset: 0 !important;
     }
 }
 </style>

@@ -1,0 +1,46 @@
+import type { VizOptionSpec } from "@/charts/composables/useVizOptions";
+import type { VizView } from "@/charts/contract/viz-contract";
+
+export interface MarkIdentity {
+    kind: string;
+}
+
+export interface MorphTransition {
+    mode: "blend" | "staged";
+    reduced: boolean;
+}
+
+export interface VizSetContract {
+    views: readonly [VizView, ...VizView[]];
+    identity: MarkIdentity;
+    transition: MorphTransition;
+}
+
+export function morphTransition(
+    reduced: boolean,
+    mode: MorphTransition["mode"] = "blend",
+): MorphTransition {
+    return { mode, reduced };
+}
+
+export function resolveVizSurface(set: VizSetContract, id?: string): VizView {
+    return set.views.find((view) => view.id === id) ?? set.views[0];
+}
+
+export function resolveFromAlternates(set: VizSetContract, selected?: string): VizView {
+    return resolveVizSurface(set, selected);
+}
+
+export function optionsLiveInView(view: VizView): VizOptionSpec[] {
+    return view.options ?? [];
+}
+
+export function viewsToOptionSpec(set: VizSetContract): VizOptionSpec {
+    return {
+        kind: "segmented",
+        key: "view",
+        label: "View",
+        choices: set.views.map(({ id, label }) => ({ value: id, label })),
+        default: set.views[0].id,
+    };
+}

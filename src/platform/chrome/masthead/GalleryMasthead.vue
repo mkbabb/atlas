@@ -92,10 +92,7 @@ withDefaults(defineProps<{ showEyebrow?: boolean }>(), { showEyebrow: true });
                  (J-HANDMARK §6's grain-clip mark-register — the headline wears the shipped
                  `--paper-aged-texture` within its letterforms, SOLID-INK fallback-first, NEVER on the
                  prose tagline below). -->
-            <p class="masthead-eyebrow masthead__standfirst">
-                A field guide to
-            </p>
-            <h1 class="masthead-headline masthead-headline-grain masthead__wordmark">
+            <h1 class="masthead-headline masthead__wordmark">
                 The <span class="text-pickout">Connectivity</span> Atlas
             </h1>
             <p class="text-prose-muted masthead__tagline">{{ site.tagline }}</p>
@@ -190,29 +187,6 @@ withDefaults(defineProps<{ showEyebrow?: boolean }>(), { showEyebrow: true });
    LAYOUT rung, recipes.css §6) so the cover-scoped `.text-hero` size override RETIRES — the recipe
    owns the scale now (fluid clamp, phone-safe). This is COVER-scoped seating only (the shared
    `text-hero`/`text-headline` recipes the dashboards inherit are untouched). */
-.masthead__standfirst {
-    margin-block-end: -0.15rem; /* the standfirst sits TIGHT to the wordmark — the lockup seam */
-}
-/* M-1 (K-DESIGN-SUFFUSE · the masthead colorful-pop) — the whispered "A field guide to" standfirst
-   gains a thin leading-rule in the icon-palette GREEN (--rainbow-signature-1, the "connected" entry
-   hue, the gallery's home pop), so the masthead LOCKUP ties to the icon palette the way the eyebrow's
-   red TIL rule (:75-79) already does. It mirrors the §2.2 `eyebrow::before` recipe EXACTLY — em-relative
-   width/height/gap (the d-hierarchy IC-3 proportionality, so the rule tracks the standfirst's own
-   cap-measure, never a fixed stroke) recessed by the §HIERARCHY --attn-chrome token (the editorial-mark
-   margin rung) — only THINNER (a hairline, not the eyebrow's cap-stroke bar) + GREEN: a chrome HAIRLINE,
-   not a fill. The bar is `::before` on the block `<p>`, prepended inline before the italic text. The
-   pop draws from the ALREADY-PUBLISHED signature set (tokens.css §RAINBOW) — no new hue, the
-   colorkind/three-red law GREEN by construction (L3 chrome, never an L4 data fill). */
-.masthead__standfirst::before {
-    content: "";
-    display: inline-block;
-    inline-size: 1.75em; /* tracks the standfirst type (the eyebrow IC-3 em-relative idiom) */
-    block-size: 0.09em; /* a HAIRLINE — thinner than the eyebrow cap-stroke; a chrome rule, not a fill */
-    margin-inline-end: 0.55em; /* the leading gap, em-relative */
-    vertical-align: middle;
-    background: var(--rainbow-signature-1); /* the green "connected" entry pop — the icon palette */
-    opacity: var(--attn-chrome); /* the editorial-mark recession rung (§HIERARCHY) — within proportion */
-}
 .masthead__wordmark {
     /* the towering serif sits hard against its box; the `masthead-headline` recipe owns face/size/
        weight/track. Only the lockup SEAT (the tight gap to the standfirst above) lands here. */

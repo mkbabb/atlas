@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { CATEGORY_SKINS, resolveCategorySkin } from "@/skin/category";
+import { CATEGORY_SKINS, SKINS, resolveCategorySkin } from "@/skin/category";
 import { resolveCompletionSeal } from "@/design/recipes/completion";
 
 describe("category skins", () => {
     it("resolve the closed dashboard categories to distinct rendered identities", () => {
         expect(Object.keys(CATEGORY_SKINS)).toEqual(["funds", "connectivity", "outcomes"]);
+        expect(CATEGORY_SKINS).toBe(SKINS);
         expect(resolveCategorySkin("funds")).toMatchObject({
+            backgroundFamily: "constellation",
             background: "liquid-grid",
             shape: "wordmark",
         });
         expect(resolveCategorySkin("connectivity")).toMatchObject({
+            backgroundFamily: "aurora",
             background: "watercolor-dot",
             shape: "check",
         });

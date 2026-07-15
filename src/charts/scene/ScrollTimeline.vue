@@ -267,7 +267,7 @@ function onKeydown(e: KeyboardEvent): void {
     user-select: none;
 }
 .scroll-rail:focus-visible {
-    outline: 2px solid var(--cp-accent, var(--ring, currentColor));
+    outline: 2px solid var(--cp-accent, var(--focus-ring-color, currentColor));
     outline-offset: 4px;
     border-radius: var(--radius-pill);
 }

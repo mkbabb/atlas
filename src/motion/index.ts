@@ -35,6 +35,8 @@ export * from "./lean-catalog";
 
 // — the reveal register: host-style + count-at-progress + the KEPT reveal bindings —
 export * from "./reveal-register";
+export * from "./reveal-score";
+export * from "./instrument-spring";
 
 // — the rank band: the lede/support/ancillary beat budget + reparameterization —
 export * from "./rankMotionBand";

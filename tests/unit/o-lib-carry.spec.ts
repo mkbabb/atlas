@@ -31,6 +31,7 @@ const VIZ_PLATE = read("../../src/charts/frame/VizPlate.vue");
 const PLATE_SKELETON = read("../../src/charts/frame/PlateSkeleton.vue");
 const USE_SCROLL_TIMELINE = read("../../src/motion/useScrollTimeline.ts");
 const VIZ_TEXT_OVERLAY = read("../../src/charts/legend/VizTextOverlay.vue");
+const VIZ_CONTRACT = read("../../src/charts/contract/viz-contract.ts");
 const YEAR_SCRUBBER = read(
     "../../src/filter/ui/components/YearScrubber.vue",
 );
@@ -48,10 +49,16 @@ describe("O-LIB-CARRY 1 — GalleryMasthead.vue: the eyebrow-suppression seam (O
         );
     });
 
-    it("does NOT gate the crest, the genre-line standfirst, the h1 wordmark, or the dek (only the kicker is suppressible)", () => {
-        expect(GALLERY_MASTHEAD).toContain('<BrandMark class="masthead__crest" />');
-        expect(GALLERY_MASTHEAD).toMatch(/<p class="masthead-eyebrow masthead__standfirst">/);
-        expect(GALLERY_MASTHEAD).toMatch(/<h1 class="masthead-headline masthead-headline-grain masthead__wordmark">/);
+    it("keeps the surviving crest, wordmark, and tagline when the optional kicker is hidden", () => {
+        const template = GALLERY_MASTHEAD.slice(
+            GALLERY_MASTHEAD.indexOf("<template>"),
+            GALLERY_MASTHEAD.indexOf("</template>"),
+        );
+        const wordmark = template.slice(template.indexOf("<h1"), template.indexOf("</h1>"));
+
+        expect(template).toMatch(/<BrandMark\b/);
+        expect(wordmark).toContain("Connectivity");
+        expect(template).toMatch(/<p[^>]*>\{\{ site\.tagline \}\}<\/p>/);
     });
 });
 
@@ -227,8 +234,16 @@ describe("O-LIB-CARRY 5 — useScrollTimeline.ts: the D30-LIB standalone-host re
 });
 
 describe("O-LIB-CARRY 6a — VizTextOverlay.vue: the `gutter` placement field (D10-LIB)", () => {
-    it("VizPlacement declares an OPTIONAL `gutter?: number` field", () => {
-        expect(VIZ_TEXT_OVERLAY).toMatch(/gutter\?:\s*number;/);
+    it("exposes `gutter` on the canonical placement contract consumed by the overlay", () => {
+        const placement = VIZ_CONTRACT.slice(
+            VIZ_CONTRACT.indexOf("export interface VizAnnotationPlacement"),
+            VIZ_CONTRACT.indexOf("export interface VizView"),
+        );
+
+        expect(VIZ_TEXT_OVERLAY).toContain(
+            "export type VizPlacement = VizAnnotationPlacement;",
+        );
+        expect(placement).toMatch(/gutter\?:\s*number;/);
     });
 
     it("an axis-only Y placement anchors px at `gutter` (default 0, byte-identical when unset)", () => {

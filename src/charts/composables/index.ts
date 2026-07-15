@@ -5,6 +5,7 @@
 export * from "./activeViz";
 export * from "./useChartSelection";
 export * from "./useEChart";
+export * from "./useEChartOrnament";
 export * from "./useGeoPaletteEpoch";
 export * from "./useThemeReactiveOption";
 export * from "./useTimeSeriesOption";

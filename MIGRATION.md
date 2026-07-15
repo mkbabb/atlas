@@ -1,3 +1,48 @@
+# Migrating to Atlas 2.0.0
+
+## Remove row parameters from visualization contracts
+
+`VizContract` no longer carries an unused row type or `_row` inference field. Keep row typing at the option builder or data projection that consumes it.
+
+```ts
+// Before
+const contract: VizContract<DistrictRow> = { /* … */, _row: undefined };
+
+// After
+const contract: VizContract = { /* … */ };
+```
+
+Apply the same change to `WatchersVizContract<Row>` consumers.
+
+## Declare complete skins
+
+`CategorySkin` now includes the brand-skin contract. Add `id`, `category`, `surfaceKind`, `backgroundFamily`, `atmosphere`, and `chrome` to custom category skins, or use `SkinContract` when the category-home presentation fields are not needed. `defineSkin()` preserves literal types and freezes the declaration.
+
+```ts
+const skin = defineSkin({
+    id: "connectivity",
+    category: "connectivity",
+    surfaceKind: "brand",
+    backgroundFamily: "aurora",
+    atmosphere: {},
+    chrome: { accent: "var(--rainbow-signature-1)" },
+});
+```
+
+`CATEGORY_SKINS` remains as the compatibility name for the built-in `SKINS` registry.
+
+## Classify visualization alternates
+
+Every custom `VizAlternate` now requires `morph: "same-instance" | "cross-instance"`. Use `same-instance` only when the alternate is a `VizView` in the base chart's `VizSetContract`; use `cross-instance` for an explicit component swap.
+
+The new public entry points are available at `@mkbabb/atlas/viz-set`, `/events`, `/skin`, and `/stage`. Existing chart and story barrels continue to re-export their corresponding facilities.
+
+## Update peers
+
+Atlas 2.0.0 targets keyframes.js 5.3.3, pencil-boil 0.8.1, and value.js 3.1.0. Publication is held until Glass publishes a peer manifest that admits pencil-boil 0.8.1; do not use `--force`, `--legacy-peer-deps`, or a consumer override to assemble the dependency tree.
+
+---
+
 # Migrating to Atlas 1.1.0
 
 ## Declare route identity

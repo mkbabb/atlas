@@ -9,7 +9,15 @@
 // per-item `<article>` rows, each a `<dl>` of rungs), NOT a font. A paper route styles it in its
 // register; the atlas plate routes inherit the platform tokens. The vft Q-31 in-paper appendix is the
 // sibling precedent (one provenance, rendered deftly inline AND fully in the appendix).
-import { appendixAnchorId, type AppendixEntry } from "./appendix";
+import {
+    appendixAnchorId,
+    appendixOrdinal,
+    figureOrdinalFor,
+    plateAnchorId,
+    type AppendixEntry,
+    type AppendixSource,
+} from "./appendix";
+import SourceLink from "./SourceLink.vue";
 import {
     sourceLine,
     measureLine,
@@ -18,12 +26,23 @@ import {
     filterLine,
 } from "./provenance-lines";
 
-const { entries, heading = "Provenance" } = defineProps<{
+const { entries, heading = "Provenance", sources = [], figureNos } = defineProps<{
     /** the route's provenance roster — each item's title + resolved provenance, the route's own order. */
     entries: readonly AppendixEntry[];
     /** the section heading, in the route's words (default "Provenance"). */
     heading?: string;
+    /** Verified sources addressable by each entry's `sourceIds`. */
+    sources?: readonly AppendixSource[];
+    /** Optional route-authored figure ordinals for appendix-to-figure return links. */
+    figureNos?: Readonly<Record<string, number>>;
 }>();
+
+function sourcesFor(entry: AppendixEntry): AppendixSource[] {
+    const sourceById = new Map(sources.map((source) => [source.id, source]));
+    return (entry.sourceIds ?? [])
+        .map((sourceId) => sourceById.get(sourceId))
+        .filter((source): source is AppendixSource => source != null);
+}
 </script>
 
 <template>
@@ -35,14 +54,26 @@ const { entries, heading = "Provenance" } = defineProps<{
     >
         <h2 class="provenance-appendix__heading">{{ heading }}</h2>
         <article
-            v-for="entry in entries"
+            v-for="(entry, index) in entries"
             :id="appendixAnchorId(entry.vizId)"
             :key="entry.vizId"
             class="provenance-appendix__row"
             :data-viz-id="entry.vizId"
             data-testid="provenance-appendix-row"
         >
-            <h3 class="provenance-appendix__title">{{ entry.title }}</h3>
+            <div class="provenance-appendix__row-head">
+                <h3 class="provenance-appendix__title">
+                    <span class="provenance-appendix__ordinal">{{ appendixOrdinal(index) }}</span>
+                    {{ entry.title }}
+                </h3>
+                <a
+                    v-if="figureNos"
+                    class="provenance-appendix__return"
+                    :href="`#${plateAnchorId(entry.vizId)}`"
+                >
+                    ↑ Figure {{ figureOrdinalFor(figureNos, entry.vizId) }}
+                </a>
+            </div>
             <dl class="provenance-appendix__rungs">
                 <div class="provenance-appendix__rung">
                     <dt>Source</dt>
@@ -64,6 +95,14 @@ const { entries, heading = "Provenance" } = defineProps<{
                     <dt>Filter</dt>
                     <dd>{{ filterLine(entry.provenance) }}</dd>
                 </div>
+                <div
+                    v-for="source in sourcesFor(entry)"
+                    :key="source.id"
+                    class="provenance-appendix__rung"
+                >
+                    <dt>Link</dt>
+                    <dd><SourceLink :source="source" /></dd>
+                </div>
             </dl>
         </article>
     </section>
@@ -81,11 +120,20 @@ const { entries, heading = "Provenance" } = defineProps<{
 .provenance-appendix__heading {
     margin: 0;
     font-family: var(--font-mono, inherit);
-    font-size: var(--type-caption);
+    font-size: var(--type-body);
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--muted-foreground, inherit);
+    color: light-dark(
+        color-mix(in oklab, var(--foreground), transparent 32%),
+        color-mix(in oklab, var(--foreground), transparent 5%)
+    );
+}
+.provenance-appendix__row-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
 }
 .provenance-appendix__row {
     display: flex;
@@ -102,6 +150,25 @@ const { entries, heading = "Provenance" } = defineProps<{
     font-size: var(--type-body);
     font-weight: 600;
     line-height: 1.3;
+}
+.provenance-appendix__ordinal {
+    margin-inline-end: 0.35rem;
+    font-family: var(--font-mono, inherit);
+    font-size: var(--type-micro);
+    letter-spacing: 0.08em;
+    color: color-mix(in oklab, var(--foreground), transparent 28%);
+}
+.provenance-appendix__return {
+    flex: none;
+    font-family: var(--font-mono, inherit);
+    font-size: var(--type-micro);
+    color: light-dark(
+        color-mix(in oklab, var(--route-accent), var(--foreground) 50%),
+        color-mix(in oklab, var(--route-accent), var(--foreground) 22%)
+    );
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: color-mix(in oklab, currentColor, transparent 55%);
 }
 .provenance-appendix__rungs {
     display: grid;
@@ -133,7 +200,8 @@ const { entries, heading = "Provenance" } = defineProps<{
 }
 .provenance-appendix__rungs dd {
     margin: 0;
-    font-size: var(--type-caption);
+    max-inline-size: 62ch;
+    font-size: var(--type-small);
     color: color-mix(in oklab, var(--foreground), transparent 8%);
     text-wrap: pretty;
 }

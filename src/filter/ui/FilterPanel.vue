@@ -52,6 +52,7 @@ import { useViewParams } from "@/platform/stores/useViewParams";
 import type { YearMode } from "@/data/useYearScope";
 import YearScrubber from "./components/YearScrubber.vue";
 import FilterDrawerFoot from "./components/FilterDrawerFoot.vue";
+import { useDismissArbiter } from "@/platform/interaction/useDismissArbiter";
 
 // The consumer (DashboardView) mounts this shell in PlatformShell's `filter` slot and
 // passes the active dashboard's filter BODY as `body`. The shell owns only the chrome
@@ -74,6 +75,19 @@ const { label: freshnessLabel } = useFreshness();
 // default (C3.3): a closed floating drawer occludes nothing on first paint, the hero
 // is fully visible. The same `open` is the A4 dock pull-out target (C3.2 drives it).
 const { open } = useFilterPane();
+useDismissArbiter().claim(() =>
+    open.value
+        ? {
+              id: "filter-drawer",
+              priority: 30,
+              outsidePointer: true,
+              escape: true,
+              within: (path) => path.some((node) => node instanceof HTMLElement && Boolean(node.closest("[data-testid='filter-panel']"))),
+              guards: (path) => path.some((node) => node instanceof HTMLElement && Boolean(node.closest("[data-viz-plate]"))),
+              onDismiss: () => (open.value = false),
+          }
+        : null,
+);
 
 // THE clearPin SEAM (K-FILTER-UNIFIED §4.H · the H2 completion) — the panel-LOCAL pin releases on
 // the drawer's open false-edge (ONE watcher where the shell already reads the open-truth). A
@@ -248,6 +262,7 @@ function cancelSave(): void {
             <DrawerContent
                 :show-overlay="false"
                 class="cp-drawer glass-reveal"
+                @interact-outside.prevent
                 data-testid="filter-panel"
                 aria-label="Filters"
             >

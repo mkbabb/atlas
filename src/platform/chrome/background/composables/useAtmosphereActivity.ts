@@ -72,6 +72,8 @@ export interface UseAtmosphereActivityReturn {
     hidden: Readonly<Ref<boolean>>;
     /** True after `IDLE_PARK_MS` with no interaction; the next interaction / visibility resets it. */
     idle: Readonly<Ref<boolean>>;
+    /** The reduced-motion verdict folded into `active`, exposed for register-specific policies. */
+    reduced: ComputedRef<boolean>;
 }
 
 /**
@@ -123,9 +125,10 @@ export function useAtmosphereActivity(
         if (timer !== undefined) clearTimeout(timer);
     });
 
+    const reducedResolved = computed<boolean>(() => toValue(reduced));
     const active = computed<boolean>(
-        () => !hidden.value && !idle.value && !toValue(reduced),
+        () => !hidden.value && !idle.value && !reducedResolved.value,
     );
 
-    return { active, hidden, idle };
+    return { active, hidden, idle, reduced: reducedResolved };
 }

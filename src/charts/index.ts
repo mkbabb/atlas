@@ -28,3 +28,5 @@ export * from "./marks";
 export * from "./readout";
 export * from "./scene";
 export * from "./composables";
+export * from "./viz-set";
+export * from "./morph";

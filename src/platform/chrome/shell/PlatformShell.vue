@@ -28,11 +28,13 @@
 //                the top-left ruled section-menu SHEET — crest→ruled-sheet, NEVER a
 //                bottom/horizontal fork. One Dock, one orientation, re-collapsed responsively.
 //   `filter`   — the right live-behind filter Drawer (C3.3 fills; a peer at --z-panel).
-import { computed, inject, onBeforeUnmount, onMounted } from "vue";
+import { computed, inject } from "vue";
 import Dock from "@/platform/chrome/dock/Dock.vue";
 import { DASHBOARD_KEY } from "@/contract";
 import { useSelection } from "@/platform/stores/useSelection";
 import { useFilterPane } from "@/filter/composables/useFilterPane";
+import FilterContinuum from "@/filter/ui/FilterContinuum.vue";
+import { provideDismissArbiter, useDismissArbiter } from "@/platform/interaction/useDismissArbiter";
 
 // The active dashboard's context — the dock reads its nav at every register (the filter is the
 // floating Drawer, one affordance for both). Bound here as the `--route-*` cascade + injected by
@@ -85,58 +87,19 @@ const routeIdentityStyle = computed<Record<string, string>>(() => {
 //     plate's own (the SelectionRegion sibling handles the keyboard clear). We never reach in.
 const selection = useSelection();
 const { open: filterOpen } = useFilterPane();
+const dismissArbiter = provideDismissArbiter();
+useDismissArbiter(dismissArbiter).claim(() =>
+    selection.hasSelection && !filterOpen.value
+        ? {
+              id: "selection",
+              priority: 0,
+              escape: true,
+              guards: (path) => path.some((node) => node instanceof HTMLElement && (node.matches("input,textarea,select,[contenteditable='true'],[role='img']"))),
+              onDismiss: () => selection.clearSelection(),
+          }
+        : null,
+);
 
-/** True when a higher-priority overlay owns this Escape (defer to its own close handler). */
-function anOverlayIsOpen(): boolean {
-    // The drawer — the shared single-source open flag (no DOM probe needed).
-    if (filterOpen.value) return true;
-    // The expand fullscreen — glass-ui teleports a `.fixed.inset-0.z-modal` surface to <body>
-    // while a plate is expanded (its own Escape closes it). Its presence is the open signal.
-    if (
-        typeof document !== "undefined" &&
-        document.querySelector(".fixed.inset-0.z-modal")
-    ) {
-        return true;
-    }
-    // The per-viz OPTIONS popover (D4.a · the §6 Esc ladder's OUTERMOST rung) — reka teleports
-    // its content with `[data-dismissable-layer][data-state="open"]` while open (its own Escape
-    // closes it). Detecting it here lets the document handler DEFER, so an Esc that dismisses the
-    // popover does NOT also clear the selection (the compound-Esc bug the ladder exists to end).
-    if (
-        typeof document !== "undefined" &&
-        document.querySelector("[data-dismissable-layer][data-state='open']")
-    ) {
-        return true;
-    }
-    return false;
-}
-
-/** True when focus sits in an editable field — the field owns its Escape, never the document. */
-function focusInEditable(): boolean {
-    const el = (
-        typeof document !== "undefined" ? document.activeElement : null
-    ) as HTMLElement | null;
-    if (!el) return false;
-    const tag = el.tagName;
-    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
-    if (el.isContentEditable) return true;
-    return false;
-}
-
-function onDocKeydown(e: KeyboardEvent): void {
-    if (e.key !== "Escape" || e.defaultPrevented) return;
-    // (a) DEFER — an overlay owns this Escape; do not also clear the selection (no double-handle).
-    if (anOverlayIsOpen()) return;
-    // GUARD — an Escape inside an editable field (the save-view input) is the field's, not ours.
-    if (focusInEditable()) return;
-    // (b) CLEAR the selection set if one is live; (c) otherwise a no-op (nothing pinned).
-    if (selection.hasSelection) {
-        selection.clearSelection();
-    }
-}
-
-onMounted(() => window.addEventListener("keydown", onDocKeydown));
-onBeforeUnmount(() => window.removeEventListener("keydown", onDocKeydown));
 </script>
 
 <template>
@@ -186,6 +149,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onDocKeydown));
         <!-- ③ The right live-behind filter Drawer (C3.3 fills; floats at --z-panel, a peer
              of the dock — occludes nothing when closed). -->
         <slot name="filter" />
+        <FilterContinuum />
     </div>
 </template>
 

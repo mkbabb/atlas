@@ -169,7 +169,7 @@ function onFocus(): void {
     pointer-events: none;
 }
 .selection-region:focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 2px solid var(--focus-ring-color);
     outline-offset: 2px;
     border-radius: var(--radius, 0.5rem);
 }

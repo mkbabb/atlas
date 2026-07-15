@@ -25,14 +25,11 @@ export type ResolvedLayout = {
     scrollIn: "left" | "right" | "up";
 };
 
-/** Whether a chapter carries the editorial masthead (eyebrow · h2 · dek · drop-cap) — i.e. it
-    PARTICIPATES in the zebra. The two page-level sentinels (`"hero"` / `"colophon"`) do NOT (they
-    render their own internal header), so they neither stamp a placement register NOR consume a zebra
-    phase. This is the SINGLE predicate both the phase counter AND the host stamp read — IDENTICAL to
-    the existing `#header` v-if (`chapter.viz !== 'hero' && chapter.viz !== 'colophon'`), so the
-    counter and the stamp can never drift. NOT `isBeat` (which conflates dock-projection). */
+/** Whether a chapter carries the editorial masthead (eyebrow · h2 · dek · drop-cap). Canonical
+    cover/colophon points may be component-backed, so sentinel identity lives in the authored
+    `isBeat:false` flag rather than in the legacy `"hero"`/`"colophon"` viz strings. */
 export function hasMasthead(c: Chapter): boolean {
-    return c.viz !== "hero" && c.viz !== "colophon";
+    return c.isBeat !== false;
 }
 
 /** The dock COUNTERWEIGHT — opposite the title margin. A `center` title has no opposite side, so the

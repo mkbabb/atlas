@@ -37,6 +37,7 @@
 
 import { RAFPlayback } from "@mkbabb/keyframes.js";
 import { useActiveBeat } from "@/platform/stores/useActiveBeat";
+import type { RevealCuePump } from "@/motion/reveal-score";
 
 /** The registered custom property the native `view()` host animates `0 → 1` (declared
     `@property --scroll-tl` in scroll-driven.css). The ONE name read here — the sole `--scroll-tl`
@@ -130,6 +131,9 @@ export interface ScrubHostRecord {
     advance: (nativeProgress: number | null) => number | null;
     /** The K-B cover-host cache (the A8 forward-seam): the host's last master position [0, 1]. */
     lastProgress: number;
+    /** Optional RevealScore once-cue projection. The registry advances it from this host's already
+        sampled position, so cue delivery adds no observer, rAF, clock, or native-style read. */
+    reveal?: RevealCuePump;
 }
 
 /** The registered hosts (the registry iterates this set once per frame). */
@@ -203,6 +207,7 @@ function frame(): boolean {
         // host whose master position shifted keeps the loop live (the morph is still in flight).
         if (Math.abs(p - h.lastProgress) > PROGRESS_EPSILON) moved = true;
         h.lastProgress = p;
+        h.reveal?.advance(p);
         const id = h.vizId();
         if (id !== "") samples.push({ id, progress: p });
     }

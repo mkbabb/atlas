@@ -1,0 +1,25 @@
+/* The one title-alignment register. Consumers stamp data-title-align with resolveTitleAlign()
+   and opt the governed title into this class; no component authors its own text-align branch. */
+[data-title-align="left"] {
+    --atlas-title-align: left;
+}
+
+[data-title-align="center"] {
+    --atlas-title-align: center;
+}
+
+[data-title-align="right"] {
+    --atlas-title-align: right;
+}
+
+.atlas-title-align {
+    text-align: var(--atlas-title-align, left);
+}
+
+/* A narrow reading measure degrades the end pole to the start edge. The ceremonial center pole
+   remains centered, including cover titles on phones. */
+@media (max-width: 63.999rem) {
+    [data-title-align="right"] {
+        --atlas-title-align: left;
+    }
+}

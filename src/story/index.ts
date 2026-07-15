@@ -29,3 +29,9 @@ export { default as StoryCorridor } from "./StoryCorridor.vue";
 export * from "./beat-template";
 export * from "./superlative";
 export * from "./viz-alternates";
+export * from "./manifest";
+
+// The canonical persistent stage is authored from the story surface as well as the charts surface;
+// both routes resolve to the same contract and thin StickyScene adapter.
+export type { ChapterStage, SceneOption } from "@/charts/contract/scene-contract";
+export { default as ChapterStageView } from "@/charts/scene/ChapterStage.vue";

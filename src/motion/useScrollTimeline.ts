@@ -49,6 +49,13 @@ import {
 } from "@/motion/useScrollProgress";
 import { useReducedMotion } from "@/motion/useReducedMotion";
 import {
+    bindRevealGoLive,
+    createRevealCuePump,
+    projectRevealScore,
+    type RevealRestoreEdge,
+    type RevealScore,
+} from "@/motion/reveal-score";
+import {
     registerScrubHost,
     type ScrubHostRecord,
 } from "@/charts/composables/activeViz";
@@ -104,7 +111,11 @@ export interface FacetState {
 export interface UseScrollTimelineOptions {
     /** The ordered facet map declared by the viz's nature. Order is the read order (the
         rail's stop sequence); windows may overlap (concurrent reveals) under the budget. */
-    facets: FacetSpec[];
+    facets?: FacetSpec[];
+    /** Optional named reveal cues projected onto this same facet map and activeViz pump. */
+    revealScore?: RevealScore;
+    /** Deep-link restore ordering for RevealScore go-live. Omit on an ordinary top load. */
+    restore?: RevealRestoreEdge;
     /**
      * THE PER-SECTION MOTION BUDGET (the cardinal law — mark-scarcity extended to motion).
      * The max number of facets allowed to be *mid-reveal* (0 < t < 1) at once. When more
@@ -218,6 +229,10 @@ export function useScrollTimeline(
     const reduced = useReducedMotion();
     const native = supportsViewTimeline();
     const budget = options.budget ?? 2;
+    const revealPump = options.revealScore
+        ? createRevealCuePump(options.revealScore)
+        : undefined;
+    let stopRestoreEdge: (() => void) | null = null;
 
     // ── THE ONE TIMELINE ─────────────────────────────────────────────────────────────────
     // Smoothing OFF: the master position IS the scroll position (already a settled scalar);
@@ -286,6 +301,7 @@ export function useScrollTimeline(
         el: null,
         advance,
         lastProgress: 0,
+        reveal: revealPump,
     };
     let unregister: (() => void) | null = null;
 
@@ -303,6 +319,10 @@ export function useScrollTimeline(
     );
 
     onMounted(() => {
+        if (revealPump) {
+            if (reduced.value || !native) revealPump.settle();
+            else stopRestoreEdge = bindRevealGoLive(revealPump, options.restore);
+        }
         if (reduced.value) {
             // TERMINAL BIND: the full story, frozen at its end — no sampler, no scrub, never
             // registered (the registry is inert under PRM, so the rim is naturally absent).
@@ -319,6 +339,7 @@ export function useScrollTimeline(
     onBeforeUnmount(() => {
         // The registry self-halts on the next frame once its last host leaves (the empty check).
         unregister?.();
+        stopRestoreEdge?.();
         stopFallbackWatch();
         unbindStandaloneScrollHost(target.value);
     });
@@ -328,7 +349,12 @@ export function useScrollTimeline(
     // local `t`. The MOTION BUDGET gates concurrency: a facet mid-reveal counts against the
     // budget; when more than `budget` windows are simultaneously open, the ones FURTHEST from
     // the master position snap to their nearest boundary (0/1) so the scene reads composed.
-    const resolved = options.facets.map((spec, index) => {
+    const facetSpecs = [
+        ...(options.facets ?? []),
+        ...(options.revealScore ? projectRevealScore(options.revealScore) : []),
+    ];
+    const revealCueIds = new Set(options.revealScore?.cues.map((cue) => cue.id) ?? []);
+    const resolved = facetSpecs.map((spec, index) => {
         const [from, to] = resolveWindow(spec);
         const ease = spec.ease ?? smoothStep3;
         const at = (from + to) / 2;
@@ -337,6 +363,9 @@ export function useScrollTimeline(
 
         /** The facet's RAW local t (pre-budget) — the master position into `[from,to]`, eased. */
         const rawT = computed(() => {
+            // NO_SDA: RevealScore's DOM once-cues settle at mount. Other facets retain the existing
+            // geometry fallback; only the named score projection is terminal and motionless.
+            if (!native && revealCueIds.has(spec.id)) return 1;
             const p = rawProgress.value;
             if (p <= from) return 0;
             if (p >= to) return 1;

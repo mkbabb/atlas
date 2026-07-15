@@ -25,7 +25,6 @@ import {
     Settings,
     GitCompareArrows,
     Download,
-    SlidersHorizontal,
 } from "@lucide/vue";
 
 defineProps<{
@@ -37,10 +36,6 @@ defineProps<{
     yearModeNow: string;
     /** A brief accent confirm after a ⤓-save (the "View saved" visual echo). */
     saveFlash: boolean;
-    /** Show the filter pull-out (the active dashboard ships a filter body). */
-    hasFilter: boolean;
-    /** The shared filter-drawer open truth — the pull-out reads it for its pressed/expanded state. */
-    filterOpen: boolean;
     /** Wire glass-ui's no-transition fast-path on the dark toggle (the INSTANT theme re-print). */
     disableTransitions: boolean;
 }>();
@@ -52,8 +47,6 @@ const emit = defineEmits<{
     (e: "toggle-range"): void;
     /** ⤓-save the current view — handler stays `useDockDataState.saveCurrentView`. */
     (e: "save-view"): void;
-    /** Toggle the filter drawer — flips the `useFilterPane().open` singleton (ONE open truth). */
-    (e: "toggle-filter"): void;
 }>();
 </script>
 
@@ -120,24 +113,6 @@ const emit = defineEmits<{
             </Button>
 
             <!-- The filter pull-out — summons the live-behind filter Drawer (ONE open truth). -->
-            <Button
-                v-if="hasFilter"
-                variant="ghost"
-                size="sm"
-                class="usf-dock-settings__row"
-                :class="{ 'usf-dock-settings__row--on': filterOpen }"
-                :aria-pressed="filterOpen"
-                :aria-expanded="filterOpen"
-                data-testid="dock-filter-pullout"
-                @click="emit('toggle-filter')"
-            >
-                <SlidersHorizontal
-                    class="usf-dock__ctl-glyph"
-                    aria-hidden="true"
-                />
-                <span>Filters</span>
-            </Button>
-
             <!-- The dark-mode toggle — `size="dock"` routes the glyph through the dock-control
                  register; `:disable-transitions` wires the INSTANT theme re-print. The toggle
                  owns its OWN label, so it rides the sheet as the library control (no wrapper). -->

@@ -41,10 +41,11 @@ describe("EX-44 · DashboardHero.vue — the eyebrow prop (D21 residue 2)", () =
         expect(HERO).toMatch(/eyebrow\?:\s*string;/);
     });
 
-    it("the eyebrow paragraph falls back to `title` when `eyebrow` is omitted (byte-identical default)", () => {
+    it("the eyebrow falls back to `title` while the semantic h1 retains the title", () => {
         expect(HERO).toContain("{{ eyebrow ?? title }}");
-        // the title itself is UNTOUCHED — still the page's one <h1>, never suppressed.
-        expect(HERO).toContain('<h1 class="dashboard-hero__title text-page-title">{{ title');
+        const template = HERO.slice(HERO.indexOf("<template>"), HERO.indexOf("</template>"));
+        const h1 = template.slice(template.indexOf("<h1"), template.indexOf("</h1>"));
+        expect(h1).toContain("{{ title");
     });
 });
 
@@ -118,5 +119,10 @@ describe("EX-44 · DashboardEssay.vue — wires the extracted figureLabelFor (li
     it("binds :figure-label to the manifest-derived ordinal — no inline dangling-comma template literal", () => {
         expect(ESSAY).toContain(':figure-label="figureLabelFor(chapter, figures[i]!)"');
         expect(ESSAY).not.toMatch(/figure-label="`Chapter/);
+    });
+
+    it("seats a canonical hero provenance component in DashboardHero's named slot", () => {
+        expect(ESSAY).toContain('<template #provenance>');
+        expect(ESSAY).toContain(':is="chapter.hero.provenance"');
     });
 });

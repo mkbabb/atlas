@@ -7,5 +7,6 @@
 // within the family, not re-exported), mirroring the pre-split flat-bag surface.
 export * from "./ColorScale";
 export * from "./colorKind";
+export * from "./colorChannel";
 export * from "./oklab";
 export * from "./render-tier";

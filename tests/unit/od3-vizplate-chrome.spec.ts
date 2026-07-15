@@ -6,8 +6,8 @@
 //   (1) G14 — the 44px toolbar hit-floor: the compact dock-icon-button + dock-trigger override
 //       hooks on `.viz-dock` (Filters/Enlarge/Download), the ExpandableContainer `[data-part=
 //       trigger]` pad (Expand), and the YearScrubber pip block-axis pad (the scrub handle).
-//   (2) the floating FILTERS pill kill — `.cp-filter-trigger` is gone from FilterPanel.vue, and
-//       the two lawful doors (dock pull-out + per-plate icon) are untouched.
+//   (2) the floating FILTERS pill kill — `.cp-filter-trigger` is gone from FilterPanel.vue while
+//       the drawer model and per-plate filter door remain available.
 //   (3) the plate-foot ledger band — ONE `.viz-plate__foot` row hosting the `#provenance` slot
 //       when filled, the `VizKeyStats` stat-band fallback when not, never both.
 //   (4) the shell landmarks — `<header role=banner>` in PlatformShell, `tabindex="-1"` on
@@ -24,7 +24,6 @@ const VIZ_PLATE_CSS = read("../../src/charts/frame/VizPlate.css");
 const CHART_FRAME_CSS = read("../../src/charts/frame/ChartFrame.css");
 const YEAR_SCRUBBER = read("../../src/filter/ui/components/YearScrubber.vue");
 const FILTER_PANEL = read("../../src/filter/ui/FilterPanel.vue");
-const DOCK_FOOT = read("../../src/platform/chrome/dock/components/DockFoot.vue");
 const PLATFORM_SHELL = read("../../src/platform/chrome/shell/PlatformShell.vue");
 const SITE_COLOPHON = read("../../src/platform/chrome/masthead/SiteColophon.vue");
 
@@ -46,8 +45,18 @@ describe("O-D3 G14 — the 44px toolbar hit-floor", () => {
         expect(vizDockRule).toMatch(/--dock-trigger-padding-inline:\s*0\.875rem/);
     });
 
-    it("the glyph itself is untouched (still the 1rem/16px rung the padding hooks size around)", () => {
-        expect(VIZ_PLATE_CSS).toMatch(/\.viz-dock__glyph\s*{\s*width:\s*1rem;\s*height:\s*1rem;/);
+    it("the glyph and padding combine to meet the 44px control floor", () => {
+        const rem = (source: string, pattern: RegExp): number =>
+            Number(source.match(pattern)?.[1] ?? Number.NaN);
+        const width = rem(VIZ_PLATE_CSS, /\.viz-dock__glyph\s*{\s*width:\s*([\d.]+)rem/);
+        const height = rem(VIZ_PLATE_CSS, /\.viz-dock__glyph\s*{[^}]*height:\s*([\d.]+)rem/);
+        const compact = rem(vizDockRule, /--dock-compact-control-padding:\s*([\d.]+)rem/);
+        const block = rem(vizDockRule, /--dock-trigger-padding-block:\s*([\d.]+)rem/);
+        const inline = rem(vizDockRule, /--dock-trigger-padding-inline:\s*([\d.]+)rem/);
+
+        for (const size of [(width + 2 * compact) * 16, (width + 2 * inline) * 16, (height + 2 * block) * 16]) {
+            expect(size).toBeGreaterThanOrEqual(44);
+        }
     });
 
     it("ChartFrame pads the ExpandableContainer's `[data-part=trigger]` (the Expand control) to 44×44", () => {
@@ -79,11 +88,6 @@ describe("O-D3 — the floating FILTERS pill kill (render-A cross-route; L33 X9)
     it("the drawer itself + its shared `open` model survive untouched (the pill kill is door-only, not feature-loss)", () => {
         expect(FILTER_PANEL).toContain('data-testid="filter-panel"');
         expect(FILTER_PANEL).toContain("useFilterPane");
-    });
-
-    it("the dock pull-out door (desktop row) still drives the SAME shared open flag", () => {
-        expect(DOCK_FOOT).toContain('data-testid="dock-filter-pullout"');
-        expect(DOCK_FOOT).toContain("useFilterPane");
     });
 
     it("the per-plate filter icon (VizPlate's own door) is untouched", () => {

@@ -127,12 +127,8 @@ const slots = useSlots();
 /** The hero plate reads the `text-headline` title rung + the more generous gutter (K3). */
 const isHero = computed(() => props.size === "hero");
 
-/** The legend's KEY-zone disposition. `rail` is a hero-register affordance only — a workhorse
-    plate's key never earns the side rail, so a stray `legendDock="rail"` on a default plate
-    falls back to the inline KEY column. */
-const dock = computed<"inline" | "rail" | "none">(() =>
-    props.legendDock === "rail" && !isHero.value ? "inline" : props.legendDock,
-);
+/** The host's layout resolver owns the rail clamp; ChartFrame only renders its decision. */
+const dock = computed(() => props.legendDock);
 /** The legend renders inline in the KEY column (the default) only when it is not railed/none. */
 const legendInline = computed(() => !!slots.legend && dock.value === "inline");
 /** The legend renders down the side rail (hero-register tall key). */
@@ -447,6 +443,7 @@ watch(open, (value) => {
                     :expand-label="`Expand ${ariaLabel}`"
                     :collapse-label="`Collapse ${ariaLabel}`"
                 >
+                    <template #expand-trigger />
                     <template #default="{ fullscreen }">
                         <!-- The body wrapper. The published 4.1.0 cut exposes stable `data-part`
                          hooks (`panel`/`overlay`/`trigger`) on the primitive's own surfaces, but the

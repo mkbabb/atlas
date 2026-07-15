@@ -64,6 +64,7 @@ import { computed } from "vue";
 import { PaperBackdrop } from "@mkbabb/glass-ui/paper-backdrop";
 import Aurora from "@/platform/chrome/background/Aurora.vue";
 import { useThemeKey } from "@/platform/composables/useThemeKey";
+import type { BackgroundFamily } from "@/skin";
 // The brand field IS C.W6.b's seeded Constellation.host (the reproducible seed + the ONE
 // NCSU-red anomaly node — the emergent-tricolor red leg), NOT a bare glass-ui <Constellation>.
 // The arbiter owns the SINGLE brand field so "one field per surface" holds (the gallery mounts
@@ -97,6 +98,7 @@ const grainOpacity = computed(() => {
     const isDark =
         typeof document !== "undefined" &&
         document.documentElement.classList.contains("dark");
+    if (props.kind === "brand") return isDark ? 0.016 : 0.012;
     return isDark ? 0.03 : 0.025;
 });
 
@@ -104,11 +106,17 @@ const grainOpacity = computed(() => {
     field. `data` → the three dashboards (USF/SCI/ECF) · `brand` → the gallery/about. */
 type SurfaceKind = "data" | "brand";
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         kind?: SurfaceKind;
+        /** Brand surfaces may opt into aurora. Data surfaces remain aurora-only. */
+        backgroundFamily?: BackgroundFamily;
     }>(),
-    { kind: "data" },
+    { kind: "data", backgroundFamily: "constellation" },
+);
+
+const field = computed<BackgroundFamily>(() =>
+    props.kind === "data" ? "aurora" : props.backgroundFamily,
 );
 </script>
 
@@ -116,14 +124,19 @@ withDefaults(
     <!-- The arbiter wrapper — fixed to the viewport behind the content, inert to pointers.
          It seats the ADDITIVE atmosphere stack (field z:-2, grain z:-1 ABOVE it); the
          content track (--z-content) floats above. -->
-    <div class="atmosphere" aria-hidden="true" data-testid="atmosphere">
+    <div
+        class="atmosphere"
+        aria-hidden="true"
+        data-testid="atmosphere"
+        :data-background-family="field"
+    >
         <!-- z:-2 — the FIELD, beneath the grain. On data it is the UNIVERSAL aurora
              (always present, no longer one-of-two); on brand it is the constellation
              (the gallery masthead, veiled by I6). Decision 2: the data branch mounts NO
              constellation. -->
-        <Aurora v-if="kind === 'data'" class="atmosphere__field" />
+        <Aurora v-if="field === 'aurora'" class="atmosphere__field" />
         <ConstellationHost
-            v-else-if="kind === 'brand'"
+            v-else
             seed="usf-atlas-cover"
             :count="NC_COUNTIES"
             class="atmosphere__field"

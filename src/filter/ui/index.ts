@@ -27,3 +27,7 @@ export { default as YearScrubber } from "./components/YearScrubber.vue";
 // — O-B8a (the chrome-blocked residue closes): FilterPanel value-imports `chrome/freshness`
 //   (the chrome root, homed by the O-B8a split), so the drawer host lands. —
 export { default as FilterPanel } from "./FilterPanel.vue";
+export { default as FilterContinuum } from "./FilterContinuum.vue";
+
+export { default as SourceDataBrowser } from "./SourceDataBrowser.vue";
+export * from "./source-data-browser";

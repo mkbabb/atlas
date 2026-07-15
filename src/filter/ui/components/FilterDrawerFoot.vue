@@ -162,7 +162,7 @@ const emit = defineEmits<{
     color: var(--foreground);
 }
 .cp-drawer__save-input:focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 2px solid var(--focus-ring-color);
     outline-offset: 0;
 }
 
@@ -190,7 +190,7 @@ const emit = defineEmits<{
     background: color-mix(in srgb, var(--accent, var(--primary)) 9%, transparent);
 }
 .cp-drawer__crosslink:focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 2px solid var(--focus-ring-color);
     outline-offset: 1px;
 }
 .cp-drawer__crosslink--pending {

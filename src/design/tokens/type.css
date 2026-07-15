@@ -2,6 +2,20 @@
    at O-B2. Holds the §A apex/figure-slug rungs + the reading-register golden ladder + the font-stack
    pins. THE WG-C successor home for the global +1–2-golden-step type bump (R-011/CD-20). */
 
+/* Q1's paired, typed tracks keep the cover figure within the ratified 1.4–2.2× title band.
+   Registration makes the interpolation a length calculation instead of an untyped token swap. */
+@property --q1-h1 {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 2.75rem;
+}
+
+@property --q1-rung {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 6.05rem;
+}
+
 /* §A — the type APEX rungs + THE CONTAINED FIGURE-SLUG REGISTER (FD1 §2.1, §1.2;
    C.W2.1, master H-1/H-2/H-3/H-7, NHI §3.1, FHV-1). PURE ADDITIONS over glass-ui's
    body rungs (--type-prose, --type-heading, …); glass-ui ships neither display apex.
@@ -122,6 +136,12 @@
         2.75rem,
         7cqw,
         4.5rem
+    );
+    --q1-h1: var(--type-page-title);
+    --q1-rung: clamp(
+        calc(var(--q1-h1) * 1.4),
+        var(--type-display-audacious),
+        calc(var(--q1-h1) * 2.2)
     );
     /* the page-hero <h1> cover-line — RESTS LARGE, h1 > h2 (O-C2 · §A3, 72/54/44).
         TRACK NOTE: §A3 specs 5.5cqw for the 72/52/44 ladder, but that math assumed a

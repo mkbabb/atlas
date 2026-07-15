@@ -83,9 +83,12 @@ const visible = computed<boolean>(
     align-items: baseline;
     gap: 0.4rem;
     font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.02em;
-    color: var(--muted-foreground);
+    color: light-dark(
+        color-mix(in oklab, var(--foreground), transparent 32%),
+        color-mix(in oklab, var(--foreground), transparent 5%)
+    );
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

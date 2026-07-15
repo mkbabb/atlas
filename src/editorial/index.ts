@@ -27,11 +27,17 @@ export * from "./rule-register";
 
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
 export * from "./useBeatLayout";
+export * from "./title-align";
+export * from "./story-card";
+export * from "./hero-system";
 export { default as AnimatedRule } from "./AnimatedRule.vue";
 export { default as DataAside } from "./DataAside.vue";
 export { default as PullFigure } from "./PullFigure.vue";
 export { default as StoryBeat } from "./StoryBeat.vue";
 export { default as DashboardHero } from "./DashboardHero.vue";
+export { default as GhostNumeral } from "./GhostNumeral.vue";
+export type { GhostNumeralScale, GhostNumeralSource } from "./GhostNumeral.vue";
+export { default as StoryCard } from "./StoryCard.vue";
 // v1.0.1 (O-B10 re-cut) — the `HeroFigure` contract (the hero's figure descriptor a route declares);
 // the `default`-only re-export dropped the named `<script>` type. Re-exported by name from the SFC.
 export type { HeroFigure } from "./DashboardHero.vue";

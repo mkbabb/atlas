@@ -17,3 +17,4 @@ export * from "./selection";
 export * from "./coordinator";
 export * from "./filter-codec";
 export * from "./route-fold";
+export * from "./rows";

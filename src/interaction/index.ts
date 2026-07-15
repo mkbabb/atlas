@@ -24,6 +24,8 @@ export * from "./pointer-machine";
 export * from "./usePointerGestures";
 export * from "./useAffordance";
 export * from "./useAffordanceHint";
+export * from "./hover-bridge";
+export * from "./useHoverBridge";
 
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
 export * from "./useVizContext";
@@ -44,6 +46,7 @@ export { default as ReadoutDrill } from "./ReadoutDrill.vue";
 // beyond the selection it dismisses. Consumed per-route (usf/sci/ecf placements + the abrogation).
 export { default as SelectionDrilldownPanel } from "./SelectionDrilldownPanel.vue";
 export type { DrilldownPlacement } from "./SelectionDrilldownPanel.vue";
+export * from "./projectDrilldown";
 export {
     parseViewBox,
     unionExtent,

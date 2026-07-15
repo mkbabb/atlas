@@ -26,6 +26,17 @@
 // literal is GONE, not that the dock is collapsed at a given viewport.
 
 import { computed, ref, type ComputedRef } from "vue";
+import { INSTRUMENT_SPRING } from "@/motion/instrument-spring";
+
+export type DockCollapseSource = "manual" | "register" | "scroll";
+const COLLAPSE_PRIORITY: Record<DockCollapseSource, number> = { manual: 30, register: 20, scroll: 10 };
+export const DOCK_COLLAPSE_SPRING = INSTRUMENT_SPRING;
+
+export function resolveDockCollapse(
+    intents: ReadonlyMap<DockCollapseSource, boolean>,
+): boolean | null {
+    return [...intents.entries()].sort((a, b) => COLLAPSE_PRIORITY[b[0]] - COLLAPSE_PRIORITY[a[0]])[0]?.[1] ?? null;
+}
 
 /** The minimal slice of the GlassDock exposed API this composable wraps — `expanded` (the live
     posture flag) + the imperative `expand()` / `collapse()` (the morph drivers). The dock binds
@@ -53,6 +64,8 @@ export interface UseDockCollapse {
     expand: () => void;
     /** Bind the `<GlassDock ref>` instance so the wrap reaches its exposed `expand`/`collapse`. */
     bindDock: (instance: DockExposed | null) => void;
+    /** Set or release one named intent; this is the only posture arbitration seam. */
+    setIntent: (source: DockCollapseSource, collapsed: boolean | null) => void;
 }
 
 /**
@@ -65,8 +78,22 @@ export interface UseDockCollapse {
 export function useDockCollapse(): UseDockCollapse {
     // The bound GlassDock instance (set once the `<GlassDock ref>` mounts). Null until bind.
     const dock = ref<DockExposed | null>(null);
+    const intents = new Map<DockCollapseSource, boolean>();
+    const reconcile = (): void => {
+        const next = resolveDockCollapse(intents);
+        const inst = dock.value;
+        if (!inst || next === null || next === !inst.expanded) return;
+        if (next) inst.collapse();
+        else inst.expand();
+    };
     const bindDock = (instance: DockExposed | null): void => {
         dock.value = instance;
+        reconcile();
+    };
+    const setIntent = (source: DockCollapseSource, next: boolean | null): void => {
+        if (next === null) intents.delete(source);
+        else intents.set(source, next);
+        reconcile();
     };
 
     // The live posture — mirrors the GlassDock `expanded` ref (inverted). Falls back to expanded
@@ -82,18 +109,17 @@ export function useDockCollapse(): UseDockCollapse {
 
     // The three drivers wrap the exposed imperative API (no-op before the instance binds).
     const collapse = (): void => {
-        dock.value?.collapse();
+        setIntent("manual", true);
     };
     const expand = (): void => {
-        dock.value?.expand();
+        setIntent("manual", false);
     };
     // The gear-toggle trigger (general, all registers) — flip the posture off the live `expanded`.
     const toggle = (): void => {
         const inst = dock.value;
         if (!inst) return;
-        if (inst.expanded) inst.collapse();
-        else inst.expand();
+        setIntent("manual", inst.expanded);
     };
 
-    return { collapsed, bound, toggle, collapse, expand, bindDock };
+    return { collapsed, bound, toggle, collapse, expand, bindDock, setIntent };
 }

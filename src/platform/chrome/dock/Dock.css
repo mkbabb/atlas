@@ -229,7 +229,7 @@
     /* the home ROW renders in the stepper's own scope (no DockNavItem skin reaches it) — the
        sheet cascade carries the one interaction mark it needs beyond the shared row rule. */
     .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step:focus-visible) {
-        outline: 2px solid var(--ring, currentColor);
+        outline: 2px solid var(--focus-ring-color, currentColor);
         outline-offset: -2px;
     }
     .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step-num) {

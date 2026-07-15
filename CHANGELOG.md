@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.0.0 — 2026-07-15
+
+### Breaking changes
+
+- `VizContract` and `WatchersVizContract` are no longer generic; the unused `_row` inference field is removed.
+- `CategorySkin` now carries the complete brand-skin contract. Custom category skins must declare identity, atmosphere, chrome, surface, and background-family fields in addition to their presentation fields.
+- `VizAlternate` declarations must state whether they use a `same-instance` or `cross-instance` morph. The registry now reports shipped truth rather than retaining unbuilt dumbbell and balance-beam rows.
+
+### Added
+
+- Public `./viz-set`, `./events`, `./skin`, and `./stage` entry points.
+- Canonical story manifests and persistent chapter stages, fixed-sector story cards, hero composition, source browsing, filter-ledger projection, appendix furniture, and unified interaction events.
+- Keyed ECharts view morphs, render-ready legends, shared swarm packing, and live-element handmark ornaments.
+
+### Dependencies
+
+- The intended peer floors are keyframes.js 5.3.3 and pencil-boil 0.8.1, retaining value.js 3.1.0. Publication is held until a Glass artifact widens its non-overlapping pencil-boil 0.4.x peer; no forced or legacy peer resolution is accepted.
+
 ## 1.1.3 — 2026-07-15
 
 ### Fixed

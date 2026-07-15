@@ -192,9 +192,8 @@ export interface UseAuroraConfig {
     config: AuroraConfig;
     /** The live scroll scalar [0,1] the Tide rides (C5's useDocumentScrollProgress). */
     p: ComputedRef<number>;
-    /** The theme-aware outer compositing envelope (→ `<Aurora :opacity-ceiling>`): clamped to the
-        deft floor on light stock (0.10) so the field stays subliminal + the dock plate reads even;
-        the gate-pinned 0.12 on dark. Re-derives on every `.dark` flip via `useThemeKey`. */
+    /** The theme-aware outer compositing envelope (→ `<Aurora :opacity-ceiling>`), pinned at the
+        calm-but-perceptible 0.30 light / 0.36 dark register. Re-derives on every theme flip. */
     opacityCeiling: ComputedRef<number>;
 }
 
@@ -227,8 +226,8 @@ export function useAuroraConfig(
     // THE AURORA OPACITY CEILING (J-CLOSE re-gate arm b) — the theme-aware outer envelope, owned
     // HERE so the aurora light-stock ceiling is the deft floor by composition (not a brighter wash
     // the dock plate bleeds through). `useThemeKey` BUMPS on any `.dark` flip, so the ceiling switches
-    // light↔dark the instant the theme changes. Light clamps to 0.10 (the render-matrix deft floor);
-    // dark holds at the gate-pinned 0.12 (no headroom over the dark dock-plate luminance floor).
+    // light↔dark the instant the theme changes. Light pins to 0.30 and dark to 0.36: the
+    // perceptibility floor and calm ceiling coincide, paired with the dock's 0.90 opacity floor.
     const themeKey = useThemeKey();
     const opacityCeiling = computed<number>(() => {
         void themeKey.value; // establish the theme dependency — re-derive on a `.dark` flip

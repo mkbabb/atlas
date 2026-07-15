@@ -1,6 +1,6 @@
 // platform/charts/viz-contract.ts — THE VIZ CONTRACT KEYSTONE (I2.a · DESIGN §3.7).
 //
-// A viz becomes a declared OBJECT, not an assembled template. ONE `VizContract<Row>` carries
+// A viz becomes a declared OBJECT, not an assembled template. ONE `VizContract` carries
 // every §E / §B affordance — the title, the axis-coloured description (E1), the key-stat strip
 // (B4), the options spec (E2), the legend policy (E5), the export payload (E3), the body-engine
 // selector (the render kind), and the empty-data signal (E8) — and ONE host (`VizPlate.vue`)
@@ -21,8 +21,10 @@
 // the body marks all wear ONE colour locus (i0-colorkind-law).
 
 import { isVNode } from "vue";
+import type { EChartsOption } from "echarts";
 import type { ColorKind } from "@/charts/scale/colorKind";
 import type { VizOptionSpec } from "@/charts/composables/useVizOptions";
+import type { VizSetContract } from "@/charts/viz-set";
 import type { ChartDataRow } from "@/charts/legend/ChartDataTable.vue";
 import type { SelectionKind } from "@/charts/contract/selection-contract";
 import type { VariantSpec } from "@/motion/variant-spec";
@@ -109,6 +111,48 @@ export interface LegendSpec {
     /** The low/high pole words flanking a continuous/stepped bar. */
     lowLabel?: string;
     highLabel?: string;
+}
+
+/** Render-ready legend derived from a view's resolved color channel. */
+export interface VizLegendSpec {
+    mode: "continuous" | "discrete";
+    colorKind?: "diverging" | "sequential";
+    hinge?: number;
+    showHinge?: boolean;
+    hingeLabel?: string;
+    lowLabel?: string;
+    highLabel?: string;
+    anchors?: (string | null)[];
+    chips?: Array<{ key: string; label: string; color: string }>;
+}
+
+/** One styled axis-name lockup seated in a chart gutter. */
+export interface AxisLockup {
+    measure: string;
+    unit?: string;
+    pole?: boolean;
+}
+
+/** One DOM-over-canvas annotation anchor. */
+export interface VizAnnotationPlacement {
+    id: string;
+    x?: number;
+    y?: number;
+    align?: "start" | "end" | "top" | "bottom";
+    dx?: number;
+    dy?: number;
+    gutter?: number;
+}
+
+/** One renderable view. Its zero-argument option thunk reads the consumer's live state directly. */
+export interface VizView {
+    id: string;
+    label: string;
+    option: () => EChartsOption;
+    options?: VizOptionSpec[];
+    axes?: { x?: AxisLockup; y?: AxisLockup };
+    annotations?: VizAnnotationPlacement[];
+    legend?: VizLegendSpec;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -346,9 +390,8 @@ export type AggregateStatsFacet = () => AggregateStat[];
     `useProvenance`); this wave claims NO render [src-rearchitecture §A.4; provenance-surface §3; CD-10]. */
 export type { ProvenanceFacet };
 
-/** THE VIZ CONTRACT (DESIGN §3.7). A viz declared once, rendered whole by `VizPlate`.
-    `Row` is the contract's row shape (defaults to `ChartDataRow`). */
-export interface VizContract<Row = ChartDataRow> {
+/** THE VIZ CONTRACT (DESIGN §3.7). A viz declared once, rendered whole by `VizPlate`. */
+export interface VizContract {
     /** The plate's ONE slug — the `?fig=` expand namespace AND the `?viz.<id>.*` options namespace. */
     id: string;
     /** N.WD1 §4.D1.2 — the SECONDARY loadDocument source this plate reads (`sci-schools`,
@@ -368,6 +411,8 @@ export interface VizContract<Row = ChartDataRow> {
     export: ExportSpec;
     /** E2 — the options spec. Declare `[]` explicitly rather than omit (no silent omission). */
     options?: VizOptionSpec[];
+    /** Alternate views over one mounted chart instance. */
+    viewSet?: VizSetContract;
     /** E5 — the legend policy (the default selection rule). Omit for a no-legend plate. */
     legend?: LegendSpec;
     /** The body-engine selector (export serializer + expand transition). Default `"echarts"`. */
@@ -453,16 +498,14 @@ export interface VizContract<Row = ChartDataRow> {
         byte-unchanged. */
     crossHighlight?: boolean;
 
-    /** The contract's typed row source (carried for `Row` inference at the call site). */
-    _row?: Row;
 }
 
 /** THE WATCHERS / USF-Integrity contract type (X3-2) — a `VizContract` with `evidenceTier` made
     REQUIRED. The new route's contracts are typed as this, so a WATCHERS figure that omits its evidence
     tag FAILS `tsc` (the born-RED coverage law), while the four shipped routes keep the OPTIONAL base
-    type and compile unchanged. Generic over the contract's row shape, exactly like `VizContract`. */
-export type WatchersVizContract<Row = ChartDataRow> = VizContract<Row> &
-    Required<Pick<VizContract<Row>, "evidenceTier">>;
+    type and compile unchanged. */
+export type WatchersVizContract = VizContract &
+    Required<Pick<VizContract, "evidenceTier">>;
 
 /** Is a value a declared `VizContract` (vs a Component, a `ChapterScene`, or a sentinel)? A contract
     is a plain object carrying the required `id` + `description` + `export` fields (NOT a VNode). The

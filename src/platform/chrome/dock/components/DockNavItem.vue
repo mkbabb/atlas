@@ -116,7 +116,7 @@ const emit = defineEmits<{
     border-color: color-mix(in srgb, var(--foreground) 35%, transparent);
 }
 .usf-dock__step:focus-visible {
-    outline: 2px solid var(--ring, currentColor);
+    outline: 2px solid var(--focus-ring-color, currentColor);
     outline-offset: 2px;
 }
 

@@ -42,7 +42,7 @@ const props = withDefaults(
         variant?: RuleVariant;
         /** The demarcation tier — `full` (chapter rule) · `short` (figure rule) · `hero`
             (the heavier page-cover rule below the DashboardHero). */
-        weight?: "full" | "short" | "hero";
+        weight?: "full" | "short" | "hero" | "seam";
         /** The ghost chapter figure (variant="numeral") → the Roman watermark. */
         numeral?: number;
         /** The InkMark grain determinism (the SectionDivider seed law — pixel-identical reloads). */
@@ -52,6 +52,7 @@ const props = withDefaults(
 );
 
 const isShort = computed(() => props.weight === "short");
+const isSeam = computed(() => props.weight === "seam");
 // Every divider is a HAIRLINE: chapter/hero use the clean pen stroke; figure uses the pencil
 // whisper. Both Glass presets are stroke ribbons, so a separator can never become a filled almond.
 const brush = computed<"pen" | "pencil">(() =>
@@ -114,6 +115,8 @@ const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : "
              no boil — the frame-guard); the bidirectional scroll draw for `draw` (Clock B, the
              view() draw the underlines use). The brush, grain, and clip-path wipe are ALL
              library-rendered (the thin-consumer contract; no atlas stroke cubic). -->
+        <span v-else-if="isSeam" class="animated-rule__seam" />
+
         <InkMark
             v-else
             class="animated-rule__ink"
@@ -189,6 +192,19 @@ const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : "
     height: 22px;
     margin-block-start: clamp(1.5rem, 4vw, 3rem);
     margin-block-end: clamp(3rem, 7vw, 6rem);
+}
+/* StoryCard's literal one-pixel silver seam: the existing divider owns separator semantics,
+   while this bounded weight deliberately skips the tapered InkMark. */
+.animated-rule--seam {
+    block-size: 1px;
+    margin-block: var(--storycard-pad, 1rem);
+    opacity: 1;
+}
+.animated-rule__seam {
+    display: block;
+    inline-size: 100%;
+    block-size: 1px;
+    background: var(--silver-rule, var(--border));
 }
 
 /* THE GHOST NUMERAL — the recessive ⑤ atmosphere watermark (text-ghost-numeral owns the

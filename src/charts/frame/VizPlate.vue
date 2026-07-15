@@ -33,6 +33,7 @@ import {
     DropdownMenuItem,
 } from "@mkbabb/glass-ui/dropdown-menu";
 import ChartFrame from "@/charts/frame/ChartFrame.vue";
+import VizGearDock from "@/charts/frame/VizGearDock.vue";
 import VizDescription from "@/charts/legend/VizDescription.vue";
 import VizKeyStats from "@/charts/legend/VizKeyStats.vue";
 import ChartLegend from "@/charts/legend/ChartLegend.vue";
@@ -128,7 +129,11 @@ defineExpose({ archetype });
              active + the dock is closed. The expand seam ChartFrame owns rides the enlarge button. -->
         <template #actions>
             <slot name="actions" />
-            <div class="viz-dock" role="group" :aria-label="`${contract.title} controls`">
+            <VizGearDock
+                class="viz-dock"
+                :label="`${contract.title} controls`"
+                :applied-count="activeFilterCount"
+            >
                 <!-- (1) THE FILTER-TOGGLE — raises the inline per-viz filter dock (a TOGGLE, the open
                      state persisting until re-toggled; NOT a click-away popover). Bound to the viz's
                      `filterDimensions` (J-FRAME's facet, CONSUMED). A Badge count-pip rides it when
@@ -216,7 +221,7 @@ defineExpose({ archetype });
                     />
                     <Maximize2 v-else class="viz-dock__glyph" aria-hidden="true" />
                 </DockControl>
-            </div>
+            </VizGearDock>
 
             <!-- THE INLINE PER-VIZ FILTER DOCK IS RETIRED (K-FILTER-UNIFIED §4.H). The filter-toggle
                  above now PINS + opens the ONE unified panel (`UnifiedFilterPanel`); the viz's

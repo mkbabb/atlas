@@ -128,7 +128,7 @@ const appendixHref = computed<string>(() => `#${appendixAnchorId(vizId)}`);
     padding-block-start: 0.6rem;
     border-block-start: 1px solid color-mix(in oklab, var(--foreground), transparent 90%);
     line-height: 1.45;
-    color: var(--muted-foreground);
+    color: inherit;
 }
 .provenance-bar__rung {
     display: contents;
@@ -168,11 +168,14 @@ const appendixHref = computed<string>(() => `#${appendixAnchorId(vizId)}`);
     color: var(--foreground);
 }
 .provenance-bar__count {
-    color: var(--muted-foreground);
+    color: color-mix(in oklab, var(--foreground), transparent 8%);
     white-space: nowrap;
 }
 .provenance-bar__appendix-link {
-    color: var(--muted-foreground);
+    color: light-dark(
+        color-mix(in oklab, var(--route-accent), var(--foreground) 50%),
+        color-mix(in oklab, var(--route-accent), var(--foreground) 22%)
+    );
     text-decoration: underline;
     text-underline-offset: 2px;
     text-decoration-color: color-mix(in oklab, currentColor, transparent 55%);

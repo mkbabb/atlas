@@ -182,7 +182,7 @@ function resetOptions(): void {
     text-decoration: underline;
 }
 .viz-options-band__reset:focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 2px solid var(--focus-ring-color);
     outline-offset: 2px;
 }
 </style>

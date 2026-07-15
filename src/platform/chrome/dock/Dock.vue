@@ -101,8 +101,8 @@ const {
     bound,
     toggle: collapseToggle,
     collapse,
-    expand,
     bindDock,
+    setIntent,
 } = useDockCollapse();
 // The `<GlassDock ref>` instance — typed as the minimal exposed slice `useDockCollapse` wraps.
 // Vue's component template ref hands back the exposed surface ({ expanded, expand, collapse, … });
@@ -122,8 +122,7 @@ watch(
     [dockRef, isPhone],
     ([inst, phone]) => {
         if (!inst) return; // no-op until the glass machine binds; the bind itself re-fires this
-        if (phone) collapse();
-        else expand();
+        setIntent("register", phone ? true : null);
     },
     { immediate: true },
 );
@@ -141,8 +140,7 @@ watch(
 const { collapsed: scrollCollapsed } = useScrollChrome({ source: scrollProgress });
 watch(scrollCollapsed, (edge) => {
     if (isPhone.value) return;
-    if (edge) collapse();
-    else expand();
+    setIntent("scroll", edge);
 });
 
 // ── THE VIEW-MODE TOGGLE — RETIRED FROM THE SERVED DOCK (O-DIR-4 ARM 3) ──────────────────────────
@@ -249,6 +247,8 @@ onBeforeUnmount(() => {
                 ref="crestRef"
                 :as-button="isPhone"
                 :expanded="sheetOpen"
+                :crest="ctx?.crest"
+                :morph-stage="collapsed ? 'seed' : 'full'"
                 @toggle="onCrestToggle"
             />
         </template>

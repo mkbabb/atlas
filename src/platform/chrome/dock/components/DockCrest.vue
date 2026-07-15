@@ -13,7 +13,7 @@
 // `aria-expanded`/`aria-controls`, and `toggle` drives the EXISTING `useDockCollapse` machine.
 // The desktop crest stays the home LINK (home rides the sheet's labeled first ROW on the phone).
 // `focusCrest` is exposed so the sheet's Esc/scrim close can return focus without scrolling.
-import { ref } from "vue";
+import { ref, type Component } from "vue";
 import BrandMark from "@/platform/chrome/masthead/BrandMark.vue";
 
 const props = withDefaults(
@@ -22,8 +22,10 @@ const props = withDefaults(
         asButton?: boolean;
         /** The sheet's open state — mirrored onto `aria-expanded` (button register only). */
         expanded?: boolean;
+        crest?: Component;
+        morphStage?: "seed" | "full";
     }>(),
-    { asButton: false, expanded: false },
+    { asButton: false, expanded: false, crest: undefined, morphStage: "full" },
 );
 
 const emit = defineEmits<{
@@ -52,6 +54,8 @@ defineExpose({ focusCrest });
         ref="markRef"
         variant="crest"
         :as="props.asButton ? 'button' : 'link'"
+        :crest="props.crest"
+        :data-morph-stage="props.morphStage"
         to="/"
         :label="props.asButton ? 'Page sections' : undefined"
         :aria-expanded="props.asButton ? String(props.expanded) : undefined"

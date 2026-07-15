@@ -24,9 +24,9 @@
 }
 
 /* N.WD1 §4.D1.5 — THE KEYBOARD FOCUS RIM (the platform overlay ring at the focused mark's anchor).
-   var(--ring) at 2.5px, ≥2px perimeter, seated in VIEWPORT space (position:fixed — the nav anchor is
+   var(--focus-ring-color) at 2.5px, ≥2px perimeter, seated in VIEWPORT space (position:fixed — the nav anchor is
    viewport-projected). It TRAVELS on the glass-ui SPATIAL spring and repositions INSTANTLY under PRM
-   (parity, not absence of meaning). REGISTER (N5 design consult, signed): 2.5px var(--ring) stands
+   (parity, not absence of meaning). REGISTER (N5 design consult, signed): 2.5px var(--focus-ring-color) stands
    (glass-ui's theme-resolved near-ink/near-ivory ring — ≥3:1 on both stocks); the travel rides
    `--spring-snappy` (the scheme-spring table's position-movement register — a ~3% overshoot that
    settles by a third of the beat), so each arrow-step ARRIVES with a felt spring, never a float. */
@@ -35,7 +35,7 @@
     z-index: 40;
     inline-size: 1.75rem;
     block-size: 1.75rem;
-    border: 2.5px solid var(--ring, var(--route-accent));
+    border: 2.5px solid var(--focus-ring-color, var(--route-accent));
     border-radius: var(--radius-pill);
     transform: translate(-50%, -50%);
     pointer-events: none;
@@ -111,7 +111,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    opacity: 0.62;
+    opacity: 0.78;
     transition: opacity 0.18s ease;
     --dock-compact-control-padding: 0.875rem;
     --dock-trigger-padding-block: 0.875rem;
@@ -147,8 +147,8 @@
     }
 }
 .viz-dock__glyph {
-    width: 1rem;
-    height: 1rem;
+    width: 1.25rem;
+    height: 1.25rem;
 }
 /* The filter-toggle + its applied-summary pip share one positioned slot so the count rides the
    control's corner. */

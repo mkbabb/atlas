@@ -194,7 +194,7 @@ const activeBeat = useActiveBeat();
     background: color-mix(in srgb, var(--foreground) 6%, transparent);
 }
 .usf-toc__row:focus-visible {
-    outline: 2px solid var(--ring, currentColor);
+    outline: 2px solid var(--focus-ring-color, currentColor);
     outline-offset: -2px;
 }
 

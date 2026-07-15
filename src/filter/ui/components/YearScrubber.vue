@@ -184,7 +184,7 @@ const emit = defineEmits<{
     font-weight: 600;
 }
 .year-scrubber__pip:focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 2px solid var(--focus-ring-color);
     outline-offset: 2px;
     border-radius: var(--radius-mark);
 }

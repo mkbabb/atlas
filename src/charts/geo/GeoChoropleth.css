@@ -20,7 +20,7 @@
 /* The roving keyboard cursor — a ring drawn on the active mark, ring-only (no fill), so
    the keyboard focus is visible on the plate without a second render system. */
 .geo-shape[data-kbd-active="true"] {
-    stroke: var(--ring);
+    stroke: var(--focus-ring-color);
     stroke-width: 2.5;
 }
 /* K-D-GEO §4.D — THE HOVER OUTLINE-TRACE. On pointer-enter (or a linked RAISE) the outline re-inks

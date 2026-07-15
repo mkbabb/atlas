@@ -47,6 +47,9 @@ import type { ColorKind } from "@/charts/scale/colorKind";
 import type { DashboardCategory } from "@/contract";
 import { resolveCategorySkin } from "@/skin/category";
 import { CompletionSeal, resolveCompletionSeal } from "@/design/recipes/completion";
+import type { TitlePole } from "@/contract";
+import { resolveTitleAlign, type TitleAlign } from "./title-align";
+import GhostNumeral, { type GhostNumeralSource } from "./GhostNumeral.vue";
 
 /** One audacious cover figure — the pre-formatted value (routed through format.ts at the
     call site / the manifest, INV-E1), the unit caption (the F6.4 unit/context word), and the
@@ -117,8 +120,17 @@ const props = withDefaults(
             LEADS with the signed figure, so its sign === the store `thesisSign` by construction — the
             k-paper-thesis-coherence guard). `null`/omit ⇒ no deck (the guarded-computed precedent). */
         standfirst?: string | null;
+        /** The bounded page-title pole. `auto` preserves the default start alignment. */
+        align?: TitleAlign;
+        /** Chapter ordinal for the chapter-masthead-only ghost. Omit on unnumbered covers. */
+        ordinal?: number;
     }>(),
-    { colorKind: "diverging", thesisIndex: 0 },
+    { colorKind: "diverging", thesisIndex: 0, align: "auto" },
+);
+
+const titleAlign = computed<TitlePole>(() => resolveTitleAlign(props.align, "left"));
+const ghostSource = computed<GhostNumeralSource | null>(() =>
+    props.ordinal != null && props.ordinal > 0 ? { ordinal: props.ordinal } : null,
 );
 
 /** Parse a figure's value into a number for the count-up; a non-numeric string (already
@@ -273,13 +285,18 @@ function rankNumTrack(f: HeroFigure): Record<string, number> | undefined {
              doubles as a chapter locator (O-C2 point 3 · ANSWERS Q-11). The `.page-title-wayfind`
              recipe (§1b) reveals it over the tail of the SAME native scroll timeline; at rest it has
              zero footprint (absent from the rest state). -->
-        <h1 class="dashboard-hero__title text-page-title">{{ title
+        <div class="dashboard-hero__title-band" :data-title-align="titleAlign">
+            <GhostNumeral v-if="ghostSource" :source="ghostSource" />
+            <h1
+                class="dashboard-hero__title text-page-title atlas-title-align"
+            >{{ title
             }}<span
                 v-if="coverKicker"
                 class="page-title-wayfind"
                 aria-hidden="true"
                 >{{ coverKicker }}</span
             ></h1>
+        </div>
         <p class="dashboard-hero__dek text-prose">{{ dek }}</p>
         <!-- THE COVER STANDFIRST (K-PAPER-COVER · ARM B) — the magazine deck / felt so-what, DERIVED
              off the route's signed thesis figure (it LEADS with the signed figure, so its sign matches

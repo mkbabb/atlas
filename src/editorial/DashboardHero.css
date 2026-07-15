@@ -65,6 +65,10 @@
     /* the page <h1> — the receded quiet label (text-page-title); the recipe owns face/axes/size. */
     max-inline-size: var(--measure, 36ch);
 }
+.dashboard-hero__title-band {
+    position: relative;
+    isolation: isolate;
+}
 .dashboard-hero__dek {
     margin: 0;
     max-inline-size: var(--measure, 60ch);
@@ -98,6 +102,8 @@
        member carries its own rung. */
     opacity: var(--attn-hero);
     align-items: start;
+    /* Q1: the default triad consumes the same bounded rung as every ranked member. */
+    --type-figure-slug: var(--q1-rung);
     /* THE COVER-HERO SERIES CLS RESERVATION (L3-CSS · Fork 12 — relocated off the platform recipe
        sheet onto the DashboardHero that OWNS the audacious series; serves demand/sci/ecf). The series
        lays out at h=0 first (the `cqw` figure-slug + count-up resolve a frame late) then jumps to its
@@ -184,7 +190,7 @@
 }
 .dashboard-hero__figure--lede .dashboard-hero__value {
     /* the crown rides the FULL audacious rung (`--rank-scale-lede: 1`) — the page apex. */
-    --type-figure-slug: calc(var(--type-display-audacious) * var(--rank-scale-lede));
+    --type-figure-slug: calc(var(--q1-rung) * var(--rank-scale-lede));
     opacity: var(--attn-hero);
     /* THE PAYER HUE (I11 §2 · design-usf §0 ⓪) — the crown is the net CARRY (a payer-side figure),
        so it wears the diverging-LOW payer pole (one-color-one-meaning, INV-2: the payer pole is the
@@ -213,13 +219,13 @@
 .dashboard-hero__figure--support .dashboard-hero__value {
     /* the graded middle (PROVISIONAL, §7) — the support rung between lede + ancillary; its rung is
        `--rank-scale-support` (`calc(1/1.3)`, the byte-equivalent successor to the old `/1.3`). */
-    --type-figure-slug: calc(var(--type-display-audacious) * var(--rank-scale-support));
+    --type-figure-slug: calc(var(--q1-rung) * var(--rank-scale-support));
     opacity: var(--attn-data);
 }
 .dashboard-hero__figure--ancillary .dashboard-hero__value {
     /* the recessed flank — the rung recessed to `--rank-scale-ancillary` (0.59) + the ink ducked to
        `--attn-data`, so the flanks read as the crown's supporting magnitudes, not co-equal KPIs. */
-    --type-figure-slug: calc(var(--type-display-audacious) * var(--rank-scale-ancillary));
+    --type-figure-slug: calc(var(--q1-rung) * var(--rank-scale-ancillary));
     opacity: var(--attn-data);
 }
 /* The recessed flank's CAPTION text stays full-ink (WCAG 1.4.3 AA — the recession governs the

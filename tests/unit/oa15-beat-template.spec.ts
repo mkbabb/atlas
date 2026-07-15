@@ -233,21 +233,17 @@ describe("O-A15 · SuperlativeRegister (Q-48) — the never-incriminate ceiling 
 });
 
 describe("O-A15 · vizAlternates (Q-30) — the registry + expand-menu binding + catalog (facility)", () => {
-    it("the full brainstormed set is declared; the usf + ecf pairs are built (O-X12/X10-LIB registry truth-up)", () => {
-        expect(VIZ_ALTERNATES.length).toBeGreaterThanOrEqual(7);
-        // O-X12: both usf alternates (dumbbell ⇄ usf-ranked-strip, balance-beam ⇄ usf-scatter) are
-        // real, wired components — `built:true` now means built in both directions (a shipped
-        // component was previously mismarked `false`, an unbuilt one previously mismarked `true`).
-        // X10-LIB: the ecf pair (packed-bars ⇄ ecf-treemap, lollipop ⇄ ecf-bars, O-D14) verified the
-        // same way — ChartersTreemap.vue/ConsultantsRankedBar.vue both wire `useVizAlternates` and
-        // render the real `PackedBars.vue`/`Lollipop.vue` components — flipped true in BOTH directions.
+    it("declares only truthful surviving alternates", () => {
+        expect(VIZ_ALTERNATES).toHaveLength(5);
         expect(VIZ_ALTERNATES.filter((a) => a.built).map((a) => a.id)).toEqual([
-            "dumbbell",
-            "balance-beam",
+            "beeswarm",
             "packed-bars",
             "lollipop",
         ]);
-        expect(VIZ_ALTERNATES.every((a) => a.mobileCompat)).toBe(true); // the 390 compat tooth target
+        expect(VIZ_ALTERNATES.find((a) => a.id === "beeswarm")?.morph).toBe(
+            "same-instance",
+        );
+        expect(VIZ_ALTERNATES.every((a) => a.mobileCompat)).toBe(true);
     });
     it("alternatesFor + vizMenuOptions — the base is the default option, alternates follow", () => {
         expect(alternatesFor("speedtest-hex").map((a) => a.id)).toEqual([
@@ -259,15 +255,15 @@ describe("O-A15 · vizAlternates (Q-30) — the registry + expand-menu binding +
         expect(opts).toHaveLength(3);
     });
     it("useVizAlternates — select swaps, an unknown id is a no-op, reset returns to base", () => {
-        const m = useVizAlternates("usf-ranked-strip");
-        expect(m.selected.value).toBe("usf-ranked-strip");
+        const m = useVizAlternates("ecf-treemap");
+        expect(m.selected.value).toBe("ecf-treemap");
         expect(m.hasAlternates.value).toBe(true);
-        m.select("dumbbell");
-        expect(m.selected.value).toBe("dumbbell");
+        m.select("packed-bars");
+        expect(m.selected.value).toBe("packed-bars");
         m.select("not-a-viz");
-        expect(m.selected.value).toBe("dumbbell"); // no-op
+        expect(m.selected.value).toBe("packed-bars");
         m.reset();
-        expect(m.selected.value).toBe("usf-ranked-strip");
+        expect(m.selected.value).toBe("ecf-treemap");
     });
     it("the storybook CATALOG groups every base with alternates (the gallery data source)", () => {
         expect(VIZ_ALTERNATE_CATALOG.map((g) => g.base)).toContain("speedtest-hex");

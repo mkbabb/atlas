@@ -21,37 +21,10 @@
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import type { ECharts } from "echarts/core";
 import { EXPAND_SETTLE_KEY } from "@/charts/scene/expand-settle";
+import type { VizAnnotationPlacement } from "@/charts/contract/viz-contract";
 
-/** One anchored overlay placement — a data coordinate + the named slot to seat there. */
-export interface VizPlacement {
-    /** A stable id (the slot name + the dom key). */
-    id: string;
-    /** The data-X (omit for an axis-only anchor — `yAxis` pins to the left gutter at this y). */
-    x?: number;
-    /** The data-Y (omit for an axis-only anchor — `xAxis` pins to the bottom gutter at this x). */
-    y?: number;
-    /** The chip's anchor edge relative to the projected point (mirrors ECharts `label.position`).
-        `end` reads rightward from the point; `start` leftward; `top`/`bottom` above/below. */
-    align?: "start" | "end" | "top" | "bottom";
-    /** A fixed pixel offset added after projection (the markLine label's `inside-end-top` nudge). */
-    dx?: number;
-    dy?: number;
-    /**
-     * O-D10-LIB (§5-A3 carry) — for an AXIS-ONLY placement (the OTHER coordinate omitted), the
-     * reserved-gutter pixel inset along the OMITTED axis, measured from that axis's zero-default
-     * edge (a y-only placement's `gutter` insets rightward from the host's left edge — the
-     * grid's own left pixel margin, `grid.left`, a value the consumer already knows since it
-     * configured the option). Before this field an axis-only placement anchored at the host's
-     * raw edge (pixel 0) with NO notion of the true axis-label margin, so a wide chip grown
-     * `align:"end"` from that anchor could reach past the gutter and overlap plotted marks (the
-     * O-D10 hinge-chip find — "renders the DOM chip much closer to the plot's inner edge than a
-     * true reserved gutter"). Pair `gutter` with `align:"start"` to anchor the chip's FAR edge at
-     * the true gutter boundary, growing AWAY from the plot — the chip then structurally cannot
-     * overlap data, regardless of its own width. `dx`/`dy` still apply as a fine nudge FROM this
-     * anchor. Omit ⇒ 0 (today's host-edge anchor, byte-identical to every existing consumer).
-     */
-    gutter?: number;
-}
+/** Backward-compatible name for the canonical contract placement. */
+export type VizPlacement = VizAnnotationPlacement;
 
 const props = withDefaults(
     defineProps<{

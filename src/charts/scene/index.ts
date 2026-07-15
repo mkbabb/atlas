@@ -7,4 +7,5 @@ export * from "./usePaperCallout";
 export { default as PaperCallout } from "./PaperCallout.vue";
 export { default as ScrollLetteringHeading } from "./ScrollLetteringHeading.vue";
 export { default as ScrollTimeline } from "./ScrollTimeline.vue";
+export { default as ChapterStageView } from "./ChapterStage.vue";
 export { default as StickyScene } from "./StickyScene.vue";

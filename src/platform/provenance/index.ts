@@ -30,3 +30,5 @@ export * from "./coverage";
 export * from "./appendix";
 export * from "./provenance-lines";
 export { default as ProvenanceAppendix } from "./ProvenanceAppendix.vue";
+export { default as SourceLink } from "./SourceLink.vue";
+export { default as VizAppendixDock } from "./VizAppendixDock.vue";

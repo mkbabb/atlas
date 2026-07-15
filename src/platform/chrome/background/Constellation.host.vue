@@ -60,25 +60,35 @@
 // resolves `--ncsu-red` off the live overlay canvas via `getComputedStyle` (so a dark-mode flip /
 // token override re-tints it — the theme watcher forces the re-read even when the breath is parked).
 // The `#cc0000` fallback is the HEAD token value.
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Constellation } from "@mkbabb/glass-ui/constellation";
 import type { ConstellationField } from "@mkbabb/glass-ui/constellation";
 import { useDebounceFn } from "@vueuse/core";
 import { useAtmosphereActivity } from "@/platform/chrome/background/composables/useAtmosphereActivity";
+import {
+    constellationShouldRun,
+    nextConstellationPhase,
+    WAKE_CROSSFADE_MS,
+    type ConstellationPhase,
+    type ConstellationRegister,
+} from "@/platform/chrome/background/composables/constellation-register";
 import { useAtmosphereTier } from "@/platform/chrome/background/composables/useAtmosphereTier";
 import { useThemeKey } from "@/platform/composables/useThemeKey";
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         /** Node count — passed through to the shipped engine. Default 100 (NC's counties —
             the civic-scalar density the brand mount seeds; D2.d / M10). */
         count?: number;
         /** The reproducible field seed — same lattice every load, capture-stable. */
         seed?: number | string;
+        /** `live` while visible, static `bake`, or belt-gated `auto` (default). */
+        register?: ConstellationRegister;
     }>(),
     {
         count: 100,
         seed: "usf-atlas-cover",
+        register: "auto",
     },
 );
 
@@ -103,14 +113,27 @@ const { tier, tide } = useAtmosphereTier();
 // — the fleck's own 2D rAF (the lattice is now a static raster, no loop). The belt parks the fleck
 // when the tab is hidden / idle > 4 s / under PRM; `active` folds PRM so it composes with the
 // engine's reduced-motion fence, never replaces it.
-const { active } = useAtmosphereActivity();
+const { active, hidden, reduced } = useAtmosphereActivity();
+const shouldRun = computed<boolean>(() =>
+    constellationShouldRun(props.register, {
+        active: active.value,
+        hidden: hidden.value,
+        reduced: reduced.value,
+    }),
+);
+
+const phase = ref<ConstellationPhase>("asleep");
+const liveMounted = ref(false);
+const liveVisible = ref(false);
+const captureKind = ref<"seed" | "sleep" | null>(null);
+const latticeMounted = computed(() => liveMounted.value || captureKind.value !== null);
+const latticeFrozen = computed(() => captureKind.value === "seed");
 
 // ── THE STATIC-TEXTURE BAKE (O-F3) ───────────────────────────────────────────────────────────
 // `baking` mounts the transient live <Constellation> (frozen, opacity:0 — it GPU-renders its
 // backing store, never shows on screen) ONLY for the capture window; once its canvas has painted a
 // deterministic frame we `drawImage` it onto the static bake canvas and set `baking = false`, which
 // UNMOUNTS the live lattice → the render loop dies. Between bakes: 0 draws, 0 WebGPU context.
-const baking = ref<boolean>(false);
 /** The transient live lattice's imperative handle — `field.canvas` is the substrate canvas we bake
     (the WebGPU/WebGL2 surface; a 2D `drawImage` source once the async device has painted). */
 const latticeRef = ref<{ field: ConstellationField } | null>(null);
@@ -215,10 +238,45 @@ function pollBake(): void {
 
 /** Arm a bake pass: mount the transient hidden live lattice, then poll it to a static capture. */
 function startBake(): void {
-    if (bakeRaf) return; // a pass is already in flight — coalesce
+    if (bakeRaf || liveMounted.value) return; // a pass is already in flight — coalesce
     bakeFrames = 0;
-    baking.value = true; // mount the transient frozen lattice (opacity:0; GPU-renders, never shown)
+    captureKind.value = "seed";
     bakeRaf = requestAnimationFrame(pollBake);
+}
+
+/** Capture the exact on-screen live frame, then swap to that raster with no visual dissolve. */
+function sleepFromLive(): void {
+    if (!liveMounted.value || bakeRaf) return;
+    phase.value = nextConstellationPhase(phase.value, "sleep");
+    captureKind.value = "sleep";
+    bakeFrames = 0;
+    bakeRaf = requestAnimationFrame(pollBake);
+}
+
+/** Mount the live field and cross-dissolve the standing raster into it. */
+async function wakeLive(): Promise<void> {
+    if (liveMounted.value || reduced.value) return;
+    if (bakeRaf) {
+        cancelAnimationFrame(bakeRaf);
+        bakeRaf = 0;
+    }
+    captureKind.value = null;
+    phase.value = nextConstellationPhase(phase.value, "wake");
+    liveVisible.value = false;
+    liveMounted.value = true;
+    await nextTick();
+    await nextTick();
+    if (shouldRun.value) liveVisible.value = true;
+}
+
+function onWakeTransitionEnd(event: TransitionEvent): void {
+    if (
+        event.target !== event.currentTarget ||
+        event.propertyName !== "opacity" ||
+        phase.value !== "waking"
+    )
+        return;
+    phase.value = nextConstellationPhase(phase.value, "woke");
 }
 
 /** Commit terminus: stop polling and UNMOUNT the live lattice — the render loop dies, the raster
@@ -228,13 +286,24 @@ function finishBake(): void {
         cancelAnimationFrame(bakeRaf);
         bakeRaf = 0;
     }
-    baking.value = false;
+    const completed = captureKind.value;
+    captureKind.value = null;
+    liveVisible.value = false;
+    liveMounted.value = false;
+    if (completed === "sleep") {
+        phase.value = nextConstellationPhase(phase.value, "slept");
+    } else {
+        phase.value = "asleep";
+    }
     bakedOnce = true;
+    if (shouldRun.value) void wakeLive();
 }
 
 /** Re-bake on the small explicit input set (MOVE 3), debounced so a resize drag coalesces to ONE
     bake at rest (O(handful/session), never per-frame). */
-const rebake = useDebounceFn(startBake, 200);
+const rebake = useDebounceFn(() => {
+    if (!shouldRun.value) startBake();
+}, 200);
 
 // The resolved NCSU-red, cached (the breath re-paints every frame; the getComputedStyle probe must
 // not). Re-resolved on mount + on every theme flip (the watcher forces the re-read).
@@ -328,7 +397,8 @@ onMounted(() => {
     // resize/theme flip, ONLY GPU pass of the session.
     paintFleck(0);
     syncFleck();
-    startBake();
+    if (shouldRun.value) void wakeLive();
+    else startBake();
     if (bakeCanvas.value && typeof ResizeObserver !== "undefined") {
         // ONE observer: the fleck follows the box immediately (cheap), the lattice re-bakes only on
         // a REAL size change, debounced (the standing raster is DPR/size-locked to the box).
@@ -337,7 +407,7 @@ onMounted(() => {
             const c = bakeCanvas.value;
             if (!c || !bakedOnce) return; // the mount bake owns the first pass; ignore its RO echo
             if (c.clientWidth === lastCssW && c.clientHeight === lastCssH) return;
-            rebake();
+            if (!liveMounted.value) rebake();
         });
         ro.observe(bakeCanvas.value);
     }
@@ -347,6 +417,12 @@ onMounted(() => {
 // off tier A (tier: low-core / save-data / PRM), resume on return to tier A + an active reader.
 watch([active, tide], syncFleck);
 
+watch(shouldRun, (run) => {
+    if (run) void wakeLive();
+    else if (liveMounted.value) sleepFromLive();
+    else if (!bakedOnce) startBake();
+});
+
 // THE THEME FLIP (motion-arch §2.4 "explicit moment"). A dark/light flip re-tints the lattice tokens
 // AND the fleck red; re-bake the lattice (debounced) at the new palette + force an immediate fleck
 // re-read (the breath may be parked, so the watcher repaints it directly).
@@ -354,7 +430,7 @@ const themeKey = useThemeKey();
 watch(themeKey, () => {
     resolvedRed = ""; // drop the cache so anomalyRed re-reads the flipped token
     paintFleck(performance.now());
-    rebake();
+    if (!liveMounted.value) rebake();
 });
 
 onBeforeUnmount(() => {
@@ -376,6 +452,9 @@ onBeforeUnmount(() => {
         ref="hostEl"
         class="constellation constellation-host"
         :data-atmosphere-tier="tier"
+        :data-register="props.register"
+        :data-phase="phase"
+        :style="{ '--constellation-wake': `${WAKE_CROSSFADE_MS}ms` }"
     >
         <!-- The brand fleck's own 2D layer, OVER the lattice raster (the readable red the gate
              samples; a Canvas2D fleck cannot share the GPU substrate canvas). -->
@@ -393,15 +472,22 @@ onBeforeUnmount(() => {
              the eye during the sub-second capture window; `warp-on-click` stays OFF (a cover plate is
              not a toy). The recessive `--constellation-alpha` default is NOT overridden here
              (GalleryView's cover scope owns the recession dial). -->
-        <Constellation
-            v-if="baking"
-            ref="latticeRef"
-            :count="count"
-            :seed="seed"
-            :warp-on-click="false"
-            :freeze="true"
-            class="constellation-lattice-live"
-        />
+        <div
+            v-if="latticeMounted"
+            class="constellation-live-shell"
+            :class="{ 'constellation-live-shell--visible': liveVisible }"
+            @transitionend="onWakeTransitionEnd"
+        >
+            <Constellation
+                ref="latticeRef"
+                :count="count"
+                :seed="seed"
+                :warp-on-click="false"
+                :wander="!latticeFrozen"
+                :freeze="latticeFrozen"
+                class="constellation-lattice-live"
+            />
+        </div>
     </div>
 </template>
 
@@ -417,7 +503,7 @@ onBeforeUnmount(() => {
 /* The layers stack full-bleed within the host: the baked lattice raster (and, transiently, the live
    capture source) beneath, the fleck over them. */
 .constellation-host > .constellation-lattice,
-.constellation-host > .constellation-lattice-live,
+.constellation-host > .constellation-live-shell,
 .constellation-host > .constellation-anomaly {
     position: absolute;
     inset: 0;
@@ -428,8 +514,36 @@ onBeforeUnmount(() => {
 
 /* The transient capture source never shows on the eye — it GPU-renders its backing store (which the
    bake reads) while invisible, then unmounts. */
-.constellation-host > .constellation-lattice-live {
+.constellation-host > .constellation-live-shell {
     opacity: 0;
+}
+
+.constellation-host > .constellation-live-shell--visible {
+    opacity: 1;
+}
+
+.constellation-host[data-phase="waking"] > .constellation-live-shell,
+.constellation-host[data-phase="waking"] > .constellation-lattice {
+    transition: opacity var(--constellation-wake) var(--ease-engrave);
+}
+
+.constellation-host[data-phase="waking"] > .constellation-lattice,
+.constellation-host[data-phase="live"] > .constellation-lattice,
+.constellation-host[data-phase="sleeping"] > .constellation-lattice {
+    opacity: 0;
+}
+
+.constellation-live-shell > .constellation-lattice-live {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .constellation-host {
+        --constellation-wake: 0ms !important;
+    }
 }
 
 /* The fleck rides ABOVE the lattice (a single recessive brand mark, never a competitor). */

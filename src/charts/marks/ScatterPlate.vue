@@ -32,19 +32,10 @@ import VizTextOverlay, {
     type VizPlacement,
 } from "@/charts/legend/VizTextOverlay.vue";
 import { useEChart } from "@/charts/composables/useEChart";
+import { armMorphPush, withMorphIdentity } from "@/charts/morph";
+import EChartOrnament from "@/charts/glyph/EChartOrnament.vue";
 import { useHoverReadout, type HoverReadout } from "@/platform/stores/useHoverReadout";
-import type { VizContract } from "@/charts/contract/viz-contract";
-
-/** One styled axis-name lockup the engine seats in the reserved ECharts grid gutter. The plate
-    hands its split measure/unit + the gutter geometry (the grid insets differ per plate — the
-    `--axis-*` CSS vars below), so the lockup placement stays the plate's skin, the MOUNT the
-    engine's. */
-export interface AxisLockup {
-    measure: string;
-    unit?: string;
-    /** Whether the axis is SIGNED (a teal-pole tint) — symmetric $/$ axes stay neutral (§5 R5). */
-    pole?: boolean;
-}
+import type { AxisLockup, VizContract } from "@/charts/contract/viz-contract";
 
 const props = withDefaults(
     defineProps<{
@@ -53,6 +44,12 @@ const props = withDefaults(
         /** The pure (rows, dials, palette) → EChartsOption derivation (the I-ARCH `useXOption`
             seam, passed in). The engine threads it into `useEChart` unchanged. */
         option: () => EChartsOption;
+        /** Active view id. Changes are pushed once with morph animation; ordinary paints stay inert. */
+        activeView?: string;
+        /** Data-only repaint fingerprint. Deliberately excludes `activeView`. */
+        fingerprint?: () => string;
+        /** Selected mark keyed ornament; null leaves the chart unadorned. */
+        ornamentKey?: string | null;
         /** Map a datum's ECharts params to its entity key (onHover + the highlight bridge). */
         keyOf: (params: unknown) => string | null;
         /** Stamp the hovered key + this plate's origin into the store (the owner-gate enter). */
@@ -68,7 +65,7 @@ const props = withDefaults(
         /** The styled x-axis lockup (the reserved bottom-gutter measure/unit). */
         xLockup: AxisLockup;
         /** The styled y-axis lockup (the reserved left-gutter measure/unit). */
-        yLockup: AxisLockup;
+        yLockup?: AxisLockup | null;
         /** The reserved-gutter insets the lockups seat against (the ECharts grid.left/bottom etc.,
             differing per plate — SciScatter 70/52, BreakEven 72/72). Each is the CSS length the
             lockup edge anchors to; omit ⇒ the SciScatter default (the common case). Applied as
@@ -95,6 +92,10 @@ const props = withDefaults(
         annotationPlacements: () => [],
         readout: null,
         axisInsets: () => ({}),
+        activeView: undefined,
+        fingerprint: undefined,
+        yLockup: null,
+        ornamentKey: null,
     },
 );
 
@@ -123,12 +124,26 @@ const host = ref<HTMLElement | null>(null);
 // the plate wires its shared-hover watch off it. The option/onHover/keyOf are the plate's forks. ──
 const { chart, highlight, downplay } = useEChart({
     host,
-    option: () => props.option(),
+    option: () => withMorphIdentity(props.option(), props.contract.viewSet?.identity ?? { kind: props.contract.id }),
+    fingerprint: props.fingerprint ? () => props.fingerprint?.() ?? "" : undefined,
     onHover: (key) => props.onHover(key),
     keyOf: (params) => props.keyOf(params),
     // T-PERF-4 — defer init+paint to first viewport; the host box is pre-sized by `hostClass`.
     lazyMount: true,
 });
+
+watch(
+    () => props.activeView,
+    (active, previous) => {
+        const set = props.contract.viewSet;
+        if (!set || active == null || previous == null || active === previous || !chart.value) return;
+        chart.value.setOption(
+            armMorphPush(withMorphIdentity(props.option(), set.identity), set.transition),
+            { notMerge: true, lazyUpdate: true },
+        );
+    },
+    { flush: "post" },
+);
 
 // ── d-hover M1·M3·M5 — the OWNER-GATED publish (the shared readout seam). The plate hands a ready
 // `readout` payload (its own `sciEntityReadout`/`usfStateReadout` projection); the engine owns the
@@ -202,6 +217,7 @@ defineExpose({ chart, host, highlight, downplay });
                  plate owns the placement projection + the delegated pointer; the engine reserves
                  its slot. -->
             <slot name="overlay" />
+            <EChartOrnament :chart="chart" :mark-key="ornamentKey" />
             <!-- F6.9 (#14) — THE STYLED AXIS-NAME LOCKUPS (the BreakEvenScatter/RankedStrip seam):
                  measure + recessive unit typeset in the reserved grid gutters. The gutter geometry
                  is the plate's skin (the `--axis-*` placement CSS); the MOUNT is the engine's. -->
@@ -213,10 +229,11 @@ defineExpose({ chart, host, highlight, downplay });
                 axis="x"
             />
             <AxisNameLockup
+                v-if="yLockup"
                 class="scatter-axis scatter-axis--y"
-                :measure="yLockup.measure"
-                :unit="yLockup.unit"
-                :pole="yLockup.pole"
+                :measure="yLockup?.measure ?? ''"
+                :unit="yLockup?.unit"
+                :pole="yLockup?.pole"
                 axis="y"
             />
             <!-- F6.9 (#16) — THE ANNOTATION CHIP (the hinge / break-even chip): eyebrow + figure,

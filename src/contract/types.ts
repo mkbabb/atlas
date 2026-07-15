@@ -1,7 +1,7 @@
 import { inject, type Component, type InjectionKey, type VNodeChild } from "vue";
 import type { ColorKind } from "@/charts/scale/colorKind";
 import type { VizContract } from "@/charts/contract/viz-contract";
-import type { ChapterScene } from "@/charts/contract/scene-contract";
+import type { ChapterScene, ChapterStage } from "@/charts/contract/scene-contract";
 
 // The dashboard registry contracts. Structural (duck-typed), not OO: a dashboard
 // is whatever a `meta.ts`/`dashboard.ts` pair under dashboards/<slug>/ exports.
@@ -69,6 +69,8 @@ export interface DashboardMeta {
         scale-conditional contents-page axis (funds → connectivity → outcomes). Omit ⇒ the route
         falls to the 'More' section. A STRUCTURE facet (a closed union), not a copy register. */
     category?: DashboardCategory;
+    /** Optional route-authored inline SVG crest; the platform falls back to the TIL mark. */
+    crest?: Component;
 }
 
 /** The heavy half — each dashboard's `dashboard.ts` lazily resolves to the body
@@ -128,6 +130,8 @@ export interface DashboardContext {
     title: string;
     /** The brandmark glyph the dock renders top-of-rail (a monogram like "U"). */
     brand: string;
+    /** Optional route-authored inline SVG crest rendered by the persistent dock mark. */
+    crest?: Component;
     /** The flagship route — where the brandmark and the gallery card point. */
     flagshipRoute: string;
     /** The dock entries — section beats or sibling-view tabs (the same component). */
@@ -325,6 +329,7 @@ export type ChapterTitle = string | (() => VNodeChild);
 export type ChapterViz =
     | Component
     | VizContract
+    | ChapterStage
     | ChapterScene
     | "hero"
     | "colophon";

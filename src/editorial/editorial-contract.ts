@@ -11,9 +11,12 @@
 // colophon is `SiteColophon`'s), so the editorial unit stays publishable — no `@/dashboards` reach.
 
 import type { Chapter } from "@/contract";
+import type { Component } from "vue";
 import type { ColorKind } from "@/charts/scale/colorKind";
 import type { HeroFigure } from "./DashboardHero.vue";
 import type { Colophon } from "@/platform/chrome/masthead/SiteColophon.vue";
+import type { TitleAlign } from "./title-align";
+import type { StoryCardFacet } from "./story-card";
 
 /** The declared HERO facet — the page cover as DATA. Its shape is the `<DashboardHero>` prop surface
     (the crown lives on the chapter, not hand-mounted in the body), so the host renders it with a bare
@@ -36,6 +39,10 @@ export interface HeroFacet {
     coverKicker?: string;
     /** The magazine-deck standfirst beneath the cover (derived off the signed thesis figure). */
     standfirst?: string | null;
+    /** The bounded page-title pole; omit/auto preserves the start-aligned cover. */
+    align?: TitleAlign;
+    /** Optional live provenance content seated in DashboardHero's named provenance slot. */
+    provenance?: Component;
 }
 
 /** A `Chapter` widened with the editorial PAGE-FACETS the essay host renders directly. A `viz:"hero"`
@@ -43,8 +50,12 @@ export interface HeroFacet {
     declaring neither renders through the host's `#hero`/`#colophon` slot (the widening never breaks a
     route that has not adopted the facet). */
 export type EditorialChapter = Chapter & {
+    /** Optional fixed-sector veil card. Omit to retain the existing bare Beat rendering. */
+    card?: StoryCardFacet;
     /** The declared page-cover crown (renders through <DashboardHero> in place of the `#hero` slot). */
     hero?: HeroFacet;
     /** The declared provenance colophon (renders through <SiteColophon> in place of the `#colophon` slot). */
     colophon?: Colophon;
+    /** Optional marginal device projected from the canonical story point. */
+    ornament?: Component;
 };

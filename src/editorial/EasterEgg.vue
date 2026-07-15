@@ -161,7 +161,7 @@ function onKeydown(e: KeyboardEvent): void {
     color: var(--foreground);
 }
 .easter-egg__marker:focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 2px solid var(--focus-ring-color);
     outline-offset: 2px;
 }
 /* The pinned state — a quiet tell the find is latched open (the F6.10 persist). */

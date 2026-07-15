@@ -161,7 +161,7 @@ function onFocus(): void {
    reads "aimed here"). The focus verb's on-state pulls the GILT pole (the one-gilt focus tier). */
 .readout-drill__verb--on {
     color: var(--foreground);
-    background: color-mix(in oklab, var(--accent, var(--ring)) 16%, transparent);
+    background: color-mix(in oklab, var(--accent, var(--focus-ring-color)) 16%, transparent);
 }
 .readout-drill__verb[data-testid="readout-drill-focus"].readout-drill__verb--on {
     background: color-mix(

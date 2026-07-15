@@ -50,10 +50,12 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useRoute } from "vue-router";
 import { Surface } from "@mkbabb/glass-ui/surface";
 import ReadoutFacts from "@/charts/readout/ReadoutFacts.vue";
-import { useHoverReadout } from "@/platform/stores/useHoverReadout";
+import { useHoverReadout, type HoverReadout } from "@/platform/stores/useHoverReadout";
 import { useAffordanceHint } from "@/interaction/useAffordanceHint";
 import { MQ } from "@/design/foundations/breakpoints";
 import { transientSeat } from "@/charts/composables/useCardPlacement";
+import { useDismissArbiter } from "@/platform/interaction/useDismissArbiter";
+import { createHoverBridge } from "@/interaction/hover-bridge";
 
 /** A single labelled fact in the grid (the universal fact-row). */
 export interface Fact {
@@ -71,7 +73,9 @@ export interface Fact {
 // longer rendered here — it migrated to the FilterView card, sourced from `selectedKeys`. There are
 // no payload props (the per-viz mounts are gone — D1.2).
 const store = useHoverReadout();
-const readout = computed(() => store.readout);
+const sourceReadout = computed(() => store.readout);
+const bridgedReadout = ref<HoverReadout | null>(null);
+const readout = computed(() => bridgedReadout.value ?? sourceReadout.value);
 
 // ── THE FIRST-VIZ AFFORDANCE MICRO-LIFT (I-UX.b · UX-D1) ───────────────────────────────────────
 // The one-time, PRM-fenced, session-once micro-lift on the first interactive viz's first scroll-into-
@@ -113,6 +117,39 @@ function measureEl(): HTMLElement | null {
     if (c instanceof HTMLElement) return c;
     return (c.$el as HTMLElement | undefined) ?? null;
 }
+
+let pointer = { x: Number.NaN, y: Number.NaN };
+const hoverBridge = createHoverBridge({
+    anchor: () => {
+        const anchor = bridgedReadout.value?.anchor;
+        return anchor
+            ? { left: anchor.x - 6, right: anchor.x + 6, top: anchor.y - 6, bottom: anchor.y + 6 }
+            : null;
+    },
+    card: () => measureEl()?.getBoundingClientRect() ?? null,
+    onRelease: () => (bridgedReadout.value = null),
+});
+watch(
+    sourceReadout,
+    (next) => {
+        if (next) {
+            if (bridgedReadout.value && hoverBridge.holdsPoint(pointer.x, pointer.y)) return;
+            bridgedReadout.value = next;
+            hoverBridge.engage();
+        } else if (bridgedReadout.value) {
+            hoverBridge.release();
+        }
+    },
+    { immediate: true },
+);
+function trackPointer(event: PointerEvent): void {
+    pointer = { x: event.clientX, y: event.clientY };
+}
+onMounted(() => window.addEventListener("pointermove", trackPointer, true));
+onBeforeUnmount(() => {
+    window.removeEventListener("pointermove", trackPointer, true);
+    hoverBridge.destroy();
+});
 
 // Re-measure when the TRANSIENT card opens or its content/position changes (the facts grid
 // resizes the card). `nextTick` lets the DOM lay out before `getBoundingClientRect`. The pinned
@@ -198,17 +235,19 @@ const style = computed(() => {
 // with the SAME contract as Esc — `store.clear(origin)` (the readout-clear, NEVER a scroll reset, C43
 // esc-no-scroll parity). Guarded so a click on a producer's own mark (which selects + re-publishes)
 // does not race the clear: we only clear when the click landed OUTSIDE any interactive viz plate.
-function onDocumentPointerDown(e: PointerEvent): void {
-    if (readout.value === null) return;
-    const t = e.target as HTMLElement | null;
-    if (!t) return;
-    // a click inside a viz plate / a card surface is the producer's own gesture — let it own the
-    // publish/select; only a true "click away" (outside every plate + card) dismisses the transient.
-    if (t.closest("[data-viz-plate], [data-testid='hover-card'], [data-testid='filter-view']"))
-        return;
-    const origin = readout.value.origin;
-    if (origin) store.clear(origin);
-}
+useDismissArbiter().claim(() =>
+    readout.value
+        ? {
+              id: "hover-card",
+              priority: 10,
+              outsidePointer: true,
+              escape: true,
+              within: (path) => path.some((node) => node instanceof HTMLElement && Boolean(node.closest("[data-testid='hover-card']"))),
+              guards: (path) => path.some((node) => node instanceof HTMLElement && Boolean(node.closest("[data-viz-plate],[data-testid='filter-view']"))),
+              onDismiss: () => store.clearAll(),
+          }
+        : null,
+);
 
 // ── THE LIFECYCLE — Esc=clearAll (kills the ghost) + route-change clears (H.W1.a · §3) ─────────
 // Both gestures are PLATFORM dismissals (not a producer's leave), so they route through the store's
@@ -221,38 +260,6 @@ function onDocumentPointerDown(e: PointerEvent): void {
 // own Escape owns that keystroke) so this never double-handles a popover/drawer/input dismiss. The
 // shell's selection-Esc clears `selectedKeys` on the same keystroke; the pin tier is a projection of
 // that set, so the two stay in lockstep — `clearAll()` is the belt that also drops the transient ghost.
-function anEscOwnerIsOpen(): boolean {
-    if (typeof document === "undefined") return false;
-    // a glass-ui expand-fullscreen surface, the reka popover, or the filter drawer each own their Esc.
-    if (document.querySelector(".fixed.inset-0.z-modal")) return true;
-    if (document.querySelector("[data-dismissable-layer][data-state='open']"))
-        return true;
-    const el = document.activeElement as HTMLElement | null;
-    if (el) {
-        const tag = el.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
-        if (el.isContentEditable) return true;
-    }
-    return false;
-}
-// THE ESC DISMISS — clears the transient readout WITHOUT a scroll reset (J-FILTER C43 esc-no-scroll).
-// `store.clearAll()` only blanks the store (and the pin tier the FilterView reads); it NEVER calls a
-// scroll-seek, so `window.scrollY` is INVARIANT across the keystroke (the esc-no-scroll relation). We
-// DEFER to a higher-priority overlay / editable field (their own Escape owns that keystroke).
-function onEsc(e: KeyboardEvent): void {
-    if (e.key !== "Escape" || e.defaultPrevented) return;
-    if (anEscOwnerIsOpen()) return;
-    store.clearAll();
-}
-onMounted(() => {
-    window.addEventListener("keydown", onEsc);
-    // C43 click-away dismiss (parity with Esc) — a true outside-click clears the transient readout.
-    window.addEventListener("pointerdown", onDocumentPointerDown, true);
-});
-onBeforeUnmount(() => {
-    window.removeEventListener("keydown", onEsc);
-    window.removeEventListener("pointerdown", onDocumentPointerDown, true);
-});
 
 // ROUTE-CHANGE: the readout store is an app-singleton (NOT route-scoped like `selectedKeys`'s
 // `?sel=` codec), so a navigation must explicitly drop any stale card/pin before the next dashboard
@@ -286,7 +293,7 @@ watch(
             v-if="transientOpen && readout"
             :ref="(el) => setCardRef(el)"
             tier="floating"
-            class="hover-card-readout z-hovercard pointer-events-none max-w-xs px-3 py-2.5 transition-opacity duration-100"
+            class="hover-card-readout z-hovercard pointer-events-auto max-w-xs px-3 py-2.5 transition-opacity duration-100"
             :style="style"
             role="tooltip"
             data-testid="hover-card"

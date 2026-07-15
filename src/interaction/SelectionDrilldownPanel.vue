@@ -59,6 +59,7 @@ import type {
 import { useSelection } from "@/platform/stores/useSelection";
 import { useSelectionStat } from "@/platform/stores/useSelectionStat";
 import { PIN_CAP } from "@/platform/stores/useHoverReadout";
+import { projectDrilldown } from "./projectDrilldown";
 
 /** Where the panel docks (selection-drilldown §B.0). `dock-br` (default) floats bottom-right over the
     focal viz's dead-space corner; `dock-tr`/`inset` are the ecf/usf-integrity per-route overrides;
@@ -111,9 +112,6 @@ const { selectedItems, primaryItem } = storeToRefs(selection);
 // ⇒ absent (the `v-if` self-gate); n=1 ⇒ SINGLE (hover info alone); n≥2 ⇒ MULTI. No `isMulti` flag
 // anywhere — the two modes are two RENDER BRANCHES over one number, never two code paths. ──────────
 const n = computed(() => selectedItems.value.length);
-const mode = computed<"single" | "multi">(() =>
-    n.value >= 2 ? "multi" : "single",
-);
 
 // The verdict hue the card rim wears — the SAME data-hue locus the veil reads (never a hand-hex). */
 const rimHue = computed<string | null>(() => selection.veilHue);
@@ -143,11 +141,15 @@ function describe(item: SelectionKey): Described {
     };
 }
 
+const projection = computed(() => projectDrilldown(selectedItems.value, describe, () => null));
+const mode = computed<"single" | "multi">(() => projection.value.mode === "multi" ? "multi" : "single");
+
 // ── SINGLE (n=1) — the hover card, docked (selection-drilldown §B.1). The one selected item's glyph +
 // name + its stat facts + the drill verbs; NO aggregate, NO dropdown, NO mini-map header. ──────────
 const single = computed<Described | null>(() => {
-    const it = primaryItem.value ?? selectedItems.value[0] ?? null;
-    return it ? describe(it) : null;
+    if (projection.value.mode !== "single") return null;
+    const primary = primaryItem.value;
+    return primary ? describe(primary) : projection.value.item;
 });
 const singleStat = computed(() =>
     single.value ? stat.statFor(single.value.item, single.value.item.kind) : null,

@@ -55,25 +55,44 @@ import { toRoman } from "@/platform/composables/useRomanNumeral";
 import Beat from "@/editorial/Beat.vue";
 import AnimatedRule from "@/editorial/AnimatedRule.vue";
 import DashboardHero from "@/editorial/DashboardHero.vue";
+import GhostNumeral from "@/editorial/GhostNumeral.vue";
+import StoryCard from "@/editorial/StoryCard.vue";
 import SiteColophon from "@/platform/chrome/masthead/SiteColophon.vue";
 import VizPlate from "@/charts/frame/VizPlate.vue";
 import VizAggregateStats from "@/charts/legend/VizAggregateStats.vue";
+import ChapterStageView from "@/charts/scene/ChapterStage.vue";
 import StickyScene from "@/charts/scene/StickyScene.vue";
 import { isVizContract, type VizContract } from "@/charts/contract/viz-contract";
-import { isChapterScene, type ChapterScene } from "@/charts/contract/scene-contract";
+import {
+    isChapterScene,
+    isChapterStage,
+    type ChapterScene,
+    type ChapterStage,
+} from "@/charts/contract/scene-contract";
 import type { Chapter, ChapterTitle } from "@/contract";
 import { resolveLayout, beatPhases, hasMasthead, figureLabelFor } from "./useBeatLayout";
-import type { EditorialChapter } from "./editorial-contract";
+import type { EditorialChapter, HeroFacet } from "./editorial-contract";
 import { provideStoryDirector } from "@/story/story-director-provide";
 import { recedeStyle } from "@/story/corridor";
 import type { StoryChapter } from "@/story/story-contract";
+import { chaptersOf, type StoryManifest } from "@/story/manifest";
 import StoryCorridor from "@/story/StoryCorridor.vue";
 import { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
+import { resolveHeroSystem } from "./hero-system";
+import type { RuleVariant } from "./rule-register";
 
 const props = defineProps<{
-    /** The narrative as data — the route's chapters, declared in `context.ts` (I3 §1). */
-    chapters: Chapter[];
+    /** The canonical route story. When present it is the sole source of essay order. */
+    story?: StoryManifest;
+    /** Legacy narrative input retained while routes migrate to `story`. */
+    chapters?: Chapter[];
 }>();
+const chapters = computed<readonly Chapter[]>(() =>
+    props.story ? chaptersOf(props.story) : (props.chapters ?? []),
+);
+// The host's index-keyed composable pools require a static chapter shape for the lifetime of a route.
+// Chapter content remains live through `chapters`; only this setup-time shape snapshot is fixed.
+const chapterShape = chapters.value;
 const activeDashboard = useActiveDashboard();
 
 // ── K-EXPRESS D2 — THE AUTO-ZEBRA PLACEMENT (resolved ONCE, the sequence is STATIC per route) ──
@@ -81,10 +100,10 @@ const activeDashboard = useActiveDashboard();
 // slot), so the first narrative beat is phase 0 (title=left) deterministically. `layouts[i]` is the
 // resolved side-set the <Beat> stamps as `data-*` registers + the fallback reveal axis reads. Hoisted
 // here so `revealStyles` reads `layouts[i]` with no temporal-dead-zone hazard.
-const phases = beatPhases(props.chapters);
+const phases = beatPhases(chapterShape);
 // The Roman ordinal is a projection of the manifest order, never a second authored facet. Sentinels
 // carry 0; every masthead-bearing chapter advances exactly once in the same phase sequence as layout.
-const figures = props.chapters.map((c, i) =>
+const figures = chapterShape.map((c, i) =>
     hasMasthead(c) ? phases[i]! + 1 : 0,
 );
 // O-A15 · THE ONE-FACET READ (the collapse). When a route carries the resolved variation facet
@@ -93,7 +112,7 @@ const figures = props.chapters.map((c, i) =>
 // separate `resolveLayout` zebra derive. `resolveLayout` still runs (the orchestration law: the
 // template ORCHESTRATES the resolver, it does not replace it — dock/numbers stay its output); the
 // template only OVERRIDES the two poles it authors. Un-varied routes carry no `template` ⇒ byte-identical.
-const layouts = props.chapters.map((c, i) => {
+const layouts = chapterShape.map((c, i) => {
     const base = resolveLayout(c, phases[i]!);
     const t = (c as StoryChapter).template;
     return t
@@ -112,11 +131,11 @@ const layouts = props.chapters.map((c, i) => {
 // once), so the subscriber pool is built ONCE at setup — composables run only in setup (never
 // inside a computed); `setBeatEl` populates the per-beat element ref each subscriber reads from.
 const reduced = useReducedMotion();
-const beatEls = props.chapters.map(() => ref<HTMLElement | null>(null));
+const beatEls = chapterShape.map(() => ref<HTMLElement | null>(null));
 function setBeatEl(el: HTMLElement | null, i: number): void {
     if (beatEls[i]) beatEls[i].value = el;
 }
-const reveals = props.chapters.map((c, i) =>
+const reveals = chapterShape.map((c, i) =>
     useSectionReveal(beatEls[i], { tail: c.reveal?.tier === "tail" }),
 );
 
@@ -128,7 +147,7 @@ const reveals = props.chapters.map((c, i) =>
 // ZERO-COST otherwise: a route with no `transition` builds no director + no recede (every other route
 // stays byte-identical). The chapters carry the optional choreography facets (a `StoryChapter` is a
 // `Chapter` + `transition?`/`focus?`), read via the widening cast — the base prop stays `Chapter[]`.
-const storyChapters = props.chapters as StoryChapter[];
+const storyChapters = chapterShape as StoryChapter[];
 // N.WB3 · THE EDITORIAL FACET WIDENING — the same array read as `EditorialChapter[]` so the template
 // reads the optional `hero`/`colophon` page-facets (the base prop stays `Chapter[]`; a route that
 // declares neither is byte-identical). One array, two facet lenses (story + editorial), zero copies.
@@ -137,7 +156,7 @@ const storyChapters = props.chapters as StoryChapter[];
 // must iterate the LIVE prop (the old in-body host did exactly that). Only the chapter DATA is live;
 // the chapter COUNT + per-index SHAPE (masthead/sentinel) stay static per route — the setup-time
 // pools above (phases/layouts/beatEls/reveals, index-keyed) rest on that static-shape law.
-const editorialChapters = computed(() => props.chapters as EditorialChapter[]);
+const editorialChapters = computed(() => chapters.value as readonly EditorialChapter[]);
 const hasChoreography = storyChapters.some((c) => c.transition !== undefined);
 const director = hasChoreography ? provideStoryDirector(storyChapters) : null;
 if (director) {
@@ -187,12 +206,15 @@ const revealStyles = reveals.map((r, i) =>
     computed<Record<string, string>>(() => {
         // A SCENE beat emits NO beat-level reveal transform (the steps ARE its reveal) — a transform
         // ancestor perturbs the scene graphic's `position:sticky` pin (the K-SCENE pin-safety guard).
-        if (isChapterScene(props.chapters[i]!.viz))
+        if (
+            isChapterStage(chapters.value[i]!.viz) ||
+            isChapterScene(chapters.value[i]!.viz)
+        )
             return {} as Record<string, string>;
         if (supportsViewTimeline() || reduced.value)
             return {} as Record<string, string>;
         const t = r.t.value;
-        const dir = hasMasthead(props.chapters[i]!) ? layouts[i]!.scrollIn : "up";
+        const dir = hasMasthead(chapters.value[i]!) ? layouts[i]!.scrollIn : "up";
         const off = 1 - t;
         const x =
             dir === "left"
@@ -234,8 +256,34 @@ function revealShapeAttr(c: Chapter): string | undefined {
     a sentinel string and not a `VizContract` is treated as the feature-plate component the beat
     body mounts (the `<FundLedgerFlow />` form). */
 function vizComponent(v: Chapter["viz"]): Component | null {
-    if (v === "hero" || v === "colophon" || isVizContract(v)) return null;
+    if (
+        v === "hero" ||
+        v === "colophon" ||
+        isVizContract(v) ||
+        isChapterStage(v) ||
+        isChapterScene(v)
+    ) return null;
     return v as Component;
+}
+
+/** Canonical component-backed cover points keep the same lead treatment as the legacy hero arm. */
+function isCoverChapter(chapter: Chapter, index: number): boolean {
+    return chapter.viz === "hero" || (index === 0 && chapter.isBeat === false);
+}
+
+/** Non-beat sentinels never consume or render a FigureInitial, regardless of viz backing. */
+function hasFigure(chapter: Chapter): boolean {
+    return chapter.isBeat !== false && chapter.viz !== "hero" && chapter.viz !== "colophon";
+}
+
+/** DashboardHero's prop payload excludes the component carried for its named provenance slot. */
+function heroPropsOf(hero: HeroFacet, ordinal: number): ReturnType<typeof resolveHeroSystem>["heroProps"] {
+    return resolveHeroSystem({ hero, ordinal }).heroProps;
+}
+
+/** The numeral junction retires into the chapter-owned title-band ghost; other variants survive. */
+function junctionRule(variant: RuleVariant | undefined): Exclude<RuleVariant, "numeral"> {
+    return variant == null || variant === "numeral" ? "rule" : variant;
 }
 
 /** The chapter's title rendered as the <h2> child (the render-function bridge for the template). */
@@ -267,18 +315,20 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
          relative origin (the marks + the overlay scroll together in this flow). -->
     <div class="essay-flow">
     <template v-for="(chapter, i) in editorialChapters" :key="chapter.id">
-        <Beat
+        <component
+            :is="chapter.card ? StoryCard : Beat"
+            :facet="chapter.card"
             :id="chapter.id"
             :ref="(el: any) => setBeatEl(el?.$el ?? el ?? null, i)"
-            :figure="chapter.viz === 'colophon' ? undefined : figures[i]"
+            :figure="hasFigure(chapter) ? figures[i] : undefined"
             :color-kind="chapter.colorKind ?? 'diverging'"
             :hinge="chapter.hinge ?? 0.5"
             :figure-label="figureLabelFor(chapter, figures[i]!)"
             :reveal="chapter.reveal?.tier ?? 'default'"
-            :lift="chapter.reveal?.lift ?? chapter.viz !== 'hero'"
+            :lift="chapter.reveal?.lift ?? !isCoverChapter(chapter, i)"
             :testid="chapter.id"
             :title-owned="hasMasthead(chapter)"
-            :sticky="isChapterScene(chapter.viz)"
+            :sticky="isChapterStage(chapter.viz) || isChapterScene(chapter.viz)"
             class="essay-beat"
             :class="{ 'essay-beat--aside': chapter.reveal?.aside }"
             :style="revealStyles[i]?.value"
@@ -302,6 +352,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                     :style="recedeStyles[i]?.value"
                     :data-corridor-recede="hasCorridorEdge[i] ? '' : undefined"
                 >
+                    <GhostNumeral v-if="!chapter.card" :source="{ ordinal: figures[i]! }" />
                     <!-- SM-1 — the eyebrow carries the chapter's nav icon, tinted in the route data hue
                          (the "pops live in the icons" site). The TEXT stays muted ink (fill-vs-label). -->
                     <p class="eyebrow">
@@ -323,6 +374,15 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                 </div>
             </template>
 
+            <component
+                :is="chapter.ornament"
+                v-if="chapter.ornament"
+                class="essay-ornament"
+                :stage="figures[i]"
+                :data-ornament-stage="figures[i]"
+                aria-hidden="true"
+            />
+
             <!-- THE BEAT BODY — the chapter's viz. A feature-plate Component (the `<FundLedgerFlow />`
                  form, the plate owning its own <VizPlate>), a declared `VizContract` (rendered
                  through <VizPlate>, the E8 PlateVoid routing through `isEmpty()`), or the page-level
@@ -333,9 +393,16 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
             <template v-if="chapter.viz === 'hero'">
                 <DashboardHero
                     v-if="chapter.hero"
-                    v-bind="chapter.hero"
+                    v-bind="heroPropsOf(chapter.hero, figures[i]!)"
                     :category="activeDashboard.entry?.category"
-                />
+                >
+                    <template #provenance>
+                        <component
+                            :is="chapter.hero.provenance"
+                            v-if="chapter.hero.provenance"
+                        />
+                    </template>
+                </DashboardHero>
                 <slot v-else name="hero" />
             </template>
             <!-- N.WB3 · THE PAGE FOOT — the `colophon` facet (the hand-built provenance literal made
@@ -344,6 +411,11 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                 <SiteColophon v-if="chapter.colophon" :colophon="chapter.colophon" />
                 <slot v-else name="colophon" />
             </template>
+            <ChapterStageView
+                v-else-if="isChapterStage(chapter.viz)"
+                :stage="chapter.viz as ChapterStage"
+                :index="i"
+            />
             <!-- K-SCENE — a `ChapterScene` mounts the `<StickyScene>` host (the pinned-graphic stepped
                  narrative). It is neither a sentinel, a contract, nor a plain Component, so `vizComponent`
                  would mis-mount it; this branch precedes the contract + component branches. -->
@@ -374,7 +446,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                 :is="vizComponent(chapter.viz)"
                 v-else-if="vizComponent(chapter.viz)"
             />
-        </Beat>
+        </component>
 
         <!-- THE TRAILING CHAPTER RULE — the engraved <AnimatedRule> parting this beat from the next.
              The `:seed` is DERIVED from the chapter index (the SM-1/`:seed` cadence drift folds — the
@@ -387,9 +459,8 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
              the current position-derived figure (used only when the resolved variant is `numeral`). -->
         <AnimatedRule
             v-if="i < chapters.length - 1"
-            :variant="storyChapters[i]?.template?.rule ?? 'rule'"
-            :weight="chapter.viz === 'hero' ? 'hero' : 'full'"
-            :numeral="figures[i]"
+            :variant="junctionRule(storyChapters[i]?.template?.rule)"
+            :weight="isCoverChapter(chapter, i) ? 'hero' : 'full'"
             :seed="i + 1"
         />
     </template>
@@ -413,6 +484,27 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
    already `position:relative`), so no positioned block is introduced here (zero layout perturbation). */
 .essay-flow {
     display: contents;
+}
+
+.essay-masthead-cluster {
+    position: relative;
+    isolation: isolate;
+}
+
+.essay-ornament {
+    inline-size: clamp(3rem, 5vw, 4.5rem);
+    max-block-size: 9rem;
+    margin-inline: auto;
+    color: var(--route-accent);
+}
+
+@media (min-width: 1024px) {
+    .essay-ornament {
+        position: absolute;
+        inset-inline-end: clamp(-5rem, -5vw, -3rem);
+        inset-block-start: 1rem;
+        z-index: 1;
+    }
 }
 
 /* N.WB1 · THE MASTHEAD CLUSTER — the ONE wrapper the corridor recede's single opacity write rides

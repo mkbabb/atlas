@@ -66,7 +66,7 @@ const legend = computed(() => props.contract.legend);
     `#legend` slot wins (a bespoke legend); else the contract's `LegendSpec` drives a ChartLegend. */
 const legendDock = computed<"inline" | "rail" | "none">(() => {
     if (!legend.value && !slots.legend) return "none";
-    return legend.value?.dock === "rail" ? "rail" : "inline";
+    return legend.value?.dock === "rail" && props.contract.size === "hero" ? "rail" : "inline";
 });
 /** The ChartLegend mode from the contract's `LegendMode` (the §E5 default: stepped for N≥7,
     rail/inline otherwise). `rail`/`inline` map onto ChartFrame's dock; the BAR mode is continuous

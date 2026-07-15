@@ -43,6 +43,10 @@ export interface SceneStep {
     state: SceneState;
 }
 
+/** One ordered option on a persistent chapter stage. The persistent-stage vocabulary deliberately
+    reuses the proven discrete scene step carrier: narration and state remain one authored unit. */
+export type SceneOption = SceneStep;
+
 /** The runtime the host hands a scene's `apply` effect — the platform stores the scene drives. */
 export interface SceneRuntime {
     /** Drive the GLOBAL year scope (the map's choropleth re-slices off `?year`). A no-op before the
@@ -85,6 +89,19 @@ export interface ChapterScene {
     apply?: (step: SceneStep, rt: SceneRuntime) => void;
 }
 
+/** A canonical persistent chapter stage. Unlike the legacy `ChapterScene`, a stage has its own
+    stable identity and names its ordered states as `scenes`; the renderer adapts those states to the
+    existing StickyScene host so the graphic mounts once and no second clock is introduced. */
+export interface ChapterStage {
+    readonly kind: "stage";
+    readonly id: string;
+    graphic: Component | VizContract;
+    scenes: SceneOption[];
+    focal?: boolean;
+    anchor?: SceneAnchor;
+    apply?: (scene: SceneOption, rt: SceneRuntime) => void;
+}
+
 /** The injected scene runtime — a graphic (or a scene-aware sibling) reads the active step THROUGH
     here (optional; outside a scene the inject default is null, so a graphic is byte-unchanged
     standalone). FORWARD-EXTENSIBLE: the scrubbed continuous `transitionT` (the opt-in richer path,
@@ -118,5 +135,15 @@ export function isChapterScene(v: unknown): v is ChapterScene {
         typeof v === "object" &&
         v !== null &&
         (v as { kind?: string }).kind === "scene"
+    );
+}
+
+/** The canonical persistent-stage guard. Its literal discriminant is disjoint from both
+    `ChapterScene` (`kind:"scene"`) and `VizContract`/Vue component values. */
+export function isChapterStage(v: unknown): v is ChapterStage {
+    return (
+        typeof v === "object" &&
+        v !== null &&
+        (v as { kind?: string }).kind === "stage"
     );
 }

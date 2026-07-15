@@ -7,8 +7,7 @@
 // Run:
 //   vite build -c vite.lib.config.mts
 //
-// The 14 barrel entries are the exports-map subpaths (contract/chrome/charts/provenance/filter/
-// story/motion/editorial/interaction/data/stores/composables/lib/vite). `preserveModules` keeps a
+// The barrel entries are the exports-map subpaths. `preserveModules` keeps a
 // 1:1 source→dist tree so each subpath resolves to a real emitted module (not a mega-bundle).
 // `external` externalizes EVERY bare specifier (peers + runtime deps + node builtins) AND the NC/US
 // topology JSON (a generic viz lib must not ship geodata; the instance supplies the loaders). The
@@ -28,15 +27,19 @@ const ROOT = fileURLToPath(new URL(".", import.meta.url));
 const OUT = resolve(ROOT, "dist");
 const src = (p: string) => resolve(ROOT, "src", p);
 
-// The 14 TS/Vue barrel entries the exports map names (styles = CSS, handled by the css aggregate
+// The TS/Vue barrel entries the exports map names (styles = CSS, handled by the css aggregate
 // pass in scripts/build-styles.mjs; not a JS entry here). Entry KEYS become the flat dist/<key>.js.
 const entries = {
     contract: src("contract/index.ts"),
     chrome: src("platform/chrome/index.ts"),
     charts: src("charts/index.ts"),
+    "viz-set": src("charts/viz-set.ts"),
     provenance: src("platform/provenance/index.ts"),
     filter: src("filter/index.ts"),
+    events: src("events/index.ts"),
+    skin: src("skin/index.ts"),
     story: src("story/index.ts"),
+    stage: src("stage/index.ts"),
     motion: src("motion/index.ts"),
     editorial: src("editorial/index.ts"),
     interaction: src("interaction/index.ts"),

@@ -1,24 +1,13 @@
-// story/viz-alternates.ts — THE VIZ-TYPE ALTERNATE REGISTRY + EXPAND-MENU BINDING (O-A15 ANSWERS Q-30).
-//
-// The template's viz-type field opens to the FULL brainstormed alternate set — every alternate is a
-// SELECTABLE option via the per-plate expand menu, each mobile-compatible (phone-legible at 390), NOT
-// the phone-legibility subset the SYNTH draft deferred. THE FACILITY lands here:
-//   · the alternate REGISTRY (the closed descriptor set — base viz ⇄ its alternates)
-//   · the per-plate expand-menu BINDING (`useVizAlternates` — the options + the selected ref)
-//   · the storybook CATALOG (`VIZ_ALTERNATE_CATALOG` — the grouped gallery data source; the repo has
-//     no storybook harness, so the catalog EXPORT is the storybook facility a gallery route consumes).
-//
-// The per-viz alternate COMPONENTS are the NAMED same-tranche WG-D successors (deferral contract R4):
-// O-D5/O-D6 (usf dumbbell/balance-beam) · O-D10 (sci beeswarm) · O-D14 (ecf packed-bars/lollipop) ·
-// O-D16 (speedtest county-choropleth/dot-density) + O-D29/O-D30 (demand/vft) — they BUILD the
-// components + carry the per-alternate 390 render tooth. This registry DECLARES all of them now.
+// The alternate registry and the legacy cross-component selection binding. Same-instance
+// alternatives are represented by VizSetContract; cross-instance consumers retain this binding.
 
 import { computed, ref, type ComputedRef, type Ref } from "vue";
+import type { VizSetContract } from "@/charts/viz-set";
 
 /** A VIZ ALTERNATE — one selectable substitute for a base viz. The descriptor the expand menu binds +
     the storybook catalogs; the COMPONENT is the named WG-D owner's (deferred). */
 export interface VizAlternate {
-    /** The alternate viz id (the option value — e.g. `"dumbbell"`). */
+    /** The alternate viz id (the option value — e.g. `"beeswarm"`). */
     id: string;
     /** The expand-menu label (the human option copy). */
     label: string;
@@ -36,24 +25,68 @@ export interface VizAlternate {
         built, checked both directions — a shipped component marked `false` is as much a lie as an
         unbuilt one marked `true`). */
     built: boolean;
+    /** Same mounted ECharts instance vs an explicit component swap. */
+    morph: "same-instance" | "cross-instance";
 }
 
-/** THE REGISTRY — the full brainstormed alternate set (O-A15 WORK · the ⇄ pairs). Each base viz opens
-    to one or more alternates; the speedtest hex opens to TWO (county-choropleth ⇄ dot-density). The
-    usf pair (dumbbell + balance-beam, O-D5/O-D6) and the ecf pair (packed-bars + lollipop, O-D14) are
-    `built:true` — all four land consumer-side (the AR-10 single-consumer precedent) and are wired live
-    (`useVizAlternates("ecf-treemap", …)` in ChartersTreemap.vue, `useVizAlternates("ecf-bars", …)` in
-    ConsultantsRankedBar.vue); the rest are their WG-D owners' (declared here so the expand menu +
-    catalog are whole from the facility cut). */
+/** Registry rows reflect current shipped consumers and tracked Speedtest alternatives. */
 export const VIZ_ALTERNATES: readonly VizAlternate[] = Object.freeze([
-    { id: "dumbbell", label: "Dumbbell", base: "usf-ranked-strip", mobileCompat: true, owner: "O-D5", built: true },
-    { id: "balance-beam", label: "Balance beam", base: "usf-scatter", mobileCompat: true, owner: "O-D6", built: true },
-    { id: "beeswarm", label: "Beeswarm", base: "sci-scatter", mobileCompat: true, owner: "O-D10", built: false },
-    { id: "packed-bars", label: "Packed bars", base: "ecf-treemap", mobileCompat: true, owner: "O-D14", built: true },
-    { id: "lollipop", label: "Lollipop", base: "ecf-bars", mobileCompat: true, owner: "O-D14", built: true },
-    { id: "county-choropleth", label: "County choropleth", base: "speedtest-hex", mobileCompat: true, owner: "O-D16", built: false },
-    { id: "dot-density", label: "Dot density", base: "speedtest-hex", mobileCompat: true, owner: "O-D16", built: false },
+    { id: "beeswarm", label: "Beeswarm", base: "sci-scatter", mobileCompat: true, owner: "O-D10", built: true, morph: "same-instance" },
+    { id: "packed-bars", label: "Packed bars", base: "ecf-treemap", mobileCompat: true, owner: "O-D14", built: true, morph: "cross-instance" },
+    { id: "lollipop", label: "Lollipop", base: "ecf-bars", mobileCompat: true, owner: "O-D14", built: true, morph: "cross-instance" },
+    { id: "county-choropleth", label: "County choropleth", base: "speedtest-hex", mobileCompat: true, owner: "O-D16", built: false, morph: "cross-instance" },
+    { id: "dot-density", label: "Dot density", base: "speedtest-hex", mobileCompat: true, owner: "O-D16", built: false, morph: "cross-instance" },
 ]);
+
+export interface VizAlternateWorld {
+    mountedViewSets: Readonly<Record<string, VizSetContract | undefined>>;
+    wiredCrossInstanceBases: ReadonlySet<string>;
+}
+
+/** Registry claims and mounted/wired surfaces must agree in both directions. */
+export function assertVizAlternateTruthUp(
+    registry: readonly VizAlternate[],
+    world: VizAlternateWorld,
+): string[] {
+    const violations: string[] = [];
+    const mounted = Object.entries(world.mountedViewSets).filter(
+        (entry): entry is [string, VizSetContract] => entry[1] !== undefined,
+    );
+    if (mounted.length === 0 && world.wiredCrossInstanceBases.size === 0)
+        violations.push("truth-up world is empty");
+
+    for (const alternate of registry) {
+        if (alternate.morph === "same-instance") {
+            const present = world.mountedViewSets[alternate.base]?.views.some(
+                (view) => view.id === alternate.id,
+            );
+            if (alternate.built && !present)
+                violations.push(`${alternate.id}: built same-instance alternate has no VizView`);
+            if (!alternate.built && present)
+                violations.push(`${alternate.id}: built:false alternate has a VizView`);
+        } else if (
+            alternate.built &&
+            !world.wiredCrossInstanceBases.has(alternate.base)
+        ) {
+            violations.push(
+                `${alternate.id}: built cross-instance alternate has no wired consumer`,
+            );
+        }
+    }
+
+    for (const [base, set] of mounted) {
+        for (const view of set.views.slice(1)) {
+            const alternate = registry.find((item) => item.base === base && item.id === view.id);
+            if (!alternate)
+                violations.push(`${base}/${view.id}: mounted VizView has no registry alternate`);
+            else if (alternate.morph !== "same-instance")
+                violations.push(`${base}/${view.id}: mounted VizView is not same-instance`);
+            else if (!alternate.built)
+                violations.push(`${base}/${view.id}: mounted VizView is marked built:false`);
+        }
+    }
+    return violations;
+}
 
 /** A per-plate EXPAND-MENU OPTION — the base viz itself PLUS each of its alternates, rendered as a
     selectable list. The base is always `id === base` (the default option); the alternates follow. */

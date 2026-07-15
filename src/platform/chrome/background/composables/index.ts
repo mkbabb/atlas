@@ -6,5 +6,6 @@
 export * from "./useAuroraConfig";
 export * from "./useAuroraVeil";
 export * from "./useAtmosphereActivity";
+export * from "./constellation-register";
 export * from "./useAtmosphereTier";
 export * from "./atmosphere";

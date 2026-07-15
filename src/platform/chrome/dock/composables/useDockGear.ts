@@ -24,9 +24,7 @@
 // `Dock.vue` §A4) — the same `open` the dock filter pull-out flips — so there is ONE open
 // mechanism, no second fork (the J-FILTER re-point is a single ref swap when its singleton lands).
 
-import { computed, ref, type ComputedRef, type Ref } from "vue";
-import { useSelection } from "@/platform/stores/useSelection";
-import { useFilterPane } from "@/filter/composables/useFilterPane";
+import { ref, type Ref } from "vue";
 import { useMobileRegister } from "@/platform/composables/useMobileRegister";
 
 /** The gear posture's reactive surface — the dock composes these into its template. */
@@ -37,15 +35,8 @@ export interface UseDockGear {
     openGear: () => void;
     /** Close the gear controls sheet. */
     closeGear: () => void;
-    /** Mount-gate for the selection chip — TRUE only when a selection is live (C24). */
-    showChip: ComputedRef<boolean>;
-    /** The live selection count (the chip's `N selected` opener label). */
-    selectionCount: ComputedRef<number>;
     /** The `@media(--phone)` register read (J-MOBILE's `useMobileRegister`, CONSUMED). */
     isPhone: Ref<boolean>;
-    /** Raise the filter-view facility — the C24 chip's opener job (consumes the ONE-open-truth
-        filter seam; J-FILTER re-points this to its own singleton when the facility body lands). */
-    openFilterView: () => void;
 }
 
 /**
@@ -70,10 +61,6 @@ export function useDockGear(): UseDockGear {
     // The chip mounts ONLY when a selection is live — at `selectionCount=0` the node is ABSENT
     // (the 106px "selected: none" vertical readout is RECLAIMED). A pure projection of the ONE
     // selection store's set, co-located here because the chip and the gear share the foot register.
-    const selection = useSelection();
-    const selectionCount = computed(() => selection.selectedKeys.size);
-    const showChip = computed(() => selectionCount.value > 0);
-
     // ── The @media(--phone) register read (CONSUMED — J-MOBILE's one JS phone probe) ──
     const { isPhone } = useMobileRegister();
 
@@ -81,18 +68,10 @@ export function useDockGear(): UseDockGear {
     // The shown chip raises the filter-view facility. Until J-FILTER lands its own open
     // singleton, this consumes the EXISTING ONE-open-truth filter seam (the same `open` the dock
     // filter pull-out + the FilterPanel trigger flip) — ONE open mechanism, no second fork.
-    const { open: filterOpen } = useFilterPane();
-    const openFilterView = (): void => {
-        filterOpen.value = true;
-    };
-
     return {
         gearOpen,
         openGear,
         closeGear,
-        showChip,
-        selectionCount,
         isPhone,
-        openFilterView,
     };
 }

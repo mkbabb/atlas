@@ -19,18 +19,14 @@
 // Vue 3.5 reactive-props convention (atlas/CLAUDE.md §Vue 3.5 reactive-props) — a NEW component. The
 // destructured `ctx` is handed to `useDockDataState` exactly as the orchestrator's injected ctx was;
 // `ctx` read inside `hasFilter` compiles to a tracked `__props` read (reactive without a wrapper).
-import { computed } from "vue";
 import { DockSeparator } from "@mkbabb/glass-ui/dock";
-import { StatusDot } from "@mkbabb/glass-ui/status-dot";
 import { DarkModeToggle } from "@mkbabb/glass-ui/controls";
 import {
     Download,
     GitCompareArrows,
-    SlidersHorizontal,
     PanelLeftClose,
 } from "@lucide/vue";
 import DockSettings from "../DockSettings.vue";
-import { useFilterPane } from "@/filter/composables/useFilterPane";
 import { useDockGear } from "@/platform/chrome/dock/composables/useDockGear";
 import { useDockDataState } from "@/platform/chrome/dock/composables/useDockDataState";
 import type { DashboardContext } from "@/contract";
@@ -55,17 +51,11 @@ const emit = defineEmits<{
 // the `@media(--phone)` register read (CONSUMING the ONE `useMobileRegister` seam — no second
 // breakpoint home), and the FilterView opener (the C24 chip's job). The chip + the gear share the
 // foot register, so the gate co-locates here.
-const { gearOpen, showChip, selectionCount, isPhone, openFilterView } =
-    useDockGear();
-const selectionChipLabel = computed(() => `${selectionCount.value} selected`);
+const { gearOpen, isPhone } = useDockGear();
 
 // ── The A4 dock pull-out filter seam (useFilterPane — the ONE open truth) ──────────────────────
 // The foot's filter affordance summons the floating right `Drawer mode="live-behind"`; it drives
 // the SAME shared `useFilterPane().open` singleton the FilterPanel trigger flips — ONE open truth.
-const { open: filterOpen } = useFilterPane();
-/** Show the pull-out only when the active dashboard ships a filter body (else there is no lens). */
-const hasFilter = computed(() => Boolean(ctx.filterBody));
-
 // ── The data-state register (J-ARCH §3 · useDockDataState) ─────────────────────────────────────
 // The year-scrubber RANGE-mode toggle + the `useSavedViews` ⤓-save door, on the SAME `useViewParams`
 // year-scope and `platform:views` shelf they already shared (no second shelf, no second scope).
@@ -87,26 +77,6 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
              it is the FilterView OPENER: a `<button>` `N selected` pip that RAISES J-FILTER's
              filter-view facility. The StatusDot carries the non-color ON signal; `aria-live="polite"`
              announces the count when the chip mounts on the first select. -->
-        <button
-            v-if="showChip"
-            type="button"
-            class="usf-dock__sel-chip usf-dock__sel-chip--active"
-            data-testid="dock-selection-chip"
-            :data-selection-count="selectionCount"
-            aria-live="polite"
-            :aria-label="`${selectionChipLabel} — open the filter view`"
-            :title="`${selectionChipLabel} — open the filter view`"
-            @click="openFilterView"
-        >
-            <StatusDot
-                variant="custom"
-                size="sm"
-                class="usf-dock__sel-dot"
-                color="var(--cp-accent, var(--foreground))"
-            />
-            <span class="usf-dock__sel-label">{{ selectionChipLabel }}</span>
-        </button>
-
         <!-- ① THE MOBILE GEAR (@media(--phone), C23) — the four secondary controls collapse behind
              ONE `Settings` glyph opening the `DockSettings` controls sheet. The desktop register is
              BYTE-UNCHANGED: above `--phone` the four controls stay inline below. -->
@@ -116,12 +86,9 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
             :has-year-scope="hasYearScope"
             :year-mode-now="yearModeNow"
             :save-flash="saveFlash"
-            :has-filter="hasFilter"
-            :filter-open="filterOpen"
             :disable-transitions="disableTransitions"
             @toggle-range="toggleRange"
             @save-view="saveCurrentView"
-            @toggle-filter="filterOpen = !filterOpen"
         />
 
         <!-- ② THE INLINE SECONDARY CONTROLS (above --phone) — the year-range toggle, the ⤓-save
@@ -170,27 +137,6 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
             <!-- ④ The A4 dock pull-out — the filter affordance summoning the floating right
                  live-behind Drawer; it drives the SAME `useFilterPane().open` the FilterPanel
                  trigger flips (ONE open truth). -->
-            <div
-                v-if="hasFilter"
-                class="usf-dock__foot-controls usf-dock__foot-controls--pullout"
-            >
-                <button
-                    type="button"
-                    class="usf-dock__ctl"
-                    :class="{ 'usf-dock__ctl--on': filterOpen }"
-                    aria-label="Toggle filters"
-                    title="Filters"
-                    :aria-expanded="filterOpen"
-                    data-testid="dock-filter-pullout"
-                    @click="filterOpen = !filterOpen"
-                >
-                    <SlidersHorizontal
-                        class="usf-dock__ctl-glyph"
-                        aria-hidden="true"
-                    />
-                </button>
-            </div>
-
             <!-- The DARK-TOGGLE DIVIDER (H.W9 §D) — the DockSeparator fencing the dark toggle into
                  its own compartment, a visually separate register from the controls. -->
             <DockSeparator />
@@ -293,7 +239,7 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
     border-color: color-mix(in srgb, var(--foreground) 35%, transparent);
 }
 .usf-dock__sel-chip:focus-visible {
-    outline: 2px solid var(--ring, currentColor);
+    outline: 2px solid var(--focus-ring-color, currentColor);
     outline-offset: 2px;
 }
 /* The selection dot rides the consumed glass-ui <StatusDot variant="custom"> — it OWNS the circle
@@ -353,7 +299,7 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
     border-color: color-mix(in srgb, var(--foreground) 35%, transparent);
 }
 .usf-dock__ctl:focus-visible {
-    outline: 2px solid var(--ring, currentColor);
+    outline: 2px solid var(--focus-ring-color, currentColor);
     outline-offset: 2px;
 }
 /* The range toggle ON-state (range mode active) — the chrome accent pill, the same raised-meaning

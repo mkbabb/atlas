@@ -3,8 +3,10 @@
 // Framework-free chart helpers. Query algebra lives with the filter engine.
 export * from "./grid";
 export * from "./format";
+export * from "./source-data";
+export * from "./swarm";
 
 // v1.0.1 (O-B10 re-cut) — the `DataUrlSource` contract (the `{ filename, rows, chartEl }` payload a
 // plate hands the CSV/image export seam). Type-only: the `vizExport` runtime download helpers stay
 // family-internal (the plate furniture consumes them; a consumer authors the source, not the sink).
-export type { DataUrlSource } from "./vizExport";
+export * from "./vizExport";
