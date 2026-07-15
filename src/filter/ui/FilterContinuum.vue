@@ -81,7 +81,7 @@ onBeforeUnmount(cancelSettle);
 </template>
 
 <style scoped>
-.filter-continuum { position: fixed; inset-inline-end: 0; inset-block-start: 42%; z-index: var(--z-dock); }
+.filter-continuum { position: fixed; inset-inline-end: 0; inset-block-start: 66.667%; z-index: var(--z-dock); }
 .filter-continuum__trigger { display: flex; min-block-size: 44px; min-inline-size: 44px; align-items: center; gap: .4rem; padding: .55rem; border: 1px solid var(--border); border-inline-end: 0; border-radius: var(--radius-control) 0 0 var(--radius-control); background: var(--background); color: var(--foreground); transition: inline-size var(--instrument-spring-duration) var(--instrument-spring-ease); }
 .filter-continuum__trigger > svg { inline-size: 1.15rem; block-size: 1.15rem; flex: none; }
 .filter-continuum__count { display: grid; min-inline-size: 1.1rem; block-size: 1.1rem; place-items: center; border-radius: 999px; background: var(--foreground); color: var(--background); font: 700 .625rem/1 var(--font-mono); }

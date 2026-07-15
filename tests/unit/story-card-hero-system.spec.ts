@@ -28,6 +28,7 @@ describe("StoryCard composition", () => {
         expect(card).toContain("<Beat");
         expect(card.match(/<AnimatedRule/g)).toHaveLength(2);
         expect(card).toContain('weight="seam"');
+        expect(card).not.toMatch(/\.story-card\s*\{[^}]*border-radius/s);
         expect(source("src/editorial/DashboardEssay.vue")).toContain(
             ":is=\"chapter.card ? StoryCard : Beat\"",
         );

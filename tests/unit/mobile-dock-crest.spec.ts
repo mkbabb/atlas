@@ -26,7 +26,7 @@ describe("mobile dock crest ownership", () => {
         );
     });
 
-    it("compiles mobile dock state rules against the scoped host", () => {
+    it("compiles dock root and mobile state rules against the scoped host", () => {
         const { code, errors } = compileStyle({
             source: DOCK_CSS,
             filename: "Dock.css",
@@ -35,6 +35,11 @@ describe("mobile dock crest ownership", () => {
         });
 
         expect(errors).toEqual([]);
+        expect(code).toContain(".usf-dock[data-v-test]");
+        expect(code).not.toContain("[data-v-test] .usf-dock");
+        expect(code).toContain(
+            ".usf-dock.collapsed[data-v-test]:not(.usf-dock--phone) .dock-persistent",
+        );
         expect(code).toContain(
             ".usf-dock--phone.collapsed[data-v-test] .dock-layers",
         );

@@ -111,7 +111,6 @@ const secondSeam = computed(
 .story-card {
     --storycard-pad: clamp(1rem, 2.5vw, 2rem);
     padding: var(--storycard-pad);
-    border-radius: var(--radius-plate, 0.75rem);
 }
 .story-card--keyline {
     border: 1px solid var(--silver-rule, var(--border));

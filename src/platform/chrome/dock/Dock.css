@@ -3,12 +3,11 @@
    plate geometry, the liquid-glass surface tokens, and the #default 3-band column layout. The
    per-band INNER skins (crest / stepper / rungs / foot) moved WITH their sub-components (K-H-ARCH).
 
-   ── THE :deep REACH (I6-FIX) ────────────────────────────────────────────────────────
-   The 4.0 BB cut wraps the dock in a `.glass-dock-frame` (the rail-chip escape). Vue's scoped
-   `data-v` auto-falls-through to THAT frame root, while glass-ui forwards our `class="usf-dock"` to
-   the INNER dock box — which therefore carries NO `data-v`, so a plain `.usf-dock {…}` scoped rule
-   no longer matches. We reach the box through the frame's `data-v` with `:deep(.usf-dock)`. */
-:deep(.usf-dock) {
+   ── THE SCOPED HOST ─────────────────────────────────────────────────────────────────
+   Glass 6 renders `.glass-dock` as the component root and forwards `class="usf-dock"` there.
+   Vue places this SFC's scope attribute on that same child root, so the host selector stays
+   scoped directly; `:deep()` is reserved for Glass-owned descendants below. */
+.usf-dock {
     /* the floating pill width + the off-margin inset (the "this floats" signal) — the --cp-*
        register C3.1 carved. The GlassDock rail consumes these as its plate geometry. */
     --dock-w: var(--cp-dock-w, 4.5rem);
@@ -28,17 +27,14 @@
     /* THE RAIL WIDTH — one fixed column width (the Roman rungs + the foot controls at their
        label-bearing room). */
     inline-size: var(--cp-dock-w, 4.5rem);
-    /* THE LEFT-MARGIN ANCHOR · CLEAR glass-ui's bottom-centre placement. glass-ui's
-       `position="fixed"` dock emits `bottom-(--dock-pos) left-1/2 -translate-x-1/2` UNCONDITIONALLY.
-       A LEFT vertical rail is top-and-left anchored, so we (a) pin top + left to the inset, (b)
-       RELEASE the inherited bottom + right pins to `auto` (both block insets pinned would
-       over-constrain `height:auto` into a top↔bottom stretch), and (c) null the `-translate-x-1/2`
-       that would otherwise shift the rail half its width off the left edge. */
+    /* THE LEFT-MARGIN ANCHOR · CLEAR glass-ui's bottom-centre placement. A fixed GlassDock emits
+       `bottom-(--dock-pos) inset-x-0 mx-auto`; a LEFT vertical rail instead pins top + left to the
+       inset and RELEASES bottom + right to `auto` (both block insets pinned would over-constrain
+       `height:auto` into a top↔bottom stretch). */
     inset-block-start: var(--cp-inset, 1.25rem);
     inset-block-end: auto;
     inset-inline-start: var(--cp-inset, 1.25rem);
     inset-inline-end: auto;
-    translate: none;
     /* a column flex of crest / stepper / foot, centred on the dock axis. */
     display: flex;
     flex-direction: column;
@@ -74,7 +70,7 @@
    scalar) — a STABLE vertical-rail token-swap. These surface tokens are set on the `.usf-dock`
    plate and CASCADE to the sub-component rungs/controls (the rung's resting fill reads
    `--dock-plate-bg`). The plate-bg + rim tokens are STATIC surface tunes (info-parity preserved). */
-:deep(.usf-dock) {
+.usf-dock {
     /* the stable morph scalar — 1 (the expanded surface). */
     --dock-morph-t: 1;
     /* THE EVEN-PLATE FLOOR (J-CLOSE re-gate · arm b · RAISED O-DIR-4 ARM 4) — the sanctioned
@@ -144,7 +140,7 @@
    rail (A21), restoring the crest — so the collapsed disc needs no separate keyboard toggle. This is
    SCOPED OUT of the phone register (`:not(.usf-dock--phone)`): on phone the crest-BUTTON stays the
    collapsed pill (the a11y menu toggle) and the layers/summary are hidden by the phone rule below. */
-:deep(.usf-dock.collapsed:not(.usf-dock--phone) .dock-persistent) {
+.usf-dock.collapsed:not(.usf-dock--phone) :deep(.dock-persistent) {
     display: none;
 }
 

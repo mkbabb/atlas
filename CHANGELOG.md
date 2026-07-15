@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.1 — 2026-07-15
+
+### Fixed
+
+- Narrative docks again apply Atlas's fixed left-rail geometry through the direct Glass 6 component root, including the desktop collapsed state.
+- The shared filter continuum occupies its ratified lower-third right-edge seat on desktop while retaining the phone safe-area placement.
+- Story cards leave rim, clipping, and the 16px card radius to the Glass Card vessel instead of overriding it with Atlas's plate radius.
+
 ## 2.0.0 — 2026-07-15
 
 ### Breaking changes

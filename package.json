@@ -1,6 +1,6 @@
 {
     "name": "@mkbabb/atlas",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "The Connectivity Atlas rendering engine for Vue charts, editorial stories, interactions, dashboard contracts, and Vite integration.",
     "type": "module",
     "license": "MIT",
