@@ -1,161 +1,244 @@
+import { useDeck, type DeckCore } from "@mkbabb/glass-ui/deck";
 import {
     computed,
-    getCurrentScope,
-    onScopeDispose,
+    readonly,
+    ref,
+    toValue,
+    watch,
     type ComputedRef,
+    type MaybeRefOrGetter,
     type Ref,
 } from "vue";
-import { useStageDeck } from "./useStageDeck";
 
-export type DeckDetent = "shut" | "peek" | "full";
-
-const DETENTS = ["shut", "peek", "full"] as const satisfies readonly DeckDetent[];
-
-export type DeckTransitionHook = (commit: () => void) => void;
-
-export interface UseDeckDetentOptions {
-    /** The snap axis. Stage decks are vertical unless a host declares otherwise. */
+export interface DeckDetentOptions {
     axis?: "x" | "y";
-    /** Optional same-document transition wrapper. Navigation does not belong in this seam. */
-    transition?: DeckTransitionHook;
+    stop?: "always" | "normal";
+    transition?: boolean;
 }
 
-export interface DeckDetentController {
-    activeIndex: Ref<number>;
-    activeDetent: ComputedRef<DeckDetent>;
-    request(index: number): void;
-    setDetent(detent: DeckDetent): void;
-    /** Bind one scroll-snap container. Rebinding disposes the previous observers and listeners. */
-    bind(container: HTMLElement | null): () => void;
+export interface DeckDetentReturn {
+    activeIndex: Readonly<Ref<number>>;
+    isSupported: Readonly<Ref<boolean>>;
+    containerAttrs: ComputedRef<Record<string, string>>;
+    slideAttrs(index: number): Record<string, string>;
+    goTo(index: number): void;
 }
 
-function detentAt(index: number): DeckDetent {
-    return DETENTS[Math.max(0, Math.min(DETENTS.length - 1, index))] ?? "shut";
+interface SnapChangeEvent extends Event {
+    snapTargetBlock?: Element | null;
+    snapTargetInline?: Element | null;
+}
+
+type TransitionDocument = Document & {
+    startViewTransition?: (update: () => void) => unknown;
+};
+
+interface ObservedDeck {
+    slides: readonly HTMLElement[];
+    ratios: Map<HTMLElement, number>;
+    settle(index: number): void;
+}
+
+const observedDecks = new Set<ObservedDeck>();
+const deckBySlide = new Map<HTMLElement, ObservedDeck>();
+let intersectionObserver: IntersectionObserver | null = null;
+
+function bindIntersectionDeck(
+    slides: readonly HTMLElement[],
+    settle: (index: number) => void,
+): () => void {
+    const deck: ObservedDeck = {
+        slides,
+        ratios: new Map(slides.map((slide) => [slide, 0])),
+        settle,
+    };
+    observedDecks.add(deck);
+    intersectionObserver ??= new IntersectionObserver(
+        (entries) => {
+            const changed = new Set<ObservedDeck>();
+            for (const entry of entries) {
+                const owner = deckBySlide.get(entry.target as HTMLElement);
+                if (!owner) continue;
+                owner.ratios.set(
+                    entry.target as HTMLElement,
+                    entry.isIntersecting ? entry.intersectionRatio : 0,
+                );
+                changed.add(owner);
+            }
+            for (const owner of changed) {
+                let best = -1;
+                let ratio = 0;
+                owner.slides.forEach((slide, index) => {
+                    const next = owner.ratios.get(slide) ?? 0;
+                    if (next > ratio) {
+                        best = index;
+                        ratio = next;
+                    }
+                });
+                if (best >= 0) owner.settle(best);
+            }
+        },
+        { threshold: [0, 0.5, 0.75, 1] },
+    );
+    for (const slide of slides) {
+        deckBySlide.set(slide, deck);
+        intersectionObserver.observe(slide);
+    }
+    return () => {
+        for (const slide of slides) {
+            intersectionObserver?.unobserve(slide);
+            deckBySlide.delete(slide);
+        }
+        observedDecks.delete(deck);
+        if (observedDecks.size === 0) {
+            intersectionObserver?.disconnect();
+            intersectionObserver = null;
+        }
+    };
 }
 
 /**
- * Three discrete stage detents over Glass's deck core. The browser owns geometry;
- * this controller only commits settled snap indices and never publishes a continuous scalar.
+ * Discrete N-slide scroll-snap driver. CSS owns geometry; Glass owns the settled
+ * index, and no continuous scroll scalar crosses this seam.
  */
-export function useDeckDetent(options: UseDeckDetentOptions = {}): DeckDetentController {
+export function useDeckDetent(
+    element: MaybeRefOrGetter<HTMLElement | null>,
+    options: DeckDetentOptions = {},
+): DeckDetentReturn {
     const axis = options.axis ?? "y";
-    let bound: HTMLElement | null = null;
-    let releaseBinding: () => void = () => undefined;
+    const stop = options.stop ?? "always";
+    const transition = options.transition ?? true;
+    const activeIndex = ref(0);
+    const isSupported = ref(false);
+    let container: HTMLElement | null = null;
+    let deck: DeckCore | null = null;
 
-    function panels(): HTMLElement[] {
-        return bound ? (Array.from(bound.children) as HTMLElement[]).slice(0, DETENTS.length) : [];
-    }
+    const slides = (): HTMLElement[] =>
+        container ? (Array.from(container.children) as HTMLElement[]) : [];
 
-    function scrollToIndex(index: number): void {
-        if (!bound) return;
-        const target = panels()[index];
-        if (!target) return;
-        const commit = (): void => {
-            const top = axis === "y" ? target.offsetTop : bound!.scrollTop;
-            const left = axis === "x" ? target.offsetLeft : bound!.scrollLeft;
-            if (typeof bound!.scrollTo === "function") {
-                bound!.scrollTo({ top, left, behavior: "smooth" });
-            } else {
-                bound!.scrollTop = top;
-                bound!.scrollLeft = left;
-            }
-        };
-        if (options.transition) options.transition(commit);
-        else commit();
-    }
-
-    const stage = useStageDeck(DETENTS.length, ({ to }) => scrollToIndex(to));
-    const activeDetent = computed(() => detentAt(stage.activeIndex.value));
-
-    function request(index: number): void {
-        stage.request(index);
-    }
-
-    function setDetent(detent: DeckDetent): void {
-        request(DETENTS.indexOf(detent));
+    function ensureDeck(): DeckCore | null {
+        const total = slides().length;
+        if (total === 0) {
+            deck = null;
+            activeIndex.value = 0;
+            return null;
+        }
+        if (deck?.total === total) return deck;
+        deck = useDeck(total, {
+            initial: activeIndex.value,
+            onChange: (index) => {
+                activeIndex.value = index;
+            },
+        });
+        activeIndex.value = deck.index.value;
+        return deck;
     }
 
     function nearestIndex(): number {
-        if (!bound) return stage.activeIndex.value;
-        const position = axis === "y" ? bound.scrollTop : bound.scrollLeft;
+        const position = axis === "y" ? container?.scrollTop : container?.scrollLeft;
         let nearest = 0;
         let distance = Number.POSITIVE_INFINITY;
-        for (const [index, panel] of panels().entries()) {
-            const offset = axis === "y" ? panel.offsetTop : panel.offsetLeft;
-            const nextDistance = Math.abs(offset - position);
+        for (const [index, slide] of slides().entries()) {
+            const offset = axis === "y" ? slide.offsetTop : slide.offsetLeft;
+            const nextDistance = Math.abs(offset - (position ?? 0));
             if (nextDistance < distance) {
-                distance = nextDistance;
                 nearest = index;
+                distance = nextDistance;
             }
         }
         return nearest;
     }
 
-    function commitSettled(index: number): void {
-        const inFlight = stage.inFlight.value;
-        if (inFlight?.to === index) {
-            stage.settle();
-            return;
-        }
-        if (!inFlight && stage.activeIndex.value !== index) stage.request(index);
+    function settle(index: number): void {
+        const core = ensureDeck();
+        if (!core) return;
+        core.go(index);
+        activeIndex.value = core.index.value;
     }
 
-    function bind(container: HTMLElement | null): () => void {
-        releaseBinding();
-        bound = container;
-        if (!container) {
-            releaseBinding = () => undefined;
-            return releaseBinding;
-        }
+    function goTo(index: number): void {
+        const core = ensureDeck();
+        const host = container;
+        if (!host || !core) return;
+        core.go(index);
+        activeIndex.value = core.index.value;
+        const target = Array.from(host.children)[core.index.value] as HTMLElement | undefined;
+        if (!target) return;
 
-        const snapStops = panels().map((panel) => panel.style.scrollSnapStop);
-        for (const panel of panels()) panel.style.scrollSnapStop = "always";
-
-        let observer: IntersectionObserver | null = null;
-        let settleTimer: ReturnType<typeof setTimeout> | null = null;
-        let stopped = false;
-        const settleNearest = (): void => commitSettled(nearestIndex());
-        const onSnapChange = (): void => settleNearest();
-        const onScroll = (): void => {
-            if (settleTimer != null) clearTimeout(settleTimer);
-            settleTimer = setTimeout(settleNearest, 80);
+        const commit = (): void => {
+            const top = axis === "y" ? target.offsetTop : host.scrollTop;
+            const left = axis === "x" ? target.offsetLeft : host.scrollLeft;
+            if (typeof host.scrollTo === "function") {
+                host.scrollTo({ top, left, behavior: "auto" });
+            } else {
+                host.scrollTop = top;
+                host.scrollLeft = left;
+            }
         };
-
-        if ("onscrollsnapchange" in container) {
-            container.addEventListener("scrollsnapchange", onSnapChange);
-        } else if (typeof IntersectionObserver !== "undefined") {
-            observer = new IntersectionObserver(
-                (entries) => {
-                    const candidate = entries
-                        .filter((entry) => entry.isIntersecting)
-                        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-                    if (!candidate) return;
-                    const index = panels().indexOf(candidate.target as HTMLElement);
-                    if (index >= 0) commitSettled(index);
-                },
-                { root: container, threshold: [0.5, 0.75, 1] },
-            );
-            for (const panel of panels()) observer.observe(panel);
+        const document = host.ownerDocument as TransitionDocument;
+        if (transition && typeof document.startViewTransition === "function") {
+            document.startViewTransition(commit);
         } else {
-            container.addEventListener("scroll", onScroll, { passive: true });
+            commit();
         }
-
-        releaseBinding = (): void => {
-            if (stopped) return;
-            stopped = true;
-            container.removeEventListener("scrollsnapchange", onSnapChange);
-            container.removeEventListener("scroll", onScroll);
-            observer?.disconnect();
-            if (settleTimer != null) clearTimeout(settleTimer);
-            panels().forEach((panel, index) => {
-                panel.style.scrollSnapStop = snapStops[index] ?? "";
-            });
-            if (bound === container) bound = null;
-        };
-        return releaseBinding;
     }
 
-    if (getCurrentScope()) onScopeDispose(() => releaseBinding());
+    watch(
+        () => toValue(element),
+        (next, _previous, onCleanup) => {
+            container = next;
+            deck = null;
+            isSupported.value = Boolean(next && "onscrollsnapchange" in next);
+            ensureDeck();
+            if (!next) return;
 
-    return { activeIndex: stage.activeIndex, activeDetent, request, setDetent, bind };
+            const boundSlides = slides();
+            let releaseObserver: (() => void) | null = null;
+            const onSnapChange = (event: Event): void => {
+                const snap = event as SnapChangeEvent;
+                const target = axis === "y" ? snap.snapTargetBlock : snap.snapTargetInline;
+                const index = target ? boundSlides.indexOf(target as HTMLElement) : -1;
+                settle(index >= 0 ? index : nearestIndex());
+            };
+
+            if (isSupported.value) {
+                next.addEventListener("scrollsnapchange", onSnapChange);
+            } else if (typeof IntersectionObserver !== "undefined") {
+                releaseObserver = bindIntersectionDeck(boundSlides, settle);
+            }
+
+            onCleanup(() => {
+                next.removeEventListener("scrollsnapchange", onSnapChange);
+                releaseObserver?.();
+                if (container === next) {
+                    container = null;
+                    deck = null;
+                    isSupported.value = false;
+                }
+            });
+        },
+        { immediate: true, flush: "sync" },
+    );
+
+    const containerAttrs = computed<Record<string, string>>(() => ({
+        "data-deck": "snap",
+        "data-deck-axis": axis,
+        style: `scroll-snap-type: ${axis} mandatory;`,
+    }));
+
+    function slideAttrs(index: number): Record<string, string> {
+        return {
+            "data-slide": String(index),
+            "data-state": index === activeIndex.value ? "active" : "parked",
+            style: `scroll-snap-align: start; scroll-snap-stop: ${stop};`,
+        };
+    }
+
+    return {
+        activeIndex: readonly(activeIndex),
+        isSupported: readonly(isSupported),
+        containerAttrs,
+        slideAttrs,
+        goTo,
+    };
 }

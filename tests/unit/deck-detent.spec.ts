@@ -1,74 +1,199 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useDeckDetent, type DeckDetent } from "@/stage/useDeckDetent";
+import { effectScope, shallowRef } from "vue";
+import { useDeckDetent } from "@/stage/useDeckDetent";
 
 interface FakePanel {
     offsetTop: number;
     offsetLeft: number;
-    style: { scrollSnapStop: string };
 }
 
-function fakeContainer(native = true) {
-    const listeners = new Map<string, () => void>();
-    const children: FakePanel[] = [0, 100, 200].map((offsetTop) => ({
-        offsetTop,
-        offsetLeft: offsetTop,
-        style: { scrollSnapStop: "" },
+type Listener = (event: Event) => void;
+
+const entry = (target: FakePanel, intersectionRatio: number): IntersectionObserverEntry =>
+    ({ target, isIntersecting: intersectionRatio > 0, intersectionRatio }) as unknown as
+        IntersectionObserverEntry;
+
+function fakeContainer(
+    options: { native?: boolean; transition?: (update: () => void) => unknown } = {},
+) {
+    const listeners = new Map<string, Listener>();
+    const children: FakePanel[] = [0, 100, 200, 300, 400].map((offset) => ({
+        offsetTop: offset,
+        offsetLeft: offset * 2,
     }));
+    const ownerDocument = {
+        startViewTransition: options.transition,
+    };
     const container = {
         children,
+        ownerDocument,
         scrollTop: 0,
         scrollLeft: 0,
-        scrollTo: vi.fn((options: ScrollToOptions) => {
-            container.scrollTop = options.top ?? container.scrollTop;
-            container.scrollLeft = options.left ?? container.scrollLeft;
+        scrollTo: vi.fn((scroll: ScrollToOptions) => {
+            container.scrollTop = scroll.top ?? container.scrollTop;
+            container.scrollLeft = scroll.left ?? container.scrollLeft;
         }),
-        addEventListener: vi.fn((type: string, callback: () => void) => listeners.set(type, callback)),
-        removeEventListener: vi.fn((type: string) => listeners.delete(type)),
-        ...(native ? { onscrollsnapchange: null } : {}),
+        addEventListener: vi.fn((type: string, callback: Listener) => listeners.set(type, callback)),
+        removeEventListener: vi.fn((type: string, callback: Listener) => {
+            if (listeners.get(type) === callback) listeners.delete(type);
+        }),
+        ...(options.native === false ? {} : { onscrollsnapchange: null }),
     };
-    return { container: container as unknown as HTMLElement, children, listeners };
+    return { container: container as unknown as HTMLElement, children, listeners, ownerDocument };
 }
 
 afterEach(() => {
-    vi.useRealTimers();
     vi.unstubAllGlobals();
 });
 
 describe("useDeckDetent", () => {
-    it("maps exact detents onto adjacent Glass deck steps and settles native snap changes", () => {
-        const transitions: DeckDetent[] = [];
-        const deck = useDeckDetent({ transition: (commit) => commit() });
+    it("drives every slide, clamps navigation, and settles native snap targets", () => {
         const { container, children, listeners } = fakeContainer();
-        const release = deck.bind(container);
+        const scope = effectScope();
+        const deck = scope.run(() => useDeckDetent(container))!;
 
-        deck.setDetent("full");
-        transitions.push(deck.activeDetent.value);
-        expect(deck.activeIndex.value).toBe(1);
-        expect(container.scrollTo).toHaveBeenLastCalledWith({ top: 100, left: 0, behavior: "smooth" });
-        expect(children.every((panel) => panel.style.scrollSnapStop === "always")).toBe(true);
+        expect(deck.isSupported.value).toBe(true);
+        expect(deck.containerAttrs.value).toEqual({
+            "data-deck": "snap",
+            "data-deck-axis": "y",
+            style: "scroll-snap-type: y mandatory;",
+        });
+        expect(deck.slideAttrs(0)).toEqual({
+            "data-slide": "0",
+            "data-state": "active",
+            style: "scroll-snap-align: start; scroll-snap-stop: always;",
+        });
 
-        listeners.get("scrollsnapchange")?.();
-        transitions.push(deck.activeDetent.value);
+        deck.goTo(99);
+        expect(deck.activeIndex.value).toBe(4);
+        expect(container.scrollTo).toHaveBeenLastCalledWith({
+            top: 400,
+            left: 0,
+            behavior: "auto",
+        });
+
+        listeners.get("scrollsnapchange")?.({
+            snapTargetBlock: children[2],
+        } as unknown as Event);
         expect(deck.activeIndex.value).toBe(2);
-        expect(container.scrollTo).toHaveBeenLastCalledWith({ top: 200, left: 0, behavior: "smooth" });
+        expect(deck.slideAttrs(2)["data-state"]).toBe("active");
 
-        release();
-        expect(transitions).toEqual(["peek", "full"]);
-        expect(children.every((panel) => panel.style.scrollSnapStop === "")).toBe(true);
+        deck.goTo(-10);
+        expect(deck.activeIndex.value).toBe(0);
+        scope.stop();
+        expect(listeners.has("scrollsnapchange")).toBe(false);
+        expect(container.removeEventListener).toHaveBeenCalledOnce();
     });
 
-    it("uses the debounced nearest offset when snap and intersection observers are unavailable", () => {
-        vi.useFakeTimers();
-        vi.stubGlobal("IntersectionObserver", undefined);
-        const deck = useDeckDetent();
-        const { container, listeners } = fakeContainer(false);
-        deck.bind(container);
+    it("reuses one complete-ratio observer across fallback decks", () => {
+        let callback: IntersectionObserverCallback | undefined;
+        const observe = vi.fn();
+        const unobserve = vi.fn();
+        const disconnect = vi.fn();
+        const IntersectionObserver = vi.fn(function (
+            this: IntersectionObserver,
+            next: IntersectionObserverCallback,
+        ) {
+            callback = next;
+            return { observe, unobserve, disconnect };
+        });
+        vi.stubGlobal("IntersectionObserver", IntersectionObserver);
+        const first = fakeContainer({ native: false });
+        const second = fakeContainer({ native: false });
+        const firstSource = shallowRef<HTMLElement | null>(first.container);
+        const scope = effectScope();
+        const [firstDeck, secondDeck] = scope.run(() => [
+            useDeckDetent(firstSource, { axis: "x", stop: "normal" }),
+            useDeckDetent(second.container),
+        ])!;
 
-        container.scrollTop = 190;
-        listeners.get("scroll")?.();
-        vi.advanceTimersByTime(80);
+        expect(firstDeck!.isSupported.value).toBe(false);
+        expect(firstDeck!.containerAttrs.value.style).toBe("scroll-snap-type: x mandatory;");
+        expect(firstDeck!.slideAttrs(4).style).toBe(
+            "scroll-snap-align: start; scroll-snap-stop: normal;",
+        );
+        expect(observe).toHaveBeenCalledTimes(10);
+        expect(IntersectionObserver).toHaveBeenCalledOnce();
+        expect(IntersectionObserver).toHaveBeenCalledWith(expect.any(Function), {
+            threshold: [0, 0.5, 0.75, 1],
+        });
 
-        expect(deck.activeIndex.value).toBe(1);
-        expect(container.scrollTo).toHaveBeenLastCalledWith({ top: 100, left: 0, behavior: "smooth" });
+        callback?.([entry(first.children[1]!, 0.6)], {} as IntersectionObserver);
+        expect(firstDeck!.activeIndex.value).toBe(1);
+        callback?.([entry(first.children[3]!, 0.9)], {} as IntersectionObserver);
+        expect(firstDeck!.activeIndex.value).toBe(3);
+        callback?.([entry(first.children[3]!, 0.2)], {} as IntersectionObserver);
+        expect(firstDeck!.activeIndex.value).toBe(1);
+        callback?.([entry(second.children[2]!, 0.8)], {} as IntersectionObserver);
+        expect(secondDeck!.activeIndex.value).toBe(2);
+
+        firstDeck!.goTo(2);
+        expect(first.container.scrollTo).toHaveBeenLastCalledWith({
+            top: 0,
+            left: 400,
+            behavior: "auto",
+        });
+
+        firstSource.value = null;
+        expect(unobserve).toHaveBeenCalledTimes(5);
+        expect(disconnect).not.toHaveBeenCalled();
+        expect(firstDeck!.isSupported.value).toBe(false);
+        scope.stop();
+        expect(unobserve).toHaveBeenCalledTimes(10);
+        expect(disconnect).toHaveBeenCalledOnce();
+    });
+
+    it("uses the bound document view transition by default", () => {
+        const startViewTransition = vi.fn((update: () => void) => update());
+        const { container } = fakeContainer({ transition: startViewTransition });
+        const scope = effectScope();
+        const deck = scope.run(() => useDeckDetent(container))!;
+
+        deck.goTo(3);
+        expect(startViewTransition).toHaveBeenCalledOnce();
+        expect(container.scrollTo).toHaveBeenCalledOnce();
+        scope.stop();
+    });
+
+    it("captures the current host before an asynchronous transition callback", () => {
+        let commit: (() => void) | undefined;
+        const startViewTransition = vi.fn((update: () => void) => {
+            commit = update;
+        });
+        const first = fakeContainer({ transition: startViewTransition });
+        const second = fakeContainer();
+        const source = shallowRef<HTMLElement | null>(first.container);
+        const scope = effectScope();
+        const deck = scope.run(() => useDeckDetent(source))!;
+
+        deck.goTo(3);
+        source.value = second.container;
+        commit?.();
+
+        expect(first.container.scrollTo).toHaveBeenCalledWith({
+            top: 300,
+            left: 0,
+            behavior: "auto",
+        });
+        expect(second.container.scrollTo).not.toHaveBeenCalled();
+        scope.stop();
+    });
+
+    it("commits directly when transitions are disabled or unavailable", () => {
+        const startViewTransition = vi.fn((update: () => void) => update());
+        const enabled = fakeContainer({ transition: startViewTransition });
+        const unavailable = fakeContainer({ transition: undefined });
+        const scope = effectScope();
+        const decks = scope.run(() => [
+            useDeckDetent(enabled.container, { transition: false }),
+            useDeckDetent(unavailable.container, { transition: true }),
+        ])!;
+
+        decks[0]!.goTo(1);
+        decks[1]!.goTo(1);
+        expect(startViewTransition).not.toHaveBeenCalled();
+        expect(enabled.container.scrollTo).toHaveBeenCalledOnce();
+        expect(unavailable.container.scrollTo).toHaveBeenCalledOnce();
+        scope.stop();
     });
 });
