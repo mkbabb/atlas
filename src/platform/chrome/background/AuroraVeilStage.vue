@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // AuroraVeilStage.vue — THE AURORA-VEIL MEMBRANE (§I-VEIL §2 · NET-NEW · the thin presentational
-// frame, NOT a state home). Wraps glass-ui `<GlassPanel variant="floating">` and stages its slot body
+// frame, NOT a state home). Wraps glass-ui `<Surface tier="floating">` and stages its slot body
 // ON a bounded, data-keyed glow membrane lit from BENEATH in the selection's OWN verdict hue. Driven
 // by the ONE `useAuroraVeil` engine; both stage surfaces (this card · the I6 drawer) read the SAME
 // `veilHue`, so the two read as ONE light-table and cannot drift.
@@ -29,7 +29,7 @@
 // compositor-only (opacity / background / background-position the ONLY animated props), PRM hard-cut to
 // static (the structure shows; the motion is gated). NO consumer `--liquid-reveal-*` fallback envelope.
 import { computed, toRef } from "vue";
-import { GlassPanel } from "@mkbabb/glass-ui/glass-panel";
+import { Surface } from "@mkbabb/glass-ui/surface";
 import { useAuroraVeil, type VeilCentroid } from "@/platform/chrome/background/composables/useAuroraVeil";
 
 const props = withDefaults(
@@ -60,7 +60,7 @@ const veil = useAuroraVeil({
 // The host class string — the stage class + the metal border (the SHIPPED W-METAL-SHIMMER family).
 // `rainbow` → `.metal-rainbow-rim` (the prismatic gilt rim composing the W-GLASS-ACCENT seam);
 // gold/silver/bronze → the swept `.metal-{name}-border` rim. `none` → no metal class (the neutral
-// rim, the medal-scarcity rest). Combined into ONE string so it binds GlassPanel's `class` prop
+// rim, the medal-scarcity rest). Combined into ONE string so it binds Surface's `class` prop
 // (typed `string`) — Vue merges it onto the root via the library's `cn(...)`.
 const hostClass = computed<string>(() => {
     let metal = "";
@@ -71,9 +71,8 @@ const hostClass = computed<string>(() => {
 </script>
 
 <template>
-    <GlassPanel
-        variant="floating"
-        :refraction="0.3"
+    <Surface
+        tier="floating"
         :class="hostClass"
         :data-lit="veil.isLit.value ? 'true' : undefined"
         :data-fresh-select="freshSelect ? '' : undefined"
@@ -94,7 +93,7 @@ const hostClass = computed<string>(() => {
         <slot name="crest" />
         <!-- the staged body — the hero glyph + the readout (the card consumer's lockup). -->
         <slot />
-    </GlassPanel>
+    </Surface>
 </template>
 
 <style scoped>

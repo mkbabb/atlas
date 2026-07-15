@@ -87,7 +87,7 @@ const emit = defineEmits<{
                 </Button>
                 <Button
                     variant="ghost"
-                    size="icon-sm"
+                    size="sm"
                     aria-label="Cancel saving view"
                     @click="emit('cancelSave')"
                 >

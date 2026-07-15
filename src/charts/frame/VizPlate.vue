@@ -15,7 +15,7 @@
 //
 // THE PRIMITIVES IT COMPOSES (never absorbs — DESIGN §6.4 COMPOSE-not-absorb):
 //   • ChartFrame      — the frame / expand / error-boundary / straddle / legend-dock.
-//   • DockIconButton/DockDropdownTrigger/Badge — the J-VIZDOCK per-viz controls cluster (the
+//   • DockControl/DockTrigger/Badge — the J-VIZDOCK per-viz controls cluster (the
 //     filter-toggle + folded download + enlarge + applied-filters summary, from the dock register).
 //   • useVizOptions + VizFilterDock — the URL-backed options engine + the inline per-viz filter dock
 //     the filter-toggle raises (E2 options + J-FRAME's filterDimensions facet; the VizOptions POPOVER
@@ -25,7 +25,7 @@
 //   • VizDescription / VizKeyStats / PlateVoid — the new furniture rungs (E1 / B4 / E8).
 //   • vizExport       — the getDataURL / DOM-snapshot / CSV serializers (E3, ZERO heavy dep).
 import { Download, SlidersHorizontal, Maximize2, Minimize2 } from "@lucide/vue";
-import { DockIconButton, DockDropdownTrigger } from "@mkbabb/glass-ui/dock";
+import { DockControl, DockTrigger } from "@mkbabb/glass-ui/dock";
 import { Badge } from "@mkbabb/glass-ui/badge";
 import {
     DropdownMenu,
@@ -120,9 +120,9 @@ defineExpose({ archetype });
             </slot>
         </template>
 
-        <!-- THE #actions RUNG — J-VIZDOCK's ONE standardized <DockIconButton compact> cluster (C38).
+        <!-- THE #actions RUNG — J-VIZDOCK's ONE standardized <DockControl compact> cluster (C38).
              The three loose nodes (the dual export <button>s + the VizOptions popover) are GONE: a
-             filter-TOGGLE + ONE folded download (the CSV/image choice behind a DockDropdownTrigger) +
+             filter-TOGGLE + ONE folded download (the CSV/image choice behind a DockTrigger) +
              an enlarge, sourced from @mkbabb/glass-ui/dock (the dock-control register — rounded,
              ≥44px hitbox). A COLLAPSED applied-filters summary Badge rides the cluster when dials are
              active + the dock is closed. The expand seam ChartFrame owns rides the enlarge button. -->
@@ -134,7 +134,7 @@ defineExpose({ archetype });
                      `filterDimensions` (J-FRAME's facet, CONSUMED). A Badge count-pip rides it when
                      ≥1 dial is active + the dock is closed (the applied-filters summary). -->
                 <span class="viz-dock__filter-slot">
-                    <DockIconButton
+                    <DockControl
                         compact
                         :aria-label="`Filters — ${contract.title}`"
                         :aria-expanded="filterDockOpen"
@@ -145,7 +145,7 @@ defineExpose({ archetype });
                         @click="toggleFilterDock"
                     >
                         <SlidersHorizontal class="viz-dock__glyph" aria-hidden="true" />
-                    </DockIconButton>
+                    </DockControl>
                     <!-- THE COLLAPSED APPLIED-FILTERS SUMMARY — a state-derived count pip reading the
                          live active `filterDimensions` dials; present-when-active + dock-closed,
                          absent when no dial is active. The full chip-list rides the title. -->
@@ -164,11 +164,12 @@ defineExpose({ archetype });
                 </span>
 
                 <!-- (2) THE FOLDED DOWNLOAD — ONE control, the CSV/image choice behind a
-                     DockDropdownTrigger (the two export handlers `onExportCsv`/`onExportImage`
+                     DockTrigger (the two export handlers `onExportCsv`/`onExportImage`
                      re-homed onto the menu, never re-authored). The image export is no longer hidden
                      in an sr-only twin; both exports stay reachable behind the one visible control. -->
                 <DropdownMenu>
-                    <DockDropdownTrigger
+                    <DockTrigger
+                        for="dropdown"
                         :aria-label="`Download ${contract.title} — CSV or image`"
                         :title="`Download · ${contract.title}`"
                         :data-testid="`viz-dock-download-${contract.id}`"
@@ -176,7 +177,7 @@ defineExpose({ archetype });
                     >
                         <Download class="viz-dock__glyph" aria-hidden="true" />
                         <span class="sr-only">Download · CSV or image</span>
-                    </DockDropdownTrigger>
+                    </DockTrigger>
                     <DropdownMenuContent align="end" :side-offset="6">
                         <DropdownMenuItem
                             :data-testid="`viz-export-csv-${contract.id}`"
@@ -195,7 +196,7 @@ defineExpose({ archetype });
 
                 <!-- (3) THE ENLARGE — the `?fig=` expand seam ChartFrame owns, driven from the
                      cluster (CONSUMED, not re-owned). Toggles this plate's fullscreen `?fig=` state. -->
-                <DockIconButton
+                <DockControl
                     compact
                     :aria-label="
                         isFullscreen
@@ -214,7 +215,7 @@ defineExpose({ archetype });
                         aria-hidden="true"
                     />
                     <Maximize2 v-else class="viz-dock__glyph" aria-hidden="true" />
-                </DockIconButton>
+                </DockControl>
             </div>
 
             <!-- THE INLINE PER-VIZ FILTER DOCK IS RETIRED (K-FILTER-UNIFIED §4.H). The filter-toggle

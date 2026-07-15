@@ -16,13 +16,13 @@
 // The dark toggle does NOT float on the masthead — it seats in GalleryView's one quiet glass
 // control top-right (the slides gear posture).
 import { useAtlasSite } from "@/contract";
-import { GlassPanel } from "@mkbabb/glass-ui/glass-panel";
+import { Surface } from "@mkbabb/glass-ui/surface";
 import BrandMark from "@/platform/chrome/masthead/BrandMark.vue";
 import { useAuroraVeil } from "@/platform/chrome/background/composables/useAuroraVeil";
 
 // THE MASTHEAD GLASS VEIL (C2 · I6 §A2 · J-GLASS §5 — the consume). The constellation/corner-glow
-// ground reads THROUGH a `GlassPanel variant="floating"` veil seated behind the head, NOT the
-// retired CSS `::before` radial halo (`backdrop-filter:none` on `.masthead` today, F6). The GlassPanel
+// ground reads THROUGH a `Surface tier="floating"` veil seated behind the head, NOT the
+// retired CSS `::before` radial halo (`backdrop-filter:none` on `.masthead` today, F6). The Surface
 // carries its OWN measurable `backdrop-filter` (the `.masthead`-own blur the re-authored
 // `i0-masthead-veil` gate now requires), so the constellation is attenuated LOCALLY under the
 // wordmark (recessive/veiled) while staying live at the margins. `useAuroraVeil` lights the veil's
@@ -58,7 +58,7 @@ withDefaults(defineProps<{ showEyebrow?: boolean }>(), { showEyebrow: true });
     <header class="masthead">
         <div class="masthead__head" data-reveal :style="{ '--d': 0 }">
             <!-- THE GLASS VEIL (C2 · I6 §A2 · J-GLASS §5) — the constellation/corner-glow ground
-                 reads THROUGH this `GlassPanel variant="floating"` veil seated BEHIND the head ink
+                 reads THROUGH this `Surface tier="floating"` veil seated BEHIND the head ink
                  (the retired `::before` radial halo is gone). The panel carries its OWN measurable
                  `backdrop-filter` (the `.masthead`-own blur the re-authored gate requires), so the
                  constellation is veiled LOCALLY under the wordmark while staying live at the margins.
@@ -66,9 +66,8 @@ withDefaults(defineProps<{ showEyebrow?: boolean }>(), { showEyebrow: true });
                  head's backing layer (it rides the same scroll-shrink transform — it is INSIDE
                  `.masthead__head`). `useAuroraVeil` carries the page-ground rim hue (UNLIT floor on
                  the cover; the veil still blurs). -->
-            <GlassPanel
-                variant="floating"
-                :blur="24"
+            <Surface
+                tier="floating"
                 class="masthead__veil"
                 :style="veilStyle"
                 aria-hidden="true"
@@ -154,7 +153,7 @@ withDefaults(defineProps<{ showEyebrow?: boolean }>(), { showEyebrow: true });
 }
 
 /* THE GLASS VEIL (C2 · I6 §A2 · J-GLASS §5 — the consume; the `::before` radial halo is DELETED).
-   The `<GlassPanel variant="floating">` veil is the head's backing layer: a real glass surface
+   The `<Surface tier="floating">` veil is the head's backing layer: a real glass surface
    carrying its OWN `backdrop-filter` (consumed from the library — the `.masthead`-own blur the
    re-authored `i0-masthead-veil` gate requires), so the constellation/corner-glow ground reads
    THROUGH it (recessive/veiled under the wordmark, live at the margins). It is anchored to the head

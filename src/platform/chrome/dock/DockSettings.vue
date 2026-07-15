@@ -4,9 +4,9 @@
 // At @media(--phone) the dock's four secondary controls (the year-range compare toggle, the
 // ⤓-save door, the filter pull-out, and the dark-mode toggle) collapse behind ONE Lucide
 // `Settings` glyph — the gear. This component IS the gear: a glass `DropdownMenu` whose
-// `DockDropdownTrigger` is the gear glyph and whose `DropdownMenuContent` is the controls sheet
+// `DockTrigger` is the gear glyph and whose `DropdownMenuContent` is the controls sheet
 // (`[data-testid="dock-settings-sheet"]`). It consumes glass-ui's OWN disclosure (the same
-// `DropdownMenu` + `DockDropdownTrigger` idiom VizPlate's download menu rides) — NO hand-rolled
+// `DropdownMenu` + `DockTrigger` idiom VizPlate's download menu rides) — NO hand-rolled
 // popover.
 //
 // THE STATE BOUNDARY (§approach-6). DockSettings is PRESENTATIONAL — it RENDERS the four
@@ -14,7 +14,7 @@
 // J-ARCH's `useDockDataState`; the filter-open + dark-toggle are the platform singletons. This
 // component takes the scalars + handlers as props and emits the gear-open model — a thin sheet,
 // not a second data seam.
-import { DockDropdownTrigger } from "@mkbabb/glass-ui/dock";
+import { DockTrigger } from "@mkbabb/glass-ui/dock";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -60,20 +60,21 @@ const emit = defineEmits<{
 <template>
     <!-- THE GEAR — ONE Lucide Settings glyph opening the controls sheet. The `DropdownMenu` root
          is the open model (driven by the dock's `useDockGear().gearOpen` via `v-model:open`); the
-         `DockDropdownTrigger` is the gear's rounded dock-control face (the same ≥44px hitbox the
+         `DockTrigger` is the gear's rounded dock-control face (the same ≥44px hitbox the
          rail controls wear); the `DropdownMenuContent` is the sheet holding the four controls. -->
     <DropdownMenu
         :open="open"
         @update:open="(v: boolean) => emit('update:open', v)"
     >
-        <DockDropdownTrigger
+        <DockTrigger
+            for="dropdown"
             class="usf-dock__gear"
             aria-label="Dock settings"
             title="Settings"
             data-testid="dock-gear"
         >
             <Settings class="usf-dock__ctl-glyph" aria-hidden="true" />
-        </DockDropdownTrigger>
+        </DockTrigger>
 
         <!-- THE CONTROLS SHEET — the four secondary affordances, resolved INSIDE the opened gear
              (NOT inline rail rungs at --phone). They render as glass-ui `<Button>`s (the G2
@@ -155,7 +156,7 @@ const emit = defineEmits<{
 /* The gear face — the ≥44px rounded dock-control hitbox. N.WG1 Arm H (the L-DOCK residue cleanup):
    the trigger formerly ALSO carried `.usf-dock__ctl`, but that class lives ONLY in DockFoot's
    SCOPED block, so the forward never reached this component (scoped-away, an under-consumed remnant
-   of the killed L-DOCK cluster). It is removed — the gear's engrave/hover face is DockDropdownTrigger's
+   of the killed L-DOCK cluster). It is removed — the gear's engrave/hover face is DockTrigger's
    own glass styling; this rule owns only the shared control SIZE (the `--dock-control-size` floor). */
 .usf-dock__gear {
     inline-size: var(--dock-control-size, 2.75rem);

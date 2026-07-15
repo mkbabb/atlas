@@ -98,10 +98,10 @@
         "release": "bash scripts/release.sh"
     },
     "peerDependencies": {
-        "@mkbabb/glass-ui": "^4.2.0",
-        "@mkbabb/keyframes.js": "^5",
+        "@mkbabb/glass-ui": "^5.0.0",
+        "@mkbabb/keyframes.js": "^5.3.1",
         "@mkbabb/pencil-boil": "^0.4.1",
-        "@mkbabb/value.js": "^1.2.0",
+        "@mkbabb/value.js": "^3.1.0",
         "pinia": "^2.3 || ^3.0",
         "vue": "^3.5",
         "vue-router": "^4.5"
@@ -121,10 +121,10 @@
     },
     "devDependencies": {
         "@arethetypeswrong/cli": "^0.18.2",
-        "@mkbabb/glass-ui": "4.2.0",
-        "@mkbabb/keyframes.js": "^5.1.0",
+        "@mkbabb/glass-ui": "5.0.0",
+        "@mkbabb/keyframes.js": "5.3.1",
         "@mkbabb/pencil-boil": "^0.4.1",
-        "@mkbabb/value.js": "^1.2.0",
+        "@mkbabb/value.js": "3.1.0",
         "@tailwindcss/vite": "^4.3.0",
         "@types/d3-geo": "^3",
         "@types/geojson": "^7946",

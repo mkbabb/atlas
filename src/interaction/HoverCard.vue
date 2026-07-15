@@ -18,7 +18,7 @@
 // list (the per-program / per-tier bars, now STRUCTURED data in the payload, not per-viz
 // markup — the publisher hands `{label,value,share,color}` bars, the card draws them).
 //
-// It floats on glass-ui's `<GlassPanel variant="floating">` — the `floating` rung of the
+// It floats on glass-ui's `<Surface tier="floating">` — the `floating` rung of the
 // canonical 5-rung tier ladder (C.W6.b2 / AS-8 · cap-glass-ui §6). The transient hover card
 // reads as "above" by its TIER NAME, not a hand-tuned blur. The card is body-teleported,
 // viewport-clamped, lifted above the resting panels, pointer-events OFF (so it never steals
@@ -48,7 +48,7 @@
 // facility, sourced from `selectedKeys`; the J-ABSORB MetricStack-absorption residual is UNCHANGED).
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { GlassPanel } from "@mkbabb/glass-ui/glass-panel";
+import { Surface } from "@mkbabb/glass-ui/surface";
 import ReadoutFacts from "@/charts/readout/ReadoutFacts.vue";
 import { useHoverReadout } from "@/platform/stores/useHoverReadout";
 import { useAffordanceHint } from "@/interaction/useAffordanceHint";
@@ -95,7 +95,7 @@ const transientOpen = computed(
 );
 
 // The card element — clamped to its OWN measured footprint, never a magic 280 (H-5/B2).
-// The ref lands on the <GlassPanel> COMPONENT (single-root), so we read its `$el` for the
+// The ref lands on the <Surface> COMPONENT (single-root), so we read its `$el` for the
 // rect (a component ref is the instance, whose `$el` is the rendered root div). `measureEl`
 // resolves either a raw element or the instance's `$el` so the measure stays robust.
 const card = ref<{ $el?: HTMLElement } | HTMLElement | null>(null);
@@ -106,7 +106,7 @@ function setCardRef(el: unknown): void {
     card.value = (el as { $el?: HTMLElement } | HTMLElement | null) ?? null;
 }
 
-/** Resolve the measurable DOM node from the GlassPanel component ref (its `$el`). */
+/** Resolve the measurable DOM node from the Surface component ref (its `$el`). */
 function measureEl(): HTMLElement | null {
     const c = card.value;
     if (!c) return null;
@@ -184,7 +184,7 @@ const style = computed(() => {
     // useCardPlacement. The right-margin `tapPeek` fork is REMOVED from the seat math (J-MOBILE §3).
     const { left, top } = transientSeat(anchor, footprint.value, { vw, vh });
     return {
-        // `position: fixed` is set inline (it WINS over GlassPanel's root `position: relative`) so
+        // `position: fixed` is set inline (it WINS over Surface's root `position: relative`) so
         // the teleported floating card is viewport-clamped, not flow-relative.
         position: "fixed" as const,
         left: `${left}px`,
@@ -280,12 +280,12 @@ watch(
              FilterView card (sourced from `selectedKeys`). The card is pointer-events:NONE (the cursor-
              chasing register never steals the hover that spawned it) — dismissal is Esc / a click-away.
 
-             THE FLOATING TIER (AS-8) — glass-ui's <GlassPanel variant="floating">. The card takes the
+             THE FLOATING TIER (AS-8) — glass-ui's <Surface tier="floating">. The card takes the
              measure ref; the seat geometry rides `style` (presence is the `v-if`, not a visibility flip). -->
-        <GlassPanel
+        <Surface
             v-if="transientOpen && readout"
             :ref="(el) => setCardRef(el)"
-            variant="floating"
+            tier="floating"
             class="hover-card-readout z-hovercard pointer-events-none max-w-xs px-3 py-2.5 transition-opacity duration-100"
             :style="style"
             role="tooltip"
@@ -330,7 +330,7 @@ watch(
                 :breakdown="readout.breakdown"
                 :breakdown-label="readout.breakdownLabel"
             />
-        </GlassPanel>
+        </Surface>
     </Teleport>
 </template>
 

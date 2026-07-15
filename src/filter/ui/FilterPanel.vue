@@ -265,7 +265,7 @@ function cancelSave(): void {
                 </DrawerDescription>
                 <Button
                     variant="ghost"
-                    size="icon-sm"
+                    size="sm"
                     class="cp-drawer__close"
                     aria-label="Close filters"
                     data-testid="filter-close"
@@ -348,7 +348,7 @@ function cancelSave(): void {
     font-size: 1rem;
     color: var(--foreground);
 }
-/* The close affordance is the glass `Button` (variant="ghost" size="icon-sm") — it OWNS
+/* The close affordance is the glass `Button` (variant="ghost" size="sm") — it OWNS
    its own surface/hover/focus/radius. Only the absolute placement in the lens crest is
    the host's to keep. */
 .cp-drawer__close {

@@ -3,8 +3,8 @@
 // / design-interstitial-system §3.4 + §7 · f6-hero-interstitials §2.B-④.
 //
 // THE ARCHITECTURE: a small marker glyph that, on the documented deterministic interaction (the
-// F6.10 grammar — hover / focus + Enter/Space + shift-click pin), reveals a `HoverPopover`
-// (@mkbabb/glass-ui/hover-popover) carrying the discovered detail. It is NEVER load-visible — the
+// F6.10 grammar — hover / focus + Enter/Space + shift-click pin), reveals a hover-triggered
+// glass-ui `Popover` carrying the discovered detail. It is NEVER load-visible — the
 // reward is the INTERACTION (DESIGN §7: the hand reaches words; this is a word-aside, lawful). It
 // is the ONE in-flow easter-egg surface; the two app-level eggs (§7 below) are SEPARATE and
 // signed in/out per the deft-not-garish law.
@@ -27,21 +27,21 @@
 //      the lane's blockers, not built here.)
 //
 // THE RUNG — ④ chrome (the margin aside): EasterEgg binds --attn-chrome (0.46). The glyph is Fira
-// (the figures/chips face); the revealed detail wears the HoverCard register (the platform's ONE
+// (the figures/chips face); the revealed detail wears the hover-card register (the platform's ONE
 // card). ≤1 per route (the §pop-budget fence — scarcity makes it a FIND, not a feature; the
 // manifest gate enforces it). Mints no hue.
 //
-// GLASS / PAPER: the resting glyph is paper-bound (a margin mark); the REVEAL is the HoverPopover
+// GLASS / PAPER: the resting glyph is paper-bound (a margin mark); the REVEAL is the Popover
 // glass (a popover IS floating chrome — lawful glass). PRM: the popover snaps open (no spring);
 // the resting page stays calm regardless.
 //
 // a11y — the deterministic grammar (the F6.10 coupling): the marker is a `<button>` (focusable —
-// the keyboard discovery path) with `label` as its accessible name; the `HoverPopover` is
+// the keyboard discovery path) with `label` as its accessible name; the `Popover` is
 // aria-associated (the library's wiring). The marker is Tab-reachable; hover/focus opens the
 // reveal; Enter/Space + shift-click PIN it open (the F6.10 shift-click-persists contract). The
 // reveal is reachable by keyboard ALONE — the egg is not pointer-gated (an a11y win).
 import { computed, ref } from "vue";
-import { HoverPopover } from "@mkbabb/glass-ui/hover-popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@mkbabb/glass-ui/popover";
 
 const props = withDefaults(
     defineProps<{
@@ -52,7 +52,7 @@ const props = withDefaults(
         /** The discovered detail (the record-holder name, the wink) — rendered in the popover. */
         reveal: string;
         /** The interaction grammar (the F6.10 deterministic contract). `both` (default) — the
-            reveal opens on hover (the HoverPopover cadence) AND on keyboard focus (the
+            reveal opens on hover (the Popover cadence) AND on keyboard focus (the
             non-pointer-gated discovery path). `hover` — pointer dwell only (the popover's native
             arm). `focus` — keyboard focus only (a pure-keyboard egg). */
         trigger?: "hover" | "focus" | "both";
@@ -62,7 +62,7 @@ const props = withDefaults(
 
 // THE PIN (the F6.10 shift-click-persists contract). Enter/Space or shift-click latches the reveal
 // OPEN (the deterministic "discovery" rung); a second press un-pins. Hover opens it transiently
-// (the HoverPopover's own cadence); FOCUS opens it transiently too when `trigger` admits the focus
+// (the Popover's own cadence); FOCUS opens it transiently too when `trigger` admits the focus
 // path (the egg is reachable by keyboard ALONE — never pointer-gated). The pin makes the find STICK
 // so the reader can read it.
 const pinned = ref(false);
@@ -72,7 +72,7 @@ const focused = ref(false);
 const focusOpens = computed(() => props.trigger === "focus" || props.trigger === "both");
 
 /** The popover's open state: pinned (latched) OR transiently focus-open. `undefined` hands control
-    back to the HoverPopover's own hover cadence (the `hover`/`both` pointer arm) — never forced
+    back to the Popover's own hover cadence (the `hover`/`both` pointer arm) — never forced
     closed, so the native hover open is unaffected. */
 const open = computed<boolean | undefined>(() =>
     pinned.value || (focusOpens.value && focused.value) ? true : undefined,
@@ -93,37 +93,45 @@ function onKeydown(e: KeyboardEvent): void {
 
 <template>
     <!-- The earned discovery — a focusable <button> marker, NEVER load-visible content. It binds
-         --attn-chrome (the margin rung). On hover/focus the HoverPopover opens; Enter/Space +
+         --attn-chrome (the margin rung). On hover/focus the Popover opens; Enter/Space +
          shift-click PIN it (the F6.10 grammar). The reveal detail lives ONLY in the popover — the
          resting flow carries the glyph alone (the reward is the interaction). -->
     <span class="easter-egg" data-attn="chrome" data-testid="easter-egg">
-        <HoverPopover
-            :content="reveal"
+        <Popover
+            trigger="hover"
             :open="open"
-            side="top"
-            align="center"
         >
-            <button
-                type="button"
-                class="easter-egg__marker"
+            <PopoverTrigger as-child>
+                <button
+                    type="button"
+                    class="easter-egg__marker"
+                    :aria-label="label"
+                    :aria-pressed="pinned"
+                    :data-pinned="pinned ? '' : undefined"
+                    @click="togglePin"
+                    @keydown="onKeydown"
+                    @focus="focused = true"
+                    @blur="focused = false"
+                >
+                    <span class="easter-egg__glyph" aria-hidden="true">{{ glyph }}</span>
+                </button>
+            </PopoverTrigger>
+            <PopoverContent
+                side="top"
+                align="center"
+                role="card"
                 :aria-label="label"
-                :aria-pressed="pinned"
-                :data-pinned="pinned ? '' : undefined"
-                @click="togglePin"
-                @keydown="onKeydown"
-                @focus="focused = true"
-                @blur="focused = false"
             >
-                <span class="easter-egg__glyph" aria-hidden="true">{{ glyph }}</span>
-            </button>
-        </HoverPopover>
+                {{ reveal }}
+            </PopoverContent>
+        </Popover>
     </span>
 </template>
 
 <style scoped>
 /* THE MARGIN MARK — a quiet Fira glyph the reader DISCOVERS (never load-loud). The rung ④ chrome
    recession rides the host (the SUFFUSION contract). The resting glyph is paper-bound; the reveal
-   is the HoverPopover glass (lawful floating chrome). */
+   is the Popover glass (lawful floating chrome). */
 .easter-egg {
     display: inline-flex;
     /* the rung ④ chrome recession — the margin aside recedes (the inversion law). */
