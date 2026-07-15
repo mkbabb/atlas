@@ -81,7 +81,6 @@ export function createDashboardRegistry(
                 );
                 return {
                     ...mod.meta,
-                    slug: mod.meta.slug || folder,
                     load: () =>
                         bodyLoaders[loaderKey as string]().then((m) => m.default),
                     context: contextByFolder[folder],

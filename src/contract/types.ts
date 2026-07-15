@@ -41,8 +41,8 @@ export interface FlagshipFigure {
 /** Cheap card metadata — lives in each dashboard's `meta.ts` (eager-loaded for the
     gallery, so listing dashboards never pulls in their feature/chart chunks). */
 export interface DashboardMeta {
-    /** URL handle — defaults to the dashboard folder name when omitted. */
-    slug?: string;
+    /** URL handle — declared explicitly and matched to the dashboard folder by the consumer. */
+    slug: string;
     /** Plate name (Fraunces title on the card). */
     title: string;
     /** The card EYEBROW kicker (J-STORY §11 de-collision · J-FEEDBACK-2 [F6]) — a SHORT 2–3-word
@@ -80,8 +80,6 @@ export interface DashboardContent {
 /** Registry entry — the metadata plus a lazy loader for the body component and the
     (eager, cheap) chrome context the active dashboard provides to the shell. */
 export interface DashboardEntry extends DashboardMeta {
-    /** The resolved URL handle (meta.slug or the folder name). */
-    slug: string;
     /** Lazily import the dashboard body component. */
     load: () => Promise<Component>;
     /** The dashboard's chrome contract (the seam the Dock/filter read). Discovered
