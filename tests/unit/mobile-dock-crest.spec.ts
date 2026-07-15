@@ -26,7 +26,7 @@ describe("mobile dock crest ownership", () => {
         );
     });
 
-    it("scopes the phone host directly so its collapsed summary is hidden", () => {
+    it("compiles mobile dock state rules against the scoped host", () => {
         const { code, errors } = compileStyle({
             source: DOCK_CSS,
             filename: "Dock.css",
@@ -41,5 +41,12 @@ describe("mobile dock crest ownership", () => {
         expect(code).toMatch(
             /\.usf-dock--phone\.collapsed\[data-v-test\] \.dock-layers\s*\{\s*display: none;/,
         );
+        expect(code).toMatch(
+            /\.usf-dock--phone\[data-v-test\]:not\(\.collapsed\)\s*\{\s*inline-size: min\(20rem,/,
+        );
+        expect(code).toMatch(
+            /\.usf-dock--phone\[data-v-test\]:not\(\.collapsed\) \.usf-dock__step-label\s*\{\s*display: block;/,
+        );
+        expect(code).toContain(".usf-dock--phone[data-v-test],");
     });
 });

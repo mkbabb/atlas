@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.3 — 2026-07-15
+
+### Fixed
+
+- Expanded mobile docks apply their sheet width and ruled-row styles through the scoped host.
+
 ## 1.1.2 — 2026-07-15
 
 ### Fixed

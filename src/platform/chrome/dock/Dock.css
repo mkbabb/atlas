@@ -158,7 +158,7 @@
      viewport-capped by the rail's own `--dock-max-block-size` token, radius --cp-radius. */
 @media (--phone) {
     /* the collapsed pill HUGS the crest dome (collapse-into-the-TIL-logo). */
-    :deep(.usf-dock--phone.collapsed) {
+    .usf-dock--phone.collapsed {
         padding-block: 0.5rem;
         gap: 0;
     }
@@ -179,7 +179,7 @@
        width morph is the O-D2 glass-consume. (The PRM opacity print below is untouched.) */
 
     /* THE SHEET — the expanded phone dock. Rides ABOVE the scrim (one rung over --z-overlay). */
-    :deep(.usf-dock--phone:not(.collapsed)) {
+    .usf-dock--phone:not(.collapsed) {
         inline-size: min(20rem, calc(100vw - 2 * var(--cp-inset, 1.25rem)));
         z-index: calc(var(--z-overlay) + 1);
         align-items: stretch;
@@ -188,24 +188,24 @@
     /* the sheet's stepper column — full-measure ruled rows, top-aligned (a MENU, not a centred
        rail); the vertical spine is RAIL furniture (the identity ramp) — the sheet is ruled by
        its rows, so the spine rests. */
-    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__stepper) {
+    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__stepper) {
         align-items: stretch;
         justify-content: flex-start;
         inline-size: 100%;
         gap: 0;
         padding-block: 0.25rem;
     }
-    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__spine) {
+    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__spine) {
         display: none;
     }
-    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__scroll) {
+    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__scroll) {
         align-items: stretch;
     }
 
     /* A RULED ROW — the same rung, re-registered: full width, the Roman (or the home glyph) as
        the leading mark, the section label as the word, the engrave hairline as the rule between
        rows (the ruled-menu ink), ≥2.75rem (the D2 row floor; the 44px tap floor still binds). */
-    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step) {
+    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step) {
         /* display/align restated here because the HOME row renders in the stepper's scope —
            DockNavItem's rail skin never reaches it; the sheet row is fully carved by this rule. */
         display: flex;
@@ -228,11 +228,11 @@
     }
     /* the home ROW renders in the stepper's own scope (no DockNavItem skin reaches it) — the
        sheet cascade carries the one interaction mark it needs beyond the shared row rule. */
-    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step:focus-visible) {
+    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step:focus-visible) {
         outline: 2px solid var(--ring, currentColor);
         outline-offset: -2px;
     }
-    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step-num) {
+    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step-num) {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -241,7 +241,7 @@
         flex: none;
         color: var(--muted-foreground);
     }
-    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step-label) {
+    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step-label) {
         display: block;
         flex: 1 1 auto;
         min-inline-size: 0;
@@ -255,14 +255,14 @@
     }
     /* the ACTIVE row — the chrome accent bar (--cp-accent fill, --cp-accent-ink word; the D2
        active-row voice — the same wayfinding singleton the rail's raised pill speaks). */
-    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step--active) {
+    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step--active) {
         background: var(--cp-accent, var(--foreground));
         color: var(--cp-accent-ink, var(--background));
         border-block-end-color: transparent;
         border-radius: var(--radius-control);
         box-shadow: none;
     }
-    :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step--active .usf-dock__step-num) {
+    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step--active .usf-dock__step-num) {
         color: inherit;
     }
 
@@ -270,7 +270,7 @@
        on every open (the selector newly matches when `.collapsed` drops, so the animation
        restarts). Scoped keyframes — DockNavItem's rail-mount rise is a different clock. */
     @media (prefers-reduced-motion: no-preference) {
-        :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step) {
+        .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step) {
             animation: usf-dock-sheet-row-rise var(--spring-snappy-duration, 0.4s)
                 var(--spring-snappy, ease) both;
             animation-delay: calc(var(--rivet-i, 0) * 40ms);
@@ -279,11 +279,11 @@
 
     /* PRM — the morph + stagger become a 120ms opacity-only print (D2); geometry snaps. */
     @media (prefers-reduced-motion: reduce) {
-        :deep(.usf-dock--phone),
-        :deep(.usf-dock--phone.collapsed) {
+        .usf-dock--phone,
+        .usf-dock--phone.collapsed {
             transition: opacity 120ms ease;
         }
-        :deep(.usf-dock--phone:not(.collapsed) .usf-dock__step) {
+        .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step) {
             animation: none;
         }
     }
