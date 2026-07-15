@@ -12,7 +12,11 @@ import {
     type StoryStage,
 } from "@/story/manifest";
 import type { VizContract } from "@/charts/contract/viz-contract";
-import { isChapterStage } from "@/charts/contract/scene-contract";
+import {
+    isChapterScene,
+    isChapterStage,
+    type ChapterScene,
+} from "@/charts/contract/scene-contract";
 import { hasMasthead } from "@/editorial/useBeatLayout";
 
 const load = async () => ({ default: {} });
@@ -222,6 +226,29 @@ describe("StoryManifest projections", () => {
 
         expect(chapter!.viz).toBe(stage);
         expect(isChapterStage(chapter!.viz)).toBe(true);
+    });
+
+    it("projects a non-ECharts sticky scene without inventing a stage morph contract", () => {
+        const scene: ChapterScene = {
+            kind: "scene",
+            graphic: () => null,
+            steps: [{ id: "2024", prose: "Today", state: { year: 2024 } }],
+        };
+        const [chapter] = chaptersOf({
+            id: "mapped",
+            points: [
+                {
+                    slug: "map",
+                    kind: "beat",
+                    title: "Map",
+                    viz: { kind: "scene", scene },
+                },
+            ],
+        });
+
+        expect(chapter!.viz).toBe(scene);
+        expect(isChapterScene(chapter!.viz)).toBe(true);
+        expect(isChapterStage(chapter!.viz)).toBe(false);
     });
 
     it("treats component-backed cover and colophon points as masthead-free sentinels", () => {

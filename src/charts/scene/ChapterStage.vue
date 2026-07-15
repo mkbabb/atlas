@@ -5,6 +5,10 @@ import FootAnatomy from "@/charts/frame/FootAnatomy.vue";
 import VizGearDock from "@/charts/frame/VizGearDock.vue";
 import VizAppendixDock from "@/platform/provenance/VizAppendixDock.vue";
 import {
+    createStageMorphDriver,
+    STAGE_MORPH_KEY,
+} from "@/charts/scene/stage-morph";
+import {
     resolveSceneAnchor,
     useViewParams,
 } from "@/platform/stores/useViewParams";
@@ -26,6 +30,13 @@ const props = defineProps<{
     index?: number;
     beatId?: string;
 }>();
+
+const morph = createStageMorphDriver({
+    initialSceneId: props.stage.scenes[0]?.id ?? props.stage.id,
+    identity: props.stage.identity,
+    transition: props.stage.transition,
+});
+provide(STAGE_MORPH_KEY, morph);
 
 // Stage declarations are static for a mounted story. Preserve the authored option objects and only
 // translate the canonical vocabulary (`scenes`) to StickyScene's legacy vocabulary (`steps`).
@@ -92,6 +103,8 @@ function onSceneChange(event: {
     index: number;
 }): void {
     activeSceneIndex.value = event.index;
+    const option = props.stage.scenes[event.index];
+    if (option) morph.applyScene(option, { dir: event.dir });
     view.setSceneId(event.to);
     events.emit({
         type: "scene-change",

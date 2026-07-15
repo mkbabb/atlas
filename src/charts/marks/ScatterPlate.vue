@@ -122,7 +122,7 @@ const host = ref<HTMLElement | null>(null);
 // ── THE useEChart LIFECYCLE (the shared host scaffold) — init on the host, the deferred lazy-mount
 // paint (the host pre-sizes its box, no scroll-in CLS), the highlight/downplay bridge EXPOSED so
 // the plate wires its shared-hover watch off it. The option/onHover/keyOf are the plate's forks. ──
-const { chart, highlight, downplay } = useEChart({
+const { chart, stageMorphOwned, highlight, downplay } = useEChart({
     host,
     option: () => {
         const option = props.option();
@@ -140,7 +140,14 @@ watch(
     () => props.activeView,
     (active, previous) => {
         const set = props.contract.viewSet;
-        if (!set || active == null || previous == null || active === previous || !chart.value) return;
+        if (
+            stageMorphOwned ||
+            !set ||
+            active == null ||
+            previous == null ||
+            active === previous ||
+            !chart.value
+        ) return;
         chart.value.setOption(
             armMorphPush(withMorphIdentity(props.option(), set.identity), set.transition),
             { notMerge: true, lazyUpdate: true },

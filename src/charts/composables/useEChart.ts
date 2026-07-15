@@ -48,6 +48,7 @@ import type { EChartsOption } from "echarts";
 import { useResizeObserver, useIntersectionObserver } from "@vueuse/core";
 import { useGlobalDark } from "@mkbabb/glass-ui/dark";
 import { EXPAND_SETTLE_KEY } from "@/charts/scene/expand-settle";
+import { useOptionalStageMorphDriver } from "@/charts/scene/stage-morph";
 
 // The canvas renderer is the shared base every viz needs; chart/component
 // modules (BarChart, GridComponent…) register at the call site so the bundle
@@ -98,6 +99,8 @@ export interface UseEChartOptions {
 export interface UseEChart {
     /** The live ECharts instance (null before mount / after dispose). */
     chart: ShallowRef<EChartsType | null>;
+    /** True when a ChapterStage owns scene-boundary option pushes for this instance. */
+    stageMorphOwned: boolean;
     /** Raise a datum by key — the linked-highlight in (bridge folded in here). */
     highlight: (
         key: string,
@@ -117,6 +120,9 @@ export interface UseEChart {
  */
 export function useEChart(opts: UseEChartOptions): UseEChart {
     const chart = shallowRef<EChartsType | null>(null);
+    const stageMorph = useOptionalStageMorphDriver();
+    const releaseStageMorph = stageMorph?.bind({ chart, option: opts.option });
+    if (releaseStageMorph) onScopeDispose(releaseStageMorph);
     const dark = useGlobalDark(); // the flip arbiter — drives the settle-batched retint (E9b)
 
     // E9b — the retint guard, a REACTIVE ref (it gates the data watch's SOURCE, so it must be a
@@ -288,10 +294,20 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     // NOT evaluated, so the heavy per-chart option rebuild (scales + `getComputedStyle`) never runs
     // as a long task on the flip — the retint is owned solely by the settle merge. `retinting` is a
     // reactive dep, so when the settle clears it the source re-evaluates and re-arms tracking.
-    const dataSource: () => unknown = opts.fingerprint
+    const ordinaryDataSource: () => unknown = opts.fingerprint
         ? () => (retinting.value ? RETINTING : opts.fingerprint!())
         : () => (retinting.value ? RETINTING : opts.option());
-    watch(dataSource, (v) => {
+    const dataSource: () => unknown = stageMorph
+        ? () => [stageMorph.sceneId.value, ordinaryDataSource()] as const
+        : ordinaryDataSource;
+    watch(dataSource, (value, previous) => {
+        let v = value;
+        if (stageMorph) {
+            const [scene, data] = value as readonly [string, unknown];
+            const prior = previous as readonly [string, unknown];
+            if (scene !== prior[0]) return;
+            v = data;
+        }
         if (v === RETINTING) return;
         if (resyncPending) {
             resyncPending = false; // the post-flip re-establish — already themed, no paint
@@ -385,5 +401,5 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
         chart.value?.dispatchAction({ type: "downplay", seriesIndex });
     }
 
-    return { chart, highlight, downplay };
+    return { chart, stageMorphOwned: stageMorph !== null, highlight, downplay };
 }

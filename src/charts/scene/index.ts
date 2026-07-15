@@ -3,6 +3,7 @@
 // re-exports, the .ts leaves whole). Split-internal helpers stay family-internal.
 
 export * from "./expand-settle";
+export * from "./stage-morph";
 export * from "./usePaperCallout";
 export { default as PaperCallout } from "./PaperCallout.vue";
 export { default as ScrollLetteringHeading } from "./ScrollLetteringHeading.vue";

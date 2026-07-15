@@ -1,5 +1,6 @@
 export * from "./useStageDeck";
 export * from "./useDeckDetent";
+export * from "@/charts/scene/stage-morph";
 
 export type {
     ChapterStage,

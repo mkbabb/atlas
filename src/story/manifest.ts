@@ -1,7 +1,7 @@
 import { defineAsyncComponent, type Component } from "vue";
 import type { ChapterTitle, RevealSpec, TitlePole } from "@/contract";
 import type { VizContract } from "@/charts/contract/viz-contract";
-import type { ChapterStage } from "@/charts/contract/scene-contract";
+import type { ChapterScene, ChapterStage } from "@/charts/contract/scene-contract";
 import type { ColorKind } from "@/charts/scale/colorKind";
 import type { HeroFacet } from "@/editorial/editorial-contract";
 import type { EditorialChapter } from "@/editorial/editorial-contract";
@@ -25,6 +25,7 @@ export type StoryStage = ChapterStage;
 export type PointViz<Stage extends ChapterStage = ChapterStage> =
     | { readonly kind: "component"; readonly load: () => Promise<{ default: Component }> }
     | { readonly kind: "contract"; readonly contract: VizContract }
+    | { readonly kind: "scene"; readonly scene: ChapterScene }
     | { readonly kind: "stage"; readonly stage: Stage }
     | { readonly kind: "hero"; readonly hero: HeroFacet }
     | { readonly kind: "colophon"; readonly colophon?: Colophon };
@@ -157,6 +158,9 @@ export function chaptersOf<Stage extends ChapterStage>(
                 break;
             case "contract":
                 figure = { viz: point.viz.contract as VizContract };
+                break;
+            case "scene":
+                figure = { viz: point.viz.scene };
                 break;
             case "hero":
                 figure = { viz: "hero", hero: point.viz.hero };
