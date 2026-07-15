@@ -20,6 +20,8 @@ import {
 import { useViewParams } from "@/platform/stores/useViewParams";
 import { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
 import type { YearScope } from "@/data/useYearScope";
+import { useReducedMotion } from "@/motion/useReducedMotion";
+import { useStageDeck } from "@/stage/useStageDeck";
 import VizPlate from "@/charts/frame/VizPlate.vue";
 import { isVizContract } from "@/charts/contract/viz-contract"; // the ONE promoted guard (S6)
 import type { VizContract } from "@/charts/contract/viz-contract";
@@ -40,6 +42,7 @@ const props = defineProps<{
 
 const view = useViewParams();
 const active = useActiveDashboard();
+const reduced = useReducedMotion();
 
 // Scenes are STATIC declarations (a route's context.ts declares them once) — read once at setup, the
 // SAME pattern DashboardEssay uses for `props.chapters.map(...)`. No reactivity loss in practice.
@@ -75,7 +78,6 @@ const ANCHOR_BAND: Record<SceneAnchor, string> = {
     entry: "-12% 0px -70% 0px", // an upper-third trigger (the active step settles on entry)
 };
 
-const activeIndex = ref(0);
 let appliedIndex = -1; // the last step `apply` ran for — the BOUNDARY dedupe. -1 ⇒ never applied (so
 //                       the FIRST genuine crossing applies even on step 0). NEVER mount-fired.
 
@@ -95,8 +97,7 @@ let appliedIndex = -1; // the last step `apply` ran for — the BOUNDARY dedupe.
 const enteredScope = ref<YearScope | null>(null);
 let scopeCaptured = false;
 
-function activate(i: number): void {
-    activeIndex.value = i; // drives the rim + SCENE_KEY (cheap, idempotent)
+function applyStep(i: number): void {
     if (i === appliedIndex) return; // re-entering the SAME step on a wobble → no re-apply
     // Snapshot the reader's scope ONCE, the instant before the FIRST apply writes the dial (the feed
     // is loaded by now — a step is crossing — so `?year` IS a live scope, not the null mount window).
@@ -106,6 +107,34 @@ function activate(i: number): void {
     }
     appliedIndex = i;
     props.scene.apply?.(steps[i]!, runtime); // the DISCRETE step → world effect, GENUINE crossing only
+}
+
+// The ONE stage authority. Glass owns the ordered deck index; this Atlas arbiter accepts the
+// observer's geometric target but advances only one adjacent detent per settled transition. The
+// existing CSS opacity transition supplies the settle signal below — no timer, rAF, or local clock.
+const stage = useStageDeck(N, ({ to }) => applyStep(to));
+const activeIndex = stage.activeIndex;
+
+function activate(i: number): void {
+    // The first genuine crossing of step 0 has no deck boundary, but it still owns the scene's
+    // initial world effect. Mount remains inert because `activate` is called only by the observer.
+    if (appliedIndex < 0 && i === activeIndex.value) applyStep(i);
+    else stage.request(i);
+
+    // PRM removes the CSS transition, so there is no transitionend to await. Drain adjacent steps
+    // synchronously: information stays complete while motion stays absent.
+    if (reduced.value) while (stage.inFlight.value) stage.settle();
+}
+
+function settleStep(event: TransitionEvent): void {
+    if (event.propertyName !== "opacity") return;
+    // Focal scenes animate the nested scrim chip; non-focal scenes animate the step itself. In
+    // both cases the listener's currentTarget is the owning detent, so one settle path serves both.
+    const el = event.currentTarget as HTMLElement;
+    const source = event.target as Element;
+    if (source !== el && !source.classList.contains("sticky-scene__chip")) return;
+    if (!el.hasAttribute("data-active-step")) return;
+    stage.settle();
 }
 
 function restoreReaderScope(): void {
@@ -231,6 +260,8 @@ function Prose(p: { prose: ChapterTitle }): VNodeChild {
                 class="sticky-scene__step"
                 :data-active-step="i === activeIndex ? '' : undefined"
                 :aria-current="i === activeIndex ? 'true' : undefined"
+                @transitionend="settleStep"
+                @transitioncancel="settleStep"
             >
                 <!-- The prose CHIP. Non-focal: `display:contents` — no box, the prose lays out exactly
                      as before (byte-identical). Focal: the floating scrim-chip card (O-A17). -->
