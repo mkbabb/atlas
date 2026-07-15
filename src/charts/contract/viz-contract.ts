@@ -241,10 +241,8 @@ export interface FilterDimension {
         The state-model set-algebra is scoped to it, so a like-keyed `district:{lea}` in one universe is
         not a member in the other. ABSENT for non-selection dims (they cannot collide across routes). */
     universe?: RouteUniverse;
-    /** K-FILTER-UNIFIED §4.B — the within-OR row ACCESSOR (the panel⇒store seam): a row → the value
-        this dim tests, folded by `composePredicate`. OMIT ⇒ the dim is PANEL-ONLY (it projects into the
-        unified panel but contributes no row clause). Loosely typed on the contract (the typed `Row`
-        accessor lives on `useFilteredRows`'s `DeclaredDim<Row>`). */
+    /** K-FILTER-UNIFIED §4.B — the within-OR row accessor folded by the normalized query.
+        Omit for a panel-only dimension. */
     field?: (row: never) => string | number | null;
     /** K-FILTER-UNIFIED §4.B — the dim's `view`/`context` SCOPE (default `view`). A `context` dim
         narrows the rank/aggregate DOMAIN before the view fold; a `view` dim dims/encodes after. */

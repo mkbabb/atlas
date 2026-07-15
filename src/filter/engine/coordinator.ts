@@ -29,13 +29,13 @@
 // its current route dims fold UNCHANGED — no re-invention.
 
 import { signal, computed, type Signal } from "./signals";
-import { isIdentity, type Predicate } from "./predicate";
-import type { Selection, Clause } from "./selection";
 import {
-    cellToConstraint,
-    type DimPredicateSpec,
+    assertNever,
+    isIdentity,
     type DimAccessor,
-} from "@/charts/lib/filter-algebra";
+    type Predicate,
+} from "./predicate";
+import type { Selection, Clause } from "./selection";
 import type { DimCell } from "@/filter/composables/useFilterDimensions";
 
 // ── PARAMS-AS-SIGNALS: the one reactive param bag (≙ useViewParams, but a signal graph node) ─────
@@ -98,21 +98,44 @@ export interface DeclaredDim<Row> {
     cell: () => DimCell | null;
 }
 
-/** Map ONE declared dim to its predicate-tree LEAF (via the algebra's `cellToConstraint`), or null
-    when the cell is at rest / panel-only. The bridge that lets `DimCell` (single/multi/range/set) feed
-    the tree algebra — the EXISTING declaration surface, new engine. */
+/** Map one declared dimension directly to its normalized query leaf. Resting and panel-only
+    dimensions contribute no clause. */
 export function cellToClause<Row>(dim: DeclaredDim<Row>): Predicate<Row> | null {
-    if (!dim.field) return null; // panel-only dim
-    const constraint = cellToConstraint(dim.cell());
-    if (constraint.kind === "any") return null;
-    if (constraint.kind === "oneOf") {
-        return { op: "oneOf", field: dim.field, values: constraint.values, key: dim.key };
+    const cell = dim.cell();
+    if (!dim.field || cell == null) return null;
+    switch (cell.arity) {
+        case "single":
+            return cell.value == null
+                ? null
+                : {
+                      op: "oneOf",
+                      field: dim.field,
+                      values: new Set([String(cell.value)]),
+                      key: dim.key,
+                  };
+        case "multi":
+        case "set": {
+            const values = new Set([...cell.value].map(String));
+            return values.size === 0
+                ? null
+                : { op: "oneOf", field: dim.field, values, key: dim.key };
+        }
+        case "range":
+            return cell.value == null
+                ? null
+                : {
+                      op: "range",
+                      field: dim.field,
+                      lo: cell.value[0],
+                      hi: cell.value[1],
+                      key: dim.key,
+                  };
+        default:
+            return assertNever(cell);
     }
-    return { op: "range", field: dim.field, lo: constraint.lo, hi: constraint.hi, key: dim.key };
 }
 
-/** Fold a route's declared dims into ONE clause predicate (the AND-of-dims tree — parity with today's
-    `composePredicate`, now a tree). Feeds `selection.update({source, predicate})`. */
+/** Fold a route's declared dims into one AND-of-dim query. */
 export function dimsToPredicate<Row>(dims: readonly DeclaredDim<Row>[]): Predicate<Row> {
     const kids = dims
         .map(cellToClause)
@@ -314,6 +337,5 @@ export function createCoordinator<Row>(
 // Re-exports for consumers/tests.
 export { createSelection } from "./selection";
 export type { Selection, Resolution, Clause } from "./selection";
-export { compile, fromDimSpecs, explain, isIdentity } from "./predicate";
-export type { Predicate, Leaf } from "./predicate";
-export type { DimPredicateSpec };
+export { compile, explain, isIdentity } from "./predicate";
+export type { DimAccessor, Predicate, Leaf } from "./predicate";

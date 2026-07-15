@@ -1,27 +1,22 @@
-// platform/filter/predicate.ts — PREDICATE-AS-DATA: the boolean tree (and/or/not) that SUPERSEDES the
-// algebra's AND-of-OR-only floor. A predicate is DATA — introspectable, serializable, and compilable
-// to a row test — not an opaque closure. This is the Mosaic "filters are first-class query fragments,
-// not booleans baked into an array fold" model, atlas-sized.
+// platform/filter/predicate.ts — the normalized query algebra. A predicate is DATA — introspectable,
+// serializable, and compilable to a row test — not an opaque closure.
 //
 // THE TWO COMPOSITION LAYERS (kept DISTINCT — the whole point):
 //   1. WITHIN one clause: this boolean TREE — arbitrary and/or/not over leaf constraints. This is
 //      what a single interactor/dim can now express (e.g. "region ∈ {W,S} AND NOT pop<1000").
-//      The OLD algebra (`composePredicate`) only did AND-across-dims / OR-within-dim — a strict
-//      SUBSET of this tree (see `fromDimSpecs` below, which reproduces it exactly).
 //   2. ACROSS clauses: the RESOLUTION strategy (single/union/intersect/crossfilter) — owned by
 //      selection.ts, one layer up. This file owns layer 1 only.
 //
-// TOTALITY: `compile(null)` and `compile({op:"any"})` ⇒ the identity `() => true`, exactly like
-// the algebra's empty-spec case. Every branch returns a function (proof by the exhaustive switch
-// + `assertNever`). The leaf constraints REUSE the algebra's `oneOf`/`range` semantics verbatim
-// (stringified `oneOf` membership; inclusive `[lo,hi]` with ±Infinity no-op bounds) — so a tree
-// of pure leaves is behaviourally identical to `composePredicate` on the same constraints.
+// TOTALITY: `compile(null)` and `compile({op:"any"})` ⇒ the identity `() => true`. Every branch
+// returns a function, with `assertNever` enforcing exhaustive switches.
 
-import {
-    assertNever,
-    type DimAccessor,
-    type DimPredicateSpec,
-} from "@/charts/lib/filter-algebra";
+/** The row-field projection shared by query leaves, declared dimensions, and the URL codec. */
+export type DimAccessor<Row> = (row: Row) => string | number | null;
+
+/** Compile-time exhaustiveness sentinel with a named runtime failure. */
+export function assertNever(x: never): never {
+    throw new Error(`unhandled query variant: ${JSON.stringify(x)}`);
+}
 
 /** A leaf constraint bound to the field it tests. `oneOf` = within-OR membership; `range` =
     inclusive interval. `field` null-return ⇒ the row fails `oneOf` / no-ops `range` (algebra rule). */
@@ -78,38 +73,6 @@ export function compile<Row>(p: Predicate<Row> | null): (row: Row) => boolean {
         default:
             return assertNever(p);
     }
-}
-
-/** THE BRIDGE — reproduce the LEGACY `composePredicate(specs)` (AND-across-dims / OR-within-dim)
-    as a tree, proving the new algebra is a strict SUPERSET. Each spec becomes a leaf; the specs
-    AND together. `any`/accessor-less specs drop (algebra rule). Used by selection.ts so a
-    declared-dim `DimPredicateSpec[]` (today's `useFilteredRows` input) folds unchanged. */
-export function fromDimSpecs<Row>(
-    specs: readonly DimPredicateSpec<Row>[],
-): Predicate<Row> {
-    const kids: Predicate<Row>[] = [];
-    for (const s of specs) {
-        if (s.constraint.kind === "any" || !s.accessor) continue;
-        if (s.constraint.kind === "oneOf") {
-            kids.push({
-                op: "oneOf",
-                field: s.accessor,
-                values: s.constraint.values,
-                key: s.key,
-            });
-        } else {
-            kids.push({
-                op: "range",
-                field: s.accessor,
-                lo: s.constraint.lo,
-                hi: s.constraint.hi,
-                key: s.key,
-            });
-        }
-    }
-    if (kids.length === 0) return { op: "any" };
-    if (kids.length === 1) return kids[0];
-    return { op: "and", kids };
 }
 
 /** True when the tree is the identity (no active constraint) — the coordinator's `filterActive`

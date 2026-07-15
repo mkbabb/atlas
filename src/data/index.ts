@@ -6,12 +6,8 @@
 // entry stays unexported (it is consumed via the `?worker` query, not a normal symbol), and the
 // `glyphs/*.json` topology assets stay deep-path data (the encapsulation boundary).
 //
-// SCOPE — the LEAF data-plane. O-B3 landed the acyclic core; O-B9 (the composables/stores move)
-// lands the two leaves whose upstream it carries: `useYearScope` (→ `composables/useUrlState`) and
-// `routeUniverse` (→ `stores/useSelection` + `charts/selection-contract`). Two members still hold at
-// the monorepo source, DEFERRED (the library must stay green; NO dangling imports):
-//   · `useFilteredRows.ts` → `charts/lib/filter-algebra` (O-B4R) + `useFilterDimensions` (O-B5R) +
-//                            `useViewParams` (O-B4R via the stores SCC)                          ==> O-B4R/B5R.
+// SCOPE — the leaf data-plane. Query membership belongs to the filter engine; this barrel owns
+// feed, geometry, joins, and time scope.
 // (`minimapMark.ts` was a data-plane leaf until O-A12 FOLDED it into `charts/glyph/resolveEntityIcon`
 //  — the grain-aware resolver is a chart mark, so it homes in the glyph family, not the feed layer.)
 
@@ -40,8 +36,3 @@ export * from "./multiYear";
 // — the year-scope reader (URL-driven year cursor) + the route dataset-universe resolver (O-B9) —
 export * from "./useYearScope";
 export * from "./routeUniverse";
-
-// — O-B4R (the SCC closure): the filtered-rows selector —
-//   (`minimapMark` FOLDED into `charts/glyph/resolveEntityIcon` at O-A12 — the grain-aware resolver
-//   generalized from 2 to 4 variants; the mini-map now consumes `resolveEntityIconForSelection`.)
-export * from "./useFilteredRows";

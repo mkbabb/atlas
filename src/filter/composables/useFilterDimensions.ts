@@ -99,9 +99,8 @@ export interface DimDeclaration {
     paramKey?: string;
     /** The human label (for the filter rail; advisory). */
     label?: string;
-    /** K-FILTER-UNIFIED §4.C — the within-OR row ACCESSOR (the panel⇒store seam the generic fold
-        `composePredicate`s over). OMIT ⇒ panel-only. `never` is the loose base; `useFilteredRows`'s
-        `DeclaredDim<Row>` narrows it to the route's typed `(row: Row) => …`. */
+    /** K-FILTER-UNIFIED §4.C — the within-OR row accessor the normalized query folds over.
+        Omit for a panel-only dimension. */
     field?: (row: never) => string | number | null;
     /** K-FILTER-UNIFIED §4.C — the dim's `view`/`context` SCOPE (default `view`). A `context` dim
         narrows the rank/aggregate DOMAIN before the view fold; a `view` dim dims/encodes after. */
