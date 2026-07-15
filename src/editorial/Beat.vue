@@ -127,7 +127,7 @@ const revealOnce = computed<string | undefined>(() => (props.lift ? undefined : 
         </header>
 
         <!-- The beat body — the plate, or the interstitial element. -->
-        <slot />
+        <slot name="figure" />
     </section>
 </template>
 

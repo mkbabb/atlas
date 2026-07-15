@@ -101,10 +101,13 @@ const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : "
         :data-variant="variant"
         data-testid="animated-rule"
     >
+        <!-- A StoryCard seam is literal chrome, irrespective of the authored chapter variant. -->
+        <span v-if="isSeam" class="animated-rule__seam" />
+
         <!-- variant="numeral" — the ghost chapter watermark (text-ghost-numeral, the recessive ⑤
              atmosphere ink). Decorative + aria-hidden (the chapter label lives in the <h2>). -->
         <span
-            v-if="variant === 'numeral'"
+            v-else-if="variant === 'numeral'"
             class="animated-rule__numeral text-ghost-numeral"
             :data-rule-clock="'scroll'"
         >
@@ -115,8 +118,6 @@ const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : "
              no boil — the frame-guard); the bidirectional scroll draw for `draw` (Clock B, the
              view() draw the underlines use). The brush, grain, and clip-path wipe are ALL
              library-rendered (the thin-consumer contract; no atlas stroke cubic). -->
-        <span v-else-if="isSeam" class="animated-rule__seam" />
-
         <HandMark
             v-else
             class="animated-rule__ink"
@@ -197,7 +198,7 @@ const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : "
    while this bounded weight deliberately skips the tapered HandMark. */
 .animated-rule--seam {
     block-size: 1px;
-    margin-block: var(--storycard-pad, 1rem);
+    margin-block: 1rem;
     opacity: 1;
 }
 .animated-rule__seam {

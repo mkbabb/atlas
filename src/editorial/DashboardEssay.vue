@@ -363,6 +363,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                 </div>
             </template>
 
+            <template #figure>
             <component
                 :is="chapter.ornament"
                 v-if="chapter.ornament"
@@ -437,6 +438,8 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                 :is="vizComponent(chapter.viz)"
                 v-else-if="vizComponent(chapter.viz)"
             />
+            </template>
+
         </component>
 
         <!-- THE TRAILING CHAPTER RULE — the engraved <AnimatedRule> parting this beat from the next.
@@ -446,9 +449,9 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
              takes the heavier `weight="hero"` rule (the band ends, the lead beat begins). -->
         <!-- The divider treatment projects directly from the authored story point. -->
         <AnimatedRule
-            v-if="i < chapters.length - 1"
+            v-if="i < chapters.length - 1 && chapter.card?.seamRule !== false"
             :variant="junctionRule(storyChapters[i]?.rule)"
-            :weight="isCoverChapter(chapter, i) ? 'hero' : 'full'"
+            :weight="chapter.card ? 'seam' : isCoverChapter(chapter, i) ? 'hero' : 'full'"
             :seed="(props.story.seed ?? 0) + i + 1"
         />
     </template>

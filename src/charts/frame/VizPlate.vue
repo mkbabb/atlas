@@ -24,7 +24,7 @@
 //   • ChartDataTable  — the a11y rows that ARE the export payload (E3, off the contract).
 //   • VizDescription / VizKeyStats / PlateVoid — the new furniture rungs (E1 / B4 / E8).
 //   • vizExport       — the getDataURL / DOM-snapshot / CSV serializers (E3, ZERO heavy dep).
-import { inject } from "vue";
+import { inject, onBeforeUnmount, watch } from "vue";
 import { Download, SlidersHorizontal, Maximize2, Minimize2 } from "@lucide/vue";
 import { DockControl, DockTrigger } from "@mkbabb/glass-ui/dock";
 import { Badge } from "@mkbabb/glass-ui/badge";
@@ -41,11 +41,14 @@ import ChartLegend from "@/charts/legend/ChartLegend.vue";
 import ChartDataTable from "@/charts/legend/ChartDataTable.vue";
 import PlateVoid from "@/charts/frame/PlateVoid.vue";
 import PlateSkeleton from "@/charts/frame/PlateSkeleton.vue";
+import VizAppendixDock from "@/platform/provenance/VizAppendixDock.vue";
+import { STORY_CARD_KEY } from "@/charts/frame/story-card-context";
 import { useVizPlate, type VizPlateProps } from "./useVizPlate";
 import { STAGE_ANATOMY_KEY } from "@/charts/contract/scene-contract";
 
 const props = withDefaults(defineProps<VizPlateProps>(), { chart: null, nav: null });
 const suppressFoot = inject(STAGE_ANATOMY_KEY, false);
+const storyCard = inject(STORY_CARD_KEY, null);
 
 const {
     slots,
@@ -66,6 +69,7 @@ const {
     reveal,
     glyphs,
     aggregateStats,
+    keyStats,
     provenance,
     archetype,
     filterDockOpen,
@@ -83,6 +87,19 @@ const {
     size,
     frameRef,
 } = useVizPlate(props);
+
+watch(
+    () => [props.contract.id, aggregateStats.value] as const,
+    ([vizId, stats], _previous, onCleanup) => {
+        if (!storyCard) return;
+        storyCard.setAggregateStats(vizId, stats);
+        onCleanup(() => {
+            if (props.contract.id !== vizId) storyCard.clearAggregateStats(vizId);
+        });
+    },
+    { immediate: true },
+);
+onBeforeUnmount(() => storyCard?.clearAggregateStats(props.contract.id));
 
 defineExpose({ archetype });
 </script>
@@ -262,7 +279,7 @@ defineExpose({ archetype });
                 :contract-id="contract.id"
             />
         </template>
-        <template v-if="aggregateStats.length" #aggregate-stats-top>
+        <template v-if="!storyCard && aggregateStats.length" #aggregate-stats-top>
             <slot
                 name="aggregate-stats"
                 :stats="aggregateStats"
@@ -410,46 +427,40 @@ defineExpose({ archetype });
                  outside-the-grid placement. The host READS the declaration and ROUTES it to its
                  owning wave via a scoped slot — J-FRAME renders NOTHING. Absent when undeclared. -->
             <slot
-                v-if="aggregateStats.length"
+                v-if="!storyCard && aggregateStats.length"
                 name="aggregate-stats"
                 :stats="aggregateStats"
                 placement="bottom"
                 :contract-id="contract.id"
             />
 
-            <!-- O-D3 — THE PLATE-FOOT LEDGER BAND (FACET 5; the always-on-but-QUIET provenance
-                 dock seat, [ANSWERS Q-53]). ONE hairline-ruled foot row, never two registers: the
-                 WG-A `ProvenanceBar` primitive (O-A9) fills the `#provenance` slot when a route
-                 wires it; absent that — every route today, the slot is unfilled platform-wide —
-                 the SAME B4 key-stat strip that used to mount unconditionally above now falls back
-                 into this seat (O-C4's declutter reconcile: "the provenance law and the declutter
-                 law RECONCILE at the foot register, so provenance never opens a second hierarchy
-                 level"). `platePhase==='figure'` guards the stat-band arm only (`keyStats()` wants
-                 ready data); the provenance arm stays phase-independent — an "always-on" dock reads
-                 the same during loading/error/empty as it does once the figure lands. -->
+            <!-- The fixed foot keeps the factual crown and the appendix as separate seats. The
+                 existing provenance and #foot fills move intact inside the collapsed dock, so the
+                 crown never disappears merely because source detail is available. -->
             <div
-                v-if="!suppressFoot && (provenance || platePhase === 'figure' || slots.foot)"
+                v-if="!suppressFoot && (keyStats.length || provenance || slots.foot)"
                 class="viz-plate__foot"
                 data-testid="viz-plate-foot"
             >
-                <slot
-                    v-if="provenance"
-                    name="provenance"
-                    :provenance="provenance"
-                    :contract-id="contract.id"
-                />
                 <VizKeyStats
-                    v-else-if="platePhase === 'figure'"
+                    v-if="keyStats.length"
                     class="viz-plate__keystats"
-                    :stats="contract.keyStats()"
+                    :stats="keyStats"
                 />
-                <!-- THE FOOT SLOT (EX-51 · O-D12 residue 2) — an ADDITIVE, contract-independent seat
-                     in the SAME ruled row for a consumer-authored fragment (the M-family's recessive
-                     AXIOM-5 terminal annotation). Empty for every plate that does not fill it (every
-                     shipped VizPlate consumer stays byte-identical); the widened outer `v-if` above
-                     lets the row itself appear even when neither provenance nor keyStats would (a
-                     `hideKeyStats` plate whose ONLY foot content is this slot). -->
-                <slot name="foot" :contract-id="contract.id" />
+                <VizAppendixDock
+                    v-if="provenance || slots.foot"
+                    class="viz-plate__appendix"
+                    peek-label="Source"
+                >
+                    <template #peek>{{ provenance?.dataset ?? contract.title }}</template>
+                    <slot
+                        v-if="provenance"
+                        name="provenance"
+                        :provenance="provenance"
+                        :contract-id="contract.id"
+                    />
+                    <slot name="foot" :contract-id="contract.id" />
+                </VizAppendixDock>
             </div>
         </template>
     </ChartFrame>

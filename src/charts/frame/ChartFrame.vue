@@ -62,6 +62,7 @@
 // the frame just supplies the matching chrome scale.
 import {
     computed,
+    inject,
     nextTick,
     onErrorCaptured,
     provide,
@@ -73,6 +74,7 @@ import { ExpandableContainer } from "@mkbabb/glass-ui/expandable-container";
 import { useViewParams } from "@/platform/stores/useViewParams";
 import { EXPAND_SETTLE_KEY } from "@/charts/scene/expand-settle";
 import PlateError from "@/charts/frame/PlateError.vue";
+import { STORY_CARD_KEY } from "@/charts/frame/story-card-context";
 import { useHeadlineLift } from "./useHeadlineLift";
 
 const props = withDefaults(
@@ -123,6 +125,7 @@ const props = withDefaults(
 );
 
 const slots = useSlots();
+const cardContained = inject(STORY_CARD_KEY, null) !== null;
 
 /** The hero plate reads the `text-headline` title rung + the more generous gutter (K3). */
 const isHero = computed(() => props.size === "hero");
@@ -317,7 +320,7 @@ watch(open, (value) => {
         class="plate paper-grain-overlay"
         :class="[
             isHero ? 'plate--hero p-6 sm:p-8' : 'p-4 sm:p-5',
-            { 'plate--straddle': straddling },
+            { 'plate--straddle': straddling, 'plate--card-contained': cardContained },
         ]"
         :style="plateVars"
         role="group"

@@ -81,7 +81,7 @@ describe("VizAppendixDock state law", () => {
         expect(resolveAppendixDetent("peek", "close")).toBe("shut");
     });
 
-    it("ships a collapsed expandable control and a print-visible pane", () => {
+    it("uses an inline desktop disclosure and a Glass-owned phone modal from one slot", () => {
         const source = readFileSync(
             new URL("../../src/platform/provenance/VizAppendixDock.vue", import.meta.url),
             "utf8",
@@ -89,7 +89,29 @@ describe("VizAppendixDock state law", () => {
         expect(source).toContain("data-appendix-dock");
         expect(source).toContain(':aria-expanded="state === \'full\'"');
         expect(source).toContain(':aria-controls="paneId"');
+        expect(source).toContain(':is="isPhone ? DrawerContent : \'div\'"');
+        expect(source).toContain(":role=\"isPhone ? undefined : 'region'\"");
+        expect(source).toContain('mode="modal"');
+        expect(source).toContain('direction="bottom"');
+        expect(source).toContain(':force-mount="isPhone ? true : undefined"');
+        expect(source).toContain(":inert=\"isPhone && state !== 'full' ? true : undefined\"");
+        expect(source).toContain("DrawerTrigger");
+        expect(source).toContain("DrawerClose");
+        expect(source.match(/<slot\s*\/>/g)).toHaveLength(1);
+        expect(source).not.toContain('role="dialog"');
+        expect(source).not.toContain('aria-modal="true"');
+        expect(source).not.toContain("appendix-dock__scrim");
         expect(source).toMatch(/@media print[\s\S]*\.appendix-dock__pane\[hidden\][\s\S]*display: block/);
+    });
+
+    it("seats the dock beside, rather than instead of, the existing key-stat crown", () => {
+        const source = readFileSync(
+            new URL("../../src/charts/frame/VizPlate.vue", import.meta.url),
+            "utf8",
+        );
+        expect(source).toMatch(/<VizKeyStats\s+v-if="keyStats.length"/);
+        expect(source).toContain('v-if="provenance || slots.foot"');
+        expect(source).toMatch(/<VizAppendixDock[\s\S]*<slot\s+v-if="provenance"[\s\S]*<slot name="foot"/);
     });
 });
 

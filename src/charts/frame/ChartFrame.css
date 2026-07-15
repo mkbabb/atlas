@@ -128,6 +128,14 @@
         0 3px 12px oklch(0 0 0 / 0.1);
 }
 
+/* StoryCard owns the containing perimeter. Keep the graph-paper figure interior, but do not
+   draw a second border or engraved shadow inside the card. This follows the injected containing
+   surface rather than a prop threaded through every feature-plate wrapper. */
+.plate--card-contained {
+    border: 0;
+    box-shadow: none;
+}
+
 /* ── THE THREE-ZONE HEADER GRID (E5a §1 · d-header-legend M1–M7) ─────────────────────────────
    The single header is a named three-column grid: MASTHEAD (the eyebrow + title) takes the
    flexible measure; KEY (the inline legend) + CONTROL (the `#actions` cluster) take their

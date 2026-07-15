@@ -271,6 +271,10 @@ const glyphs = computed(() => props.contract.glyphs ?? null);
 /** FACET 4 — the declared aggregate stats (or [] when undeclared). J-STORY places them OUTSIDE the
     grid. The host READS the thunk's face; J-STORY owns the placement. */
 const aggregateStats = computed(() => props.contract.aggregateStats?.() ?? []);
+/** B4 — the optional compact crown. An aggregate-only card has no empty foot furniture. */
+const keyStats = computed(() =>
+    platePhase.value === "figure" ? (props.contract.keyStats?.() ?? []) : [],
+);
 /** FACET 5 — the declared provenance lockup (null when undeclared). J-VOICE renders it. */
 const provenance = computed(() => props.contract.provenance ?? null);
 
@@ -451,6 +455,7 @@ watchEffect(() => {
         reveal,
         glyphs,
         aggregateStats,
+        keyStats,
         provenance,
         archetype,
         panel,

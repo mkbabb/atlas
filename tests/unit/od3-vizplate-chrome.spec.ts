@@ -8,8 +8,8 @@
 //       trigger]` pad (Expand), and the YearScrubber pip block-axis pad (the scrub handle).
 //   (2) the floating FILTERS pill kill — `.cp-filter-trigger` is gone from FilterPanel.vue while
 //       the drawer model and per-plate filter door remain available.
-//   (3) the plate-foot ledger band — ONE `.viz-plate__foot` row hosting the `#provenance` slot
-//       when filled, the `VizKeyStats` stat-band fallback when not, never both.
+//   (3) the plate-foot ledger band — a visible `VizKeyStats` crown beside a collapsed appendix
+//       dock containing the existing provenance / additive foot slots.
 //   (4) the shell landmarks — `<header role=banner>` in PlatformShell, `tabindex="-1"` on
 //       `#main-content`, `<footer role=contentinfo>` on SiteColophon.
 import { describe, it, expect } from "vitest";
@@ -95,7 +95,7 @@ describe("O-D3 — the floating FILTERS pill kill (render-A cross-route; L33 X9)
     });
 });
 
-describe("O-D3 — the plate-foot ledger band ([ANSWERS Q-53]; L34 §1.2.13, R-020 CD-10)", () => {
+describe("O-D3 — the fixed plate-foot crown + appendix", () => {
     const foot = VIZ_PLATE.slice(
         VIZ_PLATE.indexOf('class="viz-plate__foot"') - 200,
         VIZ_PLATE.indexOf('class="viz-plate__foot"') + 700,
@@ -105,15 +105,19 @@ describe("O-D3 — the plate-foot ledger band ([ANSWERS Q-53]; L34 §1.2.13, R-0
         expect(foot).toContain('data-testid="viz-plate-foot"');
     });
 
-    it("the provenance slot wins when declared", () => {
-        expect(foot).toMatch(/<slot\s+v-if="provenance"\s+name="provenance"/);
+    it("mounts the existing collapsed appendix dock for provenance or additive foot content", () => {
+        expect(VIZ_PLATE).toContain("<VizAppendixDock");
+        expect(VIZ_PLATE).toContain('v-if="provenance || slots.foot"');
+        expect(VIZ_PLATE).toContain('peek-label="Source"');
     });
 
-    it("the stat band (VizKeyStats) is the v-else-if fallback — never co-rendered with provenance", () => {
-        expect(foot).toMatch(/<VizKeyStats\s+v-else-if="platePhase === 'figure'"/);
+    it("keeps the stat crown independent from provenance", () => {
+        expect(foot).toMatch(/<VizKeyStats\s+v-if="keyStats.length"/);
+        expect(foot).not.toContain("v-else-if");
     });
 
-    it("EX-51 · O-D12 residue 2 — the ADDITIVE #foot slot seats a consumer fragment in the SAME ruled row (empty for every plate that does not fill it)", () => {
+    it("preserves the current provenance and additive foot slot payloads inside the dock", () => {
+        expect(VIZ_PLATE).toMatch(/<VizAppendixDock[\s\S]*name="provenance"/);
         expect(VIZ_PLATE).toContain('<slot name="foot" :contract-id="contract.id" />');
     });
 

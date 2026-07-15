@@ -23,15 +23,67 @@ describe("HeroSystem", () => {
 describe("StoryCard composition", () => {
     it("composes the shipped Card, Beat, and AnimatedRule with no more than two seams", () => {
         const card = source("src/editorial/StoryCard.vue");
+        const essay = source("src/editorial/DashboardEssay.vue");
+        const rule = source("src/editorial/AnimatedRule.vue");
         expect(card).toContain(':surface="surface"');
         expect(card).toContain(":tier=\"facet.tier ?? 'quiet'\"");
         expect(card).toContain("<Beat");
         expect(card.match(/<AnimatedRule/g)).toHaveLength(2);
         expect(card).toContain('weight="seam"');
         expect(card).not.toMatch(/\.story-card\s*\{[^}]*border-radius/s);
-        expect(source("src/editorial/DashboardEssay.vue")).toContain(
-            ":is=\"chapter.card ? StoryCard : Beat\"",
+        expect(essay).toContain(":is=\"chapter.card ? StoryCard : Beat\"");
+        expect(essay).toContain("<template #figure>");
+        expect(essay).toContain("chapter.card ? 'seam'");
+        expect(source("src/editorial/Beat.vue")).toContain('<slot name="figure" />');
+        expect(rule.indexOf('v-if="isSeam"')).toBeLessThan(
+            rule.indexOf('v-else-if="variant === \'numeral\'"'),
         );
+    });
+
+    it("lets Glass own the card rhythm and suppresses only nested ChartFrame perimeter chrome", () => {
+        const card = source("src/editorial/StoryCard.vue");
+        const frame = source("src/charts/frame/ChartFrame.vue");
+        const frameCss = source("src/charts/frame/ChartFrame.css");
+
+        expect(card).toContain("provide(STORY_CARD_KEY, context)");
+        for (const variable of [
+            "--card-pad-inline",
+            "--card-pad-block",
+            "--card-pad-section-gap",
+            "--card-pad-footer",
+            "--card-pad-title-gap",
+        ]) {
+            expect(card).toContain(`var(${variable})`);
+        }
+        expect(card).not.toContain("var(--space-phi-");
+        expect(card).not.toContain("--storycard-pad");
+        expect(frame).toContain("inject(STORY_CARD_KEY, null) !== null");
+        expect(frame).toContain("'plate--card-contained': cardContained");
+        expect(frameCss).toMatch(/\.plate--card-contained\s*{[^}]*border:\s*0;[^}]*box-shadow:\s*none;/s);
+    });
+
+    it("keeps keyStats as an optional non-card crown while card stats use aggregateStats", () => {
+        const contract = source("src/charts/contract/viz-contract.ts");
+        const plate = source("src/charts/frame/VizPlate.vue");
+        expect(contract).toContain("keyStats?: () => KeyStat[]");
+        expect(source("src/charts/frame/useVizPlate.ts")).toContain(
+            "props.contract.keyStats?.() ?? []",
+        );
+        expect(plate).toContain('v-if="!suppressFoot && (keyStats.length || provenance || slots.foot)"');
+        expect(plate).toContain(':stats="keyStats"');
+        expect(source("src/editorial/StoryCardStats.vue")).toContain(
+            "storyCard.aggregateStats.value",
+        );
+        expect(plate).toContain("storyCard.setAggregateStats(vizId, stats)");
+        expect(plate).toContain("if (props.contract.id !== vizId) storyCard.clearAggregateStats(vizId)");
+        expect(plate).toContain("!storyCard && aggregateStats.length");
+    });
+
+    it("clears the prior aggregate-stat registration when a plate contract id is replaced", () => {
+        const plate = source("src/charts/frame/VizPlate.vue");
+        expect(plate).toContain("[props.contract.id, aggregateStats.value] as const");
+        expect(plate).toContain("storyCard.setAggregateStats(vizId, stats)");
+        expect(plate).toContain("if (props.contract.id !== vizId) storyCard.clearAggregateStats(vizId)");
     });
 
     it("keeps veil as the quiet default and preserves the measured opaque downgrade", () => {

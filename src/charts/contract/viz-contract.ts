@@ -1,7 +1,7 @@
 // platform/charts/viz-contract.ts — THE VIZ CONTRACT KEYSTONE (I2.a · DESIGN §3.7).
 //
 // A viz becomes a declared OBJECT, not an assembled template. ONE `VizContract` carries
-// every §E / §B affordance — the title, the axis-coloured description (E1), the key-stat strip
+// every §E / §B affordance — the title, the axis-coloured description (E1), an optional key-stat strip
 // (B4), the options spec (E2), the legend policy (E5), the export payload (E3), the body-engine
 // selector (the render kind), and the empty-data signal (E8) — and ONE host (`VizPlate.vue`)
 // renders the whole furniture from it, COMPOSING `ChartFrame` internally. A plate that omits a
@@ -9,9 +9,8 @@
 //
 // THE REQUIRED FIELDS (the born-RED coverage law, DESIGN §3.7 / I2 Hard Gate 1):
 //   • `description` (E1) — the axis-keyed colour-matched dek. NON-OPTIONAL.
-//   • `keyStats`    (B4) — the per-viz key figures, as a thunk off the store reducers. NON-OPTIONAL.
 //   • `export`      (E3) — the CSV/PNG payload spec. NON-OPTIONAL.
-// `options` (E2), `legend` (E5), `render`, `isEmpty` (E8) are DECLARED FACETS (optional shape,
+// `keyStats` (B4), `options` (E2), `legend` (E5), `render`, `isEmpty` (E8) are DECLARED FACETS (optional shape,
 // but a plate declares `options: []` explicitly rather than silently omitting — the survey is the
 // default, DESIGN §2.2.3).
 //
@@ -410,8 +409,8 @@ export interface VizContract {
     title: string;
     /** E1 — the axis-keyed colour-matched description. REQUIRED (a missing dek FAILS tsc). */
     description: AxisDescription;
-    /** B4 — the per-viz key figures, off the store reducers. REQUIRED. */
-    keyStats: () => KeyStat[];
+    /** B4 — optional per-viz key figures for the compact non-card crown. */
+    keyStats?: () => KeyStat[];
     /** E3 — the CSV/PNG payload spec. REQUIRED. */
     export: ExportSpec;
     /** RM-5 — the delegating download seat opens this panel at `?browse=<id>`. */

@@ -1,5 +1,15 @@
 <script setup lang="ts">
-import { ref, useId, watch } from "vue";
+import { computed, ref, useId, watch } from "vue";
+import {
+    Drawer,
+    DrawerClose,
+    DrawerContent,
+    DrawerDescription,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerTrigger,
+} from "@mkbabb/glass-ui/drawer";
+import { useMobileRegister } from "@/platform/composables/useMobileRegister";
 import {
     resolveAppendixDetent,
     type AppendixDetent,
@@ -31,6 +41,7 @@ defineSlots<{
 const paneId = `appendix-pane-${useId().replaceAll(":", "")}`;
 const headingId = `${paneId}-heading`;
 const state = ref<AppendixDetent>(props.detent);
+const { isPhone } = useMobileRegister();
 
 watch(
     () => props.detent,
@@ -47,6 +58,18 @@ function apply(intent: AppendixDockIntent): void {
     emit("detent-change", next);
 }
 
+const drawerOpen = computed({
+    get: () => isPhone.value && state.value === "full",
+    set: (open: boolean) => {
+        if (!isPhone.value) return;
+        apply(open ? "expand" : "close");
+    },
+});
+
+function toggleInline(): void {
+    if (!isPhone.value) apply("toggle");
+}
+
 defineExpose({
     peek: () => apply("peek"),
     open: () => apply("expand"),
@@ -56,64 +79,65 @@ defineExpose({
 
 <template>
     <section class="appendix-dock" :data-detent="state" data-appendix-dock>
-        <button
-            class="appendix-dock__control"
-            type="button"
-            :aria-expanded="state === 'full'"
-            :aria-controls="paneId"
-            @click="apply('toggle')"
-        >
-            <span class="appendix-dock__crest" aria-hidden="true">Σ</span>
-            <span>{{ label }}</span>
-            <span class="appendix-dock__state" aria-hidden="true">
-                {{ state === "full" ? "Close" : "Open" }}
-            </span>
-        </button>
+        <Drawer v-model:open="drawerOpen" direction="bottom" mode="modal">
+            <component :is="isPhone ? DrawerTrigger : 'span'" :as-child="isPhone || undefined">
+                <button
+                    class="appendix-dock__control"
+                    type="button"
+                    :aria-expanded="state === 'full'"
+                    :aria-controls="paneId"
+                    @click="toggleInline"
+                >
+                    <span class="appendix-dock__crest" aria-hidden="true">Σ</span>
+                    <span>{{ label }}</span>
+                    <span class="appendix-dock__state" aria-hidden="true">
+                        {{ state === "full" ? "Close" : "Open" }}
+                    </span>
+                </button>
+            </component>
 
-        <div
-            v-if="state === 'peek'"
-            class="appendix-dock__peek"
-        >
-            <dl>
-                <div>
-                    <dt>{{ peekLabel }}</dt>
-                    <dd><slot name="peek" /></dd>
-                </div>
-            </dl>
-            <button
-                type="button"
-                :aria-controls="paneId"
-                aria-expanded="false"
-                @click="apply('expand')"
+            <div
+                v-if="state === 'peek'"
+                class="appendix-dock__peek"
             >
-                Open
-            </button>
-        </div>
-
-        <button
-            v-if="state === 'full'"
-            class="appendix-dock__scrim"
-            type="button"
-            aria-label="Close appendix"
-            @click="apply('close')"
-        />
-
-        <div
-            :id="paneId"
-            class="appendix-dock__pane"
-            :hidden="state !== 'full'"
-            role="dialog"
-            aria-modal="true"
-            :aria-labelledby="headingId"
-        >
-            <div class="appendix-dock__pane-head">
-                <h2 :id="headingId">{{ label }}</h2>
-                <button type="button" @click="apply('close')">Close</button>
+                <dl>
+                    <div>
+                        <dt>{{ peekLabel }}</dt>
+                        <dd><slot name="peek" /></dd>
+                    </div>
+                </dl>
             </div>
-            <div class="appendix-dock__reading">
-                <slot />
-            </div>
-        </div>
+
+            <component
+                :is="isPhone ? DrawerContent : 'div'"
+                :id="paneId"
+                class="appendix-dock__pane"
+                :hidden="isPhone ? undefined : state !== 'full'"
+                :role="isPhone ? undefined : 'region'"
+                :aria-labelledby="headingId"
+                :aria-hidden="isPhone && state !== 'full' ? true : undefined"
+                :inert="isPhone && state !== 'full' ? true : undefined"
+                :force-mount="isPhone ? true : undefined"
+                :show-overlay="isPhone ? true : undefined"
+                :surface="isPhone ? 'opaque' : undefined"
+            >
+                <component :is="isPhone ? DrawerHeader : 'div'" class="appendix-dock__pane-head">
+                    <component :is="isPhone ? DrawerTitle : 'h2'" :id="headingId">
+                        {{ label }}
+                    </component>
+                    <DrawerDescription v-if="isPhone" class="sr-only">
+                        Source, method, and provenance detail for this figure.
+                    </DrawerDescription>
+                    <DrawerClose v-if="isPhone" as-child>
+                        <button type="button">Close</button>
+                    </DrawerClose>
+                    <button v-else type="button" @click="apply('close')">Close</button>
+                </component>
+                <div class="appendix-dock__reading">
+                    <slot />
+                </div>
+            </component>
+        </Drawer>
     </section>
 </template>
 
@@ -123,10 +147,6 @@ defineExpose({
     gap: 0.45rem;
     min-inline-size: 0;
     color: var(--foreground);
-}
-
-.appendix-dock__scrim {
-    display: none;
 }
 
 .appendix-dock__control,
@@ -161,7 +181,6 @@ defineExpose({
 
 .appendix-dock__peek {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) max-content;
     align-items: center;
     gap: 0.65rem;
     inline-size: 100%;
@@ -194,16 +213,6 @@ defineExpose({
     color: color-mix(in oklab, var(--foreground), transparent 8%);
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.appendix-dock__peek > button {
-    color: inherit;
-    background: transparent;
-    border: 0;
-    font-family: var(--font-mono);
-    font-size: var(--type-micro);
-    text-decoration: underline;
-    text-underline-offset: 2px;
 }
 
 .appendix-dock__pane {
@@ -240,7 +249,7 @@ defineExpose({
     line-height: 1.55;
 }
 
-@media (max-width: 640px) {
+@media (--phone) {
     .appendix-dock button {
         min-block-size: 44px;
     }
@@ -250,25 +259,13 @@ defineExpose({
         inline-size: 100%;
     }
 
-    .appendix-dock__scrim {
-        position: fixed;
-        z-index: 40;
-        inset: 0;
-        display: block;
-        inline-size: 100%;
-        border: 0;
-        background: color-mix(in oklab, var(--foreground), transparent 62%);
+    :global(.appendix-dock__pane[data-glass-drawer]) {
+        max-block-size: min(82dvh, 44rem);
+        overflow: auto;
     }
 
-    .appendix-dock__pane {
-        position: fixed;
-        z-index: 41;
-        inset: auto 0 0;
-        max-block-size: min(82dvh, 44rem);
+    .appendix-dock__reading {
         padding: 1rem;
-        overflow: auto;
-        background: var(--background);
-        box-shadow: var(--shadow-xl, 0 -1rem 3rem color-mix(in oklab, var(--foreground), transparent 82%));
     }
 
     .appendix-dock__pane-head button {
@@ -279,21 +276,27 @@ defineExpose({
 @media print {
     .appendix-dock__control,
     .appendix-dock__peek,
-    .appendix-dock__scrim,
     .appendix-dock__pane-head button {
         display: none;
     }
 
-    .appendix-dock__pane {
+    .appendix-dock__pane,
+    :global(.appendix-dock__pane[data-glass-drawer]) {
         position: static;
+        display: block;
         max-block-size: none;
         padding: 0;
         overflow: visible;
         box-shadow: none;
+        transform: none !important;
     }
 
     .appendix-dock__pane[hidden] {
         display: block;
+    }
+
+    :global([data-stage-scrim]) {
+        display: none !important;
     }
 }
 </style>
