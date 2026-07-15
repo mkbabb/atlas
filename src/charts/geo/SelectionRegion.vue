@@ -10,7 +10,7 @@
 // (`aria-activedescendant`), Enter/Space selects, Cmd/Ctrl+Enter toggles-in-set, Escape
 // clears (the WAI-ARIA APG listbox pattern). It NEVER paints the data; it emits the SAME
 // `SelectEvent` the pointer producer does, so it routes through the identical
-// `useChartSelection().onSelect`. The visible focus indicator is the `activeKey` → a
+// `useChartSelection(kind).onSelect`. The visible focus indicator is the `activeKey` → a
 // `data-kbd-active` attribute the plate's mark reads (the `kbd-active:` variant), so the
 // keyboard cursor is visible on the map without a second render system.
 //

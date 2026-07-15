@@ -117,6 +117,7 @@ export interface SelectionKey {
  * result is a plain string the Set holds with zero special-casing.
  */
 export function encodeSelKey(kind: SelectionKind, id: string): string {
+    if (id.length === 0) throw new Error("selection id cannot be empty");
     return `${kind}:${id}`;
 }
 

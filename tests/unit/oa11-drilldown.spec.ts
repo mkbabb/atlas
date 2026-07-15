@@ -25,7 +25,7 @@ import {
     unionExtent,
     boundedMinimapViewBox,
 } from "@/interaction/minimapExtent";
-import { parseSelKey } from "@/charts/contract/selection-contract";
+import { encodeSelKey, parseSelKey } from "@/charts/contract/selection-contract";
 
 describe("O-A11 · the aggregate LAW (the Simpson trap)", () => {
     it("selects the honest op by measure KIND — extensive Σ, intensive pooled", () => {
@@ -92,6 +92,10 @@ describe("O-A11 · the `?sel` round-trip (parse-guarded, post-drop count)", () =
         const keys = selKeysFrom("state:48,37,cell:x");
         expect(keys.map((k) => k.key)).toEqual(["state:48", "cell:x"]);
         expect(keys.length).toBe(2);
+    });
+
+    it("rejects an empty id at the producer edge", () => {
+        expect(() => encodeSelKey("firm", "")).toThrow("selection id cannot be empty");
     });
 
     it("round-trips two well-formed keys — `state:48,state:02` → MULTI×2", () => {

@@ -23,10 +23,6 @@
 // back-projection (GAP-2 cured at the read). `encodeKey(rawId)` is exposed so the producer can
 // pin its readout under the SAME composite key the Set holds (the pin tier keys on `selectedKeys`).
 //
-// OMIT the `kind` and the seam is BYTE-IDENTICAL to before (the legacy/non-geo path — a firm-keyed
-// treemap, a bare-grain plate): no encode, the raw Set passes through, `encodeKey` is identity. The
-// codec is OPT-IN at the producer edge — a non-codec selection coexists in the grain-agnostic Set.
-
 import { computed, type ComputedRef } from "vue";
 import {
     encodeSelKey,
@@ -53,42 +49,24 @@ export interface UseChartSelection {
 }
 
 /**
- * Wire a chart primitive's `@select` to the platform selection store. The overload split keeps the
- * legacy positional `mapKey` signature working while adding the kind-aware edge:
- *   • `useChartSelection()` / `useChartSelection(mapKey)` — the LEGACY path (no kind): the Set holds
- *     the bare mark/selection key exactly as before (a non-codec / firm-keyed plate).
- *   • `useChartSelection(kind)` / `useChartSelection(kind, mapKey)` — the KIND-AWARE path: `onSelect`
- *     encodes `{kind}:{id}` and `selectedKeys` back-projects to the kind's native grain.
+ * Wire a chart primitive's `@select` to the platform selection store. Every producer names its
+ * selection kind, so the Set contains only composite keys and the returned set is the native-grain
+ * back-projection used by chart marks.
  * An empty key clears the selection (the keyboard Escape idiom — `SelectionRegion` emits `key: ""`).
  */
-export function useChartSelection(mapKey?: MapKeyFn): UseChartSelection;
 export function useChartSelection(
     kind: SelectionKind,
-    mapKey?: MapKeyFn,
-): UseChartSelection;
-export function useChartSelection(
-    kindOrMapKey?: SelectionKind | MapKeyFn,
-    maybeMapKey?: MapKeyFn,
+    mapKey: MapKeyFn = (key) => key,
 ): UseChartSelection {
-    // Disambiguate the overload: a string first arg is the `kind`, a function first arg the legacy
-    // `mapKey`. The kind-aware path encodes + back-projects; the legacy path is byte-identical.
-    const kind: SelectionKind | null =
-        typeof kindOrMapKey === "string" ? kindOrMapKey : null;
-    const mapKey: MapKeyFn =
-        typeof kindOrMapKey === "function"
-            ? kindOrMapKey
-            : (maybeMapKey ?? ((k) => k));
-
     const sel = useSelection();
 
-    // The frame channel the plate binds to `:selected-keys`. With a kind it is the native-grain
-    // back-projection (raw ids of that kind only); without, the raw Set (the legacy passthrough).
+    // The frame channel the plate binds to `:selected-keys`: raw ids of this kind only.
     const selectedKeys = computed<ReadonlySet<string>>(() =>
-        kind ? sel.selectedIdsOf(kind) : sel.selectedKeys,
+        sel.selectedIdsOf(kind),
     );
 
     function encodeKey(rawId: string): string {
-        return kind ? encodeSelKey(kind, rawId) : rawId;
+        return encodeSelKey(kind, rawId);
     }
 
     function onSelect(ev: SelectEvent): void {
@@ -98,8 +76,6 @@ export function useChartSelection(
         }
         const id = mapKey(ev.key);
         if (id == null) return;
-        // The kind-aware edge mints the composite key here (the Set still only stores + equates the
-        // resulting string); the legacy path selects the bare id exactly as before.
         sel.select(encodeKey(id), { additive: ev.multi });
     }
 
