@@ -15,7 +15,6 @@
 
 import type { Chapter } from "@/contract";
 import type { ResolvedBeatTemplate } from "./beat-template";
-import type { SceneContext } from "@/charts/contract/scene-contract";
 import {
     encodeSelKey,
     parseSelKey,
@@ -168,30 +167,3 @@ export interface ChapterChoreography {
     attached, so `DashboardEssay` renders it unchanged (it ignores the facets) and the director reads
     them. */
 export type StoryChapter = Chapter & ChapterChoreography;
-
-/** Read a chapter's arriving edge facet (type-narrowing helper — a plain `Chapter` returns
-    `undefined`, a `StoryChapter` returns its declared edge). */
-export function chapterTransition(c: StoryChapter): EdgeSpec | undefined {
-    return c.transition;
-}
-
-/** A chapter declares a shared-element arrival iff its transition facet names it — the ONE predicate
-    the corridor band + the recede engage on (D7: the corridor is DERIVED, zero new authored state). */
-export function declaresSharedElement(c: StoryChapter): boolean {
-    return c.transition?.kind === "shared-element";
-}
-
-// ── SceneContext.transitionT — Open Q5 LANDS (the scene-contract forward extension) ───────────────
-
-/** The CONTINUOUS scene context — the forward-extensible fields `scene-contract.ts` reserved.
-    `transitionT` is derived from the SAME geometry the IntersectionObserver band discretizes (the
-    step blocks' centre positions), read continuously off the one clock (0 ⇒ settled on the active
-    step, →1 ⇒ arriving at the next). Under PRM it pins to 0 (the discrete `apply()` boundary
-    behaviour is UNCHANGED — information parity; the scrub is the enhancement, never the information). */
-export interface SceneContextV2 extends SceneContext {
-    /** Continuous 0..1 scrub between the active step and the next (PRM ⇒ 0). */
-    transitionT: import("vue").ComputedRef<number>;
-    /** The story-grain continuous position `(activeIndex + transitionT) / (N−1)` — supersedes the
-        discrete `progress` for consumers that scrub (the rail keeps `progress`). */
-    scrubT: import("vue").ComputedRef<number>;
-}

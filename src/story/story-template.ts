@@ -21,7 +21,6 @@ import type {
 } from "@/contract";
 import type { ColorKind } from "@/charts/scale/colorKind";
 import type {
-    BeatTransition,
     EdgeSpec,
     FocusEffect,
     StoryChapter,
@@ -183,26 +182,22 @@ export interface StoryInstance<T extends StoryTemplate = StoryTemplate> {
     seed?: number;
 }
 
-/** The compiled story — the T1 form. `chapters` is byte-compatible with `DashboardEssay`'s existing
-    prop (the choreography facets are additive); the director consumes the edges. */
+/** The compiled story — the T1 form. The ordered chapters are the sole output; each arriving
+    chapter carries its own optional edge facet for the director. */
 export interface StoryDefinition {
     chapters: StoryChapter[];
-    transitions: BeatTransition[];
 }
 
 /**
- * THE EXPANSION — pure + total. Walks the template roles in order, zips each fill on, derives `figure`
- * from masthead position (the SAME index law the essay's Roman/seed cadence speaks), merges
+ * THE EXPANSION — pure + total. Walks the template roles in order, zips each fill on, merges
  * role-archetype reveal/focus under fill overrides, and attaches each pre-wired transition to its
- * ARRIVING chapter. Output is the plain spine — the registry tier compiles AWAY.
+ * ARRIVING chapter. Output is the plain ordered spine — the registry tier compiles AWAY.
  */
 export function expandStory<T extends StoryTemplate>(
     inst: StoryInstance<T>,
 ): StoryDefinition {
     const chapters: StoryChapter[] = [];
-    const transitions: BeatTransition[] = [];
     const fills = inst.fills as Record<string, RoleFill | RoleFill[]>;
-    let figure = 0;
     let prev: { roleId: string; chapterId: string } | null = null;
 
     // O-A15 · THE VARIATION ZIP — the MASTHEAD phase counter (the sentinels consume no phase, so the
@@ -220,10 +215,8 @@ export function expandStory<T extends StoryTemplate>(
             const id =
                 fill.id ?? (run.length > 1 ? `${role.id}-${k + 1}` : role.id);
             const isSentinel = fill.viz === "hero" || fill.viz === "colophon";
-            if (!isSentinel) figure += 1;
             const chapter: StoryChapter = {
                 id,
-                figure: isSentinel ? 0 : figure,
                 icon: fill.icon,
                 eyebrow: fill.eyebrow,
                 title: fill.title,
@@ -250,12 +243,6 @@ export function expandStory<T extends StoryTemplate>(
                               >
                           )[edgeKey] ?? null);
                 if (spec) {
-                    transitions.push({
-                        from: prev.chapterId,
-                        to: id,
-                        spec,
-                        span: spec.span,
-                    });
                     chapter.transition = spec;
                 }
             }
@@ -278,5 +265,5 @@ export function expandStory<T extends StoryTemplate>(
             prev = { roleId: role.id, chapterId: id };
         });
     }
-    return { chapters, transitions };
+    return { chapters };
 }

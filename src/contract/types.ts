@@ -411,14 +411,12 @@ export interface BeatLayout {
 
 /** A CHAPTER — one beat of the declarative essay (I3 §1). The route declares its chapters
     as a `Chapter[]` in `context.ts`; `DashboardEssay.vue` renders the full beat scaffold
-    once from each entry (the `FigureInitial` from `figure`, the eyebrow from `icon`+`figure`
-    +`eyebrow`, the `<h2>` from `title`, the dek `<p>` from `dek`, the chapter `viz`, and the
+    once from each entry (the position-derived `FigureInitial`, the eyebrow from `icon` +
+    `eyebrow`, the `<h2>` from `title`, the dek `<p>` from `dek`, the chapter `viz`, and the
     trailing `AnimatedRule` whose `:seed` the host derives from the chapter index). */
 export interface Chapter {
     /** The anchor id — REUSES the section-anchor nav id (the dock scroll target). */
     id: string;
-    /** The Roman figure-number (1 → I, 2 → II, …) the `FigureInitial` drops as the cap. */
-    figure: number;
     /** The eyebrow glyph (a Lucide/Vue icon) — tinted to the route data-hue (SM-1). */
     icon: Component;
     /** The eyebrow kicker prose (the text beside the icon + Roman, e.g. "Per-capita ↔ per-area"). */

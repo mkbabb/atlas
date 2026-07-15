@@ -82,6 +82,11 @@ const activeDashboard = useActiveDashboard();
 // resolved side-set the <Beat> stamps as `data-*` registers + the fallback reveal axis reads. Hoisted
 // here so `revealStyles` reads `layouts[i]` with no temporal-dead-zone hazard.
 const phases = beatPhases(props.chapters);
+// The Roman ordinal is a projection of the manifest order, never a second authored facet. Sentinels
+// carry 0; every masthead-bearing chapter advances exactly once in the same phase sequence as layout.
+const figures = props.chapters.map((c, i) =>
+    hasMasthead(c) ? phases[i]! + 1 : 0,
+);
 // O-A15 · THE ONE-FACET READ (the collapse). When a route carries the resolved variation facet
 // (`chapter.template`, zipped by `expandStory` from its `BeatVariationPolicy`), the beat's PLACEMENT
 // reads from THAT single facet — the title pole + its pole-following scroll-in axis — instead of the
@@ -265,10 +270,10 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
         <Beat
             :id="chapter.id"
             :ref="(el: any) => setBeatEl(el?.$el ?? el ?? null, i)"
-            :figure="chapter.viz === 'colophon' ? undefined : chapter.figure"
+            :figure="chapter.viz === 'colophon' ? undefined : figures[i]"
             :color-kind="chapter.colorKind ?? 'diverging'"
             :hinge="chapter.hinge ?? 0.5"
-            :figure-label="figureLabelFor(chapter)"
+            :figure-label="figureLabelFor(chapter, figures[i]!)"
             :reveal="chapter.reveal?.tier ?? 'default'"
             :lift="chapter.reveal?.lift ?? chapter.viz !== 'hero'"
             :testid="chapter.id"
@@ -306,7 +311,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                             :size="14"
                             aria-hidden="true"
                         />
-                        {{ toRoman(chapter.figure) }} · {{ chapter.eyebrow }}
+                        {{ toRoman(figures[i]!) }} · {{ chapter.eyebrow }}
                     </p>
                     <h2 class="text-section-fluid">
                         <!-- The title — a plain string OR a live VNode (<HandMark> /
@@ -379,12 +384,12 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
         <!-- O-A15 · THE RESOLVED RULE VARIANT — the divider variant reads from the beat's ONE resolved
              facet (`template.rule`, the tier-rotated register) instead of the hard-coded static `rule`.
              ABSENT template ⇒ `rule` (byte-identical to every un-varied route). The ghost numeral binds
-             the current chapter's figure (used only when the resolved variant is `numeral`). -->
+             the current position-derived figure (used only when the resolved variant is `numeral`). -->
         <AnimatedRule
             v-if="i < chapters.length - 1"
             :variant="storyChapters[i]?.template?.rule ?? 'rule'"
             :weight="chapter.viz === 'hero' ? 'hero' : 'full'"
-            :numeral="chapter.figure"
+            :numeral="figures[i]"
             :seed="i + 1"
         />
     </template>

@@ -65,8 +65,7 @@ export function sceneTransitionT(
     return edgeFracAt(centreAxis(stepCentres, viewportCentre));
 }
 
-/** The story-grain continuous position `(activeIndex + transitionT) / (N−1)` — the `scrubT` a scene's
-    `SceneContextV2` exposes. N≤1 ⇒ 0 (a single-step scene has no transit). */
+/** The story-grain continuous position `(activeIndex + transitionT) / (N−1)`. N≤1 ⇒ 0. */
 export function sceneScrubT(
     activeIndex: number,
     transitionT: number,

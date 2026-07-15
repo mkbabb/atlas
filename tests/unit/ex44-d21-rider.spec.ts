@@ -8,8 +8,8 @@
 //   2. DashboardHero.vue gains an `eyebrow?` prop — a route can pass a kicker DISTINCT from its <h1>
 //      title instead of duplicating the title as both eyebrow and h1 (the D21 `display:none`
 //      workaround this closes). Omit ⇒ the title itself renders as the eyebrow (unchanged default).
-//   3. DashboardEssay.vue's cover figure-label stops rendering the dangling "Chapter , " (figure:0,
-//      `toRoman(0)===""`) — a named-cover label ("<title> — cover") renders instead. Extracted as
+//   3. DashboardEssay.vue's cover figure-label stops rendering the dangling "Chapter , " — a
+//      named-cover label ("<title> — cover") renders instead. Extracted as
 //      `figureLabelFor` (useBeatLayout.ts) — PURE + TOTAL, unit-tested directly (the
 //      resolveLayout/beatPhases precedent, not a live-source scan) — plus a live-source check that
 //      DashboardEssay actually wires the extracted function.
@@ -53,7 +53,6 @@ describe("EX-44 · figureLabelFor — the cover figure-label (D21 residue 3, pur
 
     const coverWithHero: EditorialChapter = {
         id: "cover",
-        figure: 0,
         eyebrow: "",
         icon,
         title: "unused",
@@ -76,7 +75,6 @@ describe("EX-44 · figureLabelFor — the cover figure-label (D21 residue 3, pur
 
     const numberedChapter: EditorialChapter = {
         id: "overview",
-        figure: 3,
         eyebrow: "Per-capita ↔ per-area",
         icon,
         title: "unused",
@@ -85,26 +83,26 @@ describe("EX-44 · figureLabelFor — the cover figure-label (D21 residue 3, pur
     };
 
     it("a cover with a declared hero facet names ITSELF off the facet's own title", () => {
-        expect(figureLabelFor(coverWithHero)).toBe("USF Dashboard — cover");
+        expect(figureLabelFor(coverWithHero, 0)).toBe("USF Dashboard — cover");
     });
 
     it("a cover with no facet falls back to the chapter's own (non-empty) eyebrow", () => {
-        expect(figureLabelFor(coverNoFacetWithEyebrow)).toBe("USFI — cover");
+        expect(figureLabelFor(coverNoFacetWithEyebrow, 0)).toBe("USFI — cover");
     });
 
     it("a cover with NEITHER a facet title NOR an eyebrow renders the bare 'Cover' label", () => {
-        expect(figureLabelFor(coverBare)).toBe("Cover");
+        expect(figureLabelFor(coverBare, 0)).toBe("Cover");
     });
 
     it("NEVER renders the dangling 'Chapter , ' for any cover shape (the D21 find, direct regression check)", () => {
         for (const c of [coverWithHero, coverNoFacetWithEyebrow, coverBare]) {
-            expect(figureLabelFor(c)).not.toContain("Chapter ,");
-            expect(figureLabelFor(c)).not.toMatch(/^Chapter\s*,/);
+            expect(figureLabelFor(c, 0)).not.toContain("Chapter ,");
+            expect(figureLabelFor(c, 0)).not.toMatch(/^Chapter\s*,/);
         }
     });
 
     it("a numbered chapter is BYTE-IDENTICAL to the pre-EX-44 formula (no regression)", () => {
-        expect(figureLabelFor(numberedChapter)).toBe(
+        expect(figureLabelFor(numberedChapter, 3)).toBe(
             "Chapter III, Per-capita ↔ per-area",
         );
     });
@@ -117,8 +115,8 @@ describe("EX-44 · DashboardEssay.vue — wires the extracted figureLabelFor (li
         );
     });
 
-    it("binds :figure-label to figureLabelFor(chapter) — no inline dangling-comma template literal", () => {
-        expect(ESSAY).toContain(':figure-label="figureLabelFor(chapter)"');
+    it("binds :figure-label to the manifest-derived ordinal — no inline dangling-comma template literal", () => {
+        expect(ESSAY).toContain(':figure-label="figureLabelFor(chapter, figures[i]!)"');
         expect(ESSAY).not.toMatch(/figure-label="`Chapter/);
     });
 });

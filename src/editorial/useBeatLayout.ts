@@ -85,19 +85,17 @@ export function beatPhases(chapters: readonly Chapter[]): number[] {
 }
 
 /** THE FIGURE-LABEL (the EX-44 D21 rider) — the accessible chapter label `<FigureInitial>`
-    announces. A numbered chapter (figure ≥ 1) reads `"Chapter <roman>, <eyebrow>"` (unchanged).
-    The COVER (`viz:"hero"`, `figure:0` — the crown-slot MOUNT INTENT, not a chapter count) is NOT
-    a numbered chapter: `toRoman(0)` is the honest EMPTY numeral (useRomanNumeral's `1..3999`
-    domain floor), and an unmigrated cover carries no eyebrow either — so the naive formula
-    produced the illegible dangling `"Chapter , "` the D21 verifier flagged. A cover names
+    announces. A numbered chapter reads `"Chapter <roman>, <eyebrow>"`. The ordinal is derived from
+    the chapter's manifest position by the essay host; it is never authored on the chapter. A cover
+    is not numbered, and an unmigrated cover may carry no eyebrow — so it names
     ITSELF, not an ordinal: the declared `hero` facet's own title (the most authoritative name for
     the page this cover fronts), falling back to the chapter's own `eyebrow` for a route that has
     not adopted the facet yet, reads as `"<name> — cover"`. PURE + TOTAL, unit-testable without
     mounting (the `resolveLayout`/`beatPhases` precedent above). */
-export function figureLabelFor(chapter: EditorialChapter): string {
+export function figureLabelFor(chapter: EditorialChapter, figure: number): string {
     if (chapter.viz === "hero") {
         const name = chapter.hero?.title || chapter.eyebrow;
         return name ? `${name} — cover` : "Cover";
     }
-    return `Chapter ${toRoman(chapter.figure)}, ${chapter.eyebrow}`;
+    return `Chapter ${toRoman(figure)}, ${chapter.eyebrow}`;
 }
