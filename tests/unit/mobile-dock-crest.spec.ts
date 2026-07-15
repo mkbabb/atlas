@@ -8,12 +8,22 @@ const read = (rel: string): string =>
 
 const DOCK = read("../../src/platform/chrome/dock/Dock.vue");
 const DOCK_CSS = read("../../src/platform/chrome/dock/Dock.css");
+const DOCK_CREST = read("../../src/platform/chrome/dock/components/DockCrest.vue");
 
 describe("mobile dock crest ownership", () => {
     it("keeps the interactive crest persistent and the decorative summary in the collapsed slot", () => {
         expect(DOCK).toContain("<DockCrest");
         expect(DOCK).toContain("<DockSummary");
         expect(DOCK).toContain(":as-button=\"isPhone\"");
+    });
+
+    it("lets the phone crest click own disclosure without Glass focus pre-expansion", () => {
+        expect(DOCK_CREST).toContain(
+            '@focusin="props.asButton && $event.stopPropagation()"',
+        );
+        expect(DOCK_CREST).toContain(
+            '@click="props.asButton && emit(\'toggle\')"',
+        );
     });
 
     it("scopes the phone host directly so its collapsed summary is hidden", () => {

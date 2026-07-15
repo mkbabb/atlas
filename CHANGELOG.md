@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2 — 2026-07-15
+
+### Fixed
+
+- Mobile dock crest clicks now open the section sheet instead of being canceled by Glass dock focus expansion.
+
 ## 1.1.1 — 2026-07-15
 
 ### Fixed

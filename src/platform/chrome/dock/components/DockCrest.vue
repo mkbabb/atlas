@@ -58,6 +58,7 @@ defineExpose({ focusCrest });
         :aria-controls="props.asButton ? 'dock-sheet' : undefined"
         data-testid="dock-brand"
         class="usf-dock__crest glass-material glass-gilt focus-ring focus-ring-gold"
+        @focusin="props.asButton && $event.stopPropagation()"
         @click="props.asButton && emit('toggle')"
     />
 </template>
