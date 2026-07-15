@@ -43,7 +43,7 @@ export interface DarkLiftPair {
     dark: string;
 }
 
-/** The editorial-red ink pair — the HandUnderline default (the red→bright-red lift on graphite). */
+/** The editorial-red ink pair — the HandMark default (the red→bright-red lift on graphite). */
 export const RED_INK: DarkLiftPair = {
     light: "var(--ncsu-red, #cc0000)",
     dark: "var(--ncsu-red-bright, #e6322a)",

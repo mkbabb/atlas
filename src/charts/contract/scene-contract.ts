@@ -37,7 +37,7 @@ export interface SceneStep {
     /** Stable id — the active-step `v-for :key` AND the `appliedIndex` boundary key (the §3.1 law). */
     id: string;
     /** The step's narration — a plain string OR a render-slot factory (the `ChapterTitle` carrier,
-        REUSED), so a step can carry a live VNode (a picked-out figure, a `<HandUnderline>`). */
+        REUSED), so a step can carry a live VNode (a picked-out figure, a `<HandMark>`). */
     prose: ChapterTitle;
     /** The named graphic STATE this step drives to. */
     state: SceneState;

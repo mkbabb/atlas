@@ -9,7 +9,7 @@
 // The body becomes DATA. A route declares its narrative as a `Chapter[]` in `context.ts`; THIS
 // host iterates it and renders the FULL beat scaffold ONCE per chapter — the `section-anchor beat`
 // wrapper (via the shared <Beat> shell), the <FigureInitial> drop-cap, the eyebrow (icon · Roman ·
-// kicker, SM-1 data-hue), the <h2> title (a plain string OR a live VNode — <HandUnderline> /
+// kicker, SM-1 data-hue), the <h2> title (a plain string OR a live VNode — <HandMark> /
 // <ScrollLetteringHeading> — rendered identically), the dek, the chapter viz, and the trailing
 // <AnimatedRule> whose `:seed` cadence the host derives from the chapter INDEX (the SM-1/`:seed`
 // drift folds — the cadence is a function of position, never hand-incremented per body).
@@ -208,7 +208,7 @@ function isTitleFactory(t: ChapterTitle): t is () => VNodeChild {
     return typeof t === "function";
 }
 
-/** Render a chapter's title — invoke the factory (the live <HandUnderline>/<ScrollLettering>
+/** Render a chapter's title — invoke the factory (the live <HandMark>/<ScrollLettering>
     VNode) or render the plain string. ONE call site, no per-body branching (the host renders
     BOTH shapes the same way: a string is wrapped as text, a factory is invoked). */
 function renderTitle(t: ChapterTitle): VNodeChild {
@@ -309,7 +309,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                         {{ toRoman(chapter.figure) }} · {{ chapter.eyebrow }}
                     </p>
                     <h2 class="text-section-fluid">
-                        <!-- The title — a plain string OR a live VNode (<HandUnderline> /
+                        <!-- The title — a plain string OR a live VNode (<HandMark> /
                              <ScrollLetteringHeading>), rendered identically (the host renders the
                              string, or invokes the render-slot factory). -->
                         <TitleSlot :title="chapter.title" />

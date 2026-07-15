@@ -13,7 +13,7 @@
 // would dangle. I7 LATER ABSORBS this knob into its `MOTION_BUDGET` table (DESIGN §4.9 already
 // owns "the one budgeted hero boil" policy + the `--scroll-motion-budget` token); when it does,
 // this constant becomes the seam I7 folds, not a second source of truth. Until then it lives here,
-// next to `HandUnderline`/`HandHighlight`/`AnimatedRule`, the consumers it governs.
+// next to `HandMark`/`AnimatedRule`, the consumers it governs.
 
 /**
  * The Phase-A boil allowance: at most ONE `animation="draw-then-boil"` mark may continuously boil

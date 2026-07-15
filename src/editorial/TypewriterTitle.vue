@@ -3,7 +3,7 @@
 // title treatment for the 3 routes that carry NEITHER `ScrollLetteringHeading` NOR any reveal
 // variety today (demand/usf-integrity/vft-germination — RESEARCH §1.3/§4-ARM-D's "0-for-3"). It
 // wraps glass-ui's `<TypewriterText>` (installed 4.2.0, no fence) and renders as a `ChapterTitle`
-// factory — the SAME `() => VNodeChild` shape `HandUnderline`/`ScrollLetteringHeading` already
+// factory — the SAME `() => VNodeChild` shape `HandMark`/`ScrollLetteringHeading` already
 // return (`DashboardEssay.vue`'s `isTitleFactory`/`TitleSlot`, zero host changes: a 3rd factory in
 // an already-polymorphic slot).
 //

@@ -13,7 +13,7 @@
 //     closure). Lands with the contract.
 //   · `DashboardEssay` · `Beat` · `PullFigure` · `StoryBeat` · `DataAside` · `AnimatedRule` ·
 //     `DashboardHero` · `editorial-contract` — value-import charts leaves (FigureSlug/StickyScene/
-//     VizPlate/beat-title/HandUnderline/viz-contract/scene-contract → O-B4R), chrome
+//     VizPlate/beat-title/HandMark/viz-contract/scene-contract → O-B4R), chrome
 //     (FigureInitial/SiteColophon → O-B8), the story facility (→ this wave's story defer), and the
 //     global composable residue (useRomanNumeral/useCountUp → O-B9).
 //   · **`DashboardHero` (574) re-homes AS-IS and stays >500 — its split is the named successor

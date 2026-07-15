@@ -309,7 +309,7 @@ export type ProvenanceKind = (typeof PROVENANCE_KINDS)[number];
 
 /** A chapter's title CARRIER. A plain `string` renders as bare `<h2>` slot text; a
     render-slot factory (`() => VNodeChild`) carries the live VNode the body composes —
-    a `<HandUnderline>` picked-out word, a `<ScrollLetteringHeading>` glyph-scrubbed
+    a `<HandMark>` picked-out word, a `<ScrollLetteringHeading>` glyph-scrubbed
     title — so the host renders BOTH without per-body branching (it just renders the
     string, or invokes the factory in the `<h2>`). The factory form is how a body keeps
     its scroll-lettering / hand-underline title under the declarative scaffold. */
@@ -424,7 +424,7 @@ export interface Chapter {
     /** The eyebrow kicker prose (the text beside the icon + Roman, e.g. "Per-capita ↔ per-area"). */
     eyebrow: string;
     /** The `<h2>` title — a plain string OR a render-slot factory carrying a live VNode
-        (`<HandUnderline>`/`<ScrollLetteringHeading>`), rendered identically by the host. */
+        (`<HandMark>`/`<ScrollLetteringHeading>`), rendered identically by the host. */
     title: ChapterTitle;
     /** The dek prose under the title (the `text-prose-muted` paragraph). GOVERNED COPY —
         the copy-conformance gate's object-literal extractor reaches `dek:` here (I3 §7). */

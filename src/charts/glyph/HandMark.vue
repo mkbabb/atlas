@@ -1,14 +1,10 @@
 <script setup lang="ts">
 // platform/charts/HandMark.vue — THE generalized procedural hand-mark (K-HANDMARK). ONE component
 // over the full matrix `pen | pencil | crayon | marker | highlighter` × `underline | circle |
-// highlight | strikethrough | box | bracket | path`, collapsing the two divergent J-era wrappers
-// (`HandUnderline` + `HandHighlight`) the K0-REDLINE §2·7 "components grown past their seams"
-// diagnosis named. They re-threaded the SAME clock/brush/scrub policy by hand and diverged only on
-// the morphology — the underline pins a font-proportional strip, the highlight rests a hull band.
-// This is the seam re-cut: the morphology lives in `useMarkMorphology`, the clock + dark-lift in
-// `useHandMarkClock`, and the brush, the seeded grain `<filter>`, and the draw-on are ALL
-// glass-ui-rendered (the thin-consumer contract). `HandUnderline.vue`/`HandHighlight.vue` are now
-// thin re-point shims onto this component (K-REPOINT re-points their call-sites in lockstep, D16).
+// highlight | strikethrough | box | bracket | path`. Morphology lives in `useMarkMorphology`, the
+// clock + dark-lift in `useHandMarkClock`, and the brush, seeded grain `<filter>`, and draw-on are
+// glass-ui-rendered. This is Atlas's sole semantic hand-mark component; consumers select geometry
+// directly through `shape` instead of wrapper aliases.
 //
 // THE BLOB FIX (K-FRAMEWORK §3 · the load-bearing correction). The /demand verdict highlighter
 // rendered a full-viewBox amber BLOB — hull bbox 40.4 VB-units (the old `weight:40` override read as

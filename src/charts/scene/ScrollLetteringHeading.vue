@@ -4,7 +4,7 @@
 // inks its glyphs CHARACTER BY CHARACTER as its beat enters — and rewinds on scroll-up — under the
 // motion budget (the sliding active band, `concurrencyCap`). It is the shared consumer the four
 // dashboard bodies mount on their INTERROGATIVE question-titles (the proportion cardinal: only the
-// question-titles earn the stagger; declarative labels + any h2 already wearing a <HandUnderline>
+// question-titles earn the stagger; declarative labels + any h2 already wearing a <HandMark>
 // get NONE — one pen per word).
 //
 // ── ONE CLOCK, MANY FACES (the H-INV-3 seam) ─────────────────────────────────────────────────

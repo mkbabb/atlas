@@ -4,7 +4,6 @@
 
 export { default as Glyph } from "./Glyph.vue";
 export { default as HandMark } from "./HandMark.vue";
-export { default as HandUnderline } from "./HandUnderline.vue";
 
 // O-A12 — the generalized EntityIcon facade + the imperative resolver + the abstract-grain primitive
 // math (the folded `resolveMinimapMark`, generalized from 2 to 4 variants).

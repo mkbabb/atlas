@@ -17,7 +17,7 @@
 // (The actual file MOVE — SectionDivider → editorial/, the call-site re-points — is a phase-2
 // integration edit OUTSIDE this lane's write-bound; SPEC'd in the lane's blockers. AnimatedRule
 // composes the SAME InkMark primitive here, so the subsumption is real, not a fork: one divider
-// component, escalating variants, the `<HandUnderline clock>` precedent — two divider components
+// component, escalating variants, the `<HandMark clock>` precedent — two divider components
 // would be a seam that drifts.)
 //
 // THE RUNG — ④ chrome (rule/draw) → ⑤ atmosphere (numeral, the recessive ghost). The ink is the
@@ -52,9 +52,10 @@ const props = withDefaults(
 );
 
 const isShort = computed(() => props.weight === "short");
-// TIER ① CHAPTER/HERO → marker (the confident fat-pen) · TIER ② FIGURE → pencil (the whisper).
-const brush = computed<"marker" | "pencil">(() =>
-    isShort.value ? "pencil" : "marker",
+// Every divider is a HAIRLINE: chapter/hero use the clean pen stroke; figure uses the pencil
+// whisper. Both Glass presets are stroke ribbons, so a separator can never become a filled almond.
+const brush = computed<"pen" | "pencil">(() =>
+    isShort.value ? "pencil" : "pen",
 );
 // The ink: the chapter/hero rule in the page ink, the figure rule in the faint engrave hairline.
 // THE SILVER RULE FINISH (H.W4.b · §SILVER) — the FIGURE rule (the short pencil whisper, the
@@ -169,7 +170,7 @@ const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : "
     height: 100%;
 }
 
-/* TIER ① the CHAPTER rule — the confident drawn `marker` bar between beats (the wide margin parts
+/* TIER ① the CHAPTER rule — the confident drawn `pen` line between beats (the wide margin parts
    whole story beats). */
 .animated-rule--full {
     height: 18px;
@@ -202,7 +203,7 @@ const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : "
 
 /* THE SCRUBBED DRAW-ON (variant="draw") — the rule draws/un-draws BIDIRECTIONALLY under real
    scroll, binding the `crayon-wipe` @keyframes (the clip-path inset wipe) to the mark's OWN view()
-   timeline — the SAME mechanism the HandUnderline scroll arm uses. The `@keyframes crayon-wipe` is
+   timeline — the SAME mechanism the HandMark scroll arm uses. The `@keyframes crayon-wipe` is
    DEFINED in the atlas-owned, index-imported `platform/design/map-draw.css` (`@keyframes` are
    document-global; it is NOT a glass-ui global — 4.2.0 has a `crayon` brush KIND, no `crayon-wipe`
    @keyframes). The fences are the standard scroll-mark pair: the
