@@ -16,7 +16,9 @@
 
 ### Dependencies
 
-- The intended peer floors are keyframes.js 5.3.3 and pencil-boil 0.8.1, retaining value.js 3.1.0. Publication is held until a Glass artifact widens its non-overlapping pencil-boil 0.4.x peer; no forced or legacy peer resolution is accepted.
+- Peer floors advance to Glass UI 6.0.0, keyframes.js 5.3.5, pencil-boil 0.9.2, and value.js 3.1.0.
+- The runtime floor advances to Node.js 24 and npm 11 to match the required pencil-boil peer.
+- Source browsing delegates its native-table shell and grid semantics to the published Glass data-table surface while Atlas retains query, windowing, focus, and export ownership.
 
 ## 1.1.3 — 2026-07-15
 

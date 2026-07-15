@@ -4,9 +4,17 @@
     generic="Row, Scope = unknown, Key extends string | number = string | number"
 >
 import { computed, nextTick, ref, useId, watch } from "vue";
+import {
+    DataTable,
+    type DataTableColumn,
+    type DataTableRowAttrs,
+} from "@mkbabb/glass-ui/data-table";
 import type { ExportFormat } from "@/charts/lib/source-data";
 import type { ExportGrain } from "@/filter/engine/rows";
-import { useVirtualWindow } from "@/filter/composables/useVirtualWindow";
+import {
+    useVirtualWindow,
+    type VirtualItem,
+} from "@/filter/composables/useVirtualWindow";
 import { useViewParams } from "@/platform/stores/useViewParams";
 import { useVizRegistry } from "@/charts/composables/useVizRegistry";
 import type { EventScope } from "@/events";
@@ -113,6 +121,27 @@ const virtual = useVirtualWindow<Row, Key>({
     key: props.rowKey,
     estimateSize: 42,
 });
+type BrowserRow = VirtualItem<Row, Key>;
+const tableRows = computed<BrowserRow[]>(() => [...virtual.items.value]);
+const tableColumns = computed<DataTableColumn<BrowserRow>[]>(() =>
+    props.columns.map((column) => ({
+        key: column.key,
+        label: column.label,
+        class: "source-browser__cell",
+        headerClass: "source-browser__head",
+        formatter: (_value, row) => display(column.value(row.item)),
+    })),
+);
+const tableRowAttrs: DataTableRowAttrs<BrowserRow> = (row) => ({
+    class: "source-browser__row",
+    "aria-rowindex": row.index + 2,
+    style: { transform: `translateY(${row.top}px)` },
+    onFocus: () => rememberFocusedRow(row.key),
+    onKeydown: (event: KeyboardEvent) => onRowKeydown(event, row.index),
+});
+const tableRowKey = (row: BrowserRow): Key => row.key;
+const setTableRow = (element: HTMLElement | null, row: BrowserRow): void =>
+    setRowElement(row.key, element);
 
 watch(
     () => props.availableGrains.length,
@@ -374,52 +403,33 @@ function titleCase(value: string): string {
         <div
             ref="viewport"
             class="source-browser__viewport"
-            role="grid"
+            role="region"
             :aria-label="`${ariaLabel ?? 'Source data'} rows`"
-            :aria-rowcount="virtual.ariaRowCount.value + 1"
-            :aria-colcount="columns.length"
         >
-            <div class="source-browser__header" role="row" aria-rowindex="1">
-                <span
-                    v-for="column in columns"
-                    :key="column.key"
-                    role="columnheader"
-                    :style="{ width: `${100 / Math.max(1, columns.length)}%` }"
-                    >{{ column.label }}</span
-                >
-            </div>
-
-            <p v-if="rows.length === 0" class="source-browser__empty">
-                No rows match this view.
-            </p>
-            <div
-                v-else
-                class="source-browser__canvas"
-                role="rowgroup"
-                :style="{ height: `${virtual.totalSize.value}px` }"
+            <DataTable
+                class="source-browser__table"
+                :style="{
+                    '--source-columns': Math.max(1, columns.length),
+                    '--source-total-size': `${virtual.totalSize.value}px`,
+                }"
+                :columns="tableColumns"
+                :rows="tableRows"
+                :total="rows.length"
+                :page="1"
+                :page-size="Math.max(1, tableRows.length)"
+                role="grid"
+                :aria-label="`${ariaLabel ?? 'Source data'} rows`"
+                :aria-col-count="columns.length"
+                :get-row-id="tableRowKey"
+                :aria-row-count="virtual.ariaRowCount.value + 1"
+                :get-row-attrs="tableRowAttrs"
+                :row-ref="setTableRow"
+                :tabbable-row-id="focusedKey"
+                :responsive="false"
+                infinite
             >
-                <div
-                    v-for="item in virtual.items.value"
-                    :key="item.key"
-                    :ref="(element) => setRowElement(item.key, element)"
-                    class="source-browser__row"
-                    role="row"
-                    :aria-rowindex="item.index + 2"
-                    :tabindex="focusedKey === item.key ? 0 : -1"
-                    :style="{ transform: `translateY(${item.top}px)` }"
-                    @focus="rememberFocusedRow(item.key)"
-                    @keydown="onRowKeydown($event, item.index)"
-                >
-                    <span
-                        v-for="column in columns"
-                        :key="column.key"
-                        role="gridcell"
-                        :style="{ width: `${100 / Math.max(1, columns.length)}%` }"
-                        :title="display(column.value(item.item))"
-                        >{{ display(column.value(item.item)) }}</span
-                    >
-                </div>
-            </div>
+                <template #empty>No rows match this view.</template>
+            </DataTable>
         </div>
         <p class="source-browser__count" aria-live="polite">
             {{ rows.length.toLocaleString() }} {{ rows.length === 1 ? "row" : "rows" }}
@@ -499,7 +509,7 @@ function titleCase(value: string): string {
 
 .source-browser__grain:has(input:focus-visible),
 .source-browser__exports button:focus-visible,
-.source-browser__row:focus-visible {
+.source-browser__viewport :deep(.source-browser__row:focus-visible) {
     outline: 2px solid var(--focus-ring-color, currentColor);
     outline-offset: 2px;
 }
@@ -563,13 +573,20 @@ function titleCase(value: string): string {
     overscroll-behavior: contain;
 }
 
-.source-browser__header,
-.source-browser__row {
-    display: flex;
-    min-inline-size: max-content;
+.source-browser__viewport :deep(.source-browser__table) {
+    overflow: visible;
 }
 
-.source-browser__header {
+.source-browser__viewport :deep(.source-browser__table [data-slot="table"]) {
+    overflow: visible;
+}
+
+.source-browser__viewport :deep(.source-browser__table table) {
+    inline-size: max(100%, calc(var(--source-columns) * 9rem));
+    table-layout: fixed;
+}
+
+.source-browser__viewport :deep(.source-browser__table thead) {
     position: sticky;
     z-index: 2;
     inset-block-start: 0;
@@ -577,15 +594,26 @@ function titleCase(value: string): string {
     background: color-mix(in srgb, var(--card) 96%, var(--background));
 }
 
-.source-browser__header > span,
-.source-browser__row > span {
-    flex: 1 0 9rem;
-    min-inline-size: 9rem;
+.source-browser__viewport :deep(.source-browser__table tbody) {
+    position: relative;
+    display: block;
+    block-size: var(--source-total-size);
+}
+
+.source-browser__viewport :deep(.source-browser__table thead),
+.source-browser__viewport :deep(.source-browser__table tbody tr) {
+    display: table;
+    inline-size: 100%;
+    table-layout: fixed;
+}
+
+.source-browser__viewport :deep(.source-browser__head),
+.source-browser__viewport :deep(.source-browser__cell) {
     padding: 0.65rem 0.75rem;
     border-inline-end: 1px solid var(--source-rule);
 }
 
-.source-browser__header > span {
+.source-browser__viewport :deep(.source-browser__head) {
     font-size: 0.6875rem;
     font-weight: 700;
     letter-spacing: 0.055em;
@@ -594,11 +622,7 @@ function titleCase(value: string): string {
     text-transform: uppercase;
 }
 
-.source-browser__canvas {
-    position: relative;
-}
-
-.source-browser__row {
+.source-browser__viewport :deep(.source-browser__row) {
     position: absolute;
     inset-block-start: 0;
     inline-size: 100%;
@@ -608,21 +632,14 @@ function titleCase(value: string): string {
     font-variant-numeric: tabular-nums;
 }
 
-.source-browser__row:nth-child(even) {
+.source-browser__viewport :deep(.source-browser__row:nth-child(even)) {
     background: color-mix(in srgb, var(--card) 54%, var(--background));
 }
 
-.source-browser__row > span {
+.source-browser__viewport :deep(.source-browser__cell) {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.source-browser__empty {
-    margin: 0;
-    padding: 2.5rem 1rem;
-    color: var(--muted-foreground);
-    text-align: center;
 }
 
 .source-browser__count {

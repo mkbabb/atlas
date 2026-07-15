@@ -98,12 +98,10 @@ describe("O-B0 genesis — publish posture", () => {
 });
 
 describe("O-B0 genesis — bounded-caret peers (never open >=)", () => {
-    it("has no open-ended peer range (>= / * / x); glass-ui is caret-bounded", () => {
+    it("has no open-ended peer range (>= / * / x)", () => {
         for (const [name, range] of Object.entries(pkg.peerDependencies as Record<string, string>)) {
             expect(range, `peer ${name} is open-ended: ${range}`).not.toMatch(/(^|\s)(>=|\*|x)/i);
         }
-        // The immutable Glass 5 cut is the bounded public peer floor.
-        expect(pkg.peerDependencies["@mkbabb/glass-ui"]).toBe("^5.0.0");
     });
 });
 

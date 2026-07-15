@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useDeckDetent, type DeckDetent } from "@/stage";
+import { useDeckDetent, type DeckDetent } from "@/stage/useDeckDetent";
 
 interface FakePanel {
     offsetTop: number;

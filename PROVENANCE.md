@@ -47,6 +47,12 @@ The de-godding lands **with** the physical move so the exports map is born clean
 `./motion` · `./editorial` · `./interaction` · `./data` · `./stores` · `./composables` ·
 `./lib` · `./vite`, plus the CSS aggregate `./styles` + `./styles/tokens`.
 
+Atlas 2.0.0 adds the public `./viz-set`, `./events`, `./skin`, and `./stage` subpaths to
+that extracted package surface. Its registry dependency boundary is Glass UI 6, keyframes.js
+5.3.5, pencil-boil 0.9.2, and value.js 3.1.0; consumers install those immutable artifacts
+instead of linking this worktree. The package and its release workflow move to Node.js 24 and
+npm 11 because pencil-boil is a required Atlas peer with that published engine floor.
+
 ## Publish posture
 
 - **Name:** `@mkbabb/atlas` (ROUND-RULED; `@atlas/core` was a dev-local vite alias, never a

@@ -39,7 +39,9 @@ The new public entry points are available at `@mkbabb/atlas/viz-set`, `/events`,
 
 ## Update peers
 
-Atlas 2.0.0 targets keyframes.js 5.3.3, pencil-boil 0.8.1, and value.js 3.1.0. Publication is held until Glass publishes a peer manifest that admits pencil-boil 0.8.1; do not use `--force`, `--legacy-peer-deps`, or a consumer override to assemble the dependency tree.
+Install versions satisfying `@mkbabb/glass-ui ^6.0.0`, `@mkbabb/keyframes.js ^5.3.5`, `@mkbabb/pencil-boil ^0.9.2`, and `@mkbabb/value.js ^3.1.0`. These published peers compose directly; do not use `--force`, `--legacy-peer-deps`, or a consumer override to assemble the dependency tree.
+
+Atlas 2.0.0 requires Node.js 24 or newer and npm 11 or newer, matching pencil-boil 0.9.2's published runtime boundary.
 
 ---
 
