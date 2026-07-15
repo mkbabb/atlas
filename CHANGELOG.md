@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.0.0 — 2026-07-15
+
+### Breaking changes
+
+- `Beat` and `StoryCard` no longer treat unnamed content as figure content. Move figure bodies into the named `#figure` slot; the fixed card anatomy now owns title, figure, aggregate-stat, prose, and appendix sectors in that order.
+- `useDeckDetent(options).bind(element)` and its three-value `activeDetent` / `request` / `setDetent` API are removed. Call `useDeckDetent(element, options)` and consume `activeIndex`, `isSupported`, `containerAttrs`, `slideAttrs`, and `goTo`; `transition` is now a boolean that delegates to the bound document's View Transition API.
+
+### Added
+
+- Story cards hoist nested VizPlate aggregate stats through a card-scoped registry, keep optional `keyStats` as the non-card crown, consume Glass Card rhythm variables, and suppress only the nested ChartFrame perimeter.
+- Appendix detail remains an inline non-modal disclosure on desktop and print, while phone full state composes the Glass 6 bottom Drawer for focus containment, Escape, restoration, scrim, and modal semantics.
+- ChapterStage owns one identity-keyed ECharts morph push per genuine scene boundary; `useEChart` and ScatterPlate yield duplicate boundary paints, and story manifests can carry non-ECharts scenes directly.
+- The generic N-slide deck driver consumes Glass deck state, native `scrollsnapchange`, and one shared IntersectionObserver fallback.
+
 ## 2.0.1 — 2026-07-15
 
 ### Fixed
