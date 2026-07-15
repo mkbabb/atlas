@@ -22,6 +22,8 @@ import type { Colophon } from "@/platform/chrome/masthead/SiteColophon.vue";
 export interface HeroFacet {
     /** The page <h1> title (the dashboard's editorial name). */
     title: string;
+    /** Optional kicker rendered above the page title. */
+    eyebrow?: string;
     /** The Newsreader dek beneath the title. */
     dek: string;
     /** The audacious cover-figure crown series (three co-equal, or a ranked crown + flanks). */

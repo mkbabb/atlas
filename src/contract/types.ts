@@ -164,6 +164,8 @@ export interface DashboardContext {
         source it closes over, with no ref-of-ref stored here). Undefined ⇒ no dimming
         (byte-identical to every dashboard that doesn't declare one). */
     dimYears?: () => ReadonlySet<number> | readonly number[];
+    /** Optional filter-algebra readout rendered above the selection controls. */
+    algebraBody?: Component;
     /** The dashboard's floating-filter BODY — the controls the generic FilterShell
         renders inside its chrome. The chrome owns the frame; the body owns its logic
         (its own reset/apply). Undefined ⇒ the dashboard has no floating filter. */
