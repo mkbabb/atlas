@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 — 2026-07-15
+
+### Fixed
+
+- Mobile collapsed docks render one interactive TIL crest; the decorative desktop summary remains available without duplicating the mobile section control.
+
 ## 1.1.0 — 2026-07-15
 
 ### Breaking changes

@@ -167,7 +167,7 @@
        is authored + measured on the DESKTOP register (above); on phone the crest is the pill and the
        layers rest hidden (this atlas collapse machine is O-B8b's to delete on the glass-morph
        consume — O-D1 keeps it). */
-    :deep(.usf-dock--phone.collapsed .dock-layers) {
+    .usf-dock--phone.collapsed :deep(.dock-layers) {
         display: none;
     }
 
