@@ -19,7 +19,7 @@
 // EXEMPT from aspect-tracking — `isAspectTracked` would FALSE-FAIL it).
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import {
-    InkMark,
+    HandMark as GlassHandMark,
     BRUSHES,
     type BrushName,
     type HandShape,
@@ -224,7 +224,7 @@ const markShape = computed<HandShape>(() => props.shape);
 // (the only per-shape scrub delta the two wrappers carried).
 const scrubEnd = computed(() => (isHull.value ? "entry 30%" : "entry 26%"));
 
-// The library InkMark instance — `play()` is exposed for the load `Sequence` chain.
+// The library HandMark instance — `play()` is exposed for the load `Sequence` chain.
 const mark = ref<{ play: () => void } | null>(null);
 
 /** CLOCK A — draw/swipe the mark ONCE (the load arrival). A no-op for scroll/static. Returns a
@@ -241,7 +241,7 @@ defineExpose({ play, snap });
 
 // O-A4-R · THE RE-ARM (RED-LEDGER B.11's re-entry bar — the EX-43 verifier PACK, verified against
 // the INSTALLED glass-ui 4.2.0 `dist/handmark.js`). The visibility PARK above is not, by itself,
-// reversible: glass-ui's `InkMark` clears `boilArmed` in its OWN `watch(() => animation, …)` on
+// reversible: glass-ui's `HandMark` clears `boilArmed` in its OWN `watch(() => animation, …)` on
 // EVERY `draw-on ↔ draw-then-boil` flip — INCLUDING the flip BACK to `draw-then-boil` on re-entry
 // — and `clock="load"` resolves `appear:"manual"` (useHandMarkClock's map), for which glass-ui's
 // `onMounted` creates NO re-play `IntersectionObserver` and never auto-calls its draw `play()`
@@ -249,7 +249,7 @@ defineExpose({ play, snap });
 // `onMounted` `ink.play()` therefore arms the boil exactly once; nothing else ever re-invokes it —
 // the living line was permanently static after the first park.
 //
-// The lawful re-arm lever within the pinned 4.2.0 API is `InkMark`'s OWN exposed `play()`:
+// The lawful re-arm lever within the pinned 4.2.0 API is `HandMark`'s OWN exposed `play()`:
 // re-firing the SAME call the masthead makes at mount re-runs its draw transition, whose
 // `@transitionend` calls glass-ui's `onDrawEnd` → `armBoil()` (`boilArmed = true` + `boil.start()`)
 // — so re-entry drives the identical arm path the first mount did. No forked boil, no setTimeout,
@@ -263,7 +263,7 @@ watch(boilLive, (isLive, wasLive) => {
 </script>
 
 <template>
-    <!-- The slotted word/clause wears the library InkMark, driven to the proportioned hand mark. The
+    <!-- The slotted word/clause wears the library HandMark, driven to the proportioned hand mark. The
          atlas wrapper class carries the dark-lift + suffusion + strip + draw-seam hooks below; the
          brush, the seeded grain filter, and the draw-on are ALL library-rendered. `data-mark-*`
          attrs are the probe/gate hooks (`data-boil` is the boil-budget mount-intent; `data-mark-stage`
@@ -279,7 +279,7 @@ watch(boilLive, (isLive, wasLive) => {
         :data-boil="boilActive ? '' : undefined"
         :style="{ '--hu-strip': stripPx + 'px', '--mark-scrub-end': scrubEnd }"
     >
-        <InkMark
+        <GlassHandMark
             ref="mark"
             class="hand-mark__ink"
             :shape="markShape"
@@ -294,7 +294,7 @@ watch(boilLive, (isLive, wasLive) => {
             :draw-ms="drawMs"
         >
             <slot />
-        </InkMark>
+        </GlassHandMark>
     </span>
 </template>
 
