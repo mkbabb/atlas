@@ -51,13 +51,14 @@ import {
 } from "@/platform/chrome/dock/composables/useDockCollapse";
 import { useMobileRegister } from "@/platform/composables/useMobileRegister";
 import { useScrollChrome } from "@/platform/chrome/dock/composables/useScrollChrome";
+import { useDocumentScrollProgress } from "@/motion/useScrollProgress";
 import { DASHBOARD_KEY } from "@/contract";
 
 const props = withDefaults(
     defineProps<{
         /** An ordered multi-stop ramp (base → apex) for a SPECTRUM-thesis dashboard
-            (SCI's rainbow, ECF's sequential) — threaded into the stepper's spine net-retention
-            fill. Undefined ⇒ the single-accent fade; the stepper falls back to `ctx.barometerRamp`. */
+            (SCI's rainbow, ECF's sequential) — shared by the stepper's identity spine and the
+            collapsed scroll rim. Undefined ⇒ `ctx.barometerRamp`, then the route tritone. */
         ramp?: readonly string[];
         /** Wire glass-ui's no-transition fast-path on the dark toggle (C1, T-5) so the
             theme is an INSTANT re-print here too (and the correct hard-cut under PRM). */
@@ -68,6 +69,19 @@ const props = withDefaults(
 
 // The active dashboard's chrome contract — the dock reads ONLY this.
 const ctx = inject(DASHBOARD_KEY);
+
+// The ONE document-progress scalar for the whole dock. Collapse behavior, the stepper's terminal
+// beat correction, and the collapsed Glass rim all read this same computed; no child instantiates a
+// second `useWindowScroll` writer.
+const scrollProgress = useDocumentScrollProgress();
+const ROUTE_TRITONE = [
+    "var(--route-accent)",
+    "var(--route-accent-warm, var(--route-accent))",
+    "var(--route-accent-cool, var(--route-accent))",
+] as const;
+const identityRamp = computed<readonly string[]>(
+    () => props.ramp ?? ctx?.barometerRamp ?? ROUTE_TRITONE,
+);
 
 // ── ONE responsive Dock (the atlas-unified-register law) ──────────────────────
 // The SAME vertical `GlassDock` rail at EVERY viewport — no phone fork, no bottom/horizontal
@@ -124,7 +138,7 @@ watch(
 // owned (the sheet), so the scroll edge must never force-EXPAND the dock over content (the CD-01
 // regression). O-D1/O-D2 build the fuller reactive register bridge (the isPhone rewire, the phone
 // collapse-on-scroll consume) atop this witness.
-const { collapsed: scrollCollapsed } = useScrollChrome();
+const { collapsed: scrollCollapsed } = useScrollChrome({ source: scrollProgress });
 watch(scrollCollapsed, (edge) => {
     if (isPhone.value) return;
     if (edge) collapse();
@@ -219,7 +233,7 @@ onBeforeUnmount(() => {
         position="fixed"
         shape="card"
         density="comfortable"
-        overflow="scroll"
+        overflow="grow"
         :start-collapsed="isPhone"
         class="usf-dock"
         :class="{ 'usf-dock--phone': isPhone }"
@@ -251,7 +265,8 @@ onBeforeUnmount(() => {
             <div class="usf-dock__viewport">
                 <DockStepperRender
                     :ctx="ctx"
-                    :ramp="props.ramp"
+                    :ramp="identityRamp"
+                    :progress="scrollProgress"
                     :sheet="sheetOpen"
                     @close="closeSheet"
                 />
@@ -271,7 +286,7 @@ onBeforeUnmount(() => {
              collapsed pill on the DESKTOP register (scroll-collapse); on phone the persistent
              crest-BUTTON stays the collapsed pill (the a11y menu toggle, the CSS below). -->
         <template #collapsed>
-            <DockSummary />
+            <DockSummary :progress="scrollProgress" :stops="identityRamp" />
         </template>
     </GlassDock>
 </template>

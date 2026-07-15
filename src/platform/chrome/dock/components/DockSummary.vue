@@ -8,17 +8,25 @@
 // This slot gives collapse a REAL target: a dome-hugging DISC. glass's own
 // `.glass-dock.collapsed .dock-layer--summary` rule floors this pane to a perfect circle at
 // `--dock-collapsed-summary-min-size` (the orchestrator pins 4rem = 64px), centring the content on
-// both axes — so this leaf only paints the crest + the freshness pip INSIDE that circle.
+// both axes — so this leaf composes the crest + freshness pip + published scroll rim INSIDE that
+// circle.
 //
 // THE LOOK (L34 §4.1.44 — "the product's compass rose"): a 64×64 dome-hugging disc — the TIL crest
 // 40px centred (a 12px breathing ring to the disc edge) + the freshness dot 7px at 1–2 o'clock. The
-// `BorderProgress` full-ring barometer around the disc edge is the O-D2 consume (the 5.0.0 dock
-// arm), NOT authored here.
+// Glass-owned `ScrollProgressRim` traces the disc edge from the dock's one document scalar.
 //
-// PURELY DECORATIVE (`aria-hidden`): the collapsed dock's INTERACTION + a11y are carried by the
-// persistent crest band (the phone crest-BUTTON / the desktop home crest) and glass's own
-// collapsed-pane click-to-expand — this leaf paints the silhouette, it is not a control.
+// The collapsed dock's INTERACTION is carried by the persistent crest band (the phone crest-BUTTON /
+// the desktop home crest) and glass's own collapsed-pane click-to-expand. The rim keeps its native
+// progressbar semantics; the crest image and freshness pip remain decorative.
 import { StatusDot } from "@mkbabb/glass-ui/status-dot";
+import { ScrollProgressRim } from "@mkbabb/glass-ui/scroll-progress-rim";
+
+defineProps<{
+    /** Whole-document progress, 0..1. */
+    progress: number;
+    /** The active dashboard's identity spectrum. */
+    stops: readonly string[];
+}>();
 
 // The TIL crest asset — the SAME public SVG the crest band binds (BrandMark), bound as a runtime
 // string (not a static `src="…"` attr) so `transformAssetUrls` never mints an asset-import module
@@ -29,7 +37,8 @@ const CREST_SRC = "/til-logo.svg";
 <template>
     <!-- The collapsed silhouette — decorative; glass floors the enclosing `.dock-layer--summary`
          pane to the 64px circle and centres this content. -->
-    <span class="usf-dock__summary" aria-hidden="true">
+    <span class="usf-dock__summary">
+        <ScrollProgressRim :value="progress" :stops="stops" />
         <img
             class="usf-dock__summary-crest"
             :src="CREST_SRC"
@@ -62,6 +71,7 @@ const CREST_SRC = "/til-logo.svg";
     place-items: center;
     inline-size: 100%;
     block-size: 100%;
+    border-radius: inherit;
 }
 .usf-dock__summary-crest {
     inline-size: 2.5rem; /* 40px — the crest glyph */

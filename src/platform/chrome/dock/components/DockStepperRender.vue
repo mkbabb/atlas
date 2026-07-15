@@ -22,12 +22,14 @@ import DockNavItem from "./DockNavItem.vue";
 import { useDockStepper } from "@/platform/chrome/dock/composables/useDockStepper";
 import type { DashboardContext } from "@/contract";
 
-const { ctx, ramp, sheet } = defineProps<{
+const { ctx, ramp, progress, sheet } = defineProps<{
     /** The active dashboard chrome contract — the stepper reads `nav` / `accent` / `barometerRamp`. */
     ctx: DashboardContext;
     /** The dock's `:ramp` prop (a SPECTRUM-thesis ramp) threaded into the spine fill; undefined ⇒
         the injected `ctx.barometerRamp`, else the single-accent fade. */
     ramp?: readonly string[];
+    /** The dock's hoisted whole-document scalar. Read only for terminal-beat correction. */
+    progress: number;
     /** THE PHONE SHEET REGISTER (M.W1 D2 · N.WG1 Arm B) — true while the phone dock is expanded:
         the SAME stepper renders as the top-left ruled section-menu (labeled rows, the home first
         row, ArrowUp/Down roving focus, select-closes). NOT a second component — a register. */
@@ -43,18 +45,17 @@ const emit = defineEmits<{
 // ── The figure-number stepper (J-ARCH §3 · useDockStepper) — the observer MOVES here ──────────
 // The beat-observer (the dock's ONE IntersectionObserver — the single scroll-scalar writer), the
 // Roman mapping, the "step N of M" projection, the single-writer mirror into `useActiveBeat`, and
-// the spine's scroll-progress + year cross-fade triggers are owned by `useDockStepper`. ZERO new
-// observer is minted (the composable IS the dock's existing observer, relocated into this band).
+// the terminal-beat + year cross-fade triggers are owned by `useDockStepper`. ZERO new observer is
+// minted (the composable IS the dock's existing observer, relocated into this band).
 const {
     activeBeatId,
     beatItems,
     activeStep,
     roman,
-    scrollProgress,
     activeYear,
     yearFading,
     scrollTo,
-} = useDockStepper(ctx);
+} = useDockStepper(ctx, () => progress);
 
 /** SM-2 (design-suffusion §2 #2 · d-pops M1) — the per-beat RIVET HUE: each resting nav rivet
     carries its beat's data-hue as a thin ring, so the rail reads as a ≥3-colour INDEX at rest. A
@@ -131,9 +132,9 @@ function onSheetKeydown(e: KeyboardEvent): void {
         <!-- The dock divider — glass-ui's public DockSeparator (E2 · audit-e/e-dock R1). -->
         <DockSeparator />
 
-        <!-- The figure-number stepper riding the barometer spine: ONE ControlPlaneSpine (the
-             net-retention ramp fill + the scroll playhead) with the Roman rungs riding ABOVE it
-             (beats scroll, views route). -->
+        <!-- The figure-number stepper riding the identity spine: ONE ControlPlaneSpine (the
+             net-retention ramp) with the Roman rungs riding ABOVE it (beats scroll, views route).
+             Whole-document progress lives on the collapsed Glass rim, never a second rail. -->
         <div
             id="dock-sheet"
             ref="stepperEl"
@@ -148,7 +149,6 @@ function onSheetKeydown(e: KeyboardEvent): void {
             <ControlPlaneSpine
                 class="usf-dock__spine"
                 :ramp="spineRamp"
-                :progress="scrollProgress"
             />
 
             <!-- THE HOME ROW (D2) — inside the SHEET the crest is the toggle, so HOME rides as the
@@ -212,8 +212,8 @@ function onSheetKeydown(e: KeyboardEvent): void {
     min-block-size: 0;
 }
 
-/* The spine runs BEHIND the figure-numbers, down their gutter (the consumed timeline rail +
-   Roman markers + playhead). It is absolutely placed by ControlPlaneSpine's own `position:
+/* The spine runs BEHIND the figure-numbers, down their gutter (the identity rail + Roman markers).
+   It is absolutely placed by ControlPlaneSpine's own `position:
    relative` shell; here we pin it to the stepper's full height. */
 .usf-dock__spine {
     position: absolute;

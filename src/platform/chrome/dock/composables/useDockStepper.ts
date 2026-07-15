@@ -2,8 +2,8 @@
 // the Dock 988-L decomposition). EXTRACTED from Dock.vue:103-322 as a content-MOVE:
 // the figure-number stepper's wayfinding logic — the active-beat IntersectionObserver,
 // the Roman figure-number mapping, the "step N of M" projection, the single-writer
-// mirror into `useActiveBeat`, and the spine's scroll-progress + year cross-fade
-// triggers — lifted to a named home so `Dock.vue` composes it as a thin shell.
+// mirror into `useActiveBeat`, the document-end correction, and the spine's year cross-fade trigger
+// — lifted to a named home so `Dock.vue` composes it as a thin shell.
 //
 // CRITICAL — the single-scroll-scalar discipline (Dock.vue:193-197). This composable
 // IS the dock's ONE existing observer, relocated; it mints ZERO new IntersectionObserver
@@ -16,12 +16,13 @@ import {
     onBeforeUnmount,
     onMounted,
     ref,
+    toValue,
     watch,
     type ComputedRef,
+    type MaybeRefOrGetter,
     type Ref,
 } from "vue";
 import { useDebounceFn } from "@vueuse/core";
-import { useDocumentScrollProgress } from "@/motion/useScrollProgress";
 import { useReducedMotion } from "@/motion/useReducedMotion";
 import { useActiveBeat } from "@/platform/stores/useActiveBeat";
 import { useViewParams } from "@/platform/stores/useViewParams";
@@ -40,8 +41,6 @@ export interface UseDockStepper {
     activeStep: ComputedRef<number>;
     /** 1..N → I..V (and beyond) — the Roman figure-number for a 1-based rung index. */
     roman: (n: number) => string;
-    /** The scroll-progress scalar (0..1 over the whole document) that rides the spine playhead. */
-    scrollProgress: Ref<number>;
     /** The active year off the platform year-scope (the spine's year-fade trigger source). */
     activeYear: ComputedRef<number | null>;
     /** Cross-fade gate — true for one cycle after a year change drives the spine fade. */
@@ -53,11 +52,12 @@ export interface UseDockStepper {
 /**
  * Bind the dock's figure-number stepper to the active dashboard context. Owns the ONE
  * beat-observer (the sole scroll-scalar writer), the active-step projection, the Roman
- * mapping, the single-writer mirror into `useActiveBeat`, and the spine's scroll-progress
- * + year cross-fade triggers. ZERO behavior change — a content-MOVE from Dock.vue.
+ * mapping, the single-writer mirror into `useActiveBeat`, the document-end correction, and the
+ * spine's year cross-fade trigger. The document scalar is injected from Dock.vue, its one owner.
  */
 export function useDockStepper(
     ctx: DashboardContext | undefined,
+    documentProgress: MaybeRefOrGetter<number>,
 ): UseDockStepper {
     function roman(n: number): string {
         return toRoman(n);
@@ -67,9 +67,7 @@ export function useDockStepper(
         raised-pill state, AND the spine's `currentKey` rivet. "" before the first hit. */
     const activeBeatId = ref<string>("");
 
-    /** The scroll-progress scalar that rides the spine playhead (Layer B), 0..1 over the
-        whole document — wiring `useScrollProgress`'s document variant. */
-    const scrollProgress = useDocumentScrollProgress();
+    const readProgress = (): number => toValue(documentProgress);
 
     // ── The spine YEAR trigger (B4 §4, S2 §2.4, G10 §8.3) ────────────────────────
     // The spine cross-fades on a year change: `year` joins its trigger list. We read the
@@ -232,7 +230,7 @@ export function useDockStepper(
                 // below). A late observer delivery (a plate hydrating/resizing near the bottom
                 // re-fires intersections) must not un-name the LAST beat while the document
                 // rests at its end — the end zone is authoritative over band intersections.
-                if (scrollProgress.value >= END_EPSILON) {
+                if (readProgress() >= END_EPSILON) {
                     const last = beatItems.value.at(-1);
                     if (last?.kind === "beat") {
                         activeBeatId.value = last.id;
@@ -282,7 +280,7 @@ export function useDockStepper(
     // read (the observer fires no entry/exit for a beat that never intersects the band, so the
     // falling edge must re-derive, not wait).
     const END_EPSILON = 0.995;
-    watch(scrollProgress, (now, was) => {
+    watch(readProgress, (now, was) => {
         if (was == null || now === was) return;
         const ids = beatItems.value.flatMap((i) =>
             i.kind === "beat" ? [i.id] : [],
@@ -318,7 +316,6 @@ export function useDockStepper(
         beatItems,
         activeStep,
         roman,
-        scrollProgress,
         activeYear,
         yearFading,
         scrollTo,

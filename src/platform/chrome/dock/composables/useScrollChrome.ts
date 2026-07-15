@@ -21,8 +21,8 @@
 //     local `collapsed`/`direction` refs and touches no store, no `expand()`/`collapse()`, no glass
 //     instance. It is the SINGLE owner of the collapse-on-scroll mechanism — the dock binds this
 //     edge, it does not re-implement it [dock-chrome L12 "two collapse machines fighting over one
-//     box"]. (Per Q-26 the hook adds NO progress chrome — per-beat progress rides the numeral ring +
-//     the border barometer; this hook is collapse-ONLY.)
+//     box"]. This hook adds NO progress chrome: Roman rungs carry beat position and the collapsed
+//     published Glass rim carries whole-document progress. This hook is collapse-ONLY.
 //
 // THE CLOCK IS A FRACTION, NOT PIXELS. The one signal it reads is the [0,1] document-progress scalar,
 // so the thresholds below are PAGE FRACTIONS (e.g. 2% down = a committed down-scroll), the honest

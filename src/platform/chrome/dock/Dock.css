@@ -186,7 +186,7 @@
     }
 
     /* the sheet's stepper column — full-measure ruled rows, top-aligned (a MENU, not a centred
-       rail); the vertical spine is RAIL furniture (the scroll playhead) — the sheet is ruled by
+       rail); the vertical spine is RAIL furniture (the identity ramp) — the sheet is ruled by
        its rows, so the spine rests. */
     :deep(.usf-dock--phone:not(.collapsed) .usf-dock__stepper) {
         align-items: stretch;
