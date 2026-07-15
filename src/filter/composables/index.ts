@@ -14,3 +14,4 @@ export * from "./useFilterMount";
 export * from "./useFilterPanel";
 export * from "./useFilterLedger";
 export * from "./useVirtualWindow";
+export * from "./useVirtualSectionWindow";

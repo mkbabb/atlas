@@ -24,6 +24,7 @@
 //   • ChartDataTable  — the a11y rows that ARE the export payload (E3, off the contract).
 //   • VizDescription / VizKeyStats / PlateVoid — the new furniture rungs (E1 / B4 / E8).
 //   • vizExport       — the getDataURL / DOM-snapshot / CSV serializers (E3, ZERO heavy dep).
+import { inject } from "vue";
 import { Download, SlidersHorizontal, Maximize2, Minimize2 } from "@lucide/vue";
 import { DockControl, DockTrigger } from "@mkbabb/glass-ui/dock";
 import { Badge } from "@mkbabb/glass-ui/badge";
@@ -41,8 +42,10 @@ import ChartDataTable from "@/charts/legend/ChartDataTable.vue";
 import PlateVoid from "@/charts/frame/PlateVoid.vue";
 import PlateSkeleton from "@/charts/frame/PlateSkeleton.vue";
 import { useVizPlate, type VizPlateProps } from "./useVizPlate";
+import { STAGE_ANATOMY_KEY } from "@/charts/contract/scene-contract";
 
 const props = withDefaults(defineProps<VizPlateProps>(), { chart: null, nav: null });
+const suppressFoot = inject(STAGE_ANATOMY_KEY, false);
 
 const {
     slots,
@@ -70,6 +73,10 @@ const {
     activeDimChips,
     activeFilterCount,
     showAppliedSummary,
+    sourceData,
+    sourceDataOpen,
+    openSourceData,
+    closeSourceData,
     isFullscreen,
     toggleEnlarge,
     ariaLabel,
@@ -90,7 +97,7 @@ defineExpose({ archetype });
         :aria-label="ariaLabel"
         :size="size"
         :fig-id="contract.id"
-        :legend-dock="legendDock"
+        :legend-dock="suppressFoot ? 'none' : legendDock"
         :show-title="showOwnTitle"
         data-viz-plate
         :data-viz-id="contract.id"
@@ -107,7 +114,7 @@ defineExpose({ archetype });
 
         <!-- THE LEGEND (E5) — a consumer `#legend` slot wins; else the contract's LegendSpec drives
              a ChartLegend at the §E5 default mode (stepped for N≥7, else continuous/inline). -->
-        <template v-if="legend || slots.legend" #legend>
+        <template v-if="!suppressFoot && (legend || slots.legend)" #legend>
             <slot name="legend">
                 <ChartLegend
                     v-if="legend"
@@ -127,7 +134,7 @@ defineExpose({ archetype });
              an enlarge, sourced from @mkbabb/glass-ui/dock (the dock-control register — rounded,
              ≥44px hitbox). A COLLAPSED applied-filters summary Badge rides the cluster when dials are
              active + the dock is closed. The expand seam ChartFrame owns rides the enlarge button. -->
-        <template #actions>
+        <template v-if="!suppressFoot" #actions>
             <slot name="actions" />
             <VizGearDock
                 class="viz-dock"
@@ -172,7 +179,19 @@ defineExpose({ archetype });
                      DockTrigger (the two export handlers `onExportCsv`/`onExportImage`
                      re-homed onto the menu, never re-authored). The image export is no longer hidden
                      in an sr-only twin; both exports stay reachable behind the one visible control. -->
-                <DropdownMenu>
+                <DockControl
+                    v-if="sourceData"
+                    compact
+                    :aria-label="`Browse source data — ${contract.title}`"
+                    :aria-expanded="sourceDataOpen"
+                    :title="`Source data · ${contract.title}`"
+                    :data-testid="`viz-dock-download-${contract.id}`"
+                    data-viz-dock-download
+                    @click="openSourceData"
+                >
+                    <Download class="viz-dock__glyph" aria-hidden="true" />
+                </DockControl>
+                <DropdownMenu v-else>
                     <DockTrigger
                         for="dropdown"
                         :aria-label="`Download ${contract.title} — CSV or image`"
@@ -367,6 +386,25 @@ defineExpose({ archetype });
                 :value-header="contract.export.valueHeader"
             />
 
+            <aside
+                v-if="!suppressFoot && sourceDataOpen"
+                class="viz-plate__source-data"
+                :aria-label="`${contract.title} source data browser`"
+            >
+                <button
+                    type="button"
+                    class="viz-plate__source-close"
+                    @click="closeSourceData"
+                >
+                    Close source data
+                </button>
+                <component
+                    :is="sourceData"
+                    :viz-id="contract.id"
+                    :event-scope="{ grain: 'viz', vizId: contract.id }"
+                />
+            </aside>
+
             <!-- J-FRAME · FACET 4 (BOTTOM) — the host-read seam BELOW the grid (the outside-the-
                  viz placement). `aggregateStats` (bottom) → J-STORY's top/bottom-alternating
                  outside-the-grid placement. The host READS the declaration and ROUTES it to its
@@ -390,7 +428,7 @@ defineExpose({ archetype });
                  ready data); the provenance arm stays phase-independent — an "always-on" dock reads
                  the same during loading/error/empty as it does once the figure lands. -->
             <div
-                v-if="provenance || platePhase === 'figure' || slots.foot"
+                v-if="!suppressFoot && (provenance || platePhase === 'figure' || slots.foot)"
                 class="viz-plate__foot"
                 data-testid="viz-plate-foot"
             >

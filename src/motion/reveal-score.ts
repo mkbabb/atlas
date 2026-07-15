@@ -36,6 +36,8 @@ export interface RevealRestoreEdge {
     onRestoreSettled(callback: () => void): () => void;
 }
 
+export type RevealTopLoadDeferrer = (goLive: () => void) => () => void;
+
 export interface RevealCuePump {
     /** Cache the conductor position and fire newly crossed cues when live. */
     advance(progress: number): boolean;
@@ -109,14 +111,16 @@ export function createRevealCuePump(score: RevealScore): RevealCuePump {
 }
 
 /**
- * Bind go-live to restore ordering. Ordinary top loads release synchronously; deep links wait for
- * `onRestoreSettled`. The edge invokes the pump directly, so this helper adds no clock or double-rAF.
+ * Bind go-live to restore ordering. Deep links wait for `onRestoreSettled`; ordinary loads use the
+ * caller's incumbent conductor deferrer when supplied, so this helper never creates a clock.
  */
 export function bindRevealGoLive(
     pump: RevealCuePump,
     restore?: RevealRestoreEdge,
+    deferTopLoad?: RevealTopLoadDeferrer,
 ): () => void {
     if (!restore?.deepLink()) {
+        if (deferTopLoad) return deferTopLoad(() => pump.goLive());
         pump.goLive();
         return () => undefined;
     }

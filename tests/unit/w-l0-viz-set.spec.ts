@@ -24,7 +24,7 @@ const set: VizSetContract = {
             options: [{ kind: "switch", key: "jitter", label: "Jitter", default: true }],
         },
     ],
-    identity: { kind: "district" },
+    identity: { field: "leaNumber" },
     transition: morphTransition(false),
 };
 

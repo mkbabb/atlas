@@ -20,7 +20,7 @@
 // from `colorKind.ts` / `ColorScale.ts` (the keystone), so the description dek, the key stats, and
 // the body marks all wear ONE colour locus (i0-colorkind-law).
 
-import { isVNode } from "vue";
+import { isVNode, type Component } from "vue";
 import type { EChartsOption } from "echarts";
 import type { ColorKind } from "@/charts/scale/colorKind";
 import type { VizOptionSpec } from "@/charts/composables/useVizOptions";
@@ -170,6 +170,11 @@ export interface ExportSpec {
     rowHeader: string;
     /** The CSV value-header column label (e.g. `"Net retention"`). */
     valueHeader: string;
+}
+
+/** The viz-scoped source-browser panel. Query, grains, and serializers remain consumer-owned. */
+export interface SourceDataSpec {
+    readonly panel: Component;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -409,6 +414,8 @@ export interface VizContract {
     keyStats: () => KeyStat[];
     /** E3 — the CSV/PNG payload spec. REQUIRED. */
     export: ExportSpec;
+    /** RM-5 — the delegating download seat opens this panel at `?browse=<id>`. */
+    sourceData?: SourceDataSpec;
     /** E2 — the options spec. Declare `[]` explicitly rather than omit (no silent omission). */
     options?: VizOptionSpec[];
     /** Alternate views over one mounted chart instance. */

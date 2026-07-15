@@ -140,6 +140,19 @@ export function encodeAt(a: NarrativeAnchor): string {
     return a.stepId ? `${a.beatId}.${a.stepId}` : a.beatId;
 }
 
+/** Promote a direct authored `?scene` onto its owning beat's existing narrative anchor. An explicit
+    different beat or step wins; an invalid scene leaves the current anchor untouched. */
+export function resolveSceneAnchor(
+    beatId: string | undefined,
+    sceneId: string | undefined,
+    authoredScenes: readonly string[],
+    current: NarrativeAnchor | null,
+): NarrativeAnchor | null {
+    if (!beatId || !sceneId || !authoredScenes.includes(sceneId)) return current;
+    if (current && (current.beatId !== beatId || current.stepId)) return current;
+    return { beatId, stepId: sceneId };
+}
+
 export const useViewParams = defineStore("platform:viewParams", () => {
     const active = useActiveDashboard();
 
@@ -320,7 +333,7 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         url.setList(FILTO_KEY, []);
     }
 
-    // ── THE `?at` NARRATIVE ANCHOR + THE `?fig` CODEC (K-ANIM A1) ───────────────────────────────────
+    // ── THE NARRATIVE ANCHORS + THE `?fig` CODEC (K-ANIM A1) ─────────────────────────────────────────
     // Both ride the SAME shared `url` bag (NOT in `registeredKeys` — platform through-lines, so a
     // `resetParams()` KEEPS the reader's place + the open figure). The `?at` write is the dock's ONE
     // debounced caller's job (replaceState, no Back-swamp). The `?fig` codec is AUTHORED here as the
@@ -330,6 +343,7 @@ export const useViewParams = defineStore("platform:viewParams", () => {
     // with K-FILTER-UNIFIED's `figOpen` (A1·§3.D) so the `k0-one-url-bag` gate flips in ONE step (a
     // single surviving private `?fig` bag keeps it RED) — K-ACTIVE ships the codec, the fold co-lands.
     const AT_KEY = "at";
+    const SCENE_KEY = "scene";
     const FIG_KEY = "fig";
 
     /** The PARSED narrative anchor off `?at`, or null when absent / malformed. Reactive — a reload /
@@ -339,10 +353,20 @@ export const useViewParams = defineStore("platform:viewParams", () => {
     );
 
     /** Write `?at=<beatId>[.<stepId>]` (a passive replaceState). `undefined` beat clears it. The
-        dock's ONE debounced `watch(activeBeatId)` is the SOLE caller (the declared-vs-derived law:
-        the COARSE beat, passively tracked — never the per-frame `activeVizId`). */
+        dock tracks the coarse beat; ChapterStage may promote that same anchor to an authored scene
+        step during restore. Neither path writes the per-frame `activeVizId`. */
     function setNarrativeAt(beatId: string | undefined, stepId?: string): void {
         url.set(AT_KEY, beatId ? encodeAt({ beatId, stepId }) : undefined);
+    }
+
+    /** The authored stage-scene deep link. ChapterStage resolves it to its owning beat and promotes
+        the existing `?at` anchor; scene boundaries remain its sole live writer. */
+    const sceneId: ComputedRef<string | undefined> = computed(() =>
+        url.get(SCENE_KEY),
+    );
+
+    function setSceneId(id: string | undefined): void {
+        url.set(SCENE_KEY, id);
     }
 
     /** The deep-linked expanded plate id off `?fig`, or undefined. The SOLE `?fig` home — the fold
@@ -410,9 +434,11 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         promotedIdsOf,
         promoteFilter,
         clearPromotedFilter,
-        // K-ANIM A1 — the `?at` narrative anchor + the `?fig` one-bag fold.
+        // K-ANIM A1 / W-STAGE — narrative anchors + the `?fig` one-bag fold.
         narrativeAt,
         setNarrativeAt,
+        sceneId,
+        setSceneId,
         figId,
         openFig,
         closeFig,

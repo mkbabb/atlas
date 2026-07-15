@@ -38,6 +38,9 @@ export interface RouteFold<Row> {
     filterActive: ComputedRef<boolean>;
     /** O(1) membership over the memoized visible set (true when no filter is active). */
     isMatch: (id: string) => boolean;
+    /** Row membership through the coordinator's memoized compiled predicate. Consumers with a
+        wider base frame reuse the sovereign query rather than compiling a parallel matcher. */
+    matchesRow: (row: Row) => boolean;
     /** LEAVE-ONE-OUT FACET COUNTS for a declared `fields` accessor — `coord.facetsFor(vizId, field)`:
         the count of each value of `field` over the client's crossfiltered domain (the panel's
         comparable dim buckets). Empty until the client declares `fields` (the 3 pre-existing routes
@@ -100,12 +103,14 @@ export function useRouteFold<Row>(opts: RouteFoldOptions<Row>): RouteFold<Row> {
     watchEffect(() => sel.resolution.set(opts.figOpen() ? "intersect" : "crossfilter"));
 
     const rowsSig = coord.filteredFor(vizId);
+    const rowMatcher = sel.predicate(vizId);
     const activeSig = coord.filterActive(vizId);
     const visibleRows = computed<Row[]>(() => [...rowsSig()]);
     const filterActive = computed<boolean>(() => activeSig());
     const visibleSet = computed<Set<string>>(() => new Set(rowsSig().map(opts.idOf)));
     const isMatch = (id: string): boolean =>
         !filterActive.value || visibleSet.value.has(id);
+    const matchesRow = (row: Row): boolean => rowMatcher()(row);
 
     // Leave-one-out facet counts, memoized per field (the coordinator caches the underlying signal;
     // this wraps it ONCE as a Vue computed so a panel binds a stable ref). Empty when `fields` absent.
@@ -120,7 +125,7 @@ export function useRouteFold<Row>(opts: RouteFoldOptions<Row>): RouteFold<Row> {
         return ref;
     };
 
-    return { visibleRows, filterActive, isMatch, facetsFor };
+    return { visibleRows, filterActive, isMatch, matchesRow, facetsFor };
 }
 
 // ── SHARED CLAUSE BUILDERS — the tiny route-agnostic bits every section's dim declaration reuses ──

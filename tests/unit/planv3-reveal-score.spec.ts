@@ -68,6 +68,24 @@ describe("RevealScore", () => {
         expect(release).toHaveBeenCalledOnce();
     });
 
+    it("lets the incumbent conductor defer ordinary top-load go-live", () => {
+        const calls: RevealCueContext[] = [];
+        const pump = createRevealCuePump(score(calls));
+        let goLive: (() => void) | undefined;
+        const stop = bindRevealGoLive(pump, undefined, (release) => {
+            goLive = release;
+            return () => {
+                goLive = undefined;
+            };
+        });
+
+        pump.advance(0.65);
+        expect(calls).toEqual([]);
+        goLive?.();
+        expect(calls.map((cue) => cue.id)).toEqual(["lede", "rule"]);
+        stop();
+    });
+
     it("settles all cues once for reduced-motion/no-SDA parity", () => {
         const calls: RevealCueContext[] = [];
         const pump = createRevealCuePump(score(calls));

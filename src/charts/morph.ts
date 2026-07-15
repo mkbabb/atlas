@@ -11,13 +11,18 @@ export function withMorphIdentity(option: EChartsOption, identity: MarkIdentity)
         const data = Array.isArray(raw.data) ? raw.data : undefined;
         return {
             ...raw,
-            id: `${identity.kind}:${seriesIndex}`,
-            universalTransition: { enabled: true, divideShape: "clone" },
+            id: `${identity.field}:${seriesIndex}`,
+            universalTransition: {
+                enabled: true,
+                divideShape: "clone",
+                seriesKey: identity.field,
+            },
             data: data?.map((datum: unknown) => {
                 if (!datum || typeof datum !== "object") return datum;
                 const item = datum as Record<string, unknown>;
-                return item.id == null && item.name != null
-                    ? { ...item, id: String(item.name) }
+                const key = item[identity.field];
+                return item.id == null && key != null
+                    ? { ...item, id: String(key) }
                     : item;
             }),
         };

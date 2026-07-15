@@ -412,9 +412,9 @@ export interface BeatLayout {
     scrollIn?: ScrollDir;
 }
 
-/** A CHAPTER — one beat of the declarative essay (I3 §1). The route declares its chapters
-    as a `Chapter[]` in `context.ts`; `DashboardEssay.vue` renders the full beat scaffold
-    once from each entry (the position-derived `FigureInitial`, the eyebrow from `icon` +
+/** A CHAPTER — the essay-host projection of one manifest point (I3 §1).
+    `DashboardEssay.vue` renders the full beat scaffold once from each entry (the
+    position-derived `FigureInitial`, the eyebrow from `icon` +
     `eyebrow`, the `<h2>` from `title`, the dek `<p>` from `dek`, the chapter `viz`, and the
     trailing `AnimatedRule` whose `:seed` the host derives from the chapter index). */
 export interface Chapter {

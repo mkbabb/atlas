@@ -21,6 +21,9 @@ import { useViewParams } from "@/platform/stores/useViewParams";
 import { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
 import type { YearScope } from "@/data/useYearScope";
 import { useReducedMotion } from "@/motion/useReducedMotion";
+import { useScrollTimeline } from "@/motion/useScrollTimeline";
+import { onNarrativeRestoreSettled } from "@/motion/narrative-restore";
+import { onActiveScrubHostChange } from "@/charts/composables/activeViz";
 import { useStageDeck } from "@/stage/useStageDeck";
 import VizPlate from "@/charts/frame/VizPlate.vue";
 import { isVizContract } from "@/charts/contract/viz-contract"; // the ONE promoted guard (S6)
@@ -38,6 +41,16 @@ const props = defineProps<{
     scene: ChapterScene;
     /** The chapter index — drives the D2 auto-zebra side when `scene.side` is 'auto'/omitted. */
     index?: number;
+    /** Persistent stages derive scene identity from the central conductor, never a local IO. */
+    stageId?: string;
+    /** Owning story beat for one-shot `?at=<beat>.<step>` restoration. */
+    beatId?: string;
+}>();
+const emit = defineEmits<{
+    "scene-change": [
+        event: { from: string; to: string; dir: "forward" | "back"; index: number },
+    ];
+    "active-change": [active: boolean];
 }>();
 
 const view = useViewParams();
@@ -51,6 +64,19 @@ const N = steps.length;
 const stepEls = steps.map(() => ref<HTMLElement | null>(null));
 function setStepEl(el: HTMLElement | null, i: number): void {
     if (stepEls[i]) stepEls[i].value = el;
+}
+
+const stageHostKeys = steps.map((step) =>
+    props.stageId ? `${props.stageId}:scene:${step.id}` : "",
+);
+if (props.stageId) {
+    for (let i = 0; i < steps.length; i++) {
+        useScrollTimeline(stepEls[i]!, {
+            vizId: props.stageId,
+            hostKey: stageHostKeys[i],
+            informationOnly: true,
+        });
+    }
 }
 
 // ── THE PINNED SIDE (D2 auto-zebra) — declared side, else zebra by chapter index. ──
@@ -105,8 +131,17 @@ function applyStep(i: number): void {
         enteredScope.value = view.yearScope?.scope.value ?? null;
         scopeCaptured = true;
     }
+    const from = appliedIndex;
     appliedIndex = i;
     props.scene.apply?.(steps[i]!, runtime); // the DISCRETE step → world effect, GENUINE crossing only
+    const previous = from < 0 ? 0 : from;
+    if (previous !== i)
+        emit("scene-change", {
+            from: steps[previous]!.id,
+            to: steps[i]!.id,
+            dir: i > previous ? "forward" : "back",
+            index: i,
+        });
 }
 
 // The ONE stage authority. Glass owns the ordered deck index; this Atlas arbiter accepts the
@@ -154,7 +189,45 @@ const sceneRootEl = ref<HTMLElement | null>(null);
 
 let io: IntersectionObserver | null = null;
 let sceneIo: IntersectionObserver | null = null;
+let stopStageConductor: (() => void) | null = null;
+let stopNarrativeRestore: (() => void) | null = null;
+let sceneActive = false;
+let narrativeRestoreConsumed = false;
 onMounted(() => {
+    if (props.beatId) {
+        stopNarrativeRestore = onNarrativeRestoreSettled((anchor, settlement) => {
+            if (
+                settlement.aborted ||
+                narrativeRestoreConsumed ||
+                anchor.beatId !== props.beatId ||
+                !anchor.stepId
+            )
+                return false;
+            const i = steps.findIndex((step) => step.id === anchor.stepId);
+            const element = i >= 0 ? stepEls[i]?.value : null;
+            if (i < 0 || !element) return false;
+            narrativeRestoreConsumed = true;
+            element.scrollIntoView({ behavior: "auto", block: "center" });
+            activate(i);
+            return true;
+        });
+    }
+    if (props.stageId) {
+        stopStageConductor = onActiveScrubHostChange(
+            (resolution) => {
+                const i = stageHostKeys.indexOf(resolution.hostKey);
+                if (i >= 0) activate(i);
+                const nextActive = resolution.inViewport.has(props.stageId!);
+                if (nextActive !== sceneActive) {
+                    sceneActive = nextActive;
+                    emit("active-change", nextActive);
+                    if (!nextActive) restoreReaderScope();
+                }
+            },
+            { immediate: true },
+        );
+        return;
+    }
     io = new IntersectionObserver(
         (entries) => {
             // Maintain the live intersecting set, then pick the GEOMETRICALLY-NEAREST step to the
@@ -186,23 +259,27 @@ onMounted(() => {
     );
     for (const r of stepEls) if (r.value) io.observe(r.value);
 
-    // The EXIT-RESTORE observer — watches the WHOLE scene root. When the scene leaves the viewport
-    // entirely (scrolled past below OR back above — both directions), restore the reader's scope.
+    // Legacy ChapterScene keeps its established whole-root exit observer. Persistent stages return
+    // above and derive both winner and membership from the central conductor with zero local IO.
     if (sceneRootEl.value) {
-        sceneIo = new IntersectionObserver(
-            (entries) => {
-                for (const e of entries) {
-                    if (!e.isIntersecting) restoreReaderScope();
+        sceneIo = new IntersectionObserver((entries) => {
+            for (const entry of entries) {
+                if (entry.isIntersecting !== sceneActive) {
+                    sceneActive = entry.isIntersecting;
+                    emit("active-change", sceneActive);
                 }
-            },
-            { threshold: 0 },
-        );
+                if (!entry.isIntersecting) restoreReaderScope();
+            }
+        });
         sceneIo.observe(sceneRootEl.value);
     }
 });
 onBeforeUnmount(() => {
     io?.disconnect();
     sceneIo?.disconnect();
+    stopStageConductor?.();
+    stopNarrativeRestore?.();
+    if (sceneActive) emit("active-change", false);
     restoreReaderScope(); // route-away / unmount → hand the dial back to the reader
 });
 
@@ -246,6 +323,7 @@ function Prose(p: { prose: ChapterTitle }): VNodeChild {
                 :contract="(scene.graphic as VizContract)"
             />
             <component :is="graphicComponent" v-else />
+            <slot name="anatomy" />
         </div>
 
         <!-- THE NARRATED STEPS — each a block that scrolls past; the active one wears the D3 gold rim
@@ -258,6 +336,7 @@ function Prose(p: { prose: ChapterTitle }): VNodeChild {
                 :key="step.id"
                 :ref="(el: any) => setStepEl(el?.$el ?? el ?? null, i)"
                 class="sticky-scene__step"
+                :data-scene-step-id="step.id"
                 :data-active-step="i === activeIndex ? '' : undefined"
                 :aria-current="i === activeIndex ? 'true' : undefined"
                 @transitionend="settleStep"

@@ -124,7 +124,11 @@ const host = ref<HTMLElement | null>(null);
 // the plate wires its shared-hover watch off it. The option/onHover/keyOf are the plate's forks. ──
 const { chart, highlight, downplay } = useEChart({
     host,
-    option: () => withMorphIdentity(props.option(), props.contract.viewSet?.identity ?? { kind: props.contract.id }),
+    option: () => {
+        const option = props.option();
+        const identity = props.contract.viewSet?.identity;
+        return identity ? withMorphIdentity(option, identity) : option;
+    },
     fingerprint: props.fingerprint ? () => props.fingerprint?.() ?? "" : undefined,
     onHover: (key) => props.onHover(key),
     keyOf: (params) => props.keyOf(params),

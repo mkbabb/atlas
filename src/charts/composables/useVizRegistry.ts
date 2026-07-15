@@ -9,7 +9,7 @@
 //
 // A MODULE SINGLETON (the `useFilterPane.ts` one-truth idiom — sanctioned for the pure Vite SPA;
 // `main.ts` `createApp`, NO SSR cross-request leak). The registry is `reactive` so the panel
-// re-projects the instant a plate mounts/unmounts.
+// re-projects the instant a plate mounts, changes its reactive dimensions, or unmounts.
 //
 // THE per-MOUNT TOKEN (edge J — the HMR / keep-alive double-mount guard). `register` mints a fresh
 // `Symbol` per mount and `deregister` deletes the key ONLY when the live entry's token matches — so
@@ -23,6 +23,14 @@ import type { UseVizOptions } from "@/charts/composables/useVizOptions";
 /** A per-MOUNT identity token — the deregister guard's key (an HMR / keep-alive double-mount never
     evicts the live instance, the stale unmount is inert). */
 export type VizToken = symbol;
+
+/** The one truthful image format exposed by a mounted plate's native renderer. */
+export type NativeImageFormat = "png" | "svg";
+
+export interface NativeImageExport {
+    readonly format: NativeImageFormat;
+    export(): boolean;
+}
 
 /** ONE registered viz's facet — its id, the per-mount token, the declared `filterDimensions` (the
     panel projects ⋃ over the active set, de-duped by key), and the cross-HIGHLIGHT veil policy. */
@@ -40,6 +48,8 @@ export interface RegisteredViz {
         re-home into the unified panel's OPTIONS band, projected off the pinned/active viz). Null when
         the viz declares no options. */
     optionsController?: UseVizOptions | null;
+    /** Native live-renderer export. Absent when the mounted plate cannot serialize an image. */
+    imageExport?: NativeImageExport;
 }
 
 /** vizId → its registered facet. A `shallowRef`-held Map (the panel re-projects on mount/unmount via
@@ -51,9 +61,9 @@ const registry: ShallowRef<Map<string, RegisteredViz>> = shallowRef(
 );
 
 /**
- * THE MOUNTED-PLATE REGISTRY. A `VizPlate` self-registers on mount + deregisters on unmount; the
- * unified panel reads the registry projected to the K-ACTIVE active viz-set. NOT a Pinia store — a
- * module singleton (the `useFilterPane.ts:14` one-truth idiom for the pure Vite SPA).
+ * THE MOUNTED-PLATE REGISTRY. A `VizPlate` self-registers on mount, updates that token's reactive
+ * dimensions, and deregisters on unmount; the unified panel projects the K-ACTIVE active viz-set.
+ * NOT a Pinia store — a module singleton (the `useFilterPane.ts:14` one-truth idiom for the SPA).
  */
 export function useVizRegistry() {
     /** Register a mounted plate's facet — mints a fresh per-mount token and writes the entry
@@ -75,6 +85,19 @@ export function useVizRegistry() {
         }
     }
 
+    /** Replace one live mount's reactive dimensions without re-registering it. The token fence makes
+        a late watcher from a superseded mount inert, exactly like deregistration. */
+    function updateDims(
+        vizId: string,
+        token: VizToken,
+        dims: readonly FilterDimension[],
+    ): void {
+        const entry = registry.value.get(vizId);
+        if (!entry || entry.token !== token || entry.dims === dims) return;
+        registry.value.set(vizId, { ...entry, dims });
+        triggerRef(registry);
+    }
+
     /** The active set's facets — the registered entries for the ids in `ids`, skipping ids whose
         plate is not mounted (the registry is the truth: an `activeVizId` with no mounted plate
         contributes nothing). De-dup of shared dims is the panel's job (`dimKeyOf`). */
@@ -93,5 +116,12 @@ export function useVizRegistry() {
         registry.value = new Map();
     }
 
-    return { registry, register, deregister, facetsFor, __resetRegistry };
+    return {
+        registry,
+        register,
+        updateDims,
+        deregister,
+        facetsFor,
+        __resetRegistry,
+    };
 }

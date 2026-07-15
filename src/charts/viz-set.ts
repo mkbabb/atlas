@@ -2,7 +2,8 @@ import type { VizOptionSpec } from "@/charts/composables/useVizOptions";
 import type { VizView } from "@/charts/contract/viz-contract";
 
 export interface MarkIdentity {
-    kind: string;
+    /** Data field that carries the stable mark key across views and scene encodes. */
+    field: string;
 }
 
 export interface MorphTransition {

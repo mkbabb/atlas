@@ -7,9 +7,10 @@ import type { SelectionKey } from "@/charts/contract/selection-contract";
 
 describe("W-L3 keyed morph and packed swarm", () => {
     it("keys marks by name and arms only the pushed option", () => {
-        const inert = withMorphIdentity({ animation: false, series: [{ data: [{ name: "37", value: [1, 2] }] }] }, { kind: "district" });
+        const inert = withMorphIdentity({ animation: false, series: [{ data: [{ leaNumber: "37", value: [1, 2] }] }] }, { field: "leaNumber" });
         const series = (inert.series as Array<Record<string, unknown>>)[0];
-        expect(series.id).toBe("district:0");
+        expect(series.id).toBe("leaNumber:0");
+        expect(series.universalTransition).toMatchObject({ seriesKey: "leaNumber" });
         expect((series.data as Array<Record<string, unknown>>)[0].id).toBe("37");
         expect(inert.animation).toBe(false);
         expect(armMorphPush(inert, { mode: "blend", reduced: false })).toMatchObject({ animation: true, animationDurationUpdate: 520 });

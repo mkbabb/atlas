@@ -17,6 +17,8 @@ export interface ExportPayload<Row, Scope = unknown> {
     readonly rows: readonly Row[];
     readonly meta: {
         readonly grain: import("@/filter/engine/rows").ExportGrain<Scope>;
+        /** Normalized, machine-readable query for reproducing this exact row slice. */
+        readonly filter: string;
         readonly filterExplain: string;
         readonly asOf: string;
         readonly source: ExportSource;

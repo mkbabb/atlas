@@ -10,7 +10,7 @@
 // upstream edge, with a named successor):
 //   · `story-contract` → value-imports charts `scene-contract` (the entangled contract trio O-B4
 //     deferred → O-B4R, itself blocked on `stores` → O-B9).
-//   · `useStoryDirector` · `story-director-provide` · `story-template` · `StoryCorridor.vue` — all
+//   · `useStoryDirector` · `story-director-provide` · `StoryCorridor.vue` — all
 //     transitively consume `story-contract`, so they land with it once scene-contract (O-B4R) lands.
 // The monorepo import flip to this home is O-B11.
 
@@ -20,7 +20,6 @@ export * from "./clone-overlay";
 
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
 export * from "./story-contract";
-export * from "./story-template";
 export * from "./useStoryDirector";
 export * from "./story-director-provide";
 export { default as StoryCorridor } from "./StoryCorridor.vue";
@@ -33,5 +32,13 @@ export * from "./manifest";
 
 // The canonical persistent stage is authored from the story surface as well as the charts surface;
 // both routes resolve to the same contract and thin StickyScene adapter.
-export type { ChapterStage, SceneOption } from "@/charts/contract/scene-contract";
+export type {
+    ChapterStage,
+    SceneOption,
+    StageAnatomy,
+    StageEvents,
+    StageExport,
+    StageSourcePanelProps,
+} from "@/charts/contract/scene-contract";
+export { stageEventsFromHub } from "@/charts/contract/scene-contract";
 export { default as ChapterStageView } from "@/charts/scene/ChapterStage.vue";

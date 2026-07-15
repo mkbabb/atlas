@@ -48,6 +48,8 @@ import {
     useScrollProgress,
 } from "@/motion/useScrollProgress";
 import { useReducedMotion } from "@/motion/useReducedMotion";
+import { onNarrativeRestoreSettled } from "@/motion/narrative-restore";
+import { useViewParams } from "@/platform/stores/useViewParams";
 import {
     bindRevealGoLive,
     createRevealCuePump,
@@ -114,7 +116,7 @@ export interface UseScrollTimelineOptions {
     facets?: FacetSpec[];
     /** Optional named reveal cues projected onto this same facet map and activeViz pump. */
     revealScore?: RevealScore;
-    /** Deep-link restore ordering for RevealScore go-live. Omit on an ordinary top load. */
+    /** Override the shared narrative restore ordering used by RevealScore. */
     restore?: RevealRestoreEdge;
     /**
      * THE PER-SECTION MOTION BUDGET (the cardinal law — mark-scarcity extended to motion).
@@ -136,6 +138,12 @@ export interface UseScrollTimelineOptions {
      * `[data-viz-id]` (the `k0-active-vizid-resolves` seal — a wrong id lights no medal).
      */
     vizId?: string | (() => string);
+    /** A private identity for this concrete conductor host. Defaults to `vizId`. A persistent stage
+        gives each scene step a unique key while every step retains the stage's public `vizId`. */
+    hostKey?: string | (() => string);
+    /** Keep this host eligible for discrete centre/membership wayfinding under reduced motion.
+        The returned timeline remains terminal and no animation is driven. */
+    informationOnly?: boolean;
 }
 
 /** The engine's reactive surface. */
@@ -232,7 +240,20 @@ export function useScrollTimeline(
     const revealPump = options.revealScore
         ? createRevealCuePump(options.revealScore)
         : undefined;
+    const view = revealPump && !options.restore ? useViewParams() : null;
+    const restore =
+        options.restore ??
+        (view
+            ? {
+                  deepLink: () => view.narrativeAt != null,
+                  onRestoreSettled: (callback: () => void) =>
+                      onNarrativeRestoreSettled(() => callback()),
+              }
+            : undefined);
     let stopRestoreEdge: (() => void) | null = null;
+    let deferredGoLive: (() => void) | null = null;
+    /** W-L2's top-load double-rAF fallback, counted on the incumbent central conductor. */
+    let goLiveFrames = 0;
 
     // ── THE ONE TIMELINE ─────────────────────────────────────────────────────────────────
     // Smoothing OFF: the master position IS the scroll position (already a settled scalar);
@@ -279,11 +300,19 @@ export function useScrollTimeline(
     // progress through the pipeline (native path) and RETURNS the host's master position for the
     // argmin — or `null` to opt OUT (a held seek / PRM). The double-poll cannot exist by construction.
     function advance(nativeProgress: number | null): number | null {
-        if (held.value || reduced.value) return null;
+        if (held.value) return null;
+        // Information-only hosts remain geometrically eligible under PRM, but the ManualTimeline
+        // stays terminal at 1: the registry supplies a cover sample solely to the discrete argmin.
+        if (reduced.value) return options.informationOnly ? nativeProgress : null;
         // Native: the registry handed us this host's `--scroll-tl` read — push it through the
         // pipeline. Fallback: `nativeProgress` is null and the reactive watcher below already pushed
         // the geometry scalar; either way `rawProgress` is the current master position to argmin on.
         if (native && nativeProgress !== null) pushProgress(nativeProgress);
+        if (deferredGoLive && --goLiveFrames === 0) {
+            const goLive = deferredGoLive;
+            deferredGoLive = null;
+            goLive();
+        }
         return rawProgress.value;
     }
 
@@ -292,16 +321,22 @@ export function useScrollTimeline(
         const v = options.vizId;
         return typeof v === "function" ? v() : (v ?? "");
     };
+    const hostKeyOf = (): string => {
+        const key = options.hostKey;
+        return typeof key === "function" ? key() : (key ?? vizIdOf());
+    };
 
     // The host's registry record — `el` is wired at mount (native hosts only; the fallback host
     // pushes reactively, so it carries no element to poll). `lastProgress` is the K-B cover-host
     // cache (the A8 forward-seam) the registry updates each frame.
     const record: ScrubHostRecord = {
+        hostKey: hostKeyOf,
         vizId: vizIdOf,
         el: null,
         advance,
         lastProgress: 0,
         reveal: revealPump,
+        informationOnly: options.informationOnly,
     };
     let unregister: (() => void) | null = null;
 
@@ -321,12 +356,26 @@ export function useScrollTimeline(
     onMounted(() => {
         if (revealPump) {
             if (reduced.value || !native) revealPump.settle();
-            else stopRestoreEdge = bindRevealGoLive(revealPump, options.restore);
+            else
+                stopRestoreEdge = bindRevealGoLive(revealPump, restore, (goLive) => {
+                    deferredGoLive = goLive;
+                    goLiveFrames = 2;
+                    return () => {
+                        deferredGoLive = null;
+                    };
+                });
         }
-        if (reduced.value) {
+        if (reduced.value && !options.informationOnly) {
             // TERMINAL BIND: the full story, frozen at its end — no sampler, no scrub, never
             // registered (the registry is inert under PRM, so the rim is naturally absent).
             pushProgress(1);
+            return;
+        }
+        if (reduced.value) {
+            // Register the element for information-only cover sampling. No CSS animation is bound,
+            // and `advance` never pushes the sample into the terminal ManualTimeline.
+            record.el = target.value;
+            unregister = registerScrubHost(record);
             return;
         }
         // Native hosts expose their element so the registry can read `--scroll-tl`; the fallback

@@ -8,6 +8,16 @@
 .viz-plate__body {
     inline-size: 100%;
 }
+.viz-plate__source-data {
+    margin-block-start: 1rem;
+    padding-block-start: 1rem;
+    border-block-start: 1px solid color-mix(in oklab, var(--foreground), transparent 84%);
+}
+.viz-plate__source-close {
+    display: block;
+    min-block-size: var(--touch-target, 2.75rem);
+    margin: 0 0 0.75rem auto;
+}
 /* O-D3 — THE PLATE-FOOT LEDGER BAND (the always-on-but-QUIET provenance dock seat, [ANSWERS
    Q-53]; L34 §1.2.13, R-020 CD-10). The wrapper owns only the top gap (byte-identical to the
    prior `.viz-plate__keystats` standalone margin); the 1px-ruled row itself is drawn by

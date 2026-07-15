@@ -12,6 +12,7 @@ import {
     onUnmounted,
     ref,
     useSlots,
+    watch,
     watchEffect,
 } from "vue";
 import { BEAT_TITLE_KEY } from "@/charts/legend/beat-title";
@@ -104,8 +105,8 @@ function onExportCsv(): void {
 }
 
 /** Export the figure image — getDataURL for canvas, DOM-snapshot for svg/geo (ZERO heavy dep). */
-function onExportImage(): void {
-    exportImage(renderKind.value, `${props.contract.id}`, props.chart ?? null, bodyEl());
+function onExportImage(): boolean {
+    return exportImage(renderKind.value, `${props.contract.id}`, props.chart ?? null, bodyEl());
 }
 
 // ── E8 — THE DESIGNED-VOID SWAP (the empty-data signal) ──────────────────────────────────────
@@ -327,7 +328,14 @@ onMounted(() => {
         dims: filterDimensions.value,
         crossHighlight: props.contract.crossHighlight ?? true,
         optionsController: hasOptions.value ? optionsController : null,
+        imageExport: {
+            format: renderKind.value === "echarts" ? "png" : "svg",
+            export: onExportImage,
+        },
     });
+});
+watch(filterDimensions, (dims) => {
+    if (vizToken) vizRegistry.updateDims(props.contract.id, vizToken, dims);
 });
 onUnmounted(() => {
     if (vizToken) vizRegistry.deregister(props.contract.id, vizToken);
@@ -374,7 +382,19 @@ const showAppliedSummary = computed(
 // shared `useViewParams` bag (the `?fig` one-bag fold, K-ANIM A1·§3.C) — never a private
 // per-component URL-state bag that would whole-query-clobber `?year`/`?sel` on an enlarge.
 const view = useViewParams();
+view.registerKeys(["browse", "grain"]);
 const isFullscreen = computed(() => view.figId === props.contract.id);
+const sourceData = computed(() => props.contract.sourceData?.panel ?? null);
+const sourceDataOpen = computed(
+    () => sourceData.value != null && view.param("browse") === props.contract.id,
+);
+function openSourceData(): void {
+    if (sourceData.value) view.setParam("browse", props.contract.id);
+}
+function closeSourceData(): void {
+    if (view.param("browse") === props.contract.id) view.setParam("browse", undefined);
+    view.setParam("grain", undefined);
+}
 function toggleEnlarge(): void {
     if (isFullscreen.value) view.closeFig(props.contract.id);
     else view.openFig(props.contract.id);
@@ -439,6 +459,10 @@ watchEffect(() => {
         activeDimChips,
         activeFilterCount,
         showAppliedSummary,
+        sourceData,
+        sourceDataOpen,
+        openSourceData,
+        closeSourceData,
         isFullscreen,
         toggleEnlarge,
         ariaLabel,

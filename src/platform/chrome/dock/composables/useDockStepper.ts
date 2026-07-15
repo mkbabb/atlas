@@ -24,8 +24,13 @@ import {
 } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import { useReducedMotion } from "@/motion/useReducedMotion";
+import {
+    onNarrativeRestoreSettled,
+    settleNarrativeRestore,
+} from "@/motion/narrative-restore";
 import { useActiveBeat } from "@/platform/stores/useActiveBeat";
 import { useViewParams } from "@/platform/stores/useViewParams";
+import type { NarrativeAnchor } from "@/platform/stores/useViewParams";
 import { toRoman } from "@/platform/composables/useRomanNumeral";
 import { scrollToSection } from "@/platform/chrome/dock/scroll-anchor";
 import type { DashboardContext } from "@/contract";
@@ -47,6 +52,10 @@ export interface UseDockStepper {
     yearFading: Ref<boolean>;
     /** Smooth-scroll the document to a beat section by id. */
     scrollTo: (id: string) => void;
+    /** True when this mount began from a semantic narrative anchor. */
+    deepLink: () => boolean;
+    /** Subscribe to the dock's existing restore-settled edge. */
+    onRestoreSettled: (callback: () => void) => () => void;
 }
 
 /**
@@ -140,6 +149,8 @@ export function useDockStepper(
     /** True while a restore `scrollIntoView` is settling — suppresses the writer so the restore OWNS
         the initial `?at` (it must not immediately re-write the beat it just seeded). */
     let restoring = false;
+    let restoreAborted = false;
+    let stopRestoreAbort: (() => void) | null = null;
     /** The restore fires exactly ONCE, when the section nodes first resolve (the async-body trap). */
     let restored = false;
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
@@ -153,21 +164,70 @@ export function useDockStepper(
     }, 300);
     watch(activeBeatId, (id) => writeAnchor(id));
 
-    /** Drive the restore: gate the writer, seed the beat, scroll the section into view (PRM →
-        `behavior:"auto"`, used DIRECTLY so it can pass `auto` the hard-coded `scrollTo` cannot), then
-        on a settle timer release the gate AND flush the landed beat (closes the interrupt-staleness gap). */
-    function scrollToAnchor(el: HTMLElement, beatId: string): void {
+    function anchorElement(anchor: NarrativeAnchor): HTMLElement | null {
+        const beat = document.getElementById(anchor.beatId);
+        if (!beat || !anchor.stepId) return beat;
+        return (
+            [...beat.querySelectorAll<HTMLElement>("[data-scene-step-id]")].find(
+                (element) => element.dataset.sceneStepId === anchor.stepId,
+            ) ?? beat
+        );
+    }
+
+    function bindRestoreAbort(): void {
+        stopRestoreAbort?.();
+        restoreAborted = false;
+        const abort = (): void => {
+            restoreAborted = true;
+        };
+        const passive: AddEventListenerOptions = { capture: true, passive: true };
+        window.addEventListener("wheel", abort, passive);
+        window.addEventListener("touchmove", abort, passive);
+        window.addEventListener("keydown", abort, true);
+        stopRestoreAbort = () => {
+            window.removeEventListener("wheel", abort, true);
+            window.removeEventListener("touchmove", abort, true);
+            window.removeEventListener("keydown", abort, true);
+        };
+    }
+
+    /** Drive and settle the one semantic restore on the dock's existing timer. */
+    function scrollToAnchor(el: HTMLElement, anchor: NarrativeAnchor): void {
         restoring = true;
-        activeBeatId.value = beatId;
+        activeBeatId.value = anchor.beatId;
+        bindRestoreAbort();
         el.scrollIntoView({
             behavior: reduced.value ? "auto" : "smooth",
-            block: "start",
+            block: anchor.stepId ? "center" : "start",
         });
         if (settleTimer) clearTimeout(settleTimer);
         settleTimer = setTimeout(
             () => {
+                stopRestoreAbort?.();
+                stopRestoreAbort = null;
+                const aborted = restoreAborted;
+                const sceneRestore =
+                    anchor.stepId != null && view.sceneId === anchor.stepId;
+                const stepConsumed = settleNarrativeRestore(anchor, { aborted });
+                if (!aborted) {
+                    if (!stepConsumed) {
+                        document.getElementById(anchor.beatId)?.scrollIntoView({
+                            behavior: "auto",
+                            block: "start",
+                        });
+                    }
+                    view.setNarrativeAt(
+                        anchor.beatId,
+                        stepConsumed ? anchor.stepId : undefined,
+                    );
+                    if (sceneRestore)
+                        view.setSceneId(stepConsumed ? anchor.stepId : undefined);
+                }
                 restoring = false;
-                writeAnchor(activeBeatId.value);
+                if (aborted) {
+                    if (sceneRestore) view.setSceneId(undefined);
+                    writeAnchor(activeBeatId.value);
+                }
             },
             reduced.value ? 0 : RESTORE_SETTLE_MS,
         );
@@ -181,7 +241,7 @@ export function useDockStepper(
     function restoreNarrativeAnchor(): void {
         const anchor = view.narrativeAt;
         if (!anchor) return;
-        const el = document.getElementById(anchor.beatId);
+        const el = anchorElement(anchor);
         if (!el) return;
         if (view.figId) {
             const stop = watch(
@@ -189,12 +249,13 @@ export function useDockStepper(
                 (fig) => {
                     if (fig) return;
                     stop();
-                    scrollToAnchor(el, anchor.beatId);
+                    const target = anchorElement(anchor);
+                    if (target) scrollToAnchor(target, anchor);
                 },
             );
             return;
         }
-        scrollToAnchor(el, anchor.beatId);
+        scrollToAnchor(el, anchor);
     }
 
     // ── Active-beat tracking ────────────────────────────────────────────────────
@@ -309,6 +370,7 @@ export function useDockStepper(
         observer = null;
         if (yearFadeTimer) clearTimeout(yearFadeTimer);
         if (settleTimer) clearTimeout(settleTimer);
+        stopRestoreAbort?.();
     });
 
     return {
@@ -319,5 +381,10 @@ export function useDockStepper(
         activeYear,
         yearFading,
         scrollTo,
+        deepLink: () => view.narrativeAt != null,
+        onRestoreSettled: (callback) =>
+            onNarrativeRestoreSettled(() => {
+                callback();
+            }),
     };
 }

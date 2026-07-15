@@ -123,10 +123,9 @@ export function rotateRevealShape(tier: Rank, index: number): RevealShape {
     return step === 1 ? "settle" : step === 3 ? "unfold" : "lift";
 }
 
-// ── The RESOLVED facet (the ONE thing DashboardEssay reads — placement + rule + reveal in one) ─────
+// ── A pure resolved variation utility ─────────────────────────────────────────────────────────────
 
-/** THE RESOLVED BEAT TEMPLATE — the single facet the essay reads placement/rule/reveal from (collapsing
-    the three legacy module reads). Concrete + total; carries the authored poles + the seed micro-grain. */
+/** A concrete, total variation tuple carrying authored poles and seed micro-grain. */
 export interface ResolvedBeatTemplate {
     /** The resolved title pole (L/C/R) — `useBeatLayout` stamps it as `data-title`. */
     title: TitlePole;

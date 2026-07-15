@@ -70,10 +70,13 @@ describe("StoryManifest projections", () => {
         const stage: StoryStage = {
             kind: "stage",
             id: "cluster",
+            grain: "district",
             graphic: () => null,
+            identity: { field: "leaNumber" },
+            transition: { mode: "blend", reduced: false },
             scenes: [
-                { id: "a", prose: "A", state: { year: 2020 } },
-                { id: "b", prose: "B", state: { year: 2021 } },
+                { id: "a", prose: "A", state: { year: 2020 }, encode: { x: "district:x", y: "district:y" } },
+                { id: "b", prose: "B", state: { year: 2021 }, encode: { x: "district:x", y: "district:y" } },
             ],
         };
         const point = {
@@ -92,6 +95,7 @@ describe("StoryManifest projections", () => {
         const colophon = { blurb: "Notes" };
         const manifest: StoryManifest = {
             id: "canonical",
+            skin: "funds",
             colorKind: "sequential",
             seed: 42,
             points: [
@@ -109,6 +113,11 @@ describe("StoryManifest projections", () => {
                     dek: "Loaded on demand",
                     pole: "right",
                     rule: "numeral",
+                    superlative: { label: "is the canonical example", tone: "quiet" },
+                    figure: { kind: "value-scaled", value: 0.75, domain: [0, 1] },
+                    rank: "lede",
+                    signature: true,
+                    marquee: true,
                     colorKind: "rainbow",
                     hinge: 0.35,
                     transition: { kind: "crossfade" },
@@ -145,14 +154,19 @@ describe("StoryManifest projections", () => {
             hinge: 0.35,
             transition: { kind: "crossfade" },
             focus: [{ kind: "highlight", marks: ["a"] }],
-            template: { title: "right", rule: "numeral", phase: 0 },
+            reveal: { layout: { title: "right", scrollIn: "right" } },
+            rule: "numeral",
+            superlative: { label: "is the canonical example", tone: "quiet" },
+            figure: { kind: "value-scaled", value: 0.75, domain: [0, 1] },
+            rank: "lede",
+            signature: true,
+            marquee: true,
         });
         expect(chapters[1]!.viz).not.toBe(load);
         expect(chapters[2]).toMatchObject({
             viz: contract,
             navLabel: "Two",
             colorKind: "sequential",
-            template: { phase: 1 },
         });
         expect(chapters[2]!.viz).toBe(contract);
         expect(chapters[3]).toMatchObject({
@@ -160,6 +174,7 @@ describe("StoryManifest projections", () => {
             colophon,
             isBeat: false,
         });
+        expect(chapters.every((chapter) => !("seed" in chapter) && !("skin" in chapter))).toBe(true);
     });
 
     it("keeps a canonical async plate identity across equivalent live story rebuilds", () => {
@@ -187,8 +202,11 @@ describe("StoryManifest projections", () => {
         const stage: StoryStage = {
             kind: "stage",
             id: "cluster",
+            grain: "district",
             graphic: () => null,
-            scenes: [{ id: "a", prose: "A", state: { year: 2020 } }],
+            identity: { field: "leaNumber" },
+            transition: { mode: "blend", reduced: false },
+            scenes: [{ id: "a", prose: "A", state: { year: 2020 }, encode: { x: "district:x", y: "district:y" } }],
         };
         const [chapter] = chaptersOf({
             id: "staged",

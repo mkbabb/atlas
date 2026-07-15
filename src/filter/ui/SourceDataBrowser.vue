@@ -4,20 +4,33 @@
     generic="Row, Scope = unknown, Key extends string | number = string | number"
 >
 import { computed, nextTick, ref, useId, watch } from "vue";
+import type { ExportFormat } from "@/charts/lib/source-data";
 import type { ExportGrain } from "@/filter/engine/rows";
 import { useVirtualWindow } from "@/filter/composables/useVirtualWindow";
+import { useViewParams } from "@/platform/stores/useViewParams";
+import { useVizRegistry } from "@/charts/composables/useVizRegistry";
+import type { EventScope } from "@/events";
 import type { ExportPayload } from "@/charts/lib/source-data";
-import type {
-    SourceDataAvailableGrain,
-    SourceDataBrowserProps,
-    SourceDataGrainOption,
+import {
+    reconcileMountedFocus,
+    useSourceBrowserEvents,
+    type SourceDataAvailableGrain,
+    type SourceDataBrowserProps,
+    type SourceDataGrainOption,
 } from "./source-data-browser";
 
 const props = defineProps<SourceDataBrowserProps<Row, Scope, Key>>();
+const eventState = useSourceBrowserEvents(props.eventHub, props.vizId);
+const vizRegistry = useVizRegistry();
+const view = useViewParams();
+view.registerKeys(["grain"]);
 
 const grainControlName = `source-data-grain-${useId()}`;
 const viewport = ref<HTMLElement | null>(null);
-const activeIndex = ref(0);
+const activeIndex = ref(initialGrainIndex());
+const grainExplicit = ref(
+    indexForKind(view.param("grain")) >= 0 || indexForKind(eventState.grain.value) >= 0,
+);
 const focusedKey = ref<Key | null>(null);
 const rowElements = new Map<Key, HTMLElement>();
 const rowObservers = new Map<Key, () => void>();
@@ -41,15 +54,57 @@ function optionKey(option: SourceDataAvailableGrain<Scope>, index: number): stri
     return grain.kind === "aggregation" ? `aggregation-${index}` : grain.kind;
 }
 
+function indexForKind(kind: string | null | undefined): number {
+    if (!kind) return -1;
+    return props.availableGrains.findIndex((option) => grainOf(option).kind === kind);
+}
+
+function initialGrainIndex(): number {
+    const linked = indexForKind(view.param("grain"));
+    if (linked >= 0) return linked;
+    const published = indexForKind(eventState.grain.value);
+    if (published >= 0) return published;
+    const fallback = indexForKind(
+        eventState.selectedKeys.value.length > 0 ? "selection" : "dataset",
+    );
+    return fallback >= 0 ? fallback : 0;
+}
+
 const activeGrain = computed<ExportGrain<Scope>>(() => {
     const option = props.availableGrains[activeIndex.value] ?? props.availableGrains[0];
     return option ? grainOf(option) : { kind: "dataset" };
 });
-const rows = computed<readonly Row[]>(() => props.rowsReader.rowsAt(activeGrain.value));
+const reader = computed(() =>
+    typeof props.rowsReader === "function"
+        ? props.rowsReader(eventState.activeVizId.value)
+        : props.rowsReader,
+);
+const resolvedVizId = computed(
+    () => eventState.activeVizId.value || props.vizId || "source-data",
+);
+const imageExport = computed(
+    () => vizRegistry.registry.value.get(resolvedVizId.value)?.imageExport,
+);
+const exportFormats = computed<readonly ExportFormat[]>(() => [
+    "csv",
+    "json",
+    ...(imageExport.value ? [imageExport.value.format] : []),
+    "print",
+]);
+const resolvedScope = computed<EventScope>(() => {
+    const authored = props.eventScope;
+    if (!authored) return { grain: "viz", vizId: resolvedVizId.value };
+    if (authored.grain === "viz") return { grain: "viz", vizId: resolvedVizId.value };
+    return authored;
+});
+const rows = computed<readonly Row[]>(() => reader.value.rowsAt(activeGrain.value));
 const payload = computed<ExportPayload<Row, Scope>>(() =>
-    typeof props.exportPayload === "function"
-        ? props.exportPayload(rows.value, activeGrain.value)
-        : props.exportPayload,
+    props.exportPayload(rows.value, activeGrain.value, resolvedVizId.value),
+);
+const provenanceFields = computed(() =>
+    eventState.fields.value.length > 0
+        ? eventState.fields.value
+        : props.columns.map((column) => column.key),
 );
 
 const virtual = useVirtualWindow<Row, Key>({
@@ -64,6 +119,40 @@ watch(
     (length) => {
         if (activeIndex.value >= length) activeIndex.value = Math.max(0, length - 1);
     },
+);
+
+watch(eventState.grain, (kind) => {
+    if (!kind || activeGrain.value.kind === kind) return;
+    const index = indexForKind(kind);
+    if (index >= 0) {
+        grainExplicit.value = true;
+        selectGrain(index, false);
+    }
+});
+
+watch(
+    () => view.param("grain"),
+    (kind) => {
+        if (!kind) {
+            grainExplicit.value = false;
+            selectContextualDefault();
+            return;
+        }
+        if (activeGrain.value.kind === kind) return;
+        const index = indexForKind(kind);
+        if (index >= 0) {
+            grainExplicit.value = true;
+            selectGrain(index, false);
+        }
+    },
+);
+
+watch(
+    eventState.selectedKeys,
+    () => {
+        if (!grainExplicit.value) selectContextualDefault();
+    },
+    { immediate: true },
 );
 
 watch(
@@ -81,21 +170,36 @@ watch(
     { immediate: true },
 );
 
+watch(virtual.items, (mounted) => {
+    focusedKey.value = reconcileMountedFocus(
+        focusedKey.value,
+        mounted.map((item) => item.key),
+    );
+});
+
 watch(
-    [activeGrain, payload],
-    ([grain, currentPayload]) => {
+    [activeGrain, resolvedVizId],
+    ([grain, vizId]) => {
+        if (view.param("grain") !== grain.kind) view.setParam("grain", grain.kind);
         if (!props.eventHub) return;
-        const vizId = props.vizId ?? "source-data";
-        const scope = props.eventScope ?? { grain: "viz", vizId };
         props.eventHub.emit({
             type: "granularity",
-            scope,
+            scope: resolvedScope.value,
             vizId,
             grain: grain.kind,
         });
+    },
+    { immediate: true },
+);
+
+watch(
+    payload,
+    (currentPayload) => {
+        if (!props.eventHub) return;
+        const vizId = resolvedVizId.value;
         props.eventHub.emit({
             type: "provenance",
-            scope,
+            scope: resolvedScope.value,
             vizId,
             fields: props.columns.map((column) => column.key),
             filterExplain: currentPayload.meta.filterExplain,
@@ -104,9 +208,25 @@ watch(
     { immediate: true },
 );
 
-function selectGrain(index: number): void {
+function selectGrain(index: number, writeUrl = true): void {
+    if (writeUrl) grainExplicit.value = true;
+    if (index === activeIndex.value) return;
     activeIndex.value = index;
+    if (writeUrl) view.setParam("grain", activeGrain.value.kind);
     viewport.value?.scrollTo({ top: 0 });
+}
+
+function markGrainExplicit(index: number): void {
+    grainExplicit.value = true;
+    const option = props.availableGrains[index];
+    if (option) view.setParam("grain", grainOf(option).kind);
+}
+
+function selectContextualDefault(): void {
+    const index = indexForKind(
+        eventState.selectedKeys.value.length > 0 ? "selection" : "dataset",
+    );
+    if (index >= 0) selectGrain(index, false);
 }
 
 function setRowElement(key: Key, element: unknown): void {
@@ -151,7 +271,11 @@ function onRowKeydown(event: KeyboardEvent, index: number): void {
     if (row !== undefined) focusRow(props.rowKey(row, target));
 }
 
-function serialize(format: "csv" | "json"): void {
+function serialize(format: ExportFormat): void {
+    if (format === "png" || format === "svg") {
+        imageExport.value?.export();
+        return;
+    }
     payload.value.serialize(format);
 }
 
@@ -174,7 +298,12 @@ function titleCase(value: string): string {
 </script>
 
 <template>
-    <section class="source-browser" :aria-label="ariaLabel ?? 'Source data browser'">
+    <section
+        class="source-browser"
+        :aria-label="ariaLabel ?? 'Source data browser'"
+        :data-viz-id="resolvedVizId"
+        :data-filter-active="eventState.filter.value.active || undefined"
+    >
         <div
             class="source-browser__toolbar"
             role="toolbar"
@@ -192,6 +321,7 @@ function titleCase(value: string): string {
                         type="radio"
                         :name="grainControlName"
                         :checked="activeIndex === index"
+                        @click="markGrainExplicit(index)"
                         @change="selectGrain(index)"
                     />
                     <span>{{ labelOf(option) }}</span>
@@ -203,8 +333,14 @@ function titleCase(value: string): string {
                 role="group"
                 aria-label="Export source data"
             >
-                <button type="button" @click="serialize('csv')">CSV</button>
-                <button type="button" @click="serialize('json')">JSON</button>
+                <button
+                    v-for="format in exportFormats"
+                    :key="format"
+                    type="button"
+                    @click="serialize(format)"
+                >
+                    {{ format.toUpperCase() }}
+                </button>
             </div>
         </div>
 
@@ -229,6 +365,10 @@ function titleCase(value: string): string {
                 <dt>Filter</dt>
                 <dd>{{ payload.meta.filterExplain }}</dd>
             </div>
+            <div>
+                <dt>Fields</dt>
+                <dd>{{ provenanceFields.join(", ") }}</dd>
+            </div>
         </dl>
 
         <div
@@ -236,10 +376,10 @@ function titleCase(value: string): string {
             class="source-browser__viewport"
             role="grid"
             :aria-label="`${ariaLabel ?? 'Source data'} rows`"
-            :aria-rowcount="virtual.ariaRowCount.value"
+            :aria-rowcount="virtual.ariaRowCount.value + 1"
             :aria-colcount="columns.length"
         >
-            <div class="source-browser__header" role="row">
+            <div class="source-browser__header" role="row" aria-rowindex="1">
                 <span
                     v-for="column in columns"
                     :key="column.key"
@@ -264,7 +404,7 @@ function titleCase(value: string): string {
                     :ref="(element) => setRowElement(item.key, element)"
                     class="source-browser__row"
                     role="row"
-                    :aria-rowindex="item.index + 1"
+                    :aria-rowindex="item.index + 2"
                     :tabindex="focusedKey === item.key ? 0 : -1"
                     :style="{ transform: `translateY(${item.top}px)` }"
                     @focus="rememberFocusedRow(item.key)"
@@ -283,6 +423,9 @@ function titleCase(value: string): string {
         </div>
         <p class="source-browser__count" aria-live="polite">
             {{ rows.length.toLocaleString() }} {{ rows.length === 1 ? "row" : "rows" }}
+            <template v-if="eventState.selectedKeys.value.length">
+                · {{ eventState.selectedKeys.value.length.toLocaleString() }} selected
+            </template>
         </p>
     </section>
 </template>

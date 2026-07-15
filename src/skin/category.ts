@@ -1,4 +1,4 @@
-import type { Component } from "vue";
+import { inject, type Component, type InjectionKey } from "vue";
 import type { CompletionSealShape } from "@mkbabb/glass-ui/completion-seal";
 import type {
     AtmosphereFacet,
@@ -94,9 +94,34 @@ export const SKINS = {
     }),
 } as const satisfies Record<DashboardCategory, CategorySkin>;
 
+export type SkinId = keyof typeof SKINS;
+
+/** The resolved story skin shared by the essay subtree. */
+export const SKIN_KEY: InjectionKey<Readonly<SkinContract>> = Symbol("atlas:skin");
+
+export function resolveSkin(id: SkinId): CategorySkin {
+    return SKINS[id];
+}
+
+/** Bind a skin through the same inherited token contract as the platform shell. */
+export function skinCssVars(skin: SkinContract): Record<string, string> {
+    const { chrome, type } = skin;
+    const style: Record<string, string> = { "--route-accent": chrome.accent };
+    if (chrome.accentWarm) style["--route-accent-warm"] = chrome.accentWarm;
+    if (chrome.accentCool) style["--route-accent-cool"] = chrome.accentCool;
+    if (chrome.eyebrowHue) style["--route-eyebrow-hue"] = chrome.eyebrowHue;
+    if (type?.audacious) style["--q1-rung"] = type.audacious;
+    if (type?.masthead) style["--type-masthead-headline"] = type.masthead;
+    return style;
+}
+
+export function useSkin(): Readonly<SkinContract> | null {
+    return inject(SKIN_KEY, null);
+}
+
 /** Backward-compatible name for existing editorial consumers; `SKINS` is the public keystone. */
 export const CATEGORY_SKINS = SKINS;
 
 export function resolveCategorySkin(category: DashboardCategory): CategorySkin {
-    return SKINS[category];
+    return resolveSkin(category);
 }

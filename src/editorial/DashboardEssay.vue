@@ -6,7 +6,7 @@
 // the Beat/DashboardHero/AnimatedRule vocabulary AND this one assembler). Its type dep re-points at the
 // core contract (`@/contract`), never `@/dashboards` — the L1 inversion fence holds.
 //
-// The body becomes DATA. A route declares its narrative as a `Chapter[]` in `context.ts`; THIS
+// The body becomes DATA. A route declares its narrative as one StoryManifest; THIS
 // host iterates it and renders the FULL beat scaffold ONCE per chapter — the `section-anchor beat`
 // wrapper (via the shared <Beat> shell), the <FigureInitial> drop-cap, the eyebrow (icon · Roman ·
 // kicker, SM-1 data-hue), the <h2> title (a plain string OR a live VNode — <HandMark> /
@@ -17,7 +17,7 @@
 // THIS IS THE SINGLE SCAFFOLD the three bodies (usf/sci/ecf) collapse onto (I3 §2 / Hard Gate 1):
 // the per-beat `<section ref>` + `useScrollScene` + `beatStyle()` + the eyebrow icon + the Roman
 // number + the dek that was hand-copied 6–9 times per body lives ONCE here. The bodies stop
-// re-spelling it; they declare the chapters and mount `<DashboardEssay :chapters>`.
+// re-spelling it; they declare the story and mount `<DashboardEssay :story>`.
 //
 // THE VIZ SEAM (I3 §1, the I2 contract CONSUMED): a chapter's `viz` is a feature-plate Component
 // (the plate owns its own <VizPlate>/contract, the way the bodies mount `<FundLedgerFlow />`), a
@@ -47,7 +47,7 @@
 // PRM). The @supports fallback is thus the timeline's terminal `seek(1)`-equivalent: ONE reveal
 // engine on ONE clock. (Phase-A SHAPE: subscribes to each section's own scroll position; on the
 // Phase-C re-pin the source re-seats onto the BC `useScrollTrigger` page-reader — a one-line swap.)
-import { computed, ref, type Component, type VNodeChild } from "vue";
+import { computed, provide, ref, type Component, type VNodeChild } from "vue";
 import { useSectionReveal } from "@/motion/useScrollTimeline";
 import { supportsViewTimeline } from "@/motion/useScrollProgress";
 import { useReducedMotion } from "@/motion/useReducedMotion";
@@ -76,20 +76,20 @@ import { provideStoryDirector } from "@/story/story-director-provide";
 import { recedeStyle } from "@/story/corridor";
 import type { StoryChapter } from "@/story/story-contract";
 import { chaptersOf, type StoryManifest } from "@/story/manifest";
+import { resolveSkin, skinCssVars, SKIN_KEY } from "@/skin";
 import StoryCorridor from "@/story/StoryCorridor.vue";
 import { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
 import { resolveHeroSystem } from "./hero-system";
 import type { RuleVariant } from "./rule-register";
 
 const props = defineProps<{
-    /** The canonical route story. When present it is the sole source of essay order. */
-    story?: StoryManifest;
-    /** Legacy narrative input retained while routes migrate to `story`. */
-    chapters?: Chapter[];
+    /** The canonical route story and sole source of essay order. */
+    story: StoryManifest;
 }>();
-const chapters = computed<readonly Chapter[]>(() =>
-    props.story ? chaptersOf(props.story) : (props.chapters ?? []),
-);
+const storySkin = props.story.skin ? resolveSkin(props.story.skin) : null;
+const storySkinStyle = storySkin ? skinCssVars(storySkin) : undefined;
+if (storySkin) provide(SKIN_KEY, storySkin);
+const chapters = computed<readonly Chapter[]>(() => chaptersOf(props.story));
 // The host's index-keyed composable pools require a static chapter shape for the lifetime of a route.
 // Chapter content remains live through `chapters`; only this setup-time shape snapshot is fixed.
 const chapterShape = chapters.value;
@@ -106,19 +106,7 @@ const phases = beatPhases(chapterShape);
 const figures = chapterShape.map((c, i) =>
     hasMasthead(c) ? phases[i]! + 1 : 0,
 );
-// O-A15 · THE ONE-FACET READ (the collapse). When a route carries the resolved variation facet
-// (`chapter.template`, zipped by `expandStory` from its `BeatVariationPolicy`), the beat's PLACEMENT
-// reads from THAT single facet — the title pole + its pole-following scroll-in axis — instead of the
-// separate `resolveLayout` zebra derive. `resolveLayout` still runs (the orchestration law: the
-// template ORCHESTRATES the resolver, it does not replace it — dock/numbers stay its output); the
-// template only OVERRIDES the two poles it authors. Un-varied routes carry no `template` ⇒ byte-identical.
-const layouts = chapterShape.map((c, i) => {
-    const base = resolveLayout(c, phases[i]!);
-    const t = (c as StoryChapter).template;
-    return t
-        ? { ...base, title: t.title, scrollIn: t.reveal.layout?.scrollIn ?? base.scrollIn }
-        : base;
-});
+const layouts = chapterShape.map((c, i) => resolveLayout(c, phases[i]!));
 
 // ── THE REVEAL FACET — one per chapter, mounted ONCE (the §7 `kind:"reveal"` fallback writer) ──
 // The per-beat `<section ref>` the bodies hand-rolled is hoisted here: ONE ref + ONE
@@ -313,7 +301,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
          un-staged route (byte-identical), promoted to a positioned block (`--staged`) ONLY when the
          route declares a `transition`, so the between-beat clone overlay has a scroll-invariant
          relative origin (the marks + the overlay scroll together in this flow). -->
-    <div class="essay-flow">
+    <div class="essay-flow" :data-skin="storySkin?.id" :style="storySkinStyle">
     <template v-for="(chapter, i) in editorialChapters" :key="chapter.id">
         <component
             :is="chapter.card ? StoryCard : Beat"
@@ -327,6 +315,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
             :reveal="chapter.reveal?.tier ?? 'default'"
             :lift="chapter.reveal?.lift ?? !isCoverChapter(chapter, i)"
             :testid="chapter.id"
+            :data-point="chapter.id"
             :title-owned="hasMasthead(chapter)"
             :sticky="isChapterStage(chapter.viz) || isChapterScene(chapter.viz)"
             class="essay-beat"
@@ -415,6 +404,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                 v-else-if="isChapterStage(chapter.viz)"
                 :stage="chapter.viz as ChapterStage"
                 :index="i"
+                :beat-id="chapter.id"
             />
             <!-- K-SCENE — a `ChapterScene` mounts the `<StickyScene>` host (the pinned-graphic stepped
                  narrative). It is neither a sentinel, a contract, nor a plain Component, so `vizComponent`
@@ -423,6 +413,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                 v-else-if="isChapterScene(chapter.viz)"
                 :scene="chapter.viz as ChapterScene"
                 :index="i"
+                :beat-id="chapter.id"
             />
             <VizPlate
                 v-else-if="isVizContract(chapter.viz)"
@@ -453,15 +444,12 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
              grain determinism is a function of position, never hand-incremented per body with gaps).
              The LAST chapter draws no trailing rule (the colophon closes the page). The hero cover
              takes the heavier `weight="hero"` rule (the band ends, the lead beat begins). -->
-        <!-- O-A15 · THE RESOLVED RULE VARIANT — the divider variant reads from the beat's ONE resolved
-             facet (`template.rule`, the tier-rotated register) instead of the hard-coded static `rule`.
-             ABSENT template ⇒ `rule` (byte-identical to every un-varied route). The ghost numeral binds
-             the current position-derived figure (used only when the resolved variant is `numeral`). -->
+        <!-- The divider treatment projects directly from the authored story point. -->
         <AnimatedRule
             v-if="i < chapters.length - 1"
-            :variant="junctionRule(storyChapters[i]?.template?.rule)"
+            :variant="junctionRule(storyChapters[i]?.rule)"
             :weight="isCoverChapter(chapter, i) ? 'hero' : 'full'"
-            :seed="i + 1"
+            :seed="(props.story.seed ?? 0) + i + 1"
         />
     </template>
         <!-- N.WB1 · THE BETWEEN-BEAT DOM-CLONE OVERLAY (SVG/DOM path) — mounted ONLY on a choreographed

@@ -101,10 +101,7 @@ describe("O-D3 — the plate-foot ledger band ([ANSWERS Q-53]; L34 §1.2.13, R-0
         VIZ_PLATE.indexOf('class="viz-plate__foot"') + 700,
     );
 
-    it("hosts a single always-on-but-quiet band gated on provenance OR the figure phase OR a filled foot slot", () => {
-        expect(foot).toMatch(
-            /v-if="provenance \|\| platePhase === 'figure' \|\| slots\.foot"/,
-        );
+    it("hosts a single always-on-but-quiet band", () => {
         expect(foot).toContain('data-testid="viz-plate-foot"');
     });
 

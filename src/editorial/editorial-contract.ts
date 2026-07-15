@@ -1,11 +1,9 @@
 // platform/editorial/editorial-contract.ts — the DECLARED PAGE-FACETS the essay host renders (N.WB3).
 //
-// The `DashboardEssay` assembler already renders a route's `Chapter[]`; N.WB3 makes the two page-level
+// The `DashboardEssay` assembler renders the manifest's projected chapters; N.WB3 makes the two page-level
 // surfaces the bodies hand-built — the COVER-FIGURE crown series and the provenance COLOPHON — into
 // DATA the host renders too. This module widens `Chapter` with the two optional facets, mirroring the
-// `StoryChapter` = `Chapter & ChapterChoreography` seam (`platform/story/story-contract`): the base
-// prop stays `Chapter[]`, the host reads the facets via a widening cast, and a chapter that declares
-// NEITHER falls back to the `#hero`/`#colophon` slot (every un-migrated route is byte-identical).
+// `StoryChapter` = `Chapter & ChapterChoreography` seam (`platform/story/story-contract`).
 //
 // The types are core-clean platform references (the hero series is `DashboardHero`'s own contract; the
 // colophon is `SiteColophon`'s), so the editorial unit stays publishable — no `@/dashboards` reach.

@@ -4,7 +4,6 @@
 //   · the RESEED determinism — a route reseed drifts the MICRO-GRAIN but NOT the authored poles (E1).
 //   · checkBeatConstraints (E2) — 0 consecutive shared poles · ≤2 C · exactly 1 signature (+ NEGs).
 //   · figureLadderScalar (Q-27) — index=0.5, value-scaled clamps, degenerate domain ⇒ 0.5 (no NaN).
-//   · expandStory zip — each MASTHEAD chapter carries its ResolvedBeatTemplate; a sentinel carries NONE.
 //   · the center pole through resolveLayout (useBeatLayout) — the third pole resolves L/C/R + up + dock.
 //   · SuperlativeRegister (Q-48) — the ceiling guard passes a ceiling verb, FAILS a forbidden one; opt-in.
 //   · vizAlternates (Q-30) — the registry + the expand-menu binding + the catalog (facility only).
@@ -19,8 +18,6 @@ import {
     REVEAL_SHAPES,
     type BeatVariationPolicy,
 } from "@/story/beat-template";
-import { expandStory, STORY_TEMPLATES } from "@/story/story-template";
-import type { StoryChapter } from "@/story/story-contract";
 import { resolveLayout } from "@/editorial/useBeatLayout";
 import { rotateRuleVariant, RULE_VARIANTS } from "@/editorial/rule-register";
 import {
@@ -36,7 +33,7 @@ import {
     useVizAlternates,
 } from "@/story/viz-alternates";
 
-const stub = { name: "Stub" } as never; // a non-sentinel viz / icon placeholder
+const stub = { name: "Stub" } as never;
 
 const policy: BeatVariationPolicy = {
     id: "test-route",
@@ -167,41 +164,6 @@ describe("O-A15 · figureLadderScalar (Q-27) — value-scaled sizing, total", ()
     it("a degenerate / NaN domain ⇒ 0.5 (never NaN)", () => {
         expect(figureLadderScalar({ kind: "value-scaled", value: 5, domain: [3, 3] })).toBe(0.5);
         expect(figureLadderScalar({ kind: "value-scaled", value: NaN, domain: [0, 1] })).toBe(0.5);
-    });
-});
-
-describe("O-A15 · expandStory zips ResolvedBeatTemplate onto each masthead beat", () => {
-    const variation: BeatVariationPolicy = {
-        id: "essay",
-        beats: [{ title: "left", signature: true }, { title: "center" }, { title: "right" }, {}],
-    };
-    const inst = {
-        template: STORY_TEMPLATES["reveal-compare-drill-conclude"],
-        fills: {
-            cover: { icon: stub, eyebrow: "e", title: "Cover", dek: "d", viz: "hero" as const },
-            reveal: { icon: stub, eyebrow: "e", title: "Reveal", dek: "d", viz: stub },
-            compare: { icon: stub, eyebrow: "e", title: "Compare", dek: "d", viz: stub },
-            drill: { icon: stub, eyebrow: "e", title: "Drill", dek: "d", viz: stub },
-            conclude: { icon: stub, eyebrow: "e", title: "Conclude", dek: "d", viz: stub },
-        },
-        variation,
-    };
-
-    it("the 4 masthead beats carry a template; the hero SENTINEL carries none (phase-skipped)", () => {
-        const { chapters } = expandStory(inst);
-        const cover = chapters.find((c) => c.id === "cover")!;
-        expect(cover.template).toBeUndefined(); // the sentinel consumes no phase
-        const masthead = chapters.filter((c) => c.viz === stub) as StoryChapter[];
-        expect(masthead).toHaveLength(4);
-        expect(masthead.map((c) => c.template?.title)).toEqual(["left", "center", "right", "right"]);
-        // the resolved reveal folded onto the chapter — resolveLayout produces the same pole
-        expect(masthead.map((c) => c.template?.phase)).toEqual([0, 1, 2, 3]);
-    });
-
-    it("WITHOUT a variation policy no chapter carries a template (byte-identical un-varied route)", () => {
-        const { variation: _drop, ...bare } = inst;
-        const { chapters } = expandStory(bare);
-        expect(chapters.every((c) => c.template === undefined)).toBe(true);
     });
 });
 

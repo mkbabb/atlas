@@ -79,6 +79,19 @@ export interface ActiveVizResolution {
     inViewport: ReadonlySet<string>;
 }
 
+/** The same centre resolution at host grain. `hostKey` is a private registration identity while
+    `id`/`inViewport` remain public viz identities, so several scene steps can conduct one stage
+    without leaking scene ids into the active-viz store. */
+export interface ActiveScrubHostResolution extends ActiveVizResolution {
+    /** The centred host's private key, or `""` when no registered host is in the centre band. */
+    hostKey: string;
+}
+
+/** A sample carrying both the private host identity and its public viz identity. */
+export interface ScrubHostSample extends ScrubSample {
+    hostKey: string;
+}
+
 /**
  * `resolveActive` — PURE + TOTAL. The banded centre-argmin under {@link CENTRE_BAND} + the
  * {@link SWITCH_MARGIN} hysteresis. Given this frame's samples + the incumbent id, returns the
@@ -113,11 +126,36 @@ export function resolveActive(
     return { id: best.id, inViewport };
 }
 
+/** Resolve the centred private host while projecting public viz membership. Hosts that omit a
+    distinct key naturally preserve the original one-id behavior (`hostKey === id`). */
+export function resolveActiveHost(
+    samples: readonly ScrubHostSample[],
+    incumbentHostKey: string,
+): ActiveScrubHostResolution {
+    const keyed = resolveActive(
+        samples.map((sample) => ({ id: sample.hostKey, progress: sample.progress })),
+        incumbentHostKey,
+    );
+    const winner = samples.find((sample) => sample.hostKey === keyed.id);
+    return {
+        hostKey: keyed.id,
+        id: winner?.id ?? "",
+        inViewport: new Set(
+            samples
+                .filter((sample) => sample.progress > 0 && sample.progress < 1)
+                .map((sample) => sample.id),
+        ),
+    };
+}
+
 /**
  * A registered scrub host — the registry reads each ONCE per frame. The host owns its facet
  * pipeline; the registry owns the clock + the argmin + the cache.
  */
 export interface ScrubHostRecord {
+    /** A private identity for this concrete host. Defaults to `vizId()`. Scene steps use a stable,
+        unique key while sharing the stage's public viz id. */
+    hostKey?: () => string;
     /** The host's viz id (a getter). `""` opts OUT of the argmin (the host still drives its facets
         but never wears the rim — the §4.D grain knob omitted). */
     vizId: () => string;
@@ -134,6 +172,20 @@ export interface ScrubHostRecord {
     /** Optional RevealScore once-cue projection. The registry advances it from this host's already
         sampled position, so cue delivery adds no observer, rAF, clock, or native-style read. */
     reveal?: RevealCuePump;
+    /** Keep this host in the information conductor under reduced motion. Its timeline remains
+        terminal; the registry samples cover geometry only for discrete wayfinding. */
+    informationOnly?: boolean;
+}
+
+/** Subscribe to discrete centred-host or public-membership changes. The callback never runs per
+    frame while the resolution is unchanged. */
+export function onActiveScrubHostChange(
+    callback: (resolution: ActiveScrubHostResolution) => void,
+    options: { immediate?: boolean } = {},
+): () => void {
+    hostSubscribers.add(callback);
+    if (options.immediate) callback(currentHostResolution);
+    return () => hostSubscribers.delete(callback);
 }
 
 /** The registered hosts (the registry iterates this set once per frame). */
@@ -144,6 +196,14 @@ const driver = new RAFPlayback();
 let store: ReturnType<typeof useActiveBeat> | null = null;
 /** The last COMMITTED winner — the incumbent the hysteresis reads + the id-change dedupe compares. */
 let currentId = "";
+/** The incumbent concrete host (separate from its public viz id). */
+let currentHostKey = "";
+let currentHostResolution: ActiveScrubHostResolution = {
+    hostKey: "",
+    id: "",
+    inViewport: new Set(),
+};
+const hostSubscribers = new Set<(resolution: ActiveScrubHostResolution) => void>();
 /** Consecutive still frames observed (O-A4) — once this reaches {@link IDLE_HALT_FRAMES} the loop
     returns `false` and the driver stops scheduling. Reset to 0 on any movement / commit / re-arm. */
 let quiescentFrames = 0;
@@ -163,6 +223,16 @@ function readNativeProgress(el: HTMLElement): number | null {
     const raw = getComputedStyle(el).getPropertyValue(NATIVE_PROGRESS_VAR);
     const p = Number.parseFloat(raw);
     return Number.isFinite(p) ? p : null;
+}
+
+/** Reduced-motion information sampling over the same cover 0→1 grammar as `--scroll-tl`.
+    This runs inside the existing registry frame; it creates no observer, listener, or scheduler. */
+function readCoverProgress(el: HTMLElement): number {
+    const rect = el.getBoundingClientRect();
+    const viewport = window.innerHeight;
+    const span = rect.height + viewport;
+    if (span <= 0) return 0;
+    return Math.max(0, Math.min(1, (viewport - rect.top) / span));
 }
 
 /** Membership-equality for the in-viewport set — so a steady-state scroll does NOT swap a fresh `Set`
@@ -186,6 +256,18 @@ function commit(next: ActiveVizResolution): boolean {
     return true;
 }
 
+function commitHost(next: ActiveScrubHostResolution): boolean {
+    const changed =
+        next.hostKey !== currentHostResolution.hostKey ||
+        next.id !== currentHostResolution.id ||
+        !sameSet(next.inViewport, currentHostResolution.inViewport);
+    if (!changed) return false;
+    currentHostKey = next.hostKey;
+    currentHostResolution = next;
+    for (const subscriber of hostSubscribers) subscriber(next);
+    return true;
+}
+
 /**
  * One frame of the ONE reader: advance every host off its single native read, collect the argmin
  * samples (only hosts that joined the argmin via a non-empty `vizId`) + the in-viewport set, commit
@@ -197,10 +279,15 @@ function commit(next: ActiveVizResolution): boolean {
  */
 function frame(): boolean {
     if (hosts.size === 0) return false;
-    const samples: ScrubSample[] = [];
+    const samples: ScrubHostSample[] = [];
     let moved = false;
+    const reduced = prefersReducedMotion();
     for (const h of hosts) {
-        const native = h.el ? readNativeProgress(h.el) : null;
+        const native = h.el
+            ? reduced && h.informationOnly
+                ? readCoverProgress(h.el)
+                : readNativeProgress(h.el)
+            : null;
         const p = h.advance(native);
         if (p === null) continue;
         // Compare against the CACHED position from the prior frame BEFORE we overwrite it — any
@@ -209,10 +296,13 @@ function frame(): boolean {
         h.lastProgress = p;
         h.reveal?.advance(p);
         const id = h.vizId();
-        if (id !== "") samples.push({ id, progress: p });
+        const hostKey = h.hostKey?.() ?? id;
+        if (id !== "" && hostKey !== "") samples.push({ id, hostKey, progress: p });
     }
-    const committed = commit(resolveActive(samples, currentId));
-    if (moved || committed) {
+    const resolution = resolveActiveHost(samples, currentHostKey);
+    const committed = commit(resolution);
+    const hostCommitted = commitHost(resolution);
+    if (moved || committed || hostCommitted) {
         quiescentFrames = 0;
         return true;
     }
@@ -227,7 +317,11 @@ function frame(): boolean {
  * PRM guard). Resets the quiescent counter so a fresh wake gets its full settle window.
  */
 function startLoop(): void {
-    if (driver.running || hosts.size === 0 || prefersReducedMotion()) return;
+    if (
+        driver.running ||
+        hosts.size === 0 ||
+        (prefersReducedMotion() && ![...hosts].some((host) => host.informationOnly))
+    ) return;
     quiescentFrames = 0;
     driver.loop(frame);
 }
@@ -250,8 +344,9 @@ function bindWakeInteractions(): void {
 /**
  * Register a scrub host. Arms the loop on the empty → non-empty edge via {@link startLoop} (idempotent
  * + PRM-gated) and installs the wake interactions on first use. Returns the unregister thunk; the
- * registry SELF-HALTS on the next frame once the last host leaves (the empty check returns `false`),
- * and thereafter stays parked at idle until a scroll/interaction re-arms it (O-A4 zero-idle-rAF).
+ * the last-host disposer clears both public/private resolutions synchronously (so unmount cannot
+ * strand a stale active stage), while a partial removal re-arms the same driver to resolve survivors.
+ * The registry then stays parked at idle until a scroll/interaction re-arms it (O-A4 zero-idle-rAF).
  */
 export function registerScrubHost(record: ScrubHostRecord): () => void {
     hosts.add(record);
@@ -259,6 +354,20 @@ export function registerScrubHost(record: ScrubHostRecord): () => void {
     startLoop();
     return () => {
         hosts.delete(record);
+        if (hosts.size === 0) {
+            const empty: ActiveScrubHostResolution = {
+                hostKey: "",
+                id: "",
+                inViewport: new Set(),
+            };
+            commit(empty);
+            commitHost(empty);
+            quiescentFrames = 0;
+            return;
+        }
+        // The removed host may have held the winner while the driver was parked at idle. Wake the
+        // existing singleton so the surviving registry is resolved without waiting for user input.
+        startLoop();
     };
 }
 

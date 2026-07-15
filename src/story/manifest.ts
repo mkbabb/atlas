@@ -9,16 +9,13 @@ import type { StoryCardFacet } from "@/editorial/story-card";
 import type { Colophon } from "@/platform/chrome/masthead/SiteColophon.vue";
 import type { RuleVariant } from "@/editorial/rule-register";
 import type { Rank } from "@/motion/variant-bounds";
-import {
-    resolveBeatTemplates,
-    type AuthoredBeat,
-    type FigureLadder,
-} from "./beat-template";
+import type { SkinId } from "@/skin";
+import type { FigureLadder } from "./beat-template";
 import type { Superlative } from "./superlative";
 import type { EdgeSpec, FocusEffect, StoryChapter } from "./story-contract";
 
 export type PointKind = "cover" | "beat" | "colophon";
-export type SkinRef = string;
+export type SkinRef = SkinId;
 
 /** Compatibility name for early manifest authors; the canonical persistent-stage contract now owns
     the shape directly. */
@@ -91,8 +88,17 @@ export interface StoryDeck {
     readonly slides: readonly { readonly component: string; readonly label: string }[];
 }
 
+/** Point and story authorship retained on the essay-host projection. */
+export interface ManifestChapterFacets {
+    readonly superlative?: Superlative;
+    readonly figure?: FigureLadder;
+    readonly rank?: Rank;
+    readonly signature?: boolean;
+    readonly marquee?: boolean;
+}
+
 /** The current essay-host chapter surface produced from one canonical story point. */
-export type ManifestChapter = EditorialChapter & StoryChapter;
+export type ManifestChapter = EditorialChapter & StoryChapter & ManifestChapterFacets;
 
 const EmptyChapterIcon: Component = () => null;
 const AsyncPointComponents = new Map<string, Component>();
@@ -118,18 +124,17 @@ function pointLabel<Stage extends ChapterStage>(point: StoryPoint<Stage>): strin
     );
 }
 
-function authoredBeatOf<Stage extends ChapterStage>(
-    point: BeatPoint<Stage>,
-): AuthoredBeat {
+function revealOf<Stage extends ChapterStage>(
+    point: StoryPoint<Stage>,
+): RevealSpec | undefined {
+    if (!point.pole) return point.reveal;
     return {
-        title: point.pole,
-        reveal: point.reveal,
-        rule: point.rule,
-        signature: point.signature,
-        marquee: point.marquee,
-        figure: point.figure,
-        superlative: point.superlative,
-        rank: point.rank,
+        ...point.reveal,
+        layout: {
+            title: point.pole,
+            scrollIn: point.pole === "center" ? "up" : point.pole,
+            ...point.reveal?.layout,
+        },
     };
 }
 
@@ -141,13 +146,6 @@ function authoredBeatOf<Stage extends ChapterStage>(
 export function chaptersOf<Stage extends ChapterStage>(
     story: StoryManifest<Stage>,
 ): readonly ManifestChapter[] {
-    const templates = resolveBeatTemplates({
-        id: story.id,
-        beats: beatsOf(story).map(authoredBeatOf),
-        seed: story.seed,
-    });
-    let phase = 0;
-
     return story.points.map((point): ManifestChapter => {
         let figure: Pick<ManifestChapter, "viz"> &
             Partial<Pick<ManifestChapter, "hero" | "colophon">>;
@@ -171,7 +169,6 @@ export function chaptersOf<Stage extends ChapterStage>(
                 break;
         }
 
-        const template = point.kind === "beat" ? templates[phase++] : undefined;
         return {
             id: point.slug,
             icon: point.icon ?? EmptyChapterIcon,
@@ -180,7 +177,13 @@ export function chaptersOf<Stage extends ChapterStage>(
             title: point.title,
             dek: point.dek ?? "",
             ...figure,
-            reveal: template?.reveal ?? point.reveal,
+            reveal: revealOf(point),
+            rule: point.rule,
+            superlative: point.superlative,
+            figure: point.figure,
+            rank: point.rank,
+            signature: point.signature,
+            marquee: point.marquee,
             isBeat: point.kind === "beat",
             colorKind: point.colorKind ?? story.colorKind,
             hinge: point.hinge,
@@ -188,7 +191,6 @@ export function chaptersOf<Stage extends ChapterStage>(
             focus: point.focus ? [...point.focus] : undefined,
             card: point.card ?? (point.kind === "beat" ? story.card : undefined),
             ornament: point.ornament,
-            template,
         };
     });
 }

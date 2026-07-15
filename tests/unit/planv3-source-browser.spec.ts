@@ -1,40 +1,81 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-
-const source = readFileSync(
-    new URL("../../src/filter/ui/SourceDataBrowser.vue", import.meta.url),
-    "utf8",
-);
-const barrel = readFileSync(
-    new URL("../../src/filter/ui/index.ts", import.meta.url),
-    "utf8",
-);
+import { effectScope } from "vue";
+import { createAtlasEventHub } from "@/events";
+import {
+    reconcileMountedFocus,
+    useSourceBrowserEvents,
+} from "@/filter/ui/source-data-browser";
 
 describe("SourceDataBrowser", () => {
-    it("exports the browser through the filter surface", () => {
-        expect(barrel).toContain(
-            'export { default as SourceDataBrowser } from "./SourceDataBrowser.vue";',
-        );
+    it("restores one tab stop when pointer scrolling recycles the focused row", () => {
+        expect(reconcileMountedFocus("row-1", ["row-20", "row-21"])).toBe("row-20");
+        expect(reconcileMountedFocus("row-20", ["row-20", "row-21"])).toBe("row-20");
+        expect(reconcileMountedFocus("row-1", [])).toBe("row-1");
     });
 
-    it("keeps the source grid virtual, keyboard-stable, and explicitly described", () => {
-        expect(source).toContain("useVirtualWindow<Row, Key>");
-        expect(source).toContain("virtual.ensureTargetWindow(key)");
-        expect(source).toContain('role="grid"');
-        expect(source).toContain(':aria-rowcount="virtual.ariaRowCount.value"');
-        expect(source).toContain('role="columnheader"');
-        expect(source).toContain("payload.meta.source.label");
-        expect(source).toContain("payload.meta.asOf");
-        expect(source).toContain("payload.meta.filterExplain");
-    });
+    it("projects the five browser events by active viz and resets viz-local state", () => {
+        const hub = createAtlasEventHub();
+        const scope = effectScope();
+        const state = scope.run(() => useSourceBrowserEvents(hub, "initial"))!;
+        const vizScope = { grain: "viz" as const, vizId: "districts" };
 
-    it("routes only the two browser event classes and both supplied serializers", () => {
-        const emittedTypes = [...source.matchAll(/type: "([^"]+)"/g)].map(
-            (match) => match[1],
-        );
-        expect(emittedTypes).toEqual(["granularity", "provenance"]);
-        expect(source).toContain("payload.value.serialize(format)");
-        expect(source).toContain("serialize('csv')");
-        expect(source).toContain("serialize('json')");
+        hub.emit({
+            type: "active-viz",
+            scope: vizScope,
+            vizId: "districts",
+            beat: { id: "cost", label: "Cost" },
+        });
+        hub.emit({
+            type: "selected-viz",
+            scope: vizScope,
+            vizId: "districts",
+            primaryKey: "district:1",
+            selectedKeys: ["district:1"],
+        });
+        hub.emit({
+            type: "selected-viz",
+            scope: { grain: "viz", vizId: "foreign" },
+            vizId: "foreign",
+            primaryKey: "foreign:1",
+            selectedKeys: ["foreign:1"],
+        });
+        hub.emit({
+            type: "granularity",
+            scope: vizScope,
+            vizId: "districts",
+            grain: "selection",
+        });
+        hub.emit({
+            type: "provenance",
+            scope: vizScope,
+            vizId: "districts",
+            fields: ["leaNumber", "cost"],
+            filterExplain: "state = NC",
+        });
+        hub.emit({
+            type: "filter-state",
+            scope: vizScope,
+            predicate: "state = NC",
+            active: true,
+        });
+
+        expect(state.activeVizId.value).toBe("districts");
+        expect(state.selectedKeys.value).toEqual(["district:1"]);
+        expect(state.grain.value).toBe("selection");
+        expect(state.fields.value).toEqual(["leaNumber", "cost"]);
+        expect(state.filter.value).toEqual({ predicate: "state = NC", active: true });
+
+        hub.emit({
+            type: "active-viz",
+            scope: { grain: "viz", vizId: "schools" },
+            vizId: "schools",
+            beat: { id: "map", label: "Map" },
+        });
+        expect(state.activeVizId.value).toBe("schools");
+        expect(state.selectedKeys.value).toEqual([]);
+        expect(state.grain.value).toBeNull();
+        expect(state.fields.value).toEqual([]);
+
+        scope.stop();
     });
 });
