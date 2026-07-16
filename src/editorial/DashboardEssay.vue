@@ -56,7 +56,6 @@ import { toRoman } from "../platform/composables/useRomanNumeral.js";
 import Beat from "./Beat.vue";
 import AnimatedRule from "./AnimatedRule.vue";
 import DashboardHero from "./DashboardHero.vue";
-import GhostNumeral from "./GhostNumeral.vue";
 import StoryCard from "./StoryCard.vue";
 import SiteColophon from "../platform/chrome/masthead/SiteColophon.vue";
 import VizPlate from "../charts/frame/VizPlate.vue";
@@ -303,11 +302,12 @@ function hasFigure(chapter: Chapter): boolean {
 }
 
 /** DashboardHero's prop payload excludes the component carried for its named provenance slot. */
-function heroPropsOf(hero: HeroFacet, ordinal: number): ReturnType<typeof resolveHeroSystem>["heroProps"] {
-    return resolveHeroSystem({ hero, ordinal }).heroProps;
+function heroPropsOf(hero: HeroFacet): ReturnType<typeof resolveHeroSystem>["heroProps"] {
+    return resolveHeroSystem({ hero }).heroProps;
 }
 
-/** The numeral junction retires into the chapter-owned title-band ghost; other variants survive. */
+/** The numeral rule-variant yields to a plain rule — the eyebrow is the sole numeral seat now
+    (OF-22 · the ghost watermark retired), so no junction paints a chapter numeral. Others survive. */
 function junctionRule(variant: RuleVariant | undefined): Exclude<RuleVariant, "numeral"> {
     return variant == null || variant === "numeral" ? "rule" : variant;
 }
@@ -389,7 +389,6 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                     :style="recedeStyles[i]?.value"
                     :data-corridor-recede="hasCorridorEdge[i] ? '' : undefined"
                 >
-                    <GhostNumeral v-if="!chapter.card" :source="{ ordinal: figures[i]! }" />
                     <!-- SM-1 — the eyebrow carries the chapter's nav icon, tinted in the route data hue
                          (the "pops live in the icons" site). The TEXT stays muted ink (fill-vs-label). -->
                     <p class="eyebrow">
@@ -431,7 +430,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
             <template v-if="chapter.viz === 'hero'">
                 <DashboardHero
                     v-if="chapter.hero"
-                    v-bind="heroPropsOf(chapter.hero, figures[i]!)"
+                    v-bind="heroPropsOf(chapter.hero)"
                     :category="activeDashboard.entry?.category"
                 >
                     <template #provenance>

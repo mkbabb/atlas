@@ -8,7 +8,6 @@ import {
 } from "../charts/frame/story-card-context.js";
 import Beat from "./Beat.vue";
 import AnimatedRule from "./AnimatedRule.vue";
-import GhostNumeral, { type GhostNumeralSource } from "./GhostNumeral.vue";
 import StoryCardStats from "./StoryCardStats.vue";
 import { resolveTitleAlign } from "./title-align.js";
 import { storyCardSurface, type StoryCardFacet } from "./story-card.js";
@@ -47,11 +46,6 @@ const context = createStoryCardContext();
 provide(STORY_CARD_KEY, context);
 const surface = computed(() => storyCardSurface(props.facet));
 const titleAlign = computed(() => resolveTitleAlign(props.facet.pole, "left"));
-const ghostSource = computed<GhostNumeralSource | null>(() =>
-    props.facet.numeral != null || props.figure != null
-        ? { ordinal: props.facet.numeral ?? props.figure ?? 0 }
-        : null,
-);
 const hasFigure = computed(() => Boolean(slots.figure));
 const firstSeam = computed(
     () => props.facet.seamRule !== false && hasFigure.value && Boolean(slots.prose || slots.appendix),
@@ -92,7 +86,6 @@ const secondSeam = computed(
                     class="story-card__title-band"
                     :data-title-align="titleAlign"
                 >
-                    <GhostNumeral v-if="ghostSource" :source="ghostSource" />
                     <div class="atlas-title-align">
                         <slot name="header"><slot name="title" /></slot>
                     </div>
@@ -134,10 +127,6 @@ const secondSeam = computed(
 }
 .story-card--keyline {
     border: 1px solid var(--silver-rule, var(--border));
-}
-.story-card__title-band {
-    position: relative;
-    isolation: isolate;
 }
 .story-card__title-band > .atlas-title-align {
     display: grid;

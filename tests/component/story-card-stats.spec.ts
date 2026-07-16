@@ -18,10 +18,6 @@ vi.mock("../../src/editorial/Beat.vue", async () => {
     const { defineComponent, h } = await import("vue");
     return { default: defineComponent({ setup: (_, { slots }) => () => h("section", slots.figure?.()) }) };
 });
-vi.mock("../../src/editorial/GhostNumeral.vue", async () => {
-    const { defineComponent } = await import("vue");
-    return { default: defineComponent(() => () => null) };
-});
 vi.mock("../../src/editorial/AnimatedRule.vue", async () => {
     const { defineComponent } = await import("vue");
     return { default: defineComponent(() => () => null) };

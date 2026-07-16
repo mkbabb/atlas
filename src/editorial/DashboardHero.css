@@ -65,10 +65,6 @@
     /* the page <h1> — the receded quiet label (text-page-title); the recipe owns face/axes/size. */
     max-inline-size: var(--measure, 36ch);
 }
-.dashboard-hero__title-band {
-    position: relative;
-    isolation: isolate;
-}
 .dashboard-hero__dek {
     margin: 0;
     max-inline-size: var(--measure, 60ch);

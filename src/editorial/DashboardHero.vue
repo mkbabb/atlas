@@ -49,7 +49,6 @@ import { resolveSkin } from "../skin/category.js";
 import { CompletionSeal, resolveCompletionSeal } from "../design/recipes/completion.js";
 import type { TitlePole } from "../contract/index.js";
 import { resolveTitleAlign, type TitleAlign } from "./title-align.js";
-import GhostNumeral, { type GhostNumeralSource } from "./GhostNumeral.vue";
 
 /** One audacious cover figure — the pre-formatted value (routed through format.ts at the
     call site / the manifest, INV-E1), the unit caption (the F6.4 unit/context word), and the
@@ -122,16 +121,11 @@ const props = withDefaults(
         standfirst?: string | null;
         /** The bounded page-title pole. `auto` preserves the default start alignment. */
         align?: TitleAlign;
-        /** Chapter ordinal for the chapter-masthead-only ghost. Omit on unnumbered covers. */
-        ordinal?: number;
     }>(),
     { colorKind: "diverging", thesisIndex: 0, align: "auto" },
 );
 
 const titleAlign = computed<TitlePole>(() => resolveTitleAlign(props.align, "left"));
-const ghostSource = computed<GhostNumeralSource | null>(() =>
-    props.ordinal != null && props.ordinal > 0 ? { ordinal: props.ordinal } : null,
-);
 
 /** Parse a figure's value into a number for the count-up; a non-numeric string (already
     formatted, e.g. "$8.92B") has its digits extracted so the count climbs to the same crown. */
@@ -286,7 +280,6 @@ function rankNumTrack(f: HeroFigure): Record<string, number> | undefined {
              recipe (§1b) reveals it over the tail of the SAME native scroll timeline; at rest it has
              zero footprint (absent from the rest state). -->
         <div class="dashboard-hero__title-band" :data-title-align="titleAlign">
-            <GhostNumeral v-if="ghostSource" :source="ghostSource" />
             <h1
                 class="dashboard-hero__title text-page-title atlas-title-align"
             >{{ title

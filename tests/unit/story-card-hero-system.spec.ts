@@ -6,10 +6,9 @@ describe("HeroSystem", () => {
     it("organizes the existing DashboardHero payload without minting state or a wrapper tree", () => {
         const provenance = {} as never;
         const system = resolveHeroSystem({
-            ordinal: 4,
             hero: { title: "Atlas", dek: "Evidence", figures: [], provenance },
         });
-        expect(system.heroProps).toEqual({ title: "Atlas", dek: "Evidence", figures: [], ordinal: 4 });
+        expect(system.heroProps).toEqual({ title: "Atlas", dek: "Evidence", figures: [] });
         expect(system.provenance).toBe(provenance);
     });
 });
