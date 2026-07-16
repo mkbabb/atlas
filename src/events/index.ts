@@ -87,22 +87,3 @@ export interface AtlasEventContract {
 }
 
 export { createAtlasEventHub } from "./hub.js";
-
-/** Compile-time exhaustiveness helper for consumers projecting all eight classes. */
-export function assertAtlasEventExhaustive(event: AtlasEvent): AtlasEventType {
-    switch (event.type) {
-        case "active-viz":
-        case "scene-change":
-        case "stage-active":
-        case "selected-viz":
-        case "granularity":
-        case "provenance":
-        case "provenance-drawer":
-        case "filter-state":
-            return event.type;
-        default: {
-            const neverEvent: never = event;
-            return neverEvent;
-        }
-    }
-}
