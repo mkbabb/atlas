@@ -2,7 +2,6 @@
 //   · resolveBeatTemplate — authored poles WIN, cadence fills the rest; reveal FOLLOWS the pole;
 //     the center pole rises vertically; the rule is authored ?? tier-rotated.
 //   · the RESEED determinism — a route reseed drifts the MICRO-GRAIN but NOT the authored poles (E1).
-//   · checkBeatConstraints (E2) — 0 consecutive shared poles · ≤2 C · exactly 1 signature (+ NEGs).
 //   · figureLadderScalar (Q-27) — index=0.5, value-scaled clamps, degenerate domain ⇒ 0.5 (no NaN).
 //   · the center pole through resolveLayout (useBeatLayout) — the third pole resolves L/C/R + up + dock.
 //   · SuperlativeRegister (Q-48) — the ceiling guard passes a ceiling verb, FAILS a forbidden one; opt-in.
@@ -11,7 +10,6 @@ import { describe, it, expect } from "vitest";
 import {
     resolveBeatTemplate,
     resolveBeatTemplates,
-    checkBeatConstraints,
     figureLadderScalar,
     rotateRevealShape,
     REVEAL_SHAPES,
@@ -99,48 +97,6 @@ describe("O-A15 · the RESEED determinism (E1) — poles FIXED, micro-grain DRIF
         const a = resolveBeatTemplates(policy, 42);
         const b = resolveBeatTemplates(policy, 42);
         expect(a).toEqual(b);
-    });
-});
-
-describe("O-A15 · checkBeatConstraints (E2) — the resolved-tuple invariants", () => {
-    it("the authored policy PASSES: 0 consecutive shared poles, ≤2 C, exactly 1 signature", () => {
-        const report = checkBeatConstraints(resolveBeatTemplates(policy));
-        expect(report).toEqual({
-            consecutiveSharedPoles: 0,
-            centerBeats: 1,
-            signatureBeats: 1,
-            ok: true,
-        });
-    });
-
-    it("NEG — two adjacent beats sharing a pole TRIPS consecutiveSharedPoles", () => {
-        const bad: BeatVariationPolicy = {
-            id: "bad",
-            beats: [{ title: "left", signature: true }, { title: "left" }],
-        };
-        const report = checkBeatConstraints(resolveBeatTemplates(bad));
-        expect(report.consecutiveSharedPoles).toBe(1);
-        expect(report.ok).toBe(false);
-    });
-
-    it("NEG — >2 center beats FAILS the ≤2-C ceiling; NEG — no/2 signatures FAILS the exactly-1", () => {
-        const threeC: BeatVariationPolicy = {
-            id: "3c",
-            beats: [
-                { title: "center", signature: true },
-                { title: "left" },
-                { title: "center" },
-                { title: "right" },
-                { title: "center" },
-            ],
-        };
-        const r = checkBeatConstraints(resolveBeatTemplates(threeC));
-        expect(r.centerBeats).toBe(3);
-        expect(r.ok).toBe(false);
-
-        const noSig: BeatVariationPolicy = { id: "0s", beats: [{ title: "left" }, { title: "right" }] };
-        expect(checkBeatConstraints(resolveBeatTemplates(noSig)).signatureBeats).toBe(0);
-        expect(checkBeatConstraints(resolveBeatTemplates(noSig)).ok).toBe(false);
     });
 });
 

@@ -227,34 +227,3 @@ export function resolveBeatTemplates(
     const seed = (routeSeed ?? policy.seed ?? hashSeed(policy.id)) >>> 0;
     return policy.beats.map((_, phase) => resolveBeatTemplate(policy, phase, seed, rank));
 }
-
-// ── THE E2 CONSTRAINT SET (the "cohesive but never uniform" guarantee, checked on the resolved tuples) ──
-
-/** THE CONSTRAINT REPORT (animation-taxonomy §E2 / §G AG15) — the E2 invariants MEASURED on a route's
-    resolved templates. `ok` iff all three hold: 0 consecutive shared title poles, ≤2 center beats, and
-    exactly 1 signature. The evidence pack reads this off the resolved tuples (not asserted — measured). */
-export interface BeatConstraintReport {
-    /** The count of ADJACENT beat pairs sharing a title pole (E2: MUST be 0). */
-    consecutiveSharedPoles: number;
-    /** The count of `center` title beats (E2: ≤2 per corridor). */
-    centerBeats: number;
-    /** The count of SIGNATURE beats (E2: exactly 1). */
-    signatureBeats: number;
-    /** All three invariants hold. */
-    ok: boolean;
-}
-
-/** MEASURE the E2 constraints on a route's resolved templates. TOTAL — an empty route is vacuously
-    non-ok on the signature count (a route with beats declares exactly one signature). */
-export function checkBeatConstraints(
-    resolved: readonly ResolvedBeatTemplate[],
-): BeatConstraintReport {
-    let consecutiveSharedPoles = 0;
-    for (let i = 1; i < resolved.length; i++) {
-        if (resolved[i]!.title === resolved[i - 1]!.title) consecutiveSharedPoles += 1;
-    }
-    const centerBeats = resolved.filter((r) => r.title === "center").length;
-    const signatureBeats = resolved.filter((r) => r.signature).length;
-    const ok = consecutiveSharedPoles === 0 && centerBeats <= 2 && signatureBeats === 1;
-    return { consecutiveSharedPoles, centerBeats, signatureBeats, ok };
-}
