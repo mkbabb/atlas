@@ -722,7 +722,7 @@ function onPanelKeydown(e: KeyboardEvent): void {
     min-width: 2.4rem;
     min-height: 2.4rem;
     padding: 0.2rem;
-    border-radius: var(--radius-control, 0.5rem);
+    border-radius: var(--radius-control);
     cursor: pointer;
     transition: background-color 0.15s ease;
 }
@@ -788,7 +788,7 @@ function onPanelKeydown(e: KeyboardEvent): void {
 .drilldown__dropdown-head:focus-visible {
     outline: 2px solid color-mix(in oklab, var(--route-accent), transparent 40%);
     outline-offset: 2px;
-    border-radius: var(--radius-control, 0.4rem);
+    border-radius: var(--radius-control);
 }
 .drilldown__dropdown-title {
     font-family: var(--font-mono, monospace);
@@ -813,7 +813,7 @@ function onPanelKeydown(e: KeyboardEvent): void {
     cursor: pointer;
     text-align: left;
     color: var(--foreground);
-    border-radius: var(--radius-control, 0.4rem);
+    border-radius: var(--radius-control);
 }
 .drilldown__row-trigger:hover {
     background: color-mix(in oklab, var(--muted-foreground), transparent 90%);
@@ -862,7 +862,7 @@ function onPanelKeydown(e: KeyboardEvent): void {
     appearance: none;
     min-height: 2.2rem;
     padding: 0.35rem 0.7rem;
-    border-radius: var(--radius-control, 0.5rem);
+    border-radius: var(--radius-control);
     font-family: var(--font-mono, monospace);
     font-size: 0.68rem;
     letter-spacing: 0.03em;

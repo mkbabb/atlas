@@ -228,7 +228,7 @@ const snapPoints: number[] = [0.12, 0.5, 1];
 .readout-sheet__dot {
     inline-size: 0.5rem;
     block-size: 0.5rem;
-    border-radius: var(--radius-pill, 9999px);
+    border-radius: var(--radius-pill);
     flex: none;
 }
 

@@ -26,7 +26,7 @@
        the hairline reads as machined-metal rather than flat ink. ADDITIVE: the --engrave
        fallback keeps the bare ink if silver is ever unset. Not loud — a subtle steel whisper. */
     border: 1px solid color-mix(in oklab, var(--engrave), var(--silver-hairline) 45%);
-    border-radius: var(--radius-plate, 6px);
+    border-radius: var(--radius-plate);
     box-shadow:
         0 0 0 4px var(--background),
         0 0 0 5px color-mix(in oklab, var(--engrave), var(--silver-hairline) 45%),

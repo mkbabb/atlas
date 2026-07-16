@@ -151,7 +151,7 @@ const leader = computed<{ style: Record<string, string>; path: string } | null>(
     top: 0;
     max-width: 20ch;
     padding: 0.14rem 0.42rem;
-    border-radius: var(--radius-sm, 6px);
+    border-radius: var(--radius-sm);
     background: color-mix(in oklab, var(--background, #fdfbf4), transparent 4%);
     box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground, #1a1a1a) 12%, transparent);
     font-family: var(--font-serif, "Newsreader"), serif;

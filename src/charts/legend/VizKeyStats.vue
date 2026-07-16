@@ -94,7 +94,7 @@ const stats = computed<KeyStat[]>(() => {
     padding: 0.35rem 0.6rem;
     border: 1px solid
         var(--gold-rim, color-mix(in oklab, var(--foreground), transparent 70%));
-    border-radius: var(--radius-control, 0.4rem);
+    border-radius: var(--radius-control);
     background: color-mix(in oklab, var(--gold-ink, #b8860b) 8%, transparent);
 }
 .key-stat--record .key-stat__value {

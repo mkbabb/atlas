@@ -274,7 +274,7 @@ function reset(): void {
     color: var(--muted-foreground);
     background: transparent;
     border: 0;
-    border-radius: var(--radius-plate, 6px);
+    border-radius: var(--radius-plate);
     cursor: pointer;
     /* LEGIBLE AT REST (F3 "better affordance" · f-vizoptions §1): the trigger is PRESENT-BUT-
        RECESSIVE at rest (~0.55), not invisible — a hover-gated-invisible control on a data-dense

@@ -346,7 +346,7 @@ watch(
    reads the PLATE register (--radius-plate, 6px) — was Tailwind `rounded-lg` (glass-ui's --radius,
    0.625rem = 10px, a THIRD register). Scoped + unlayered, so this beats glass-ui's layered utility. */
 .hover-card-readout {
-    border-radius: var(--radius-plate, 6px);
+    border-radius: var(--radius-plate);
 }
 
 /* O-C7 D5 — the eyebrow tints to the hovered datum's fill as a READABLE INK (the ecf-readout

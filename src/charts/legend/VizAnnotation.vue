@@ -70,7 +70,7 @@ withDefaults(
     align-items: baseline;
     gap: 0.32em;
     padding: 0.08rem 0.34rem;
-    border-radius: var(--radius-pill, 999px);
+    border-radius: var(--radius-pill);
     line-height: 1.1;
     white-space: nowrap;
     pointer-events: none;
