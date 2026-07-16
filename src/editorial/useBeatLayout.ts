@@ -43,24 +43,17 @@ function pick<T extends string>(...candidates: (T | "auto" | undefined)[]): T | 
     return undefined;
 }
 
-/** Resolve a chapter's placement from its declared `layout`, the retained `aside` alias, and the
-    auto-zebra by MASTHEAD PHASE. PURE + TOTAL. `phase` is the masthead-only running index (the
-    sentinels never consume a zebra slot and skew the alternation). */
+/** Resolve a chapter's placement from its declared `layout` and the auto-zebra by MASTHEAD
+    PHASE. PURE + TOTAL. `phase` is the masthead-only running index (the sentinels never consume
+    a zebra slot and skew the alternation). */
 export function resolveLayout(chapter: Chapter, phase: number): ResolvedLayout {
     const L: BeatLayout = chapter.reveal?.layout ?? {};
-    // `aside:true` folds to title:'right' (the cap-right pole it already was); an explicit `L.title`
-    // still wins (the override-beats-alias order in `pick`).
-    const asideTitle: "right" | undefined = chapter.reveal?.aside ? "right" : undefined;
     const even = phase % 2 === 0;
 
     // The title pole admits the O-A15 `center` third pole (via `L.title`) — an explicit `center`
     // flows through `pick` first (override-beats-zebra); the zebra default stays L/R alternation
     // (center is AUTHORED, never auto-picked — it is spent sparingly by the E3 tables/policy).
-    const title = pick<TitlePole>(
-        L.title,
-        asideTitle,
-        even ? "left" : "right",
-    ) as TitlePole;
+    const title = pick<TitlePole>(L.title, even ? "left" : "right") as TitlePole;
     const numbers = pick<"top" | "bottom">(L.numbers, even ? "top" : "bottom") as "top" | "bottom";
     const dock = pick<"left" | "right">(L.dock, counterweight(title)) as "left" | "right";
     // The reveal-in axis FOLLOWS the title pole (K-EXPRESS D2 · O-A15 ANSWERS Q-21): left slides

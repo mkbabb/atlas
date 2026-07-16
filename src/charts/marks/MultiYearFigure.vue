@@ -29,6 +29,7 @@ import {
     type TrajectoryPoint,
 } from "@/data/multiYear";
 import type { Feed } from "@/data/contract";
+import type { FilterResponse } from "@/charts/contract/viz-contract";
 
 const props = withDefaults(
     defineProps<{
@@ -60,6 +61,8 @@ const props = withDefaults(
         ariaLabel?: string;
         size?: "default" | "hero";
         figId?: string;
+        /** Whether route filters alter this figure. Omit for the responsive default. */
+        filterResponse?: FilterResponse;
         /**
          * THE RECESSIVE TERMINAL annotation string (AXIOM-5). The trajectory's terminal value
          * (e.g. the −$324.1M the hero already carries audaciously). Rendered DUCKED — never the
@@ -94,6 +97,7 @@ const props = withDefaults(
         ariaLabel: "Multi-year figure",
         size: "default",
         figId: undefined,
+        filterResponse: "responsive",
         terminalValue: undefined,
         terminalCaption: undefined,
         terminalInFoot: false,
@@ -138,6 +142,7 @@ const showFootTerminal = computed<boolean>(
             :aria-label="ariaLabel"
             :size="size"
             :fig-id="figId"
+            :filter-response="filterResponse"
         >
             <template v-if="$slots.title" #title><slot name="title" /></template>
             <template v-if="showFootTerminal" #foot>
@@ -165,6 +170,7 @@ const showFootTerminal = computed<boolean>(
             :aria-label="ariaLabel"
             :size="size"
             :fig-id="figId"
+            :filter-response="filterResponse"
             :hide-key-stats="hideKeyStats"
         >
             <template v-if="$slots.title" #title><slot name="title" /></template>

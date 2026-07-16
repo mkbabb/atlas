@@ -9,6 +9,7 @@ import {
     DrawerTitle,
     DrawerTrigger,
 } from "@mkbabb/glass-ui/drawer";
+import { Button } from "@mkbabb/glass-ui/button";
 import { useMobileRegister } from "@/platform/composables/useMobileRegister";
 import {
     resolveAppendixDetent,
@@ -81,9 +82,10 @@ defineExpose({
     <section class="appendix-dock" :data-detent="state" data-appendix-dock>
         <Drawer v-model:open="drawerOpen" direction="bottom" mode="modal">
             <component :is="isPhone ? DrawerTrigger : 'span'" :as-child="isPhone || undefined">
-                <button
+                <Button
                     class="appendix-dock__control"
                     type="button"
+                    variant="glass"
                     :aria-expanded="state === 'full'"
                     :aria-controls="paneId"
                     @click="toggleInline"
@@ -93,7 +95,7 @@ defineExpose({
                     <span class="appendix-dock__state" aria-hidden="true">
                         {{ state === "full" ? "Close" : "Open" }}
                     </span>
-                </button>
+                </Button>
             </component>
 
             <div
@@ -115,9 +117,6 @@ defineExpose({
                 :hidden="isPhone ? undefined : state !== 'full'"
                 :role="isPhone ? undefined : 'region'"
                 :aria-labelledby="headingId"
-                :aria-hidden="isPhone && state !== 'full' ? true : undefined"
-                :inert="isPhone && state !== 'full' ? true : undefined"
-                :force-mount="isPhone ? true : undefined"
                 :show-overlay="isPhone ? true : undefined"
                 :surface="isPhone ? 'opaque' : undefined"
             >
@@ -129,9 +128,11 @@ defineExpose({
                         Source, method, and provenance detail for this figure.
                     </DrawerDescription>
                     <DrawerClose v-if="isPhone" as-child>
-                        <button type="button">Close</button>
+                        <Button type="button" variant="ghost" size="sm">Close</Button>
                     </DrawerClose>
-                    <button v-else type="button" @click="apply('close')">Close</button>
+                    <Button v-else type="button" variant="ghost" size="sm" @click="apply('close')">
+                        Close
+                    </Button>
                 </component>
                 <div class="appendix-dock__reading">
                     <slot />
@@ -149,21 +150,12 @@ defineExpose({
     color: var(--foreground);
 }
 
-.appendix-dock__control,
-.appendix-dock__peek {
-    border: 1px solid color-mix(in oklab, var(--foreground), transparent 84%);
-    color: inherit;
-    background: color-mix(in oklab, var(--background), transparent 12%);
-}
-
 .appendix-dock__control {
     display: inline-flex;
     align-items: center;
     justify-self: start;
     gap: 0.45rem;
     min-block-size: 2rem;
-    padding-inline: 0.65rem;
-    border-radius: var(--radius-full, 999px);
     font-family: var(--font-mono);
     font-size: var(--type-micro);
     font-weight: 600;
@@ -217,7 +209,6 @@ defineExpose({
 
 .appendix-dock__pane {
     padding-block-start: 0.75rem;
-    border-block-start: 1px solid color-mix(in oklab, var(--foreground), transparent 88%);
 }
 
 .appendix-dock__pane-head {
@@ -231,16 +222,6 @@ defineExpose({
     margin: 0;
     font-size: var(--type-body);
     line-height: 1.25;
-}
-
-.appendix-dock__pane-head button {
-    color: inherit;
-    background: transparent;
-    border: 0;
-    font-family: var(--font-mono);
-    font-size: var(--type-micro);
-    text-decoration: underline;
-    text-underline-offset: 2px;
 }
 
 .appendix-dock__reading {

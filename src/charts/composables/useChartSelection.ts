@@ -37,7 +37,7 @@ export type MapKeyFn = (markKey: string) => string | null;
 export interface UseChartSelection {
     /** The live selected SET — bind to the primitive's `:selected-keys` (the frame channel). When a
         `kind` is named this is the NATIVE-GRAIN back-projection (`selectedIdsOf(kind)`, raw ids); a
-        foreign-kind key is invisible. Without a `kind` it is the raw Set (legacy/non-codec). */
+        foreign-kind key is invisible. */
     selectedKeys: ComputedRef<ReadonlySet<string>>;
     /** The `@select` handler — routes the modifier→store (plain replaces, cmd toggles). When a `kind`
         is named it ENCODES `{kind}:{id}` into the Set at the producer edge. */

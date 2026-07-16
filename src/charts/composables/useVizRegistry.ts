@@ -17,7 +17,10 @@
 // the SAME `vizId`) never evicts the live one (last-writer-wins the key, the stale unmount is inert).
 
 import { shallowRef, triggerRef, type ShallowRef } from "vue";
-import type { FilterDimension } from "@/charts/contract/viz-contract";
+import type {
+    FilterDimension,
+    FilterResponse,
+} from "@/charts/contract/viz-contract";
 import type { UseVizOptions } from "@/charts/composables/useVizOptions";
 
 /** A per-MOUNT identity token — the deregister guard's key (an HMR / keep-alive double-mount never
@@ -42,6 +45,8 @@ export interface RegisteredViz {
     /** The declared filter dimensions (the contract facet — the panel projects + the `DimDial`
         reads `dataValues`/`format`/`step`/`label`/`arity` off these). */
     dims: readonly FilterDimension[];
+    /** The contract's explicit filter-response policy, normalized by the mounting host. */
+    filterResponse: FilterResponse;
     /** `VizContract.crossHighlight ?? true` — the per-viz veil policy (a mark-render policy, H4). */
     crossHighlight: boolean;
     /** The E2 per-viz options controller (the dials the retired inline dock used to host — they
@@ -85,16 +90,20 @@ export function useVizRegistry() {
         }
     }
 
-    /** Replace one live mount's reactive dimensions without re-registering it. The token fence makes
-        a late watcher from a superseded mount inert, exactly like deregistration. */
-    function updateDims(
+    /** Replace one live mount's reactive filter facet without re-registering it. */
+    function updateFilterFacet(
         vizId: string,
         token: VizToken,
-        dims: readonly FilterDimension[],
+        facet: Pick<RegisteredViz, "dims" | "filterResponse">,
     ): void {
         const entry = registry.value.get(vizId);
-        if (!entry || entry.token !== token || entry.dims === dims) return;
-        registry.value.set(vizId, { ...entry, dims });
+        if (
+            !entry ||
+            entry.token !== token ||
+            (entry.dims === facet.dims && entry.filterResponse === facet.filterResponse)
+        )
+            return;
+        registry.value.set(vizId, { ...entry, ...facet });
         triggerRef(registry);
     }
 
@@ -119,7 +128,7 @@ export function useVizRegistry() {
     return {
         registry,
         register,
-        updateDims,
+        updateFilterFacet,
         deregister,
         facetsFor,
         __resetRegistry,

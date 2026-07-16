@@ -114,10 +114,8 @@
     min-block-size: 0;
 }
 
-/* THE SCROLL-MIDDLE VIEWPORT — the stepper's band (the TOC view-mode toggle RETIRED, O-DIR-4 ARM 3;
-   the widen rule + the `.dock-toc-*` <Transition> it drove are removed with it — `DockTOC.vue` +
-   `useDockViewMode.ts` stay on disk, unconsumed, behind the GLASS_TOC_ABSTRACTION_AVAILABLE
-   owner-held seam). Fills the band (flex-grow, min-block 0 so the inner FadingScroll scrolls). */
+/* THE SCROLL-MIDDLE VIEWPORT — the stepper's band. Fills the band (flex-grow, min-block 0 so the
+   inner FadingScroll scrolls). */
 .usf-dock__viewport {
     display: flex;
     flex-direction: column;

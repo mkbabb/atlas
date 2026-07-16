@@ -13,7 +13,7 @@
 //   • the `useHoverReadout` PUBLISH/CLEAR watch (the owner-gated `publish(builder(e,a))` /
 //     `clear(origin)` on the [hovered-entity, anchor] change — DistrictChoropleth:311-321,
 //     NetRetentionMap:232-248, NormalizationFlip:252-268, HexMapPlate:207-227, SchoolMap:415-425),
-//   • the `useSharedColorMode`→settle-epoch→scale-rebuild SEAM (the `void mode.value` poke FOLDED:
+//   • the Glass settle-epoch→scale-rebuild seam (the pre-paint mode poke folded:
 //     the engine owns ONE settle-epoch subscription via `useVizPalette`'s live `onFlipSettled` wire,
 //     so the 3 geo `void mode.value` pokes — DistrictChoropleth:125, NetRetentionMap:95,
 //     NormalizationFlip:139 — EVAPORATE; each plate reads the `paletteEpoch` the engine exposes).

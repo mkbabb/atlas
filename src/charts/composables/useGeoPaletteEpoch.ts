@@ -10,7 +10,7 @@
 //
 // A plate's scale/option `computed` reads `void geoPaletteEpoch.value` in place of `void mode.value`:
 // the rebuild now keys on the engine-owned settle epoch (one subscription, the GATE-D clock unity),
-// not a per-plate `useSharedColorMode()` ref read. The poke is the mirror; this is its removal.
+// not a per-plate theme-store read. The poke is the mirror; this is its removal.
 //
 // GeoPlate.vue consumes this so the engine carries the subscription once; the consumer plates consume
 // it too (their script-level scale computeds need the epoch the slot scope cannot reach). Idempotent —

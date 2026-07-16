@@ -21,8 +21,8 @@
 // worker posts the COLUMNAR envelope back (the field-name-written-once form), NOT a
 // re-inflated row graph — so the structured-clone moves the compact columnar bytes and
 // the 3.1 MB SCI feeds are materialized as rows EXACTLY ONCE, here on the main side
-// (`decodeAndNormalize` runs the columnar→row decode + the key `normalize` on the thread
-// that owns the row consumers). The decode is the SAME `decodeColumnar` the contract owns;
+// (`materializeValidated` decodes and normalizes the already-validated envelope without a
+// second strict scan). The decode is the SAME `decodeColumnar` the contract owns;
 // only WHERE it runs moved (worker → main), so the consumers receive the IDENTICAL Feed.
 // Light slugs (usf/ecf/speedtest — small, row-shaped) stay synchronous: the worker
 // round-trip is not worth its postMessage clone for a cheap parse.
@@ -115,6 +115,8 @@ function getWorker(): Worker {
         // A worker-level failure rejects EVERY in-flight parse so the caller can fall
         // through to the snapshot floor (or surface the error) — never a silent hang.
         const err = new Error(`feedParse.worker failed: ${e.message}`);
+        worker?.terminate();
+        worker = null;
         for (const [, entry] of pending) entry.reject(err);
         pending.clear();
     };
@@ -124,8 +126,8 @@ function getWorker(): Worker {
 /**
  * Post one raw body to the worker, await its parsed ENVELOPE, then decode+normalize it to
  * rows MAIN-SIDE — exactly once. The worker did the blocking JSON.parse + validate and posted
- * the COLUMNAR envelope back (the field-name-written-once form); `decodeAndNormalize` runs the
- * columnar→row decode + the key `normalize` here, on the thread that owns the row consumers.
+ * the COLUMNAR envelope back (the field-name-written-once form); `materializeValidated` runs the
+ * columnar→row decode + key normalization without repeating the worker's strict validation.
  * This is the double-materialize transpose: the 3.1 MB feed is materialized as rows ONCE (no
  * worker-side decode + clone double-allocation).
  */
@@ -139,13 +141,13 @@ function parseInWorker<Row extends FeedRow>(
         pending.set(id, { resolve, reject });
         const req: FeedParseRequest = { id, url, text };
         w.postMessage(req);
-    }).then((envelope) => decodeAndNormalize<Row>(envelope, url));
+    }).then((envelope) => materializeValidated<Row>(envelope));
 }
 
 /**
  * Parse a heavy slug OFF the main thread: the main thread does the (non-blocking)
  * `fetch` + `res.text()`, the worker does the (blocking) JSON.parse + validate and posts
- * the COLUMNAR envelope back; `parseInWorker` decodes+normalizes it to rows main-side, once.
+ * the validated COLUMNAR envelope back; `parseInWorker` materializes it main-side once.
  * If the worker is unavailable (an environment with no Worker, e.g. a jsdom test), fall
  * back to a synchronous main-thread parse so the loader never hard-fails on platform gaps.
  */
@@ -165,11 +167,18 @@ async function fetchHeavy<Row extends FeedRow>(
     return parseInWorker<Row>(text, url);
 }
 
+/** Materialize an envelope already validated by `feedParse.worker`. The boundary is trusted:
+    decoding and state-key normalization run once without repeating the strict O(n) guards. */
+function materializeValidated<Row extends FeedRow>(
+    envelope: FeedColumnar | Feed,
+): Feed<Row> {
+    const feed = "columnar" in envelope ? decodeColumnar(envelope) : envelope;
+    return normalize(feed as Feed<Row>);
+}
+
 /**
- * Decode a parsed JSON value into the row `Feed<Row>` the consumers expect — the EXACT
- * worker pipeline, minus the JSON.parse: columnar-decode-if-columnar → isFeed → normalize.
- * Shared by the light synchronous path and the no-Worker heavy fallback so all paths keep
- * strict parity with the worker (the parity law — a datum changing fails the wave).
+ * Validate and materialize raw main-thread JSON: columnar-decode-if-columnar → strict row
+ * validation → normalize. Shared by light feeds and the no-Worker heavy fallback.
  */
 function decodeAndNormalize<Row extends FeedRow>(
     json: unknown,

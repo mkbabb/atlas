@@ -134,8 +134,7 @@ export function useDockStepper(
         { immediate: true },
     );
 
-    // The rung-click scroll — the shared O-A3 anchor machinery (`scrollToSection`), the SAME primitive
-    // `DockTOC`'s row click routes through, so a beat lands identically from either view-mode (O-A23).
+    // The rung-click scroll — the shared O-A3 anchor machinery (`scrollToSection`).
     function scrollTo(id: string) {
         scrollToSection(id);
     }

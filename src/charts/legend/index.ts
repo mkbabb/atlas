@@ -17,4 +17,3 @@ export { default as VizTextOverlay } from "./VizTextOverlay.vue";
 // re-export dropped the named `<script>` type contracts). Re-exported by name from each owning SFC.
 export type { ChartDataRow } from "./ChartDataTable.vue";
 export type { LegendChip } from "./ChartLegend.vue";
-export type { VizPlacement } from "./VizTextOverlay.vue";

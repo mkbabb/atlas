@@ -28,14 +28,16 @@ import { computed, ref, watch } from "vue";
 import type { EChartsOption } from "echarts";
 import VizPlate from "@/charts/frame/VizPlate.vue";
 import AxisNameLockup from "@/charts/legend/AxisNameLockup.vue";
-import VizTextOverlay, {
-    type VizPlacement,
-} from "@/charts/legend/VizTextOverlay.vue";
+import VizTextOverlay from "@/charts/legend/VizTextOverlay.vue";
 import { useEChart } from "@/charts/composables/useEChart";
 import { armMorphPush, withMorphIdentity } from "@/charts/morph";
 import EChartOrnament from "@/charts/glyph/EChartOrnament.vue";
 import { useHoverReadout, type HoverReadout } from "@/platform/stores/useHoverReadout";
-import type { AxisLockup, VizContract } from "@/charts/contract/viz-contract";
+import type {
+    AxisLockup,
+    VizAnnotationPlacement,
+    VizContract,
+} from "@/charts/contract/viz-contract";
 
 const props = withDefaults(
     defineProps<{
@@ -80,7 +82,7 @@ const props = withDefaults(
         }>;
         /** The in-plate annotation chip placements (the hinge / break-even chip), each naming a
             `#<id>` slot the plate fills with a <VizAnnotation>. Empty ⇒ no chip. */
-        annotationPlacements?: VizPlacement[];
+        annotationPlacements?: VizAnnotationPlacement[];
         /** The READY readout payload the plate built (`sciEntityReadout`/`usfStateReadout`) for the
             live hovered datum, or null to clear. The engine owns the publish/clear watch + the
             owner-gate; the plate owns only the projection. */

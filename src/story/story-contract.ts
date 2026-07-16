@@ -14,29 +14,12 @@
 
 import type { Chapter } from "@/contract";
 import type { RuleVariant } from "@/editorial/rule-register";
-import {
-    encodeSelKey,
-    parseSelKey,
-    type SelectionKind,
-} from "@/charts/contract/selection-contract";
-
 // ── The mark identity — the object-constancy key (REUSED, never re-minted) ────────────────────────
 
 /** A stable mark identity — the object-constancy key. REUSES the selection-contract codec
     (`{kind}:{id}`, e.g. `"district:920"`), so the morph keys ARE the selection keys: a mark that
     morphs A→B is the same mark the cross-viz highlight lifts. One identity system. */
 export type MarkKey = string;
-
-/** Mint a `MarkKey` from a feed's `meta.keyField` grain + its raw id — the SAME producer-edge codec
-    the selection set mints (`encodeSelKey`). A figure derives its handle keys from `meta.keyField`
-    (the selection codec), so the shared-element morph and the cross-viz highlight speak one wire form. */
-export function markKeyFor(kind: SelectionKind, id: string): MarkKey {
-    return encodeSelKey(kind, id);
-}
-
-/** Parse a `MarkKey` back to its `{kind,id}` — the migration guard (a legacy bare key ⇒ null), so a
-    handle that re-reads a foreign-grain key drops it rather than mis-grain a raw id. */
-export const parseMarkKey = parseSelKey;
 
 // ── The transition MECHANISMS (a closed union; a route declares WHICH, never HOW) ─────────────────
 

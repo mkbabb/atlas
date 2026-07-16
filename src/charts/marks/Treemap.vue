@@ -260,14 +260,14 @@ const option = computed<EChartsOption>(() => {
                           : `{name|${richSpec.name}}`,
                   rich: {
                       name: {
-                          fontFamily: "Newsreader",
+                          fontFamily: palette.value.fontSerif,
                           fontWeight: 600,
                           fontSize: 12,
                           lineHeight: 15,
                           color: nameInk,
                       },
                       meta: {
-                          fontFamily: "Fira Code",
+                          fontFamily: palette.value.fontMono,
                           fontWeight: 400,
                           fontSize: 10,
                           lineHeight: 13,

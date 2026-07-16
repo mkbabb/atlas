@@ -426,15 +426,12 @@ export function publishMarkColorResolver(resolver: MarkColorResolver): () => voi
 
 /**
  * Resolve a composite selection KEY to its staged datum's verdict fill — the veil-hue locus
- * (`useSelection.veilHue` reads this for a single focused selection). Parses the key once (a bare
- * legacy key → null, the migration guard), then asks the active dashboard's published resolver. A
- * concrete `rgb(...)`/CSS colour when the focused datum is in the live frame; `null` when no
- * resolver is published, the key is bare, or the resolver cannot grain the key (the heterogeneous
+ * (`useSelection.veilHue` reads this for a single focused selection). Parses the canonical key once,
+ * then asks the active dashboard's published resolver. A concrete `rgb(...)`/CSS colour when the
+ * focused datum is in the live frame; `null` when no resolver is published or it cannot grain the key (the heterogeneous
  * fall-through to `--route-accent`). It NEVER returns a hand-picked hex — every colour comes off the
  * dashboard's live `Scale<V>` through the published resolver.
  */
 export function markColorFor(key: string): string | null {
-    const sel = parseSelKey(key);
-    if (sel === null) return null;
-    return activeMarkColorResolver?.(sel) ?? null;
+    return activeMarkColorResolver?.(parseSelKey(key)) ?? null;
 }

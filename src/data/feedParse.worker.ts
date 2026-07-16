@@ -16,7 +16,7 @@
 // THE PARITY LAW (the wave's hard gate): the envelope this worker posts back decodes to a
 // `Feed<Row>` IDENTICAL to the pre-worker main-thread parse. `JSON.parse` → validate is the
 // blocking work this worker relocates; the columnar→row `decodeColumnar` + `normalize` run
-// ONCE on the main side that owns the row consumers (loadFeed.decodeAndNormalize). The worker
+// ONCE on the main side that owns the row consumers (`materializeValidated`). The worker
 // is a transport relocation, not a transform; a datum changing fails the wave.
 //
 // THE DOUBLE-MATERIALIZE TRANSPOSE (J-DATA arm e · j2 P8 · j-data-worker-clone): the worker
@@ -56,7 +56,7 @@ export interface FeedParseRequest {
  * The reply the worker posts back: the PARSED-AND-VALIDATED envelope (NOT a decoded row
  * graph), or an error. `envelope` is the COLUMNAR form for a heavy slug (the field-name-
  * written-once transport) or the row `Feed` for a light/row feed — the main side decodes
- * to rows exactly once (loadFeed.decodeAndNormalize). Posting the columnar envelope (rather
+ * to rows exactly once (`loadFeed.materializeValidated`). Posting the columnar envelope (rather
  * than a re-inflated row graph) is the double-materialize transpose: the 3.1 MB SCI feeds
  * cross the boundary in their compact columnar form, materialized as rows once main-side.
  */
@@ -81,7 +81,7 @@ function parse(text: string, url: string): FeedColumnar | Feed {
     // Validate the envelope on the worker (fail-loud parity — a hostile body rejects here so
     // the main thread falls to the snapshot floor), but do NOT decode the columnar rows: the
     // heavy columnar envelope rides the boundary in its compact form and the consumer side
-    // (loadFeed.decodeAndNormalize) materializes the rows ONCE. A light/row feed flows through.
+    // (`loadFeed.materializeValidated`) materializes the rows ONCE. A light/row feed flows through.
     let envelope: FeedColumnar | Feed;
     if (isColumnarFeed(json)) {
         envelope = json;

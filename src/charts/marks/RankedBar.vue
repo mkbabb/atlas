@@ -188,7 +188,7 @@ const option = computed<EChartsOption>(() => {
                           show: true,
                           position: "right" as const,
                           color: palette.value.muted,
-                          fontFamily: "Fira Code",
+                          fontFamily: palette.value.fontMono,
                           fontSize: 11,
                           formatter: () => props.valueLabel!(r),
                       }
@@ -225,7 +225,7 @@ const option = computed<EChartsOption>(() => {
             // resolved foreground ink (T-4), Newsreader to match the in-plate prose voice.
             axisLabel: {
                 color: palette.value.foreground,
-                fontFamily: "Newsreader",
+                fontFamily: palette.value.fontSerif,
                 fontSize: 12,
                 // Keep the gutter bounded so the longest firm name never eats the bars; ECharts
                 // truncates with an ellipsis past the width (the gutter is wide via containLabel).

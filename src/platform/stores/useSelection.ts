@@ -138,6 +138,7 @@ export const useSelection = defineStore("platform:selection", () => {
      * set is copied before mutation so the ref re-assigns (reactive replace, no in-place).
      */
     function select(key: string, opts: { additive?: boolean } = {}): void {
+        parseSelKey(key);
         const next = new Set(selectedKeys.value);
         if (opts.additive) {
             if (next.has(key)) next.delete(key);
@@ -157,7 +158,9 @@ export const useSelection = defineStore("platform:selection", () => {
      * marquee routes through here. An empty iterable clears the set.
      */
     function selectMany(keys: Iterable<string>): void {
-        selectedKeys.value = new Set(keys);
+        const next = new Set(keys);
+        next.forEach(parseSelKey);
+        selectedKeys.value = next;
     }
 
     /**
@@ -236,6 +239,7 @@ export const useSelection = defineStore("platform:selection", () => {
      * points beyond them. Passing `null` clears the manual focus (primary falls to the first-pin).
      */
     function focus(key: string | null): void {
+        if (key !== null) parseSelKey(key);
         focusOverride.value = key;
     }
 
@@ -248,26 +252,13 @@ export const useSelection = defineStore("platform:selection", () => {
         return selectedKeys.value.has(key);
     }
 
-    // ── THE KIND-AWARE PROJECTIONS (I5 §2, ADDITIVE — the core stays key-agnostic) ──────────────
-    //
-    // The store's MECHANISM never learns the kind: `select`/`selectMany`/the toggle-replace algebra
-    // above operate on opaque strings, byte-unchanged. Only these DERIVED reads parse the composite
-    // `{kind}:{id}` key back, so the card/co-filter/veil consume the kind WITHOUT each re-parsing the
-    // set. A legacy BARE key (a pre-codec fips) drops out of `selectedItems` via the parse guard, so
-    // a stale deep-link can never mis-grain a mark.
+    // ── THE KIND-AWARE PROJECTIONS (I5 §2) ──────────────────────────────────────────────
 
-    /**
-     * The parsed selected set — every composite key resolved to `{kind, id, key}`, legacy BARE keys
-     * dropped (the migration guard). The card reads this to render one stack member per item, each
-     * dispatching its own `<Glyph grain>` by its own kind. Insertion order is the Set's own (pin order).
-     */
+    /** Canonical selected keys parsed in insertion order for grain-aware projections. */
     const selectedItems = computed<SelectionKey[]>(() =>
-        [...selectedKeys.value]
-            .map(parseSelKey)
-            .filter((s): s is SelectionKey => s !== null),
+        [...selectedKeys.value].map(parseSelKey),
     );
-    /** The PARSED primary item (the first pin), or null when empty / a bare-key primary. The card's
-        focused member + the veil's single-selection hue read this. */
+    /** The parsed primary item, or null when the set is empty. */
     const primaryItem = computed<SelectionKey | null>(() =>
         primaryKey.value ? parseSelKey(primaryKey.value) : null,
     );
@@ -322,8 +313,7 @@ export const useSelection = defineStore("platform:selection", () => {
     });
 
     // ── THE `?sel` URL BRIDGE (O-A11 · selection-drilldown §A.4) — the store OWNS `?sel` (single-writer).
-    // SEED-ONCE: a deep-link `?sel=<k1>,<k2>,…` with NO live selection reconstructs the set (parse-guarded
-    // — legacy-bare / foreign tokens already dropped by `useViewParams.selKeys`); a within-session select
+    // SEED-ONCE: a deep-link `?sel=<k1>,<k2>,…` with NO live selection reconstructs the canonical set; a within-session select
     // is never clobbered (the seed runs only on the empty set). WRITE: every select/selectMany/clear flows
     // the set to `?sel` (flush:post so the set has settled), so the drill-down deep-link round-trips for
     // free (the panel is a pure projection of `?sel`). Browser-guarded (no `window` in the node specs).

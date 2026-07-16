@@ -45,7 +45,7 @@ import FigureSlug from "@/charts/frame/FigureSlug.vue";
 import { useCountUp } from "@/platform/composables/useCountUp";
 import type { ColorKind } from "@/charts/scale/colorKind";
 import type { DashboardCategory } from "@/contract";
-import { resolveCategorySkin } from "@/skin/category";
+import { resolveSkin } from "@/skin/category";
 import { CompletionSeal, resolveCompletionSeal } from "@/design/recipes/completion";
 import type { TitlePole } from "@/contract";
 import { resolveTitleAlign, type TitleAlign } from "./title-align";
@@ -154,7 +154,7 @@ const targets = computed(() =>
 const { run } = useCountUp(() => targets.value, { autoRecount: false });
 
 const categorySkin = computed(() =>
-    props.category ? resolveCategorySkin(props.category) : null,
+    props.category ? resolveSkin(props.category) : null,
 );
 const categoryStyle = computed(() =>
     categorySkin.value ? { "--category-accent": categorySkin.value.accent } : undefined,
@@ -270,7 +270,7 @@ function rankNumTrack(f: HeroFigure): Record<string, number> | undefined {
         :style="categoryStyle"
     >
         <p class="eyebrow dashboard-hero__eyebrow">{{ eyebrow ?? title }}</p>
-        <p v-if="categorySkin" class="eyebrow dashboard-hero__identity">
+        <p v-if="categorySkin" class="eyebrow-plain dashboard-hero__identity">
             <span
                 class="dashboard-hero__identity-mark"
                 :data-background="categorySkin.background"

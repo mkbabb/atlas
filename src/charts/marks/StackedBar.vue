@@ -166,7 +166,7 @@ const option = computed<EChartsOption>(() => {
             // The ONE boundary-equal preset — first + last category tick render at the
             // SAME tabular rung as the interior (B3 parity); the resolved `palette.muted`
             // chrome ink, never a raw `var(--)` (the C1 grep-guard stays green, C2-2/HD-6).
-            axisLabel: BOUNDARY_AXIS.label(palette.value.muted),
+            axisLabel: BOUNDARY_AXIS.label(palette.value.muted, palette.value.fontMono),
         },
         yAxis: {
             type: "value",
@@ -177,7 +177,7 @@ const option = computed<EChartsOption>(() => {
             min: 0,
             ...(isShareStack.value ? { max: 1 } : {}),
             splitLine: { lineStyle: { color: palette.value.grid } },
-            axisLabel: BOUNDARY_AXIS.label(palette.value.muted),
+            axisLabel: BOUNDARY_AXIS.label(palette.value.muted, palette.value.fontMono),
         },
         series,
     };

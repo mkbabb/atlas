@@ -2,14 +2,14 @@ import { inject, type Component, type InjectionKey, type VNodeChild } from "vue"
 import type { ColorKind } from "@/charts/scale/colorKind";
 import type { VizContract } from "@/charts/contract/viz-contract";
 import type { ChapterScene, ChapterStage } from "@/charts/contract/scene-contract";
+import type { EntityGrain } from "@/data/contract";
+
+export type { EntityGrain } from "@/data/contract";
 
 // The dashboard registry contracts. Structural (duck-typed), not OO: a dashboard
 // is whatever a `meta.ts`/`dashboard.ts` pair under dashboards/<slug>/ exports.
 // Mirrors the slides deck/types.ts split — a cheap eager half (the gallery card)
 // and a heavy lazy half (the dashboard body), so listing never pulls a chunk.
-
-/** The human grain of an entity row — what one mark on the dashboard counts. */
-export type EntityGrain = "state" | "district" | "entity";
 
 /** The gallery's NARRATIVE-FAMILY axis (J-STORY §11 / J-FEEDBACK-4 §6 A9 · C33) — the
     scale-conditional grouping the contents page sections by. A reader seeks by WHAT a route
@@ -358,19 +358,17 @@ export interface RevealSpec {
         ZERO cover hosts). CONSUMES the KEPT `scroll-driven.css` `[data-reveal-beat][data-scroll-tl]`
         register + `useCoverProgress` — it authors no new reveal machinery. */
     scrub?: boolean;
-    /** O-A26 (DIR-5 ARM D) · THE BOUNDED REVEAL-SHAPE AXIS — a closed 3-name register layered
+    /** P-CF06 · THE BOUNDED REVEAL-SHAPE AXIS — a closed 2-name register layered
         onto the SAME `translate3d(...)` the `reveal-beat` keyframe already scrubs
         (`scroll-driven.css`), compositor-safe by construction (AG7: transform/opacity only, zero
         new paint properties). `lift` = today's shape (unchanged, the majority default); `settle`
-        = PLUS a gentle `scale()` zoom-in; `unfold` = PLUS a paper-tilt `skewY()` settle. Omit ⇒
-        the tier-rotated fallback (`rotateRevealShape`, `story/beat-template.ts`), restraint-biased
-        (`lift` wins ≥half the slots). An AUTHORED value always wins over the fallback — the same
-        override law every other `RevealSpec` field carries. */
-    shape?: "lift" | "settle" | "unfold";
+        = PLUS a gentle `scale()` zoom-in. Omit ⇒ the tier-rotated fallback
+        (`rotateRevealShape`, `story/beat-template.ts`), restraint-biased (`lift` wins most slots).
+        An AUTHORED value always wins over the fallback — the same override law every other
+        `RevealSpec` field carries. */
+    shape?: "lift" | "settle";
     /** The PLACEMENT grammar (K-EXPRESS D2). Omit ⇒ the beat auto-zebras by its masthead-phase
-        index. An explicit `layout.title` WINS over the retained `aside` alias (override-beats-alias).
-        `aside` is RETAINED (it also keys the editorial INSET + the `data-scroll-tl` scalar stamp,
-        OUT of D2's scope); `resolveLayout` reads it as `title:'right'` so the beat zebra-aligns. */
+        index. Independent of `aside`, which retains only its real inset + scrub-host semantics. */
     layout?: BeatLayout;
 }
 

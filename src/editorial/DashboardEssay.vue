@@ -84,6 +84,7 @@ import { resolveSkin, skinCssVars, SKIN_KEY } from "@/skin";
 import StoryCorridor from "@/story/StoryCorridor.vue";
 import { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
 import { resolveHeroSystem } from "./hero-system";
+import { useComponentPointLoading } from "./useComponentPointLoading";
 import type { RuleVariant } from "./rule-register";
 
 const props = defineProps<{
@@ -235,8 +236,8 @@ function renderTitle(t: ChapterTitle): VNodeChild {
     return isTitleFactory(t) ? t() : t;
 }
 
-/** O-A26 (DIR-5 ARM D) · THE `data-reveal-shape` STAMP — present ONLY for the non-default
-    settle/unfold shapes (the CSS default `lift` needs no attribute, mirroring `data-dense`/
+/** P-CF06 · THE `data-reveal-shape` STAMP — present ONLY for the non-default settle shape
+    (the CSS default `lift` needs no attribute, mirroring `data-dense`/
     `data-chrome`'s "attribute present only when non-default" convention). Read directly off
     `chapter.reveal` — no `hasMasthead` gate needed (a sentinel's `reveal` never carries a
     variation-zipped `shape`, the same ungated precedent `data-scroll-tl` already sets below). */
@@ -258,6 +259,16 @@ function vizComponent(v: Chapter["viz"]): Component | null {
     ) return null;
     return v as Component;
 }
+
+// Plain component points load from the dock's existing active-beat observer and remain mounted once
+// reached. ChapterStage/ChapterScene retain their own virtualization and bypass this ledger.
+const loadedComponentIds = useComponentPointLoading(
+    chapterShape.map((chapter, index) => ({
+        id: chapter.id,
+        component: vizComponent(chapter.viz) !== null,
+        eager: isCoverChapter(chapter, index),
+    })),
+);
 
 /** Canonical component-backed cover points keep the same lead treatment as the legacy hero arm. */
 function isCoverChapter(chapter: Chapter, index: number): boolean {
@@ -306,7 +317,12 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
          un-staged route (byte-identical), promoted to a positioned block (`--staged`) ONLY when the
          route declares a `transition`, so the between-beat clone overlay has a scroll-invariant
          relative origin (the marks + the overlay scroll together in this flow). -->
-    <div class="essay-flow" :data-skin="storySkin?.id" :style="storySkinStyle">
+    <div
+        class="essay-flow"
+        :class="{ 'essay-flow--staged': director }"
+        :data-skin="storySkin?.id"
+        :style="storySkinStyle"
+    >
     <template v-for="(chapter, i) in editorialChapters" :key="chapter.id">
         <component
             :is="chapter.card ? StoryCard : Beat"
@@ -445,7 +461,9 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
             </VizPlate>
             <component
                 :is="vizComponent(chapter.viz)"
-                v-else-if="vizComponent(chapter.viz)"
+                v-else-if="
+                    vizComponent(chapter.viz) && loadedComponentIds.has(chapter.id)
+                "
             />
             </template>
 
@@ -477,13 +495,15 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
 </template>
 
 <style scoped>
-/* N.WB1 · THE STORY FLOW WRAPPER — LAYOUT-TRANSPARENT (`display:contents`: the wrapper generates NO
-   box, so the beats + rules flow the parent EXACTLY as before on every route — byte-identical). It
-   exists only to give the between-beat clone overlay a stable subtree sibling; the overlay itself
-   positions `absolute` against the route's own positioned essay container (the manuscript column is
-   already `position:relative`), so no positioned block is introduced here (zero layout perturbation). */
+/* N.WB1 · THE STORY FLOW WRAPPER — unstaged routes remain layout-transparent. A staged route alone
+   becomes the corridor's local containing/stacking context, keeping its overlay within the essay. */
 .essay-flow {
     display: contents;
+}
+.essay-flow--staged {
+    display: block;
+    position: relative;
+    isolation: isolate;
 }
 
 .essay-masthead-cluster {
@@ -571,19 +591,15 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
     }
 
     /* THE DROP-CAP COUNTERWEIGHT — the tinted Roman rides the title side's OUTER gutter. title=left ⇒
-       cap left (today's default, Beat.vue unchanged); title=right ⇒ cap right. This SUBSUMES the
-       retired `.essay-beat--aside` cap-right rule: the aside beat resolves to data-title="right", so
-       it matches HERE — one rule for the zebra-right pole AND the legacy aside. */
+       cap left (today's default, Beat.vue unchanged); title=right ⇒ cap right. */
     .essay-beat[data-title="right"] :deep(.beat__initial:not(.beat__initial--inline)) {
         inset-inline-start: auto;
         inset-inline-end: 0;
         transform: translateX(115%);
     }
 
-    /* THE ASIDE INSET — RETAINED for the ONE legacy normalization beat ONLY (keyed on the CLASS, NOT
-       on data-title), so the zebra NEVER insets the plate (the stable centre holds for every other
-       beat). The aside beat is BOTH cap-right (above) AND inset (here) — its exact current visual,
-       byte-preserved without a route edit. */
+    /* THE ASIDE INSET — keyed on the class, independent of title placement. Aside retains only
+       its genuine inset + scrub-host semantics; the authored/zebra title pole remains authoritative. */
     .essay-beat--aside {
         margin-inline-start: clamp(2rem, 8%, 6rem);
         margin-inline-end: 0;

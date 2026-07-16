@@ -93,10 +93,15 @@ describe("VizAppendixDock state law", () => {
         expect(source).toContain(":role=\"isPhone ? undefined : 'region'\"");
         expect(source).toContain('mode="modal"');
         expect(source).toContain('direction="bottom"');
-        expect(source).toContain(':force-mount="isPhone ? true : undefined"');
-        expect(source).toContain(":inert=\"isPhone && state !== 'full' ? true : undefined\"");
+        expect(source).not.toContain("force-mount");
+        expect(source).not.toContain(":inert=");
+        expect(source).not.toContain(":aria-hidden=");
         expect(source).toContain("DrawerTrigger");
         expect(source).toContain("DrawerClose");
+        expect(source).toContain('from "@mkbabb/glass-ui/button"');
+        expect(source).toContain('variant="glass"');
+        expect(source).not.toMatch(/<button\b/);
+        expect(source).not.toContain("border-radius:");
         expect(source.match(/<slot\s*\/>/g)).toHaveLength(1);
         expect(source).not.toContain('role="dialog"');
         expect(source).not.toContain('aria-modal="true"');

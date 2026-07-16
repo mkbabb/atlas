@@ -64,18 +64,16 @@ export type SelectionEmits = {
 // veil hue) learn the kind by PARSING the string back. The Set member stays a plain string;
 // `encodeSelKey`/`parseSelKey` are the only seam that knows the wire form.
 //
-// THE MIGRATION GUARD. `parseSelKey` returns `null` for a legacy BARE key (no `<kind>:` prefix,
-// or an unknown kind) — so a consumer that re-parses a set holding pre-codec keys silently
-// drops them rather than mis-grain a raw fips. A foreign-kind key (a /usf-encoded `"state:37"`
-// surviving into /sci) parses to a well-formed `SelectionKey` whose `kind` the route's matcher
-// simply does not match — inert by construction, never a mis-read (GAP-2 cured at the read).
+// The codec is strict: malformed, bare, and unknown-kind strings fail at the ingress seam. A
+// foreign-kind canonical key still parses; the route's matcher simply does not match its kind, so
+// cross-grain selections remain inert by construction.
 
 /**
  * The entity GRAIN a composite key identifies — the legal kinds the producers mint.
  * `state`/`county`/`district`/`school` are the geo (polygon-resolvable) grains; `cell` is the
  * speedtest hex bin (aspatial — no polygon); `firm` is the ECF consultant/broker grain (J-FILTER
  * §4 · the silent-omission contract fix — `ConsultantsRankedBar` pins a firm key the five-kind
- * union could not name, so `parseSelKey` dropped it as a foreign kind and the FilterView mini-map
+ * union could not name, so the codec rejected it as a foreign kind and the FilterView mini-map
  * had no grain to switch on). `firm` is aspatial (a broker has no administrative silhouette), so
  * it joins `cell` as a kind the grain-aware mini-map resolves to a kind-icon, never a Glyph. Frozen
  * here as the ONE union every projection switches on.
@@ -122,19 +120,17 @@ export function encodeSelKey(kind: SelectionKind, id: string): string {
 }
 
 /**
- * Parse a composite key back to its `{kind, id, key}` shape, or `null` for a legacy BARE key
- * (the migration guard). Splits on the FIRST `:` so an id containing colons survives intact;
- * a key with no `:` (a pre-codec bare fips) or an unknown kind prefix returns `null` so the
- * caller drops it rather than mis-grain a raw id. The returned `key` is the input verbatim, so
- * `parseSelKey(encodeSelKey(k, id))` round-trips to the same Set member.
+ * Parse a canonical composite key. Splits on the FIRST `:` so ids containing colons survive
+ * intact. Malformed and bare strings throw at ingress instead of entering stores or disappearing
+ * from derived state. The returned `key` is the input verbatim.
  */
-export function parseSelKey(key: string): SelectionKey | null {
+export function parseSelKey(key: string): SelectionKey {
     const colon = key.indexOf(":");
-    if (colon <= 0) return null; // no delimiter, or an empty kind ("":id) — a bare/legacy key
+    if (colon <= 0) throw new Error(`invalid selection key: ${key}`);
     const kind = key.slice(0, colon);
-    if (!SELECTION_KINDS.has(kind)) return null; // an unknown prefix — not a composite key
+    if (!SELECTION_KINDS.has(kind)) throw new Error(`unknown selection kind: ${kind}`);
     const id = key.slice(colon + 1);
-    if (id.length === 0) return null; // a kind with no id ("state:") — malformed, drop it
+    if (id.length === 0) throw new Error("selection id cannot be empty");
     return { kind: kind as SelectionKind, id, key };
 }
 

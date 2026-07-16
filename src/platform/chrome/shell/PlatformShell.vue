@@ -33,7 +33,6 @@ import Dock from "@/platform/chrome/dock/Dock.vue";
 import { DASHBOARD_KEY } from "@/contract";
 import { useSelection } from "@/platform/stores/useSelection";
 import { useFilterPane } from "@/filter/composables/useFilterPane";
-import FilterContinuum from "@/filter/ui/FilterContinuum.vue";
 import { provideDismissArbiter, useDismissArbiter } from "@/platform/interaction/useDismissArbiter";
 
 // The active dashboard's context — the dock reads its nav at every register (the filter is the
@@ -149,7 +148,6 @@ useDismissArbiter(dismissArbiter).claim(() =>
         <!-- ③ The right live-behind filter Drawer (C3.3 fills; floats at --z-panel, a peer
              of the dock — occludes nothing when closed). -->
         <slot name="filter" />
-        <FilterContinuum />
     </div>
 </template>
 

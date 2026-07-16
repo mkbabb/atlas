@@ -44,8 +44,8 @@ import { leaToCountyFips } from "@/data/leaJoin";
 //
 // THE WIRE FORM. A `SelectionKey.key` is ALREADY `"<kind>:<id>"` — so serialize is "write the
 // composite `key` verbatim" and parse is "run `parseSelKey`". No second codec: the param value IS
-// the Set member, so `?focus=district:370480` and the in-store key are byte-identical. The migration
-// guard rides for free (a malformed `?focus` parses to null → no focus, never a mis-grained mark).
+// the Set member, so `?focus=district:370480` and the in-store key are byte-identical. Malformed
+// wire values fail at this ingress seam rather than disappearing into nullable state.
 //
 // THE CROSS-GRAIN RESOLVE (LEA→county→state). The four routes lens DIFFERENT grains: a focused
 // `district:<lea>` is a district on /sci, its COUNTY on a county-grain map, its STATE on the national
@@ -213,8 +213,7 @@ export const useViewParams = defineStore("platform:viewParams", () => {
     // not a dashboard's vocab), so a copied URL reconstructs the focused subject across routes.
     const FOCUS_KEY = "focus";
 
-    /** The PARSED focused key off `?focus`, or null when absent / malformed (the migration guard —
-        a garbled `?focus` parses to null, never a mis-grained focus). Reactive: it re-reads the one
+    /** The parsed focused key off `?focus`, or null when absent. Reactive: it re-reads the one
         URL bag, so a route change / reload re-resolves the focused subject. */
     const focusKey: ComputedRef<SelectionKey | null> = computed(() => {
         const raw = url.get(FOCUS_KEY);
@@ -228,6 +227,7 @@ export const useViewParams = defineStore("platform:viewParams", () => {
      */
     function setFocus(key: SelectionKey | string | null): void {
         const wire = key === null ? undefined : typeof key === "string" ? key : key.key;
+        if (wire !== undefined) parseSelKey(wire);
         url.set(FOCUS_KEY, wire);
     }
 
@@ -241,52 +241,28 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         return f ? resolveFocusToGrain(f, target) : null;
     }
 
-    // ── THE `?sel` SELECTION-SET ROUND-TRIP (O-A11 · C.W4.2 · the drill-down deep link) ──────────────
-    // The sticky selection SET, URL-persisted as `?sel=<k1>,<k2>,…` — the comma-joined composite
-    // `{kind}:{id}` keys the store already holds. Like `?focus`, it rides the SAME shared `url` bag but
-    // owns its own key (a platform through-line, not a dashboard's vocab), reusing the ONE list codec
-    // (`getList`/`setList` — the USF `regions` round-trip's codec). The READ drops legacy-bare / foreign
-    // keys via `parseSelKey` (the migration guard), so a stale token never mis-grains a mark. The store's
-    // URL bridge (`useSelection`) is the SOLE writer (single-writer preserved).
+    // ── THE `?sel` SELECTION-SET ROUND-TRIP ─────────────────────────────────────────────
     const SEL_KEY = "sel";
 
-    /** The PARSED selection set off `?sel` — every token resolved to `{kind,id,key}`, legacy-bare /
-        foreign keys DROPPED (`parseSelKey` returns null). The single/multi determination is post-drop:
-        `?sel=state:48,37,cell:x` parses to `[state:48, cell:x]` (the bare `37` gone). Reactive. */
+    /** Canonical composite keys restored from `?sel`. */
     const selKeys: ComputedRef<SelectionKey[]> = computed(() =>
-        url
-            .getList(SEL_KEY)
-            .map(parseSelKey)
-            .filter((s): s is SelectionKey => s !== null),
+        url.getList(SEL_KEY).map(parseSelKey),
     );
 
     /** Write the selection set to `?sel` (comma-joined composite keys); an empty set CLEARS the param.
         The list codec left VERBATIM — each token is already the Set member (`SelectionKey.key`). */
     function setSel(keys: Iterable<string>): void {
-        url.setList(SEL_KEY, [...keys]);
+        const wire = [...keys];
+        wire.forEach(parseSelKey);
+        url.setList(SEL_KEY, wire);
     }
 
-    // ── THE DRILL-AND-FILTER PROMOTION (O-A11 · [ANSWERS Q-45] · the un-filter seam) ──────────────────
-    // The drill panel's `[Filter to these ▸]` promotes the selection into the route's PERSISTENT filter
-    // state, URL-persisted as `?filto=<k1>,<k2>,…` — the promoted set of composite `{kind}:{id}` keys.
-    // DISTINCT from `?sel` by design: `?sel` is the TRANSIENT selection that drives the drill panel and
-    // clears on dismiss/Esc; `?filto` is the co-filter the promote verb LIFTS OUT of it — it PERSISTS
-    // across a selection clear, round-trips (shareable / reload-stable), and is reversed ONLY by the
-    // explicit `[✕ un-filter]` affordance, so the filter is never a one-way trap. It is the FIRST-CLASS
-    // home the route folds into its `matchByKey` co-filter (`promotedIdsOf(grain)`) — NOT an overload of
-    // an unrelated param (`?fig` is the plate-expand home; the promotion owns its OWN key). Rides the SAME
-    // `url` bag + the ONE list codec (a platform through-line, not a dashboard's vocab); the READ drops
-    // legacy-bare / foreign keys via `parseSelKey` (the migration guard, twinning `selKeys`).
+    // ── THE DRILL-AND-FILTER PROMOTION ─────────────────────────────────────────────────────
     const FILTO_KEY = "filto";
 
-    /** The PARSED promoted co-filter set off `?filto` — every token resolved to `{kind,id,key}`,
-        legacy-bare / foreign keys DROPPED (`parseSelKey` returns null). Reactive: a reload / route change
-        re-reads the one URL bag (the `?sel` twin). */
+    /** Canonical promoted co-filter keys restored from `?filto`. */
     const promotedFilterKeys: ComputedRef<SelectionKey[]> = computed(() =>
-        url
-            .getList(FILTO_KEY)
-            .map(parseSelKey)
-            .filter((s): s is SelectionKey => s !== null),
+        url.getList(FILTO_KEY).map(parseSelKey),
     );
 
     /** True when a DRILL-AND-FILTER co-filter is LIVE — drives the `SelectionDrilldownPanel` `filtered`

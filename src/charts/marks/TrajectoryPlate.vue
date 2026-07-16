@@ -19,7 +19,7 @@
 import { computed } from "vue";
 import VizPlate from "@/charts/frame/VizPlate.vue";
 import TimeSeries, { type LineSeries } from "@/charts/marks/TimeSeries.vue";
-import type { VizContract } from "@/charts/contract/viz-contract";
+import type { FilterResponse, VizContract } from "@/charts/contract/viz-contract";
 import { useVizPalette } from "@/charts/composables/useVizPalette";
 import { trajectory, type TrajectoryPoint } from "@/data/multiYear";
 import { trajectoryRivet } from "@/data/useYearScope";
@@ -64,6 +64,8 @@ const props = withDefaults(
         /** The plate register — `hero` for the flagship crown. */
         size?: "default" | "hero";
         figId?: string;
+        /** Whether route filters alter this figure. Omit for the responsive default. */
+        filterResponse?: FilterResponse;
         /** DE-SUPERFLUITY (I-COMPOSE): suppress the auto first/last key-stats when the consuming
             beat already crowns those span endpoints audaciously (the ECF cliff crown owns the
             three window magnitudes), so no number renders twice within one beat. Default `false`
@@ -83,6 +85,7 @@ const props = withDefaults(
         ariaLabel: "Multi-year trajectory",
         size: "default",
         figId: undefined,
+        filterResponse: "responsive",
         hideKeyStats: false,
     },
 );
@@ -126,6 +129,7 @@ const markPoint = computed<Record<string, unknown> | undefined>(() => {
         x: r.x,
         y: r.y,
         color: palette.value.signal,
+        fontMono: palette.value.fontMono,
         label: props.xFormat ? props.xFormat(r.x) : String(r.x),
     });
 });
@@ -228,6 +232,7 @@ const contract = computed<VizContract>(() => {
             valueHeader: leadLabel,
         },
         options: [],
+        filterResponse: props.filterResponse,
     };
 });
 </script>

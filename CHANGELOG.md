@@ -1,5 +1,34 @@
 # Changelog
 
+## 5.0.0 — 2026-07-16
+
+### Breaking changes
+
+- Selection keys are canonical-only: `parseSelKey` throws for bare, malformed, or unknown-kind strings, and the selection and URL stores reject invalid ingress instead of silently dropping it. The unused `markKeyFor` and `parseMarkKey` story wrappers are removed.
+- The parallel visualization-alternate registry, `resolveFromAlternates`, and the `VizPlacement` alias are removed. Use `VizSetContract`, `resolveVizSurface`, and `VizAnnotationPlacement`.
+- The held `DockTOC` / `useDockViewMode`, standalone `FilterContinuum`, and `useDeckDetent` surfaces are removed. The dock stepper, `FilterPanel`, and `useStageDeck` / persistent stage now own those concerns.
+- `CATEGORY_SKINS` and `resolveCategorySkin` are removed; use `SKINS` and `resolveSkin`. `useSharedColorMode` and the optional `useVizPalette(mode)` argument are removed; palette invalidation follows the Glass post-settle clock.
+- Feed validation rejects v1 and `meta.year`, enforces canonical metadata, complete year spines, normalized unique `(keyField, year)` identities, and numeric-or-null measures. The runtime `encodeColumnar` export is removed; columnar encoding belongs to the snapshot producer.
+- Reveal shape `unfold` is removed, and `reveal.aside` no longer aliases right-aligned title placement. Declare `reveal.layout.title` explicitly when placement matters.
+- `useVizRegistry().updateDims` is renamed to `updateFilterFacet` and now updates dimensions with filter response atomically.
+- `directEndLabel`, labeled `markPointRivet`, and `dropRule` now require the resolved canvas mono-family argument instead of embedding a font name.
+
+### Changed
+
+- One Glass Drawer now owns the complete filter PIP → ledger → drawer continuum, including explicit responsive/static filter behavior.
+- Appendix actions use Glass Button primitives; canvas typography resolves from the shared live font tokens; component-backed story points load eagerly only when adjacent to the active point.
+
+## 4.0.0 — 2026-07-15
+
+### Breaking changes
+
+- `ChapterStage` replaces the optional `graphic` arm with one required persistent `instance`, requires a non-empty scene tuple and fixed stage anatomy, and removes the `PointViz` scene arm and `StoryStage` alias.
+- Stage events derive from one event hub, and story manifests carry the persistent stage contract directly instead of parallel ownership paths.
+
+### Added
+
+- Per-scene morph modes, interruptible crossfades, and shared row/section virtual-window measurement state.
+
 ## 3.0.0 — 2026-07-15
 
 ### Breaking changes

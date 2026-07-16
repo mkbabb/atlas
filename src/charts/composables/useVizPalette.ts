@@ -7,16 +7,11 @@
 // bridge: it resolves the locus vars via `getComputedStyle` into the three JS
 // palettes every viz colours from.
 //
-// MODE-AWARE (the latent CQ7 §1 bug this fixes): `getComputedStyle` is a one-shot
-// read, so a palette snapshotted in light mode keeps light colours after a dark
-// flip and the canvas never re-paints. We track the colour mode via @vueuse
-// `useColorMode`; the palette is a `computed` keyed on it, so flipping the mode
-// re-runs the resolve and hands ECharts fresh stops (the consumer re-`setOption`s on
-// the same mode signal — see `useEChart`). Read fresh on every mode change, never
-// cached across a flip.
+// MODE-AWARE: `getComputedStyle` is a one-shot read, so the palette re-resolves on
+// Glass's post-paint theme settle. The canvas receives fresh concrete colours only
+// after the cascade has settled, never from an independent pre-paint mode watcher.
 
-import { computed, ref, type ComputedRef, type Ref } from "vue";
-import { useColorMode, type BasicColorSchema } from "@vueuse/core";
+import { computed, ref, type ComputedRef } from "vue";
 import { useGlobalDark } from "@mkbabb/glass-ui/dark";
 import { VIZ_DIVERGING_MID_FALLBACK } from "@/charts/scale/colorKind";
 import { clearVarMemo } from "@/charts/scale/ColorScale";
@@ -61,6 +56,10 @@ export interface VizChrome {
     grid: string;
     /** The plate fill — the engraved box-seam between treemap rects. (`--card`) */
     border: string;
+    /** The live tabular/code family used by canvas labels. (`--font-mono`) */
+    fontMono: string;
+    /** The live prose family used by canvas labels. (`--font-serif`) */
+    fontSerif: string;
     /**
      * THE ONE SIGNAL — the teal route-accent rivet ink (the "one signal, one clock", commit
      * a0e94cc/30bfd7b). The multi-year crown's active-year `markPoint` rivet paints in THIS
@@ -100,23 +99,35 @@ const RAINBOW_TIER_COUNT = 14;
 // `oklch()`, `color-mix()`, hex, and named colours into one canonical rgb string.
 let probe: HTMLSpanElement | null = null;
 
-/** Resolve a CSS length custom property (a `clamp(rem,vw,rem)` figure rung) to its live
-    COMPUTED px, the form a canvas `fontSize` needs (it cannot read a var nor evaluate a
-    `clamp()`). Sets the token reference on the detached probe's `font-size`, reads back
-    `getComputedStyle().fontSize` (always resolved to `Npx`), and parses. Falls back when the
-    token is unset or there is no DOM (SSR/headless-pre-mount). */
-function cssVarPx(name: string, fallback: number): number {
-    if (typeof window === "undefined" || typeof document === "undefined")
-        return fallback;
+/** Resolve both canvas families and the live figure rung from one probe snapshot. */
+function cssTypography(): Pick<
+    VizChrome,
+    "fontMono" | "fontSerif" | "figureAxisPx"
+> {
+    const fallback = {
+        fontMono: '"Fira Code", monospace',
+        fontSerif: '"Newsreader", serif',
+        figureAxisPx: 13,
+    };
+    if (typeof window === "undefined" || typeof document === "undefined") return fallback;
     if (!probe) {
         probe = document.createElement("span");
         probe.style.display = "none";
         document.documentElement.appendChild(probe);
     }
-    probe.style.fontSize = "";
-    probe.style.fontSize = `var(${name})`;
-    const px = parseFloat(getComputedStyle(probe).fontSize);
-    return Number.isFinite(px) && px > 0 ? px : fallback;
+    probe.style.fontSize = "var(--type-figure-axis, 13px)";
+    const style = getComputedStyle(probe);
+    const read = (name: string, value: string) =>
+        style.getPropertyValue(name).trim() || value;
+    const figureAxisPx = parseFloat(style.fontSize);
+    return {
+        fontMono: read("--font-mono", fallback.fontMono),
+        fontSerif: read("--font-serif", fallback.fontSerif),
+        figureAxisPx:
+            Number.isFinite(figureAxisPx) && figureAxisPx > 0
+                ? figureAxisPx
+                : fallback.figureAxisPx,
+    };
 }
 
 /** BATCH-resolve a list of CSS colour exprs in ONE style recalc (the E4-close flip profile,
@@ -200,6 +211,7 @@ function readPalette(): VizPalette {
     // canvas-guard:resolver-table-end
     const r = resolveColorsBatch(tokens);
     const N = 6 + RAINBOW_TIER_COUNT;
+    const typography = cssTypography();
     return {
         diverging: { low: r[0], mid: r[1], high: r[2], noData: r[3] },
         sequential: { low: r[4], high: r[5], noData: r[3] },
@@ -212,13 +224,10 @@ function readPalette(): VizPalette {
         background: r[N + 3],
         grid: r[N + 4],
         border: r[N + 5],
+        ...typography,
         // The ONE signal — the teal route-accent rivet ink (the linked-clock markPoint), the
         // last resolved token (after `--card`). Resolved per (theme, route) like every stop.
         signal: r[N + 6],
-        // The axis-tick figure rung in px — the figure-slug-axis voice (pv-c2), resolved off
-        // `--type-figure-axis` so the canvas tick wears the slug register, not a frozen 12.
-        // (One probe read AFTER the batch — the tree is clean by now, so it is a cheap read.)
-        figureAxisPx: cssVarPx("--type-figure-axis", 13),
     };
 }
 
@@ -227,19 +236,13 @@ function readPalette(): VizPalette {
 // THAT (the resolved cascade), the SAME representation `ColorScale.readVar` uses — never the
 // vueuse store string (`auto`-collapse-prone: vueuse writes `"auto"` on a light return when
 // OS=light, so a store-keyed memo freezes a mismatched half of the canvas the instant the
-// store↔cascade mapping breaks 1:1 — the "lossy" round-trip). The `useColorMode` ref no longer
-// keys this cache; the cascade class does. `resolvedThemeKey()` is the lawful key shape.
+// store↔cascade mapping breaks 1:1 — the "lossy" round-trip). The cascade class is the cache key;
+// `resolvedThemeKey()` is its lawful shape.
 function resolvedThemeKey(): "d" | "l" {
     if (typeof document === "undefined") return "l";
     return document.documentElement.classList.contains("dark") ? "d" : "l";
 }
 
-// E4-integration (the flip profile) — THE ONE-PASS-PER-FLIP MEMO. Every consumer's computed
-// used to run its OWN readPalette() (~25 probe write→getComputedStyle read pairs, each a
-// forced style recalc on the freshly-invalidated document) — 8 consumers × ~25 reads was the
-// 189ms getPropertyValue slice of the /sci flip's long task. The snapshot is identical for
-// every consumer in a given theme, so it resolves ONCE per (resolved-theme, settle-epoch) and
-// every palette computed shares the cached object.
 let paletteCache: { key: string; value: VizPalette } | null = null;
 let paletteEpoch = 0;
 
@@ -271,23 +274,6 @@ function readPaletteMemo(): VizPalette {
     return value;
 }
 
-// E4-integration (the flip profile, root 1 of 3) — THE ONE MODE SIGNAL. Each consumer used
-// to default to its OWN `useColorMode()` instance; every instance runs @vueuse's
-// `updateHTMLAttrs` watcher on a flip, and with its default `disableTransition: true` each
-// watcher injects a `*{transition:none}` style tag and FORCES A REFLOW
-// (`getComputedStyle(el).opacity` — @vueuse's own belt). ~70 instance-watchers × ~9ms forced
-// recalc = the 655ms vendor slice of the /sci flip long task. ONE lazy module singleton with
-// `disableTransition: false` (glass-ui's `useGlobalDark` owns transition suppression — the
-// 3.11.2 no-reflow path) collapses that to a single class write. It still drives `<html>.dark`;
-// it is no longer a cache KEY — the resolved class is (above).
-let sharedMode: Ref<BasicColorSchema> | null = null;
-/** The ONE colour-mode signal every viz consumer shares (exported for the plate SFCs whose
-    option factories key on the flip — never spawn a fresh `useColorMode()` per plate). */
-export function useSharedColorMode(): Ref<BasicColorSchema> {
-    if (!sharedMode) sharedMode = useColorMode({ disableTransition: false });
-    return sharedMode;
-}
-
 // F6.6 §2(b).2 — THE LIVE SETTLE WIRE. ONE module-level subscription to glass-ui's
 // `onFlipSettled` busts the palette plane on the post-paint settle beat — the live caller that
 // makes `bumpVizPaletteEpoch` real (GATE-C ②). Lazy so an SSR/test context that never resolves
@@ -312,21 +298,11 @@ function ensureSettleWire(): void {
  * `.dark` class (the resolved theme), so the `auto`-collapse store string can never freeze a
  * mismatched half. The `computed` also re-derives lazily, so a component that only reads it once
  * still gets the current theme's palette.
- *
- * The optional `mode` ref is retained as a legacy reactivity trigger (some plate SFCs pass the
- * shared ref); it is read into the dep graph so a `mode` change still re-fires, but it is NEVER
- * a cache key. The settle epoch is the primary, post-settle trigger.
  */
-export function useVizPalette(
-    mode: Ref<BasicColorSchema> = useSharedColorMode(),
-): ComputedRef<VizPalette> {
+export function useVizPalette(): ComputedRef<VizPalette> {
     ensureSettleWire(); // the live settle subscriber — wired once per module
     return computed<VizPalette>(() => {
-        // Track BOTH triggers: `settleEpoch` (the post-settle re-resolve, the primary clock) and
-        // `mode` (the legacy pre-paint ref some consumers still pass — kept in the dep graph so a
-        // mode-only change still re-fires). Neither is a cache KEY — the resolved `.dark` class is.
         void settleEpoch.value;
-        void mode.value;
         return readPaletteMemo();
     });
 }

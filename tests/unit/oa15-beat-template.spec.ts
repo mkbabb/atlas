@@ -6,7 +6,6 @@
 //   · figureLadderScalar (Q-27) — index=0.5, value-scaled clamps, degenerate domain ⇒ 0.5 (no NaN).
 //   · the center pole through resolveLayout (useBeatLayout) — the third pole resolves L/C/R + up + dock.
 //   · SuperlativeRegister (Q-48) — the ceiling guard passes a ceiling verb, FAILS a forbidden one; opt-in.
-//   · vizAlternates (Q-30) — the registry + the expand-menu binding + the catalog (facility only).
 //   · rotateRuleVariant — restraint-first (`rule` dominant), tier-offset cadence.
 import { describe, it, expect } from "vitest";
 import {
@@ -25,13 +24,6 @@ import {
     isWithinCeiling,
     superlativeTone,
 } from "@/story/superlative";
-import {
-    VIZ_ALTERNATES,
-    VIZ_ALTERNATE_CATALOG,
-    alternatesFor,
-    vizMenuOptions,
-    useVizAlternates,
-} from "@/story/viz-alternates";
 
 const stub = { name: "Stub" } as never;
 
@@ -79,9 +71,9 @@ describe("O-A15 · resolveBeatTemplate — authored poles win, cadence fills the
         const shaped: BeatVariationPolicy = {
             id: "test-route-shaped",
             seed: 1,
-            beats: [{ title: "left", reveal: { shape: "unfold" } }],
+            beats: [{ title: "left", reveal: { shape: "settle" } }],
         };
-        expect(resolveBeatTemplate(shaped, 0, 1).reveal.shape).toBe("unfold");
+        expect(resolveBeatTemplate(shaped, 0, 1).reveal.shape).toBe("settle");
     });
 
     it("the signature flag reads through; the rest default false", () => {
@@ -178,6 +170,11 @@ describe("O-A15 · the CENTER third pole through resolveLayout (useBeatLayout)",
         expect(resolveLayout({ viz: stub } as never, 0).title).toBe("left");
         expect(resolveLayout({ viz: stub } as never, 1).title).toBe("right");
     });
+    it("aside retains inset/scrub intent without becoming a title-alignment alias", () => {
+        const chapter = { reveal: { aside: true }, viz: stub } as never;
+        expect(resolveLayout(chapter, 0).title).toBe("left");
+        expect(resolveLayout(chapter, 1).title).toBe("right");
+    });
 });
 
 describe("O-A15 · SuperlativeRegister (Q-48) — the never-incriminate ceiling guard", () => {
@@ -191,46 +188,6 @@ describe("O-A15 · SuperlativeRegister (Q-48) — the never-incriminate ceiling 
         expect(Object.isFrozen(SuperlativeRegister)).toBe(true);
         expect(superlativeTone({ label: "sits far from peers" })).toBe("quiet");
         expect(superlativeTone({ label: "x", tone: "neutral" })).toBe("neutral");
-    });
-});
-
-describe("O-A15 · vizAlternates (Q-30) — the registry + expand-menu binding + catalog (facility)", () => {
-    it("declares only truthful surviving alternates", () => {
-        expect(VIZ_ALTERNATES).toHaveLength(5);
-        expect(VIZ_ALTERNATES.filter((a) => a.built).map((a) => a.id)).toEqual([
-            "beeswarm",
-            "packed-bars",
-            "lollipop",
-        ]);
-        expect(VIZ_ALTERNATES.find((a) => a.id === "beeswarm")?.morph).toBe(
-            "same-instance",
-        );
-        expect(VIZ_ALTERNATES.every((a) => a.mobileCompat)).toBe(true);
-    });
-    it("alternatesFor + vizMenuOptions — the base is the default option, alternates follow", () => {
-        expect(alternatesFor("speedtest-hex").map((a) => a.id)).toEqual([
-            "county-choropleth",
-            "dot-density",
-        ]);
-        const opts = vizMenuOptions("speedtest-hex", "Hex map");
-        expect(opts[0]).toMatchObject({ id: "speedtest-hex", isBase: true, label: "Hex map" });
-        expect(opts).toHaveLength(3);
-    });
-    it("useVizAlternates — select swaps, an unknown id is a no-op, reset returns to base", () => {
-        const m = useVizAlternates("ecf-treemap");
-        expect(m.selected.value).toBe("ecf-treemap");
-        expect(m.hasAlternates.value).toBe(true);
-        m.select("packed-bars");
-        expect(m.selected.value).toBe("packed-bars");
-        m.select("not-a-viz");
-        expect(m.selected.value).toBe("packed-bars");
-        m.reset();
-        expect(m.selected.value).toBe("ecf-treemap");
-    });
-    it("the storybook CATALOG groups every base with alternates (the gallery data source)", () => {
-        expect(VIZ_ALTERNATE_CATALOG.map((g) => g.base)).toContain("speedtest-hex");
-        const hex = VIZ_ALTERNATE_CATALOG.find((g) => g.base === "speedtest-hex")!;
-        expect(hex.options).toHaveLength(3);
     });
 });
 
@@ -265,9 +222,8 @@ describe("O-A26 · rotateRevealShape — restraint-first, tier-offset cadence (m
             expect(rotateRevealShape("support", i)).toBe(rotateRevealShape("support", i));
         }
     });
-    it("both non-lift shapes appear over a sampled run (settle at step 1, unfold at step 3)", () => {
+    it("the non-lift shape appears at step 1 over a sampled run", () => {
         const seq = Array.from({ length: 4 }, (_, i) => rotateRevealShape("support", i));
         expect(seq).toContain("settle");
-        expect(seq).toContain("unfold");
     });
 });

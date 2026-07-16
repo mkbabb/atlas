@@ -23,9 +23,6 @@ import type { ECharts } from "echarts/core";
 import { EXPAND_SETTLE_KEY } from "@/charts/scene/expand-settle";
 import type { VizAnnotationPlacement } from "@/charts/contract/viz-contract";
 
-/** Backward-compatible name for the canonical contract placement. */
-export type VizPlacement = VizAnnotationPlacement;
-
 const props = withDefaults(
     defineProps<{
         /** The host ECharts instance (the plate's `useEChart().chart`). Null until mounted. */
@@ -33,7 +30,7 @@ const props = withDefaults(
         /** The grid index the coords project against (default grid 0 — the single-grid plates). */
         gridIndex?: number;
         /** The placements to seat (each names a `#<id>` slot). */
-        placements: VizPlacement[];
+        placements: VizAnnotationPlacement[];
         /**
          * T-PERF-4 (I-PERF-DATA.c) — the overlay's lazy-mount pairing. When the parent chart opts
          * into `useEChart({ lazyMount: true })`, its `chart` ref stays null until the host scrolls
@@ -126,7 +123,7 @@ onBeforeUnmount(() => ro?.disconnect());
 
 /** The per-placement transform that seats the slot relative to its projected point (mirroring
     the ECharts `label.position` anchor — `end` reads rightward, `start` leftward, etc). */
-function transformFor(p: VizPlacement): string {
+function transformFor(p: VizAnnotationPlacement): string {
     switch (p.align) {
         case "start":
             return "translate(-100%, -50%)";

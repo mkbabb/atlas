@@ -384,6 +384,10 @@ export interface AggregateStat {
     crowd the graph-paper). */
 export type AggregateStatsFacet = () => AggregateStat[];
 
+/** Whether route filters alter this figure. Omission is responsive: static is an explicit
+    exception, never inferred from an empty per-viz dimension list. */
+export type FilterResponse = "responsive" | "static";
+
 // ── FACET 5 — `provenance` (the per-viz source lockup) — LIFTED to `provenance/` at O-B7 ─────────
 
 /** FACET 5 — the per-viz `provenance` facet. The declared-provenance SHAPE was LIFTED out of this
@@ -482,6 +486,9 @@ export interface VizContract {
         shared-dim-persists relation), and J-WORKBOOK renders the SCI/ECF filter rails. The `set`-arity
         dims resolve through `useSelection.selectedIdsOf`, universe-scoped (the `district:{lea}` guard). */
     filterDimensions?: FilterDimensions;
+    /** Whether route filters alter this figure. Default `"responsive"`; declare `"static"` only
+        when the figure deliberately preserves its authored values under route filtering. */
+    filterResponse?: FilterResponse;
     /** FACET 2 — the per-viz scroll-reveal declaration. The IMPL is the KEPT reveal register (the
         scroll-driven.css compositor over the ONE page-clock — the `data-reveal-*` bands, NOT a second
         clock) + a declared `MotionDeclaration` on the motion director for the per-mark/number tiers. */

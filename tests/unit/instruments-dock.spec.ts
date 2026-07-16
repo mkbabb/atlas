@@ -5,6 +5,12 @@ import { createDismissArbiter } from "@/platform/interaction/dismiss-arbiter";
 import { createHoverBridge } from "@/interaction/hover-bridge";
 import { instrumentSpringStyle } from "@/motion/instrument-spring";
 import { resolveDockCollapse, type DockCollapseSource } from "@/platform/chrome/dock/composables/useDockCollapse";
+import {
+    FILTER_SNAP,
+    filterRegisterFor,
+    filterSnapFor,
+    filterSnapPoints,
+} from "@/filter/ui/filter-continuum";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 const source = (path: string) => readFileSync(`${root}/${path}`, "utf8");
@@ -12,11 +18,10 @@ const source = (path: string) => readFileSync(`${root}/${path}`, "utf8");
 afterEach(() => vi.useRealTimers());
 
 describe("instrument ownership", () => {
-    it("keeps one expand affordance and one shared spring family", () => {
+    it("keeps one expand affordance and one shared gear spring", () => {
         expect(source("src/charts/frame/ChartFrame.vue")).toContain("<template #expand-trigger />");
         expect(source("src/charts/frame/VizPlate.vue")).toContain("<VizGearDock");
         expect(source("src/charts/frame/VizPlate.vue").match(/data-viz-dock-enlarge/g)).toHaveLength(1);
-        expect(source("src/filter/ui/FilterContinuum.vue")).toContain("data-selection-count");
         expect(source("src/platform/chrome/dock/components/DockFoot.vue")).not.toContain("data-selection-count");
         expect(instrumentSpringStyle(true)["--instrument-spring-duration"]).toBe("0ms");
     });
@@ -26,6 +31,23 @@ describe("instrument ownership", () => {
         expect(resolveDockCollapse(intents)).toBe(false);
         intents.delete("manual");
         expect(resolveDockCollapse(intents)).toBe(true);
+    });
+});
+
+describe("filter continuum register", () => {
+    it("maps one active snap model to the desktop and phone ladders", () => {
+        expect(filterSnapPoints(false)).toEqual([0.12, 0.5, 1]);
+        expect(filterSnapPoints(true)).toEqual([0.12, 1]);
+        expect(filterRegisterFor(FILTER_SNAP.ledger, false)).toBe("ledger");
+        expect(filterRegisterFor(FILTER_SNAP.ledger, true)).toBe("pip");
+        expect(filterSnapFor("pip")).toBe(0.12);
+        expect(filterSnapFor("ledger")).toBe(0.5);
+        expect(filterSnapFor("drawer")).toBe(1);
+    });
+
+    it("keeps the resting pip near the 44px touch target at both registers", () => {
+        expect(FILTER_SNAP.pip * 24 * 16).toBeCloseTo(46.08);
+        expect(FILTER_SNAP.pip * 390 * 0.92).toBeCloseTo(43.056);
     });
 });
 

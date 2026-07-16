@@ -82,14 +82,14 @@ export function recessedBaseline(palette: VizPalette) {
     the full `s.label` stays the legend/tooltip/a11y name. A long label printed at the terminal
     clips against the end-label gutter (the /demand "Categ…" stubs) — the tag is the direct-labelling
     idiom's own vocabulary, not a second naming system. Absent ⇒ `s.label` verbatim (unchanged). */
-export function directEndLabel(s: LineSeries) {
+export function directEndLabel(s: LineSeries, fontMono: string) {
     return {
         endLabel: {
             show: true,
             formatter: () => s.endLabel ?? s.label,
             color: s.color,
             opacity: ATTN.legend,
-            fontFamily: "Fira Code",
+            fontFamily: fontMono,
             fontSize: 12,
             fontWeight: 600,
             distance: 8,

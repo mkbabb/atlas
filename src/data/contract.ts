@@ -6,7 +6,7 @@
 // god-manifest — a dashboard declares its key, grain, and reduce spec in `meta`.
 
 /** The entity a dashboard's rows are grained on. */
-export type EntityGrain = "state" | "district" | "entity";
+export type EntityGrain = "state" | "district" | "school" | "entity" | "year";
 
 /**
  * How a measure folds across years when the year-scope is `aggregate` (INV-4's
@@ -40,9 +40,6 @@ export interface FeedMeta {
     /** The numeric measure columns (everything aggregable / colorable). */
     measures: string[];
     aggregable: Record<string, AggregateRule>;
-    // v1-compat carry so older readers keep working through the migration:
-    /** Equals `latestYear`; the single-year readers' `meta.year`. */
-    year?: number;
     /** USF only — the Census vintage behind `population`. */
     populationYear?: number;
 
@@ -80,6 +77,135 @@ export interface Feed<Row extends FeedRow = FeedRow> {
     rows: Row[];
 }
 
+const ENTITY_GRAINS = new Set<EntityGrain>([
+    "state",
+    "district",
+    "school",
+    "entity",
+    "year",
+]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+    return typeof value === "string" && value.trim().length > 0;
+}
+
+/** The shared v2 metadata law for row and columnar envelopes. */
+function isAggregateRule(value: unknown, measures: ReadonlySet<string>): value is AggregateRule {
+    if (value === "sum" || value === "latest" || value === "mean") return true;
+    if (!isRecord(value) || Object.keys(value).length !== 1) return false;
+    if ("weightedAvg" in value) {
+        return isNonEmptyString(value.weightedAvg) && measures.has(value.weightedAvg);
+    }
+    if (!("ratio" in value) || !Array.isArray(value.ratio) || value.ratio.length !== 2) {
+        return false;
+    }
+    return value.ratio.every((measure) =>
+        isNonEmptyString(measure) && measures.has(measure),
+    );
+}
+
+/** The shared v2 metadata law for row and columnar envelopes. */
+function isFeedMeta(value: unknown): value is FeedMeta {
+    if (!isRecord(value) || value.schemaVersion !== 2 || "year" in value) return false;
+    if (
+        !isNonEmptyString(value.dataset) ||
+        !isNonEmptyString(value.keyField) ||
+        !isNonEmptyString(value.generatedAt) ||
+        Number.isNaN(Date.parse(value.generatedAt)) ||
+        !ENTITY_GRAINS.has(value.entityGrain as EntityGrain) ||
+        !Array.isArray(value.years) ||
+        value.years.length === 0 ||
+        !Array.isArray(value.measures) ||
+        !isRecord(value.aggregable)
+    ) {
+        return false;
+    }
+
+    let previous = -Infinity;
+    for (const year of value.years) {
+        if (typeof year !== "number" || !Number.isInteger(year) || year <= previous) {
+            return false;
+        }
+        previous = year;
+    }
+
+    const measures = new Set<string>();
+    for (const measure of value.measures) {
+        if (!isNonEmptyString(measure) || measure === "year" || measure === value.keyField || measures.has(measure)) {
+            return false;
+        }
+        measures.add(measure);
+    }
+    const aggregable = value.aggregable as Record<string, unknown>;
+    const aggregateKeys = Object.keys(aggregable);
+    if (aggregateKeys.length !== measures.size || aggregateKeys.some((key) => !measures.has(key))) {
+        return false;
+    }
+    if (aggregateKeys.some((key) => !isAggregateRule(aggregable[key], measures))) {
+        return false;
+    }
+
+    const optional = [
+        ["populationYear", (v: unknown) => typeof v === "number" && Number.isInteger(v)],
+        ["frozen", (v: unknown) => typeof v === "boolean"],
+        ["frozenAsOf", isNonEmptyString],
+        ["extractAsOf", isNonEmptyString],
+        ["updateCadence", isNonEmptyString],
+        ["programStatus", isNonEmptyString],
+        ["fidelity", isNonEmptyString],
+        ["sourcePath", (v: unknown) => v === null || isNonEmptyString(v)],
+    ] as const;
+    if (optional.some(([key, valid]) => key in value && !valid(value[key]))) return false;
+
+    return value.latestYear === value.years[value.years.length - 1];
+}
+
+function isCell(value: unknown): value is ColumnarCell {
+    return value === null || typeof value === "string" ||
+        (typeof value === "number" && Number.isFinite(value));
+}
+
+function hasValidRows(
+    meta: FeedMeta,
+    rowCount: number,
+    cellAt: (row: number, field: string) => unknown,
+): boolean {
+    const years = new Set<number>();
+    const identities = new Set<string>();
+    for (let row = 0; row < rowCount; row++) {
+        const key = cellAt(row, meta.keyField);
+        const year = cellAt(row, "year");
+        if (
+            !((typeof key === "string" && key.trim().length > 0) ||
+                (typeof key === "number" && Number.isFinite(key))) ||
+            typeof year !== "number" ||
+            !Number.isInteger(year)
+        ) {
+            return false;
+        }
+        if (meta.measures.some((measure) => {
+            const value = cellAt(row, measure);
+            return value !== null && (typeof value !== "number" || !Number.isFinite(value));
+        })) {
+            return false;
+        }
+        const identityKey = meta.entityGrain === "state"
+            ? String(key).padStart(2, "0")
+            : key;
+        const identity = JSON.stringify([identityKey, year]);
+        if (identities.has(identity)) return false;
+        identities.add(identity);
+        years.add(year);
+    }
+    const actualYears = [...years].sort((a, b) => a - b);
+    return actualYears.length === meta.years.length &&
+        actualYears.every((year, index) => year === meta.years[index]);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // THE COLUMNAR ENVELOPE (I-PERF-DATA.b · T-PERF-3b) — a transport-only transpose.
 //
@@ -91,16 +217,13 @@ export interface Feed<Row extends FeedRow = FeedRow> {
 //
 // The columnar envelope inverts the axis: ONE `columns` map of parallel arrays,
 // one array per field, the field-name written ONCE. Same data, a fraction of the
-// key-string bytes — and the worker (I-PERF-DATA.a) decodes it OFF the main
-// thread, so the consumers (loadFeed's `normalize`, every dashboard store) still
-// receive the IDENTICAL `Feed<Row>` they read today.
+// key-string bytes. The worker validates that compact envelope off-thread;
+// `loadFeed` decodes it once on the consumer thread and every dashboard still
+// receives the identical `Feed<Row>` it reads today.
 //
 // THE PARITY LAW (the wave's hard gate): the columnar form is a FORMAT change,
-// never a CONTENT change — `decodeColumnar(encodeColumnar(feed))` round-trips the
-// rows byte-equal (same field ORDER, same null-vs-number, same value). I10 owns
-// the CONTENT (the rows/numbers); this seam owns only the ENVELOPE FORMAT. The
-// `columnar` discriminator + `schemaVersion` carry through untouched so `isFeed`
-// still adjudicates the decoded envelope.
+// never a CONTENT change. The sole producer preserves field order, nulls, numbers,
+// and values; this seam validates that transport and decodes it without mutation.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** A single columnar value — the same scalar union a row cell carries. */
@@ -114,60 +237,74 @@ export type ColumnarCell = string | number | null;
  * parallel array per field. A `columnar: true` discriminator lets a reader (the
  * worker / loadFeed) branch on the file shape without sniffing for `rows`.
  */
-export interface FeedColumnar {
+export interface FeedColumnar<Row extends FeedRow = FeedRow> {
     meta: FeedMeta;
     columnar: true;
     rowCount: number;
-    fields: string[];
-    columns: Record<string, ColumnarCell[]>;
+    fields: Array<Extract<keyof Row, string>>;
+    columns: Record<Extract<keyof Row, string>, ColumnarCell[]>;
 }
 
-/**
- * Type guard — a parsed JSON value is a columnar envelope (vs a `{meta, rows}`
- * row feed). The worker and loadFeed branch on this to decide whether to decode.
- */
-export function isColumnarFeed(x: unknown): x is FeedColumnar {
-    if (typeof x !== "object" || x === null) return false;
-    const d = x as Record<string, unknown>;
-    return (
-        d.columnar === true &&
-        typeof d.meta === "object" &&
-        d.meta !== null &&
-        Array.isArray(d.fields) &&
-        typeof d.columns === "object" &&
-        d.columns !== null &&
-        typeof d.rowCount === "number"
+/** Validate a columnar envelope against the same v2 metadata law as a row feed. */
+export function isColumnarFeed<Row extends FeedRow = FeedRow>(
+    x: unknown,
+): x is FeedColumnar<Row> {
+    if (
+        !isRecord(x) ||
+        x.columnar !== true ||
+        !isFeedMeta(x.meta) ||
+        Object.keys(x).some((key) =>
+            !["meta", "columnar", "rowCount", "fields", "columns"].includes(key),
+        )
+    ) {
+        return false;
+    }
+    const rowCount = x.rowCount;
+    if (typeof rowCount !== "number" || !Number.isInteger(rowCount) || rowCount < 0) {
+        return false;
+    }
+    const rawFields = x.fields;
+    const columns = x.columns;
+    if (!Array.isArray(rawFields) || rawFields.length === 0 || !isRecord(columns)) {
+        return false;
+    }
+
+    const fields: string[] = [];
+    const seen = new Set<string>();
+    for (const field of rawFields) {
+        if (!isNonEmptyString(field) || seen.has(field)) return false;
+        seen.add(field);
+        fields.push(field);
+    }
+
+    const keys = Object.keys(columns);
+    if (keys.length !== fields.length || keys.some((key, index) => key !== fields[index])) {
+        return false;
+    }
+    if (
+        !fields.includes(x.meta.keyField) ||
+        !fields.includes("year") ||
+        x.meta.measures.some((measure) => !fields.includes(measure)) ||
+        !fields.every((field) => {
+            const column = columns[field];
+            return Array.isArray(column) &&
+                column.length === rowCount &&
+                column.every(isCell);
+        })
+    ) {
+        return false;
+    }
+    return hasValidRows(x.meta, rowCount, (row, field) =>
+        (columns[field] as unknown[])[row],
     );
 }
 
 /**
- * Transpose a row feed into the columnar envelope (the SOURCE step — runs in the
- * snapshot bake, NOT at read time). The `fields` order is taken from the FIRST
- * row so decode can restore key order exactly; every row MUST carry the same key
- * set (the snapshot bake asserts this — sci/sci-schools rows are uniform). A cell
- * absent on a row decodes back to `null` (parity with a JSON-missing key reading
- * `undefined`), but uniform feeds never hit that path.
- */
-export function encodeColumnar<Row extends FeedRow>(feed: Feed<Row>): FeedColumnar {
-    const { rows } = feed;
-    const fields = rows.length > 0 ? Object.keys(rows[0]) : [];
-    const columns: Record<string, ColumnarCell[]> = {};
-    for (const f of fields) columns[f] = new Array(rows.length);
-    for (let i = 0; i < rows.length; i++) {
-        const r = rows[i] as Record<string, ColumnarCell>;
-        for (const f of fields) columns[f][i] = r[f] ?? null;
-    }
-    return { meta: feed.meta, columnar: true, rowCount: rows.length, fields, columns };
-}
-
-/**
- * Decode a columnar envelope back into the row `Feed<Row>` the consumers expect
- * (the READ step — runs in the worker, OFF the main thread). Rebuilds each row's
- * keys in the recorded `fields` ORDER so the result round-trips byte-equal with
- * the pre-transpose row feed (the parity law). Generic over the concrete row.
+ * Decode a columnar envelope back into the row `Feed<Row>` the consumers expect.
+ * Rebuilds each row's keys in the recorded `fields` order without changing values.
  */
 export function decodeColumnar<Row extends FeedRow = FeedRow>(
-    columnar: FeedColumnar,
+    columnar: FeedColumnar<Row>,
 ): Feed<Row> {
     const { fields, columns, rowCount } = columnar;
     const rows = new Array<Row>(rowCount);
@@ -180,45 +317,25 @@ export function decodeColumnar<Row extends FeedRow = FeedRow>(
 }
 
 /**
- * Schema guard — a parsed JSON value is a well-formed Feed envelope, FAIL-LOUD
- * (C8.3 / pf-hardening M1). The pre-C8 guard was SHALLOW — it asserted only that
- * `rows` is an array and `meta` is a non-null object, so a v1-usf envelope read as
- * v2, a `{meta:{}}` with no `keyField`, or a garbled upstream body all PASSED, and
- * downstream `normalize` then wrote `r[undefined]` — corrupting the geometry join
- * SILENTLY rather than rejecting. This guard validates the envelope's load-bearing
- * meta so the live→snapshot fallback (loadFeed.ts) engages on a hostile body.
- *
- * Two envelopes are valid — the byte-stable v1-usf live shape AND the v2 platform
- * shape (the committed snapshots are all v2; only the live `/api/usf` read emits v1).
- * Rejecting v1 outright would break the live usf route (the edge's `x-usf-schema`
- * header catches a v1↔v2 MISMATCH; this is the body-level twin):
- *
- *   • schemaVersion MUST be 1 or 2 (a missing/garbled version → reject; a v3 we do
- *     not understand → reject loud, not silently mis-read).
- *   • v2 additionally REQUIRES `keyField` (a non-empty string — the join column
- *     `normalize` writes; an undefined key is the silent-corruption seam) and `years`
- *     (a number array — the multi-year scrubber reads it). v1-usf carries neither.
- *   • rows MUST be an array AND (if non-empty) its first element an object — a
- *     `rows:[42]` primitive-row body is rejected before a viz reads `.x` off a number.
+ * Validate the sole row-feed envelope: strict v2 metadata plus object rows. A
+ * value carrying columnar transport members cannot also pass as a row envelope.
  */
 export function isFeed(x: unknown): x is Feed {
-    if (typeof x !== "object" || x === null) return false;
-    const d = x as Record<string, unknown>;
-    if (!Array.isArray(d.rows)) return false;
-    // A non-empty rows array must carry object rows (reject `rows:[42]`/`rows:["x"]`).
-    if (d.rows.length > 0 && (typeof d.rows[0] !== "object" || d.rows[0] === null)) {
+    if (
+        !isRecord(x) ||
+        "columnar" in x ||
+        "rowCount" in x ||
+        "fields" in x ||
+        "columns" in x
+    ) {
         return false;
     }
-    if (typeof d.meta !== "object" || d.meta === null) return false;
-    const meta = d.meta as Record<string, unknown>;
-    const ver = meta.schemaVersion;
-    if (ver !== 1 && ver !== 2) return false;
-    // The v1-usf envelope carries no keyField/years — the byte-stable live shape.
-    if (ver === 1) return true;
-    // v2 REQUIRES the join + year-scope fields normalize/the scrubber read.
-    return (
-        typeof meta.keyField === "string" &&
-        meta.keyField.length > 0 &&
-        Array.isArray(meta.years)
-    );
+    if (!isFeedMeta(x.meta) || !Array.isArray(x.rows) || !x.rows.every(isRecord)) {
+        return false;
+    }
+    const rows = x.rows as Record<string, unknown>[];
+    if (rows.some((row) => Object.values(row).some((value) => !isCell(value)))) {
+        return false;
+    }
+    return hasValidRows(x.meta, rows.length, (row, field) => rows[row][field]);
 }

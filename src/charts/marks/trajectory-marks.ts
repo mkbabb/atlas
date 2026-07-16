@@ -45,16 +45,22 @@ export type DropRuleKind = "forecast" | "oversub" | "partial";
     active-year peak rivet. The colour is a RESOLVED rgb the caller passes (the
     `--route-accent` teal signal, the "one signal, one clock"); the symbol is a filled pin
     so the rivet reads as a deliberate annotation, not a fourth data point. */
-export interface MarkPointRivetSpec {
+export type MarkPointRivetSpec = {
     /** the x (the active year) the rivet sits at. */
     x: number;
     /** the y (the lead measure's value at the active year). */
     y: number;
     /** the RESOLVED teal signal rgb (never a raw `var(--…)` — the canvas-colour law). */
     color: string;
-    /** an optional short label riding the rivet (e.g. the active year). */
-    label?: string;
-}
+} & (
+    | {
+          /** a short label riding the rivet (e.g. the active year). */
+          label: string;
+          /** the RESOLVED canvas tabular family from `useVizPalette`. */
+          fontMono: string;
+      }
+    | { label?: never; fontMono?: never }
+);
 
 /** Build the `markPoint` option fragment for the active-year rivet. The datum is `coord`-
     anchored (the value space, so it rides the data, not a pixel), a small filled pin in the
@@ -73,7 +79,7 @@ export function markPointRivet(spec: MarkPointRivetSpec): Record<string, unknown
                           label: {
                               show: true,
                               formatter: spec.label,
-                              fontFamily: "Fira Code",
+                              fontFamily: spec.fontMono,
                               fontWeight: 600,
                               fontSize: 9,
                               color: "#fff",
@@ -127,6 +133,8 @@ export interface DropRuleSpec {
     label: string;
     /** the RESOLVED rule rgb (the diverging pole for oversub, the muted for partial/forecast). */
     color: string;
+    /** the RESOLVED canvas tabular family from `useVizPalette`. */
+    fontMono: string;
     /** the editorial voice — forecast (dashed, → glyph) | oversub (solid, → glyph) | partial (dashed). */
     kind: DropRuleKind;
     /** an optional pre-formatted year string (e.g. via a route's xFormat); defaults to `x`. */
@@ -155,19 +163,19 @@ export function dropRule(spec: DropRuleSpec): Record<string, unknown> {
             position: spec.kind === "oversub" ? "insideStartTop" : "insideEndTop",
             rich: {
                 yr: {
-                    fontFamily: "Fira Code",
+                    fontFamily: spec.fontMono,
                     fontWeight: 500,
                     fontSize: 11,
                     color: spec.color,
                 },
                 lab: {
-                    fontFamily: "Fira Code",
+                    fontFamily: spec.fontMono,
                     fontWeight: 600,
                     fontSize: 9,
                     color: spec.color,
                 },
                 arr: {
-                    fontFamily: "Fira Code",
+                    fontFamily: spec.fontMono,
                     fontWeight: 600,
                     fontSize: 11,
                     color: spec.color,

@@ -7,8 +7,8 @@
 //   (4) THE AGGREGATE LAW — the Simpson trap. A 3-member intensive fixture reduces to `Σnum/Σden`
 //       (POOLED / weighted), NEVER `mean(ratios)` — and the MEDIAN rides ALONGSIDE ([ANSWERS Q-38]).
 //       There is no `mean-of-ratios` fold to call, so the trap is unrepresentable by construction.
-//   (6) THE `?sel` ROUND-TRIP — `?sel=state:48,37,cell:x` parses to [state:48, cell:x] (the bare `37`
-//       + no foreign token here) → SINGLE-vs-MULTI is the POST-drop count; `state:48,state:02` → 2.
+//   (6) THE `?sel` ROUND-TRIP — canonical composite keys parse exactly; bare and malformed tokens
+//       fail at ingress rather than silently changing the selection count.
 //   §B.3 THE BOUNDED-MINIMAP EXTENT — the union viewBox reduce (a mid-load box drops out, never NaN).
 //
 // BAN THE SENTINEL (Part F §7): none of these pass because "the panel exists" — each drives the actual
@@ -77,37 +77,25 @@ describe("O-A11 · the aggregate LAW (the Simpson trap)", () => {
     });
 });
 
-describe("O-A11 · the `?sel` round-trip (parse-guarded, post-drop count)", () => {
-    /** Mirror `useViewParams.selKeys`: split the `?sel` list, parse each, drop the nulls. */
+describe("O-A11 · the `?sel` canonical round-trip", () => {
     function selKeysFrom(sel: string) {
-        return sel
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean)
-            .map(parseSelKey)
-            .filter((s): s is NonNullable<typeof s> => s !== null);
+        return sel.split(",").map((token) => parseSelKey(token.trim()));
     }
 
-    it("drops the BARE token — `state:48,37,cell:x` → [state:48, cell:x] (n=2)", () => {
-        const keys = selKeysFrom("state:48,37,cell:x");
-        expect(keys.map((k) => k.key)).toEqual(["state:48", "cell:x"]);
-        expect(keys.length).toBe(2);
+    it("rejects bare, unknown-kind, and empty-id tokens", () => {
+        expect(() => selKeysFrom("state:48,37,cell:x")).toThrow("invalid selection key");
+        expect(() => parseSelKey("region:48")).toThrow("unknown selection kind");
+        expect(() => parseSelKey("state:")).toThrow("selection id cannot be empty");
     });
 
     it("rejects an empty id at the producer edge", () => {
         expect(() => encodeSelKey("firm", "")).toThrow("selection id cannot be empty");
     });
 
-    it("round-trips two well-formed keys — `state:48,state:02` → MULTI×2", () => {
+    it("round-trips canonical keys without changing ids", () => {
         const keys = selKeysFrom("state:48,state:02");
-        expect(keys.length).toBe(2);
-        expect(keys.map((k) => k.id)).toEqual(["48", "02"]);
-    });
-
-    it("a lone valid key parses to SINGLE (n=1) — the mode is the post-drop count", () => {
-        expect(selKeysFrom("state:48").length).toBe(1);
-        // a single valid + a foreign-shaped bare token still lands SINGLE (the bare drops).
-        expect(selKeysFrom("state:48,999").length).toBe(1);
+        expect(keys.map((key) => key.key)).toEqual(["state:48", "state:02"]);
+        expect(keys.map((key) => key.id)).toEqual(["48", "02"]);
     });
 });
 

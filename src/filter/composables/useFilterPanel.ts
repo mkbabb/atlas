@@ -21,8 +21,14 @@
 import { computed, ref, type ComputedRef } from "vue";
 import { storeToRefs } from "pinia";
 import { useActiveBeat } from "@/platform/stores/useActiveBeat";
-import { useVizRegistry } from "@/charts/composables/useVizRegistry";
-import type { FilterDimension } from "@/charts/contract/viz-contract";
+import {
+    useVizRegistry,
+    type RegisteredViz,
+} from "@/charts/composables/useVizRegistry";
+import type {
+    FilterDimension,
+    FilterResponse,
+} from "@/charts/contract/viz-contract";
 
 /** The panel-LOCAL pin — a module singleton (NOT a K-ACTIVE write). `null` ⇒ the panel projects the
     in-viewport set; a vizId ⇒ the panel pins to that ONE viz (the dock-toggle target). */
@@ -36,6 +42,8 @@ function dimKeyOf(d: Pick<FilterDimension, "key">): string {
 export interface UseFilterPanelReturn {
     /** The de-duped projection of the active viz-set's dims — first-declaration-wins per key. */
     projectedDims: ComputedRef<FilterDimension[]>;
+    /** Static only when every mounted viz in the active projection explicitly declares static. */
+    filterResponse: ComputedRef<FilterResponse>;
     /** The `scope:'context'` partition (the "Narrow the fleet" band). */
     contextDims: ComputedRef<FilterDimension[]>;
     /** The `scope:'view'` partition (the "Filter within the fleet" dials). */
@@ -71,9 +79,10 @@ export function useFilterPanel(): UseFilterPanelReturn {
 
     /** The de-duped union — first declaration of a key wins (its `scope` is then unambiguous, the
         §3.5 consistency gate asserts the precondition). */
+    const facets = computed(() => facetsFor(panelVizIds.value));
     const projectedDims = computed<FilterDimension[]>(() => {
         const byKey = new Map<string, FilterDimension>();
-        for (const facet of facetsFor(panelVizIds.value)) {
+        for (const facet of facets.value) {
             for (const d of facet.dims) {
                 if (!byKey.has(dimKeyOf(d))) byKey.set(dimKeyOf(d), d);
             }
@@ -87,6 +96,7 @@ export function useFilterPanel(): UseFilterPanelReturn {
     const viewDims = computed<FilterDimension[]>(() =>
         projectedDims.value.filter((d) => (d.scope ?? "view") === "view"),
     );
+    const filterResponse = computed(() => resolveFilterResponse(facets.value));
 
     function pin(vizId: string): void {
         pinnedVizId.value = vizId;
@@ -97,10 +107,21 @@ export function useFilterPanel(): UseFilterPanelReturn {
 
     return {
         projectedDims,
+        filterResponse,
         contextDims,
         viewDims,
         pinnedVizId: computed(() => pinnedVizId.value),
         pin,
         clearPin,
     };
+}
+
+/** Aggregate the active set honestly: one responsive figure means the visible set responds;
+    static is reserved for a non-empty set whose members all explicitly opt out. */
+export function resolveFilterResponse(
+    facets: readonly Pick<RegisteredViz, "filterResponse">[],
+): FilterResponse {
+    return facets.length > 0 && facets.every((facet) => facet.filterResponse === "static")
+        ? "static"
+        : "responsive";
 }

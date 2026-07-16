@@ -1,26 +1,14 @@
 <script setup lang="ts">
-// FilterPanel — the ONE filter, re-seated as a CLOSED-BY-DEFAULT right
-// `Drawer mode="live-behind"` (C.W3.3, CP-1/CP-3). Not a modal, not a left-anchored
-// `position:fixed` rail: a glass lens that slides from the RIGHT, over a single
-// full-width content stage. The viz stays LIVE behind it the whole time —
-// `mode="live-behind"` bundles `modal:false` + no scrim + page-behind-interactive as
-// CONFIGURED policy (the "lens not a modal" property, not a re-derived surface).
-//
-// The B-tranche `.filter-shell` left-`calc` anchor (`inset-inline-start:
-// calc(var(--dock-w)…)`) + the hand-rolled collapse-spine + the §K5 open-default
-// content gutter are RETIRED: a closed floating drawer occludes NOTHING on first
-// paint, so the hero is fully visible (CP-1). The §K5 reactive-gutter machinery in
-// `PlatformShell` was deleted by C3.1; here `useFilterPane().open` flips to
-// closed-default and there is no gutter for the content to react to.
-//
-// Glass Drawer owns the right-axis geometry, material, and motion. This drawer is also the A4 dock
-// pull-out target (C3.2's affordance drives the same `useFilterPane().open`).
+// FilterPanel — the ONE right-edge filter surface (C.W3.3, W-L4). One Glass
+// `Drawer mode="live-behind"` owns the material, geometry, drag, and motion from
+// PIP through LEDGER to DRAWER. It overlays one full-width live stage without the
+// retired rail, content gutter, or a second page-level trigger.
 //
 // It is a generic SHELL: it owns the chrome (the "Filters" header, the freshness
 // colophon, the cross-links) and renders the ACTIVE dashboard's filter BODY — passed
 // by the consumer as the `body` prop — inside it. The reset/apply affordances belong
 // to the body; the shell never reaches into the body's logic.
-import { computed, inject, ref, watch, type Component } from "vue";
+import { computed, inject, onBeforeUnmount, ref, watch, type Component } from "vue";
 import {
     Drawer,
     DrawerContent,
@@ -28,11 +16,13 @@ import {
     DrawerDescription,
 } from "@mkbabb/glass-ui/drawer";
 import { Button } from "@mkbabb/glass-ui/button";
-import { SlidersHorizontal, X } from "@lucide/vue";
+import { Filter, SlidersHorizontal, X } from "@lucide/vue";
 import { DASHBOARD_KEY, useDashboardRegistry } from "@/contract";
 import { useFilterPane } from "@/filter/composables/useFilterPane";
 import { useFilterPanel } from "@/filter/composables/useFilterPanel";
+import { useFilterLedger } from "@/filter/composables/useFilterLedger";
 import { useFreshness } from "@/platform/chrome/freshness";
+import { useMobileRegister } from "@/platform/composables/useMobileRegister";
 import { useSavedViews, currentUrl } from "@/platform/composables/useSavedViews";
 import { useSelection } from "@/platform/stores/useSelection";
 import { useViewParams } from "@/platform/stores/useViewParams";
@@ -40,6 +30,12 @@ import type { YearMode } from "@/data/useYearScope";
 import YearScrubber from "./components/YearScrubber.vue";
 import FilterDrawerFoot from "./components/FilterDrawerFoot.vue";
 import { useDismissArbiter } from "@/platform/interaction/useDismissArbiter";
+import {
+    FILTER_SNAP,
+    filterRegisterFor,
+    filterSnapFor,
+    filterSnapPoints,
+} from "./filter-continuum";
 
 // The consumer (DashboardView) mounts this shell in PlatformShell's `filter` slot and
 // passes the active dashboard's filter BODY as `body`. The shell owns only the chrome
@@ -51,17 +47,125 @@ const ctx = inject(DASHBOARD_KEY);
 // The instance-built registry, injected (L1-INVERSION) — core chrome never imports
 // `@/dashboards/registry`. Gates the cross-link "ready" state on a registered target slug.
 const { findDashboard } = useDashboardRegistry();
+const activeDashboard = computed(() => (ctx ? findDashboard(ctx.id) : undefined));
 
 const filterBody = computed<Component | undefined>(() => props.body);
+const hasFilter = computed(() => Boolean(filterBody.value));
 
 // The freshness colophon, mirrored in the drawer foot (the data-vintage chip surfaced
 // so a filtering user reads the vintage without leaving).
 const { label: freshnessLabel } = useFreshness();
 
-// The drawer open state — the SHARED useFilterPane singleton, flipped to closed by
-// default (C3.3): a closed floating drawer occludes nothing on first paint, the hero
-// is fully visible. The same `open` is the A4 dock pull-out target (C3.2 drives it).
+// The shared flag requests the full register. Its false state leaves this same
+// physical Drawer at the non-occluding PIP detent.
 const { open } = useFilterPane();
+const { clearPin } = useFilterPanel();
+const { chips, appliedCount, selectionCount, filterResponse } = useFilterLedger();
+const { isPhone } = useMobileRegister();
+
+// W-L4 — the Drawer is the continuum. Its one Glass snap scalar moves one physical
+// side lens through PIP → LEDGER → DRAWER; the shared `open` flag is only the public
+// request for the full register, never a second geometry or presence authority.
+const activeSnapPoint = ref<number | string | null>(
+    open.value ? FILTER_SNAP.drawer : FILTER_SNAP.pip,
+);
+const snapPoints = computed<number[]>(() => [...filterSnapPoints(isPhone.value)]);
+const register = computed(() => filterRegisterFor(activeSnapPoint.value, isPhone.value));
+const ledgerActive = computed(() => register.value === "ledger");
+const drawerActive = computed(() => register.value === "drawer");
+const doorLabel = computed(() =>
+    drawerActive.value
+        ? "Close filters"
+        : ledgerActive.value
+          ? "Open filters"
+          : `Review filters${appliedCount.value ? `, ${appliedCount.value} applied` : ""}`,
+);
+const scopeLabel = computed(() => {
+    if (filterResponse.value === "static") return "Static figure · filters do not alter it";
+    const grain = activeDashboard.value?.entityGrain ?? "entity";
+    return `${grain.charAt(0).toUpperCase()}${grain.slice(1)} view`;
+});
+
+let dwell: ReturnType<typeof setTimeout> | null = null;
+let writingOpenFromSnap = false;
+
+function cancelDwell(): void {
+    if (dwell) clearTimeout(dwell);
+    dwell = null;
+}
+
+function retarget(next: "pip" | "ledger" | "drawer"): void {
+    activeSnapPoint.value = filterSnapFor(next);
+}
+
+function armLedgerDwell(): void {
+    cancelDwell();
+    dwell = setTimeout(() => retarget("pip"), 4_000);
+}
+
+function showLedger(): void {
+    if (isPhone.value || register.value === "drawer") return;
+    if (register.value === "ledger") armLedgerDwell();
+    else retarget("ledger");
+}
+
+function activateContinuum(): void {
+    if (register.value === "drawer") {
+        open.value = false;
+        return;
+    }
+    if (isPhone.value || register.value === "ledger") open.value = true;
+    else retarget("ledger");
+}
+
+watch(
+    open,
+    (expanded) => {
+        if (!expanded) clearPin();
+        if (writingOpenFromSnap) return;
+        const target = expanded ? "drawer" : "pip";
+        if (register.value !== target) retarget(target);
+    },
+    { flush: "sync" },
+);
+
+// Glass writes the active detent after drag/fling. Reflect that one target into the
+// public full-register flag without feeding a second target back into the spring.
+watch(
+    activeSnapPoint,
+    (snap) => {
+        cancelDwell();
+        const next = filterRegisterFor(snap, isPhone.value);
+        const expanded = next === "drawer";
+        if (open.value !== expanded) {
+            writingOpenFromSnap = true;
+            open.value = expanded;
+            writingOpenFromSnap = false;
+        }
+        if (next === "ledger") armLedgerDwell();
+    },
+    { flush: "sync" },
+);
+
+watch(isPhone, (phone) => {
+    if (phone && filterRegisterFor(activeSnapPoint.value, false) === "ledger") retarget("pip");
+});
+function teardown(): void {
+    cancelDwell();
+    open.value = false;
+    clearPin();
+    retarget("pip");
+}
+
+watch(
+    hasFilter,
+    (available) => {
+        if (!available) teardown();
+    },
+    { immediate: true },
+);
+onBeforeUnmount(teardown);
+
 useDismissArbiter().claim(() =>
     open.value
         ? {
@@ -75,17 +179,6 @@ useDismissArbiter().claim(() =>
           }
         : null,
 );
-
-// THE clearPin SEAM (K-FILTER-UNIFIED §4.H · the H2 completion) — the panel-LOCAL pin releases on
-// the drawer's open false-edge (ONE watcher where the shell already reads the open-truth). A
-// scroll-resumed reader re-takes the in-viewport context after close; the pin never strands a stale
-// projection. NEVER a K-ACTIVE write — the pin is `useFilterPanel`'s panel-local singleton.
-const { clearPin } = useFilterPanel();
-watch(open, (o) => {
-    if (!o) clearPin();
-});
-
-const hasFilter = computed(() => Boolean(filterBody.value));
 
 // ── The year-scrubber (B4 §3, FD6 §6.3 — the filter's top stratum) ───────────
 // The floating filter owns the multi-year scrubber: a year track + a mode toggle
@@ -206,33 +299,80 @@ function cancelSave(): void {
 </script>
 
 <template>
-    <template v-if="hasFilter">
-        <!-- O-D3 — THE FLOATING FILTERS PILL IS KILLED (render-A cross-route; L33 X9). The quiet
-             top-right `.cp-filter-trigger` overlaid the AK inset / legends / readouts on every
-             route (a THIRD door onto the SAME `useFilterPane().open` singleton). Filter entry is
-             now consolidated onto the two LAWFUL doors that already exist and already drive this
-             same open flag: the dock instrument (Dock.vue's desktop pull-out row +
-             DockSettings.vue's phone gear sheet, both `data-testid="dock-filter-pullout"`) and the
-             per-plate icon (VizPlate's `viz-dock__filter-slot` toggle, which pins + opens this
-             SAME drawer). No page-level affordance is re-added — the dock instrument already
-             fills that role at every viewport, so nothing here occludes content on first paint. -->
-
-        <!-- The right live-behind filter Drawer — closed by default. `mode="live-behind"`
-             bundles `modal:false` + no scale-down; `:show-overlay="false"` drops the
-             scrim so the viz stays LIVE + interactive behind. `direction="right"` slides
-             from the right edge; Glass DrawerContent owns the material, geometry, motion,
-             and Reka dismissal semantics. -->
-        <Drawer
-            v-model:open="open"
-            mode="live-behind"
-            direction="right"
+    <Drawer
+        v-if="hasFilter"
+        :open="true"
+        mode="live-behind"
+        direction="right"
+        :snap-points="snapPoints"
+        v-model:active-snap-point="activeSnapPoint"
+    >
+        <DrawerContent
+            :show-overlay="false"
+            class="cp-drawer"
+            :data-register="register"
+            data-filter-continuum
+            data-testid="filter-panel"
+            aria-label="Filters"
+            @open-auto-focus.prevent
+            @escape-key-down.prevent
+            @interact-outside.prevent
         >
-            <DrawerContent
-                :show-overlay="false"
-                class="cp-drawer"
-                @interact-outside.prevent
-                data-testid="filter-panel"
-                aria-label="Filters"
+            <Button
+                type="button"
+                variant="glass"
+                class="cp-continuum__door"
+                :aria-expanded="drawerActive"
+                :aria-label="doorLabel"
+                aria-controls="filter-drawer-body"
+                data-filter-door
+                @pointerenter="showLedger"
+                @focusin="showLedger"
+                @click="activateContinuum"
+            >
+                <SlidersHorizontal v-if="drawerActive" aria-hidden="true" />
+                <Filter v-else aria-hidden="true" />
+                <span
+                    v-if="register === 'pip' && appliedCount"
+                    class="cp-continuum__count"
+                    aria-hidden="true"
+                >
+                    {{ appliedCount }}
+                </span>
+            </Button>
+
+            <section
+                v-if="!isPhone"
+                v-show="ledgerActive"
+                class="cp-continuum__ledger"
+                aria-label="Filter summary"
+            >
+                <span
+                    class="cp-continuum__scope"
+                    :class="{ static: filterResponse === 'static' }"
+                >
+                    {{ scopeLabel }}
+                </span>
+                <span
+                    v-for="chip in chips"
+                    :key="chip.key"
+                    class="cp-continuum__chip"
+                >
+                    {{ chip.label }}
+                </span>
+                <span
+                    v-if="selectionCount"
+                    class="cp-continuum__chip"
+                    data-selection-count
+                >
+                    {{ selectionCount }} selected
+                </span>
+            </section>
+
+            <div
+                v-show="drawerActive"
+                id="filter-drawer-body"
+                class="cp-continuum__drawer"
             >
                 <DrawerTitle class="cp-drawer__title">
                     <SlidersHorizontal class="h-4 w-4" aria-hidden="true" />
@@ -253,9 +393,6 @@ function cancelSave(): void {
                     <X class="h-4 w-4" aria-hidden="true" />
                 </Button>
 
-                <!-- The year-scrubber — the top stratum (B4 §3, FD6 §6.3). The control is
-                     the colocated <YearScrubber> sub-component; the host owns the
-                     `useYearScope` write the control's pick/aggregate intents drive. -->
                 <YearScrubber
                     v-if="hasScrubber"
                     :years="scrubberYears"
@@ -267,16 +404,7 @@ function cancelSave(): void {
                 />
 
                 <div class="cp-drawer__body">
-                    <!-- TRANSPARENT SLOT-FORWARD (O-A11 residue · the band-0 reach): the shell is a
-                         generic wrapper, so it FORWARDS every slot it is handed straight through to the
-                         injected `body` component. This is the idiomatic Vue transparent-wrapper pattern
-                         (`v-for (_, name) in $slots` → a re-emitted `#[name]`), and it is what makes the
-                         body's own named slots CONSUMABLE from the route — e.g. `UnifiedFilterPanel`'s
-                         band-0 `#algebra` band: a route mounts `<FilterPanel :body="UnifiedFilterPanel">`
-                         and paints `<template #algebra>…</template>` on the SHELL, which lands in the
-                         panel's algebra band. ADDITIVE: no slots handed ⇒ `$slots` empty ⇒ the forward
-                         renders nothing, byte-identical to the prior bare `<component :is>`. -->
-                    <component :is="filterBody">
+                    <component v-if="filterBody" :is="filterBody">
                         <template
                             v-for="(_, name) in $slots"
                             :key="name"
@@ -287,9 +415,6 @@ function cancelSave(): void {
                     </component>
                 </div>
 
-                <!-- The drawer foot — the save-view + cross-links + freshness cluster, the
-                     colocated <FilterDrawerFoot> sub-component. The host owns the save-name
-                     model + the `useSavedViews` write the foot's intents drive. -->
                 <FilterDrawerFoot
                     v-model:save-name="saveName"
                     :cross-links="crossLinks"
@@ -299,56 +424,102 @@ function cancelSave(): void {
                     @commit-save="commitSave"
                     @cancel-save="cancelSave"
                 />
-            </DrawerContent>
-        </Drawer>
-    </template>
+            </div>
+        </DrawerContent>
+    </Drawer>
 </template>
 
 <style scoped>
-/* ── THE RIGHT LIVE-BEHIND LENS — surface seam ─────────────────────────────────
-   Glass owns the teleported DrawerContent surface, motion, and directional geometry.
-   Only the INNER chrome below (title / close / scrubber / body / foot — authored in
-   THIS template, so they carry the scope attr) is styled here. */
-
-/* The header title — the lens crest. */
+/* Glass owns the material, side-lens geometry, drag, and motion. */
+.cp-continuum__door {
+    position: absolute;
+    inset-block-start: 66.667%;
+    inset-inline-start: 0;
+    z-index: 2;
+    display: grid;
+    inline-size: 44px;
+    block-size: 44px;
+    min-inline-size: 44px;
+    padding: 0;
+    place-items: center;
+    transform: translateY(-50%);
+}
+.cp-continuum__door > svg {
+    inline-size: 1.15rem;
+    block-size: 1.15rem;
+}
+.cp-continuum__count {
+    position: absolute;
+    inset-block-start: 0.2rem;
+    inset-inline-end: 0.2rem;
+    display: grid;
+    min-inline-size: 1rem;
+    block-size: 1rem;
+    padding-inline: 0.15rem;
+    place-items: center;
+    border-radius: var(--radius-pill);
+    background: var(--foreground);
+    color: var(--background);
+    font: 700 0.625rem/1 var(--font-mono);
+}
+.cp-continuum__ledger {
+    position: absolute;
+    inset-block-start: 66.667%;
+    inset-inline-start: 44px;
+    display: flex;
+    inline-size: calc(50% - 44px);
+    padding: 0.6rem;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    transform: translateY(-50%);
+}
+.cp-continuum__scope,
+.cp-continuum__chip {
+    padding: 0.25rem 0.45rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    font: 0.6875rem/1.2 var(--font-mono);
+}
+.cp-continuum__scope.static {
+    border-style: dashed;
+}
+.cp-continuum__drawer {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    min-block-size: 0;
+    padding-block-start: var(--touch-target, 2.75rem);
+    flex-direction: column;
+}
 .cp-drawer__title {
-    display: inline-flex;
+    display: flex;
+    inline-size: 100%;
     align-items: center;
     gap: 0.45rem;
     margin: 0;
-    padding: 0.95rem 1rem 0.6rem;
-    border-bottom: 1px solid var(--border);
+    padding: 0.95rem 3.5rem 0.75rem 1rem;
+    border-block-end: 1px solid var(--border);
+    color: var(--foreground);
     font-family: var(--font-display);
     font-size: 1rem;
-    color: var(--foreground);
 }
-/* The close affordance is the glass `Button` (variant="ghost" size="sm") — it OWNS
-   its own surface/hover/focus/radius. Only the absolute placement in the lens crest is
-   the host's to keep. */
 .cp-drawer__close {
     position: absolute;
-    inset-block-start: 0.75rem;
+    inset-block-start: 3.25rem;
     inset-inline-end: 0.75rem;
-    z-index: 1;
 }
-
-/* The year-scrubber (B4 §3) + the drawer foot (save-view · cross-links · freshness) skins
-   live with their colocated sub-components (`components/YearScrubber.vue`,
-   `components/FilterDrawerFoot.vue`) — the §Y componentize moved their grammar out of this
-   host. Only the drawer SHELL chrome (title · close · body · summon trigger) is styled here. */
-
-/* The body region scrolls when the injected filter outgrows the lens — the header +
-   foot stay pinned (the chrome frames the body, never clips it). */
 .cp-drawer__body {
     flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
+    min-block-size: 0;
     padding: 0 1rem 0.5rem;
+    overflow-y: auto;
 }
-
-/* THE SUMMON TRIGGER IS RETIRED (O-D3 — the floating FILTERS pill kill, render-A cross-route;
-   L33 X9). `.cp-filter-trigger` used to float this drawer's ONE open door at every viewport; it
-   now has two lawful doors instead (the dock instrument's pull-out/gear-sheet row + the per-plate
-   VizPlate filter icon), so the third floating door — and the top-right content collision it
-   caused on every route — is gone, not re-aimed. */
+@media (--phone) {
+    .cp-continuum__door {
+        inset-block-start: auto;
+        inset-block-end: calc(1rem + env(safe-area-inset-bottom));
+        transform: none;
+    }
+}
 </style>

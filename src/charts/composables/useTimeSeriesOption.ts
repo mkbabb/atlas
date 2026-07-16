@@ -97,13 +97,13 @@ export function buildTimeSeriesOption(
                 position: "insideEndTop",
                 rich: {
                     yr: {
-                        fontFamily: "Fira Code",
+                        fontFamily: palette.fontMono,
                         fontWeight: 500,
                         fontSize: 11,
                         color: palette.muted,
                     },
                     lab: {
-                        fontFamily: "Fira Code",
+                        fontFamily: palette.fontMono,
                         fontWeight: 600,
                         fontSize: 9,
                         color: palette.muted,
@@ -129,19 +129,19 @@ export function buildTimeSeriesOption(
                 position: "insideStartTop",
                 rich: {
                     yr: {
-                        fontFamily: "Fira Code",
+                        fontFamily: palette.fontMono,
                         fontWeight: 500,
                         fontSize: 11,
                         color: palette.diverging.low,
                     },
                     lab: {
-                        fontFamily: "Fira Code",
+                        fontFamily: palette.fontMono,
                         fontWeight: 600,
                         fontSize: 9,
                         color: palette.diverging.low,
                     },
                     arr: {
-                        fontFamily: "Fira Code",
+                        fontFamily: palette.fontMono,
                         fontWeight: 600,
                         fontSize: 11,
                         color: palette.diverging.low,
@@ -158,6 +158,7 @@ export function buildTimeSeriesOption(
                 x: dials.forecastBoundaryX,
                 label: "forecast",
                 color: palette.muted,
+                fontMono: palette.fontMono,
                 kind: "forecast",
                 yearText: dials.xFormat
                     ? dials.xFormat(dials.forecastBoundaryX)
@@ -258,14 +259,14 @@ export function buildTimeSeriesOption(
             //   `s.endLabel` string opt-in holds VERBATIM. directLabels off ⇒ the else branch IS the
             //   prior expression, so the option is BYTE-IDENTICAL for every existing consumer.
             ...(dials.directLabels && !isBand && !s.hidden && !s.hideInLegend
-                ? directEndLabel(s)
+                ? directEndLabel(s, palette.fontMono)
                 : s.endLabel && !isBand && !s.hidden
                   ? {
                         endLabel: {
                             show: true,
                             formatter: s.endLabel,
                             color: s.color,
-                            fontFamily: dials.axisFontFamily ?? "Fira Code",
+                            fontFamily: dials.axisFontFamily ?? palette.fontMono,
                             fontSize: 12,
                             fontWeight: 600,
                             distance: 8,
@@ -364,7 +365,11 @@ export function buildTimeSeriesOption(
                 : { lineStyle: { color: palette.grid } },
             axisTick: { show: false },
             axisLabel: {
-                ...BOUNDARY_AXIS.label(palette.muted, palette.figureAxisPx),
+                ...BOUNDARY_AXIS.label(
+                    palette.muted,
+                    palette.fontMono,
+                    palette.figureAxisPx,
+                ),
                 // THE AXIS NUMERAL FACE — the route's tabular face (VFT's "IBM Plex Mono") replaces
                 // the "Fira Code" default so the ticks read in the journal's technical register.
                 ...(dials.axisFontFamily ? { fontFamily: dials.axisFontFamily } : {}),
@@ -393,7 +398,11 @@ export function buildTimeSeriesOption(
                 ? dashedHairline(palette)
                 : { lineStyle: { color: palette.grid } },
             axisLabel: {
-                ...BOUNDARY_AXIS.label(palette.muted, palette.figureAxisPx),
+                ...BOUNDARY_AXIS.label(
+                    palette.muted,
+                    palette.fontMono,
+                    palette.figureAxisPx,
+                ),
                 ...(dials.axisFontFamily ? { fontFamily: dials.axisFontFamily } : {}),
                 ...(dials.yFormat
                     ? { formatter: (v: number) => dials.yFormat!(v) }

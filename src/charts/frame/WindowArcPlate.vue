@@ -26,6 +26,7 @@ import { useVizPalette } from "@/charts/composables/useVizPalette";
 import { trajectory, type TrajectoryPoint } from "@/data/multiYear";
 import { forecastBoundaryX as forecastBoundary } from "@/charts/marks/trajectory-marks";
 import type { Feed } from "@/data/contract";
+import type { FilterResponse } from "@/charts/contract/viz-contract";
 
 const props = withDefaults(
     defineProps<{
@@ -46,6 +47,7 @@ const props = withDefaults(
         ariaLabel?: string;
         size?: "default" | "hero";
         figId?: string;
+        filterResponse?: FilterResponse;
     }>(),
     {
         leadMeasure: undefined,
@@ -59,6 +61,7 @@ const props = withDefaults(
         ariaLabel: "Multi-year window trajectory",
         size: "default",
         figId: undefined,
+        filterResponse: "responsive",
     },
 );
 
@@ -130,6 +133,7 @@ const forecastX = computed<number | undefined>(() => {
         :aria-label="ariaLabel"
         :size="size"
         :fig-id="figId"
+        :filter-response="filterResponse"
     >
         <template v-if="$slots.title" #title><slot name="title" /></template>
         <template v-if="$slots.foot" #foot><slot name="foot" /></template>

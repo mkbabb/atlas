@@ -6,8 +6,8 @@
 // `<SectionDivider>` — the static drawn `HandMark` (`animation="none"`), the same thin-consumer of
 // `@mkbabb/glass-ui/handmark` (the atlas authors NO stroke cubic; the brush, the wobble, the
 // seeded-static grain are ALL library-rendered). It carries SectionDivider's `full`/`short` weight
-// tiers + a NEW `hero` tier (heavier — the page-cover rule below `<DashboardHero>`). The variants
-// ESCALATE expression, restraint-first (most junctions stay the static `rule`):
+// tiers + a `hero` tier (the page-cover rule below `<DashboardHero>`). The variants escalate
+// expression, restraint-first (most junctions stay the static `rule`):
 //   · rule    — the static drawn HandMark (today's default; boil FORBIDDEN — the frame-guard).
 //   · draw    — the HandMark draws-on on scroll-entry, un-draws on scroll-up (the bidirectional
 //               view() draw the underlines already use; clock="scroll" semantics).
@@ -41,7 +41,7 @@ const props = withDefaults(
             is `rule-register.ts`'s `RuleVariant`; the beat-template orchestrator resolves it per beat. */
         variant?: RuleVariant;
         /** The demarcation tier — `full` (chapter rule) · `short` (figure rule) · `hero`
-            (the heavier page-cover rule below the DashboardHero). */
+            (the page-cover rule below the DashboardHero). */
         weight?: "full" | "short" | "hero" | "seam";
         /** The ghost chapter figure (variant="numeral") → the Roman watermark. */
         numeral?: number;
@@ -58,12 +58,13 @@ const isSeam = computed(() => props.weight === "seam");
 const brush = computed<"pen" | "pencil">(() =>
     isShort.value ? "pencil" : "pen",
 );
+const HAIRLINE_BRUSH = { weight: 1 } as const;
 // The ink: the chapter/hero rule in the page ink, the figure rule in the faint engrave hairline.
 // THE SILVER RULE FINISH (H.W4.b · §SILVER) — the FIGURE rule (the short pencil whisper, the
 // structural section divider) wears the brushed-metal finish: --silver-rule mixes a faint cool-
 // steel tint INTO the --engrave hairline ink, so the rule reads as a struck-metal section cut, not
 // flat graphite. ADDITIVE (the --engrave fallback survives if silver is unset); NEUTRAL (it does
-// not fight the route accent). The CHAPTER/HERO rule stays full page ink (a loud cut earns no tint).
+// not fight the route accent). The CHAPTER/HERO rule stays in page ink at the same recessive rung.
 const ink = computed<string>(() =>
     isShort.value
         ? "color-mix(in oklab, var(--engrave, var(--muted-foreground)), var(--silver-rule) 40%)"
@@ -123,6 +124,7 @@ const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : "
             class="animated-rule__ink"
             shape="strikethrough"
             :brush="brush"
+            :overrides="HAIRLINE_BRUSH"
             :color="ink"
             :seed="seed"
             :animation="animation"
@@ -133,35 +135,22 @@ const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : "
 </template>
 
 <style scoped>
-/* Both ink variants are DRAWN rules — the host is a sized BOX (no background, no border; the ink
-   is the HandMark path / the ghost glyph, not a CSS fill). The chapter/hero rule breathes wide; the
-   figure rule breathes tighter. The host carries the measured HEIGHT the brush stroke needs (the
-   marker is fat, the pencil thin) + the full reading measure, so the inline-block HandMark `.hm`
-   has a box to fill. (This mirrors SectionDivider's geometry exactly — the subsumption is real.) */
+/* Every non-seam rule is one recessive HandMark hairline. The weight tiers retain only their
+   editorial breathing rhythm; the shared story/figure track owns inline proportion. */
 .animated-rule {
-    border: 0;
-    background: none;
-    /* THE READING MEASURE (the N.LIVE-DEFECTS full-bleed-rule fix). The rule is EDITORIAL SPINE —
-       a chapter/figure divider (role="separator"), not a data mark — so it reads at the PROSE
-       measure, NOT the wide `--measure-figure` figure track its `.dashboard-body` host provides
-       (the §13 viz-area-is-viz-ONLY law: high-level text/furniture stays at the reading measure;
-       only the marks break out). Before this, `width:100%` stretched the tapered HandMark across
-       the whole ~1280px figure track — the "wildly long dividing rule". `min(100%, --measure-prose)`
-       + `margin-inline:auto` centres it in the reading column at every width (the phone column
-       still fills, the 100% term winning below 72ch). */
     width: 100%;
-    max-inline-size: var(--measure-prose, 72ch);
+    max-inline-size: var(--measure-figure, 92rem);
     margin-inline: auto;
     display: block;
     padding: 0;
     overflow: visible;
-    /* THE SUFFUSION RUNG (DESIGN §13 / HIER-SUFFUSION · rung ④). The drawn rule declares its
-       recession from --attn-chrome (0.46) — the ONE source of truth, NEVER the brush's intrinsic
-       opacity (the marker/pencil presets carry their own alpha; the rung recedes the whole rendered
-       mark uniformly to the chrome register, as the inversion law demands of frame chrome). The
-       numeral arm recesses further via its own ghost ink (the ⑤ atmosphere floor), so its
-       additional fade composes on top of this chrome floor. */
+    border: 0;
+    background: none;
+    /* The shared chrome rung keeps the one-pixel mark recessive in both themes. */
     opacity: var(--attn-chrome);
+}
+.animated-rule:not(.animated-rule--seam):not([data-variant="numeral"]) {
+    block-size: 1px;
 }
 /* The HandMark `.hm` root is inline-block (the library's scoped default); the rule host needs it
    to STRETCH the full measure. The descendant selector (two classes) out-specifies the library's
@@ -177,20 +166,15 @@ const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : "
 /* TIER ① the CHAPTER rule — the confident drawn `pen` line between beats (the wide margin parts
    whole story beats). */
 .animated-rule--full {
-    height: 18px;
     margin-block: clamp(2.5rem, 6vw, 5rem);
 }
 /* TIER ② the FIGURE rule — the faint `pencil` graphite whisper within a beat (a tighter margin;
    never louder than a whisper, the stopping rule). */
 .animated-rule--short {
-    height: 14px;
     margin-block: clamp(1.5rem, 3.5vw, 2.5rem);
 }
-/* THE NEW HERO TIER — the heavier page-cover rule below the DashboardHero (the band ends, the lead
-   beat begins). Taller than the chapter rule so the marker draws a heavier cut; a tighter top
-   margin (it sits against the cover) and a wider bottom (it parts the cover from the first plate). */
+/* The page-cover tier keeps its distinct breathing rhythm, not a distinct stroke weight. */
 .animated-rule--hero {
-    height: 22px;
     margin-block-start: clamp(1.5rem, 4vw, 3rem);
     margin-block-end: clamp(3rem, 7vw, 6rem);
 }

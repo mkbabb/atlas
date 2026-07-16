@@ -234,24 +234,22 @@
         /* The beat reveal: fade up + a restrained lift from below (S3 §2.3). The `to`
            keyframe is the terminal state; `fill-mode: both` (below) holds it past the range
            end, so a settled beat rests at exactly opacity 1 — the snap is structural.
-           O-A26 (DIR-5 ARM D) · THE REVEAL-SHAPE TERMS — `scale()`/`skewY()` are layered onto the
-           SAME `translate3d(...)` (never a second keyframe), each defaulting to its IDENTITY value
-           (scale 1 / skewY 0deg) so an un-stamped beat (the `lift` majority default) is
-           byte-UNCHANGED. `data-reveal-shape="settle"|"unfold"` (below) re-parameterizes the two
-           vars — the SAME custom-property axis-swap `data-scroll-in` already uses on `--reveal-x`.
-           Both frames declare the SAME transform-function list so the browser interpolates each
-           function independently (no matrix-decomposition fallback). Compositor-legal by
-           construction (AG7): transform/opacity only, zero new paint properties — AG6 (byte-
-           identical reversal) holds without a new proof. */
+           P-CF06 · THE REVEAL-SHAPE TERM — `scale()` is layered onto the SAME `translate3d(...)`
+           (never a second keyframe), defaulting to its identity value so an un-stamped beat (the
+           `lift` majority default) is byte-UNCHANGED. `data-reveal-shape="settle"` (below)
+           re-parameterizes that one value — the SAME custom-property axis-swap `data-scroll-in`
+           already uses on `--reveal-x`. Both frames declare the SAME transform-function list so
+           the browser interpolates each function independently. Compositor-legal by construction
+           (AG7): transform/opacity only, zero new paint properties. */
         @keyframes reveal-beat {
             from {
                 opacity: 0;
                 transform: translate3d(var(--reveal-x, 0px), var(--reveal-lift, 6vh), 0)
-                    scale(var(--reveal-scale-from, 1)) skewY(var(--reveal-skew-from, 0deg));
+                    scale(var(--reveal-scale-from, 1));
             }
             to {
                 opacity: 1;
-                transform: translate3d(0, 0, 0) scale(1) skewY(0);
+                transform: translate3d(0, 0, 0) scale(1);
             }
         }
 
@@ -271,16 +269,11 @@
             --reveal-lift: 0px;
         }
 
-        /* O-A26 (DIR-5 ARM D) · THE REVEAL-SHAPE AXIS — the SAME custom-property re-parameterization
-           pattern as the scroll-in swap above, now on the `from` keyframe's new scale/skewY terms.
-           `settle` layers a gentle zoom-in (`scale` 0.965→1); `unfold` layers a paper-tilt settle
-           (`skewY` 2deg→0). Omitted (the `lift` majority default, `rotateRevealShape`-biased ≥half
-           the slots) ⇒ both vars fall to the keyframe's own identity defaults — byte-UNCHANGED. */
+        /* P-CF06 · THE REVEAL-SHAPE AXIS — the SAME custom-property re-parameterization pattern as
+           the scroll-in swap above. `settle` layers a gentle zoom-in (`scale` 0.965→1). Omitted
+           (the `lift` majority default) ⇒ the variable falls to the keyframe's identity default. */
         [data-reveal-beat][data-reveal-shape="settle"] {
             --reveal-scale-from: 0.965;
-        }
-        [data-reveal-beat][data-reveal-shape="unfold"] {
-            --reveal-skew-from: 2deg;
         }
 
         /* The INTERIOR narrative beat: scrubs its reveal off its own view-timeline, reverses

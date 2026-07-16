@@ -118,10 +118,3 @@ export function skinCssVars(skin: SkinContract): Record<string, string> {
 export function useSkin(): Readonly<SkinContract> | null {
     return inject(SKIN_KEY, null);
 }
-
-/** Backward-compatible name for existing editorial consumers; `SKINS` is the public keystone. */
-export const CATEGORY_SKINS = SKINS;
-
-export function resolveCategorySkin(category: DashboardCategory): CategorySkin {
-    return resolveSkin(category);
-}

@@ -70,7 +70,7 @@ export interface AuthoredBeat {
     marquee?: boolean;
     /** The figure-ladder sizing field (Q-27). Omit ⇒ `{ kind: "index" }` (the neutral rung). */
     figure?: FigureLadder;
-    /** The declared viz-type id — opens to the full alternate registry (Q-30 · `viz-alternates.ts`). */
+    /** The declared viz surface id, resolved by the figure's canonical `VizSetContract`. */
     viz?: string;
     /** The optional superlative register (Q-48) — a deft per-item badge/caption. Omit ⇒ none. */
     superlative?: Superlative;
@@ -91,14 +91,14 @@ export interface BeatVariationPolicy {
     seed?: number;
 }
 
-// ── THE REVEAL-SHAPE AXIS (O-A26 · DIR-5 ARM D — mirrors `RULE_VARIANTS`/`rotateRuleVariant`) ──────
+// ── THE REVEAL-SHAPE AXIS (P-CF06 — mirrors `RULE_VARIANTS`/`rotateRuleVariant`) ───────────────────
 
 /** THE CLOSED REVEAL-SHAPE REGISTER — the beat-reveal transform variety `Beat`'s
     `data-reveal-shape` stamp selects (scroll-driven.css's `reveal-beat` keyframe). Restraint-first:
-    `lift` is today's translate+opacity rise (the majority default); `settle`/`unfold` layer a
-    `scale`/`skewY` term onto that SAME keyframe. A shape can ONLY be one of these three (no free
-    variant) — the RevealSpec.shape field literal union this register mirrors. */
-export const REVEAL_SHAPES = ["lift", "settle", "unfold"] as const;
+    `lift` is today's translate+opacity rise (the majority default); `settle` layers a `scale` term
+    onto that SAME keyframe. A shape can ONLY be one of these two (no free variant) — the
+    RevealSpec.shape field literal union this register mirrors. */
+export const REVEAL_SHAPES = ["lift", "settle"] as const;
 
 /** The beat-reveal transform-shape register — the variety a beat's rise wears. */
 export type RevealShape = (typeof REVEAL_SHAPES)[number];
@@ -114,13 +114,13 @@ const SHAPE_TIER_OFFSET: Record<Rank, number> = {
 
 /** THE ROTATION — resolve a beat's reveal shape from its tier + its running index, mirroring
     `rotateRuleVariant` BYTE-FOR-BYTE (rule-register.ts:37-42): the SAME period-4, tier-offset
-    cadence over a 3-name register, restraint-biased (`lift` wins two of every four slots — the
-    ≥half floor). The AUTHORED `RevealSpec.shape` field ALWAYS wins over this fallback (the
+    cadence over a 2-name register, restraint-biased (`lift` wins three of every four slots). The
+    AUTHORED `RevealSpec.shape` field ALWAYS wins over this fallback (the
     resolver below only reaches it when a beat leaves `shape` unset). Deterministic + total: same
     (tier, index) ⇒ same shape, never random. */
 export function rotateRevealShape(tier: Rank, index: number): RevealShape {
     const step = ((index + SHAPE_TIER_OFFSET[tier]) % 4 + 4) % 4;
-    return step === 1 ? "settle" : step === 3 ? "unfold" : "lift";
+    return step === 1 ? "settle" : "lift";
 }
 
 // ── A pure resolved variation utility ─────────────────────────────────────────────────────────────

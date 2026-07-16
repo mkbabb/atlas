@@ -17,6 +17,9 @@ describe("HeroSystem", () => {
         expect(system.heroProps).toEqual({ title: "Atlas", dek: "Evidence", figures: [], ordinal: 4 });
         expect(system.provenance).toBe(provenance);
         expect(source("src/editorial/hero-system.ts")).not.toMatch(/\b(ref|watch|computed)\s*\(/);
+        const hero = source("src/editorial/DashboardHero.vue");
+        expect(hero).toContain('class="eyebrow dashboard-hero__eyebrow"');
+        expect(hero).toContain('class="eyebrow-plain dashboard-hero__identity"');
     });
 });
 
@@ -37,6 +40,11 @@ describe("StoryCard composition", () => {
         expect(card).toContain("<Beat");
         expect(card.match(/<AnimatedRule/g)).toHaveLength(2);
         expect(card).toContain('weight="seam"');
+        expect(rule).toContain(':overrides="HAIRLINE_BRUSH"');
+        expect(rule).toContain("max-inline-size: var(--measure-figure");
+        expect(rule).toMatch(
+            /\.animated-rule:not\(\.animated-rule--seam\):not\(\[data-variant="numeral"\]\)\s*{[^}]*block-size:\s*1px;/s,
+        );
         expect(card).not.toMatch(/\.story-card\s*\{[^}]*border-radius/s);
         expect(essay).toContain(":is=\"chapter.card ? StoryCard : Beat\"");
         expect(essay).toContain("<template #figure>");
@@ -50,6 +58,7 @@ describe("StoryCard composition", () => {
     it("lets Glass own the card rhythm and suppresses only nested ChartFrame perimeter chrome", () => {
         const card = source("src/editorial/StoryCard.vue");
         const frame = source("src/charts/frame/ChartFrame.vue");
+        const drilldown = source("src/interaction/SelectionDrilldownPanel.vue");
         const frameCss = source("src/charts/frame/ChartFrame.css");
 
         expect(card).toContain("provide(STORY_CARD_KEY, context)");
@@ -64,6 +73,10 @@ describe("StoryCard composition", () => {
         }
         expect(card).not.toContain("var(--space-phi-");
         expect(card).not.toContain("--storycard-pad");
+        expect(drilldown).toContain("<Card");
+        expect(drilldown).not.toMatch(
+            /\.drilldown__card\s*{[^}]*border-radius\s*:/s,
+        );
         expect(frame).toContain("inject(STORY_CARD_KEY, null) !== null");
         expect(frame).toContain("'plate--card-contained': cardContained");
         expect(frameCss).toMatch(/\.plate--card-contained\s*{[^}]*border:\s*0;[^}]*box-shadow:\s*none;/s);

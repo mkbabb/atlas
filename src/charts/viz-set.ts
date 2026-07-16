@@ -40,10 +40,6 @@ export function resolveVizSurface(set: VizSetContract, id?: string): VizView {
     return set.views.find((view) => view.id === id) ?? set.views[0];
 }
 
-export function resolveFromAlternates(set: VizSetContract, selected?: string): VizView {
-    return resolveVizSurface(set, selected);
-}
-
 export function optionsLiveInView(view: VizView): VizOptionSpec[] {
     return view.options ?? [];
 }

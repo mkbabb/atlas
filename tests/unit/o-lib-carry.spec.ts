@@ -240,9 +240,8 @@ describe("O-LIB-CARRY 6a — VizTextOverlay.vue: the `gutter` placement field (D
             VIZ_CONTRACT.indexOf("export interface VizView"),
         );
 
-        expect(VIZ_TEXT_OVERLAY).toContain(
-            "export type VizPlacement = VizAnnotationPlacement;",
-        );
+        expect(VIZ_TEXT_OVERLAY).toContain("placements: VizAnnotationPlacement[];");
+        expect(VIZ_TEXT_OVERLAY).not.toContain("VizPlacement");
         expect(placement).toMatch(/gutter\?:\s*number;/);
     });
 

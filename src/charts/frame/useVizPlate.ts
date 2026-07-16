@@ -211,7 +211,7 @@ function onFigureKey(e: KeyboardEvent): void {
             break;
         case "pin": {
             const parsed = parseSelKey(res.intent.key);
-            if (parsed) viz?.selection.select(parsed.kind, parsed.id, { additive: res.intent.additive });
+            viz?.selection.select(parsed.kind, parsed.id, { additive: res.intent.additive });
             break;
         }
         case "exit":
@@ -264,6 +264,7 @@ const focusedStat = computed(() => {
     each dim by its `key` to ONE shared cell; J-WORKBOOK renders the rails. The host READS the
     declaration, it does NOT render the dials. */
 const filterDimensions = computed(() => props.contract.filterDimensions ?? []);
+const filterResponse = computed(() => props.contract.filterResponse ?? "responsive");
 /** FACET 2 — the declared scroll-reveal facet (null when undeclared). J-SCROLL §9 renders it. */
 const reveal = computed(() => props.contract.reveal ?? null);
 /** FACET 3 — the declared entity-glyph grain (null when undeclared). J-GLYPH resolves it. */
@@ -330,6 +331,7 @@ onMounted(() => {
     vizToken = vizRegistry.register({
         vizId: props.contract.id,
         dims: filterDimensions.value,
+        filterResponse: filterResponse.value,
         crossHighlight: props.contract.crossHighlight ?? true,
         optionsController: hasOptions.value ? optionsController : null,
         imageExport: {
@@ -338,8 +340,12 @@ onMounted(() => {
         },
     });
 });
-watch(filterDimensions, (dims) => {
-    if (vizToken) vizRegistry.updateDims(props.contract.id, vizToken, dims);
+watch([filterDimensions, filterResponse], ([dims, response]) => {
+    if (vizToken)
+        vizRegistry.updateFilterFacet(props.contract.id, vizToken, {
+            dims,
+            filterResponse: response,
+        });
 });
 onUnmounted(() => {
     if (vizToken) vizRegistry.deregister(props.contract.id, vizToken);

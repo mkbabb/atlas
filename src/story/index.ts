@@ -27,7 +27,6 @@ export { default as StoryCorridor } from "./StoryCorridor.vue";
 // ── O-A15 · the variation-axes + template-as-data algebra ─────────────────────────────────────
 export * from "./beat-template";
 export * from "./superlative";
-export * from "./viz-alternates";
 export * from "./manifest";
 
 // The canonical persistent stage is authored from the story surface as well as the charts surface;

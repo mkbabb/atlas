@@ -6,6 +6,7 @@ import {
 } from "./useFilterDimensions";
 import { useFilterPanel } from "./useFilterPanel";
 import { useSelection } from "@/platform/stores/useSelection";
+import type { FilterResponse } from "@/charts/contract/viz-contract";
 
 export interface FilterLedgerChip {
     key: string;
@@ -16,11 +17,12 @@ export interface UseFilterLedgerReturn {
     chips: ComputedRef<FilterLedgerChip[]>;
     appliedCount: ComputedRef<number>;
     selectionCount: ComputedRef<number>;
+    filterResponse: ComputedRef<FilterResponse>;
 }
 
 /** A read-only projection of the existing panel cells; it never parses or writes the URL. */
 export function useFilterLedger(): UseFilterLedgerReturn {
-    const { projectedDims } = useFilterPanel();
+    const { projectedDims, filterResponse } = useFilterPanel();
     const declarations = computed<DimDeclaration[]>(() =>
         projectedDims.value.map((dim) => ({
             key: dim.key,
@@ -51,5 +53,6 @@ export function useFilterLedger(): UseFilterLedgerReturn {
         chips,
         appliedCount: computed(() => chips.value.length),
         selectionCount: computed(() => selection.selectedKeys.size),
+        filterResponse,
     };
 }

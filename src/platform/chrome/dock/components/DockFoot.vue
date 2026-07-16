@@ -141,10 +141,7 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
                  its own compartment, a visually separate register from the controls. -->
             <DockSeparator />
 
-            <!-- ⑤ The dark-mode toggle + the collapse toggle (the TOC view-mode toggle RETIRED,
-                 O-DIR-4 ARM 3 — the owner's "entirely worthless" verdict on the A23 interim; the
-                 DockTOC code + useDockViewMode stay on disk behind the GLASS_TOC_ABSTRACTION_AVAILABLE
-                 owner-held seam, unconsumed). `size="dock"` routes the theme toggle through the
+            <!-- ⑤ The dark-mode toggle + the collapse toggle. `size="dock"` routes the theme toggle through the
                  dock-control register; `:disable-transitions` wires the INSTANT theme re-print. Beside
                  it, the GEAR-TOGGLED COLLAPSE control (C26) toggling the re-enabled collapse posture
                  (the orchestrator drives the GlassDock `expand()`/`collapse()`). Fenced into its own

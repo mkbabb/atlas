@@ -387,10 +387,9 @@ const clones = computed<{ key: string; style: CSSProperties }[]>(() => {
 </script>
 
 <template>
-    <!-- The flight overlay is SEATED IN THE CONTENT STAGE (it inherits the dock gutter reserve), so
-         ZERO clone ink sits left of `--cp-dock-reserve` (the G-N1 occlusion arm b, structural). Clones
-         sit ABOVE the plates, BELOW the dock stratum (`--z-overlay`). Pointer-transparent — the marks
-         under it stay interactive. -->
+    <!-- The flight overlay is contained by the staged essay's local positioning context. Clones sit
+         above story content and below external chrome; pointer-transparent so the marks under it stay
+         interactive. -->
     <div ref="root" class="story-corridor" aria-hidden="true">
         <!-- THE DOM TIER (≤ the DOM-clone ceiling) — one compositor-transformed div per mark. -->
         <div
@@ -410,12 +409,8 @@ const clones = computed<{ key: string; style: CSSProperties }[]>(() => {
 .story-corridor {
     position: absolute;
     inset: 0;
-    /* seated IN the content stage: no clone ink in the dock gutter (the occlusion arm b, by
-       construction — the overlay inherits the stage's inline gutter reserve). */
-    padding-inline-start: max(2rem, var(--cp-dock-reserve, 112px));
     pointer-events: none;
-    z-index: var(--z-overlay, 50);
-    overflow: clip;
+    z-index: 1;
 }
 .story-corridor__clone {
     position: absolute;
@@ -430,8 +425,7 @@ const clones = computed<{ key: string; style: CSSProperties }[]>(() => {
 /* THE DENSE-TIER CANVAS (N.WP-sci) — fills the corridor container; its own 0,0 aligns with the
    border-box origin the cached mark rects are relative to (the DOM clones share that origin). The
    backing store is sized in JS at the device pixel ratio; pointer-transparent (the marks under it
-   stay interactive). Ignores the container's inline gutter reserve (absolute children position
-   against the padding box), so its coordinate space matches the DOM-clone tier byte-for-byte. */
+   stay interactive). */
 .story-corridor__canvas {
     position: absolute;
     inset: 0;

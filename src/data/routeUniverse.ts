@@ -25,8 +25,7 @@
 // universe-scoped membership test — so the raw-leaNumber consumers (`filter.ts` `.has(rawLea)`,
 // `selection.ts` `selectedLea`) keep reading RAW ids (the universe is stripped, never folded into the id).
 //
-// THE ADDITIVE DISCIPLINE: an UNTAGGED key (a `?sel=` deep-link re-added through `selectMany`, a legacy
-// pre-guard pin) is universe-AGNOSTIC — it belongs to EVERY universe, so the guard NEVER makes a currently-
+// THE ADDITIVE DISCIPLINE: an UNTAGGED key (a canonical `?sel=` deep-link restored through `selectMany`) is universe-AGNOSTIC — it belongs to EVERY universe, so the guard NEVER makes a currently-
 // visible district vanish. It ONLY excludes a key minted EXPLICITLY in the OTHER universe. The guard is a
 // pure NARROWING of the cross-universe alias, never a regression of the in-universe read.
 
@@ -76,7 +75,7 @@ export function tagUniverse(key: string, universe: RouteUniverse): void {
 /**
  * THE UNIVERSE-SCOPED MEMBERSHIP RELATION (the collision guard's core predicate — the gate asserts THIS).
  * Does `key` belong to `universe`? TRUE when the key was minted in `universe`, OR when the key is
- * UNTAGGED (no recorded universe — a `?sel=` deep-link, a legacy pin): an untagged key is universe-
+ * UNTAGGED (no recorded universe — a canonical `?sel=` deep-link): an untagged key is universe-
  * AGNOSTIC, so the guard never hides a currently-visible district. FALSE exactly when the key was minted
  * in a DIFFERENT universe (and never this one) — the precise cross-universe alias the guard catches: a
  * SCI-minted `district:{lea}` is NOT a member of the ECF universe, so it cannot co-filter an ECF viz.

@@ -97,13 +97,13 @@ export const BOUNDARY_AXIS = {
         wears the slug register the hero + HoverCard reach, never the frozen `12` it was stuck at.
         Omit ⇒ the legacy 12px rung (the canvas cannot read a var/clamp, so the fallback is a
         literal number, not the token). */
-    label(color: string, figurePx?: number) {
+    label(color: string, fontMono: string, figurePx?: number) {
         return {
             showMinLabel: true,
             showMaxLabel: true,
             margin: 12,
             hideOverlap: true,
-            fontFamily: "Fira Code",
+            fontFamily: fontMono,
             fontSize: figurePx ?? 12,
             color,
         };
