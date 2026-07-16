@@ -234,6 +234,40 @@ export function regionClearsLabelGate(minorAxisPx: number, contrastRatio: number
     return minorAxisPx >= LABEL_MINOR_AXIS_FLOOR_PX && contrastRatio >= LABEL_CONTRAST_FLOOR;
 }
 
+/** A resting value-label's CENTRED bounding box in SVG user-space (the SAME frame the region's
+    `cx`/`cy` are measured in) — the collision-declutter input. `w`/`h` are the word's estimated
+    advance-width and line height (charCount × the mono advance, one line). */
+export interface LabelBox {
+    key: string;
+    cx: number;
+    cy: number;
+    w: number;
+    h: number;
+}
+
+/** THE DETERMINISTIC LABEL-COLLISION DECLUTTER (X10 · the pairwise-overlap leg, PA-9 R3-USF-01).
+    Resting value-label words seated at region centroids overlap pairwise on a dense choropleth
+    (measured 4–16px). This THINS them: walk the boxes in the caller's PRIORITY order (the larger
+    region first — it keeps its word), KEEP a box that clears every already-kept box, SUPPRESS one
+    whose centred AABB overlaps a kept box. Returns the suppressed key set; the caller routes a
+    suppressed region to the pattern texture, so O-A22's non-hue-channel-per-region invariant survives
+    the thin (the word only changes FORM, it never drops). PURE + DETERMINISTIC: the same ordered
+    boxes always yield the same suppressed set — no hover state, frozen per frame. */
+export function resolveLabelCollisions(boxes: readonly LabelBox[]): Set<string> {
+    const suppressed = new Set<string>();
+    const kept: LabelBox[] = [];
+    for (const b of boxes) {
+        const overlaps = kept.some(
+            (k) =>
+                Math.abs(k.cx - b.cx) < (k.w + b.w) / 2 &&
+                Math.abs(k.cy - b.cy) < (k.h + b.h) / 2,
+        );
+        if (overlaps) suppressed.add(b.key);
+        else kept.push(b);
+    }
+    return suppressed;
+}
+
 /**
  * THE O-A22 EXECUTABLE PROOF (the `checkOrdinalRainbowPassthrough` idiom) — the pure-mechanism
  * teeth the acceptance rides, collapsed into ONE function the spec calls (returns `{ok, failures}`,
