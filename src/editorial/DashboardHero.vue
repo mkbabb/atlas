@@ -373,7 +373,7 @@ function rankNumTrack(f: HeroFigure): Record<string, number> | undefined {
                             v-bind="completionSeal"
                             class="dashboard-hero__seal"
                         />
-                        <span class="dashboard-hero__unit eyebrow">{{ f.unit }}</span>
+                        <span class="dashboard-hero__unit eyebrow-plain">{{ f.unit }}</span>
                     </span>
                     <span class="dashboard-hero__context text-caption">{{
                         f.caption
