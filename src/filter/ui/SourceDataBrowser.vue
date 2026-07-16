@@ -3,12 +3,14 @@
     lang="ts"
     generic="Row, Scope = unknown, Key extends string | number = string | number"
 >
-import { computed, nextTick, ref, useId, watch } from "vue";
+import { computed, h, nextTick, ref, useId, watch, type FunctionalComponent } from "vue";
 import {
     DataTable,
     type DataTableColumn,
     type DataTableRowAttrs,
 } from "@mkbabb/glass-ui/data-table";
+import { ToggleGroup, ToggleGroupItem } from "@mkbabb/glass-ui/toggle-group";
+import { Button } from "@mkbabb/glass-ui/button";
 import type { ExportFormat } from "../../charts/lib/source-data.js";
 import type { ExportGrain } from "../engine/rows.js";
 import {
@@ -24,6 +26,7 @@ import {
     useSourceBrowserEvents,
     type SourceDataAvailableGrain,
     type SourceDataBrowserProps,
+    type SourceDataColumn,
     type SourceDataGrainOption,
 } from "./source-data-browser.js";
 import { emitSourceFilterState } from "./source-filter-state.js";
@@ -125,9 +128,23 @@ const tableColumns = computed<DataTableColumn<BrowserRow>[]>(() =>
         label: column.label,
         class: "source-browser__cell",
         headerClass: "source-browser__head",
-        formatter: (_value, row) => display(column.value(row.item)),
+        component: cellRenderer(column),
     })),
 );
+
+/** A truncating cell that carries its full value as a title, so a clipped District/Aggregate name
+    stays legible on hover (the ellipsis-with-title truncation policy). Props are declared so the
+    DataTable's `value`/`row` bindings never fall through as stray DOM attributes. */
+function cellRenderer(
+    column: SourceDataColumn<Row>,
+): FunctionalComponent<{ row: BrowserRow }> {
+    const render: FunctionalComponent<{ row: BrowserRow }> = ({ row }) => {
+        const text = display(column.value(row.item));
+        return h("span", { class: "source-browser__cell-text", title: text }, text);
+    };
+    render.props = ["value", "row"];
+    return render;
+}
 const tableRowAttrs: DataTableRowAttrs<BrowserRow> = (row) => ({
     class: "source-browser__row",
     "aria-rowindex": row.index + 2,
@@ -246,10 +263,10 @@ function selectGrain(index: number, writeUrl = true): void {
     viewport.value?.scrollTo({ top: 0 });
 }
 
-function markGrainExplicit(index: number): void {
-    grainExplicit.value = true;
-    const option = props.availableGrains[index];
-    if (option) view.setParam("grain", grainOf(option).kind);
+function onGrainChange(value: unknown): void {
+    if (value == null || value === "") return; // ToggleGroup emits "" on re-press — keep the value
+    const index = Number.parseInt(String(value), 10);
+    if (Number.isInteger(index)) selectGrain(index);
 }
 
 function selectContextualDefault(): void {
@@ -339,45 +356,53 @@ function titleCase(value: string): string {
             role="toolbar"
             aria-label="Source data controls"
         >
-            <fieldset class="source-browser__grains">
-                <legend>Rows shown</legend>
-                <label
-                    v-for="(option, index) in availableGrains"
-                    :key="optionKey(option, index)"
-                    class="source-browser__grain"
-                    :class="{ 'source-browser__grain--active': activeIndex === index }"
+            <div class="source-browser__grains-field">
+                <span :id="grainControlName" class="source-browser__eyebrow"
+                    >Rows shown</span
                 >
-                    <input
-                        type="radio"
-                        :name="grainControlName"
-                        :checked="activeIndex === index"
-                        @click="markGrainExplicit(index)"
-                        @change="selectGrain(index)"
-                    />
-                    <span>{{ labelOf(option) }}</span>
-                </label>
-            </fieldset>
+                <ToggleGroup
+                    :model-value="String(activeIndex)"
+                    type="single"
+                    register="glass"
+                    :aria-labelledby="grainControlName"
+                    class="flex flex-wrap gap-1"
+                    @update:model-value="onGrainChange"
+                >
+                    <ToggleGroupItem
+                        v-for="(option, index) in availableGrains"
+                        :key="optionKey(option, index)"
+                        :value="String(index)"
+                        :aria-label="labelOf(option)"
+                        class="min-h-[44px] text-xs"
+                    >
+                        {{ labelOf(option) }}
+                    </ToggleGroupItem>
+                </ToggleGroup>
+            </div>
 
             <div
                 class="source-browser__exports"
                 role="group"
                 aria-label="Export source data"
             >
-                <button
+                <Button
                     v-for="format in exportFormats"
                     :key="format"
                     type="button"
+                    variant="glass"
+                    size="sm"
+                    class="min-h-[44px] text-xs"
                     @click="serialize(format)"
                 >
                     {{ format.toUpperCase() }}
-                </button>
+                </Button>
             </div>
         </div>
 
         <dl class="source-browser__provenance" aria-label="Data provenance">
             <div>
                 <dt>Source</dt>
-                <dd>
+                <dd :title="payload.meta.source.label">
                     <a
                         v-if="payload.meta.source.href"
                         :href="payload.meta.source.href"
@@ -389,15 +414,19 @@ function titleCase(value: string): string {
             </div>
             <div>
                 <dt>As of</dt>
-                <dd>{{ payload.meta.asOf }}</dd>
+                <dd :title="payload.meta.asOf">{{ payload.meta.asOf }}</dd>
             </div>
             <div class="source-browser__filter">
                 <dt>Filter</dt>
-                <dd>{{ payload.meta.filterExplain }}</dd>
+                <dd :title="payload.meta.filterExplain">
+                    {{ payload.meta.filterExplain }}
+                </dd>
             </div>
             <div>
                 <dt>Fields</dt>
-                <dd>{{ provenanceFields.join(", ") }}</dd>
+                <dd :title="provenanceFields.join(', ')">
+                    {{ provenanceFields.join(", ") }}
+                </dd>
             </div>
         </dl>
 
@@ -458,19 +487,14 @@ function titleCase(value: string): string {
     justify-content: space-between;
 }
 
-.source-browser__grains {
+.source-browser__grains-field {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
     min-inline-size: 0;
-    margin: 0;
-    padding: 0;
-    border: 0;
+    flex-direction: column;
+    gap: 0.35rem;
 }
 
-.source-browser__grains legend {
-    inline-size: 100%;
-    margin-block-end: 0.2rem;
+.source-browser__eyebrow {
     font-size: 0.6875rem;
     font-weight: 650;
     letter-spacing: 0.08em;
@@ -478,38 +502,6 @@ function titleCase(value: string): string {
     text-transform: uppercase;
 }
 
-.source-browser__grain,
-.source-browser__exports button {
-    min-block-size: 2.25rem;
-    padding: 0.45rem 0.7rem;
-    border: 1px solid var(--source-rule);
-    border-radius: var(--radius, 0.35rem);
-    background: color-mix(in srgb, var(--card) 78%, transparent);
-    font: 600 0.75rem/1.1 var(--font-sans, ui-sans-serif, sans-serif);
-    color: var(--muted-foreground);
-    cursor: pointer;
-}
-
-.source-browser__grain {
-    display: inline-flex;
-    align-items: center;
-}
-
-.source-browser__grain input {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    opacity: 0;
-}
-
-.source-browser__grain--active {
-    border-color: color-mix(in srgb, var(--foreground) 42%, transparent);
-    background: var(--foreground);
-    color: var(--background);
-}
-
-.source-browser__grain:has(input:focus-visible),
-.source-browser__exports button:focus-visible,
 .source-browser__viewport :deep(.source-browser__row:focus-visible) {
     outline: 2px solid var(--focus-ring-color, currentColor);
     outline-offset: 2px;
@@ -517,12 +509,9 @@ function titleCase(value: string): string {
 
 .source-browser__exports {
     display: flex;
-    gap: 0.25rem;
-}
-
-.source-browser__exports button:hover {
-    color: var(--foreground);
-    border-color: color-mix(in srgb, var(--foreground) 38%, transparent);
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    align-self: end;
 }
 
 .source-browser__provenance {
@@ -569,7 +558,7 @@ function titleCase(value: string): string {
     min-block-size: 12rem;
     max-block-size: min(32rem, 65vh);
     border: 1px solid var(--source-rule);
-    border-radius: var(--radius, 0.35rem);
+    border-radius: var(--radius-plate);
     background: color-mix(in srgb, var(--background) 94%, var(--card));
     overscroll-behavior: contain;
 }
@@ -585,6 +574,13 @@ function titleCase(value: string): string {
 .source-browser__viewport :deep(.source-browser__table table) {
     inline-size: max(100%, calc(var(--source-columns) * 9rem));
     table-layout: fixed;
+}
+
+/* The name column earns the widest seat — District / Aggregate names run long, so 9rem clipped
+   them mid-word. The remaining columns share the rest under the fixed layout. */
+.source-browser__viewport :deep(.source-browser__table th:first-child),
+.source-browser__viewport :deep(.source-browser__table td:first-child) {
+    inline-size: 16rem;
 }
 
 .source-browser__viewport :deep(.source-browser__table thead) {
@@ -639,6 +635,11 @@ function titleCase(value: string): string {
 
 .source-browser__viewport :deep(.source-browser__cell) {
     overflow: hidden;
+}
+
+.source-browser__viewport :deep(.source-browser__cell-text) {
+    display: block;
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -659,11 +660,6 @@ function titleCase(value: string): string {
         grid-column: 1 / -1;
         border-block-start: 1px solid var(--source-rule);
         border-inline-start: 0;
-    }
-
-    .source-browser__grain,
-    .source-browser__exports button {
-        min-block-size: 44px;
     }
 }
 </style>
