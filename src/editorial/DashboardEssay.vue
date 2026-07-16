@@ -634,12 +634,17 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
         text-align: center;
     }
 
-    /* THE DROP-CAP COUNTERWEIGHT — the tinted Roman rides the title side's OUTER gutter. title=left ⇒
-       cap left (today's default, Beat.vue unchanged); title=right ⇒ cap right. */
+    /* THE DROP-CAP COUNTERWEIGHT — the tinted Roman rides the title side. title=left ⇒ cap left
+       (Beat.vue's default `translateX(-115%)` breaks into the reserved LEFT dock gutter — it has
+       112px of room). title=right has NO mirror gutter (the content stage pads only the START), so
+       the mirrored `translateX(115%)` pushed the cap PAST the right viewport edge at wide desktop
+       (the systemic masthead right-edge bleed). Seat the right cap AT the block's right edge instead
+       (`translateX(0)`) — the manuscript grid-break still overlaps the masthead's top-right corner,
+       contained within the viewport. */
     .essay-beat[data-title="right"] :deep(.beat__initial:not(.beat__initial--inline)) {
         inset-inline-start: auto;
         inset-inline-end: 0;
-        transform: translateX(115%);
+        transform: translateX(0);
     }
 
     /* THE ASIDE INSET — keyed on the class, independent of title placement. Aside retains only
