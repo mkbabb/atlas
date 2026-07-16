@@ -13,27 +13,14 @@
 // `PlatformShell` was deleted by C3.1; here `useFilterPane().open` flips to
 // closed-default and there is no gutter for the content to react to.
 //
-// PROBE (C3-10 / RR-4, resolved): `direction="right" × mode="live-behind"` COMPOSES at
-// the resolved 3.9.0 pin — `DrawerDirection` includes `'right'`, vaul-vue owns the
-// per-axis transform, and `mode="live-behind"` is overridable per-prop. The detent
-// ladder (`snapPoints:[0.12,0.5,1]`, authored for the bottom sheet) is suppressed for
-// the right lens via `:snap-points="[]"` → `hasSnapPoints=false` → a plain full-slide
-// drawer. No `Sheet` fallback needed.
-//
-// `Drawer`/`DrawerContent`/`DrawerTitle`/`DrawerDescription` import from the ROOT
-// barrel `@mkbabb/glass-ui` (`./drawer` is an UNPUBLISHED subpath — C3-5). The drawer
-// width reads `--cp-drawer-w` (Drawer has no `size="dock"`). This drawer is ALSO the
-// A4 dock pull-out target (C3.2's affordance drives the same `useFilterPane().open`).
+// Glass Drawer owns the right-axis geometry, material, and motion. This drawer is also the A4 dock
+// pull-out target (C3.2's affordance drives the same `useFilterPane().open`).
 //
 // It is a generic SHELL: it owns the chrome (the "Filters" header, the freshness
 // colophon, the cross-links) and renders the ACTIVE dashboard's filter BODY — passed
 // by the consumer as the `body` prop — inside it. The reset/apply affordances belong
 // to the body; the shell never reaches into the body's logic.
 import { computed, inject, ref, watch, type Component } from "vue";
-// I1 BA→4.0 — the Drawer moved to the published `/drawer` subpath (C3-5's "unpublished
-// subpath" forcing the root import is RESOLVED in 4.0; W-DRAWER-ABROGATE rebuilt the body
-// on reka+SpringProgress with the vaul-vue prop surface — mode/direction/snapPoints/
-// showOverlay — preserved byte-compatible).
 import {
     Drawer,
     DrawerContent,
@@ -97,10 +84,6 @@ const { clearPin } = useFilterPanel();
 watch(open, (o) => {
     if (!o) clearPin();
 });
-
-// The right lens carries NO bottom-sheet detents — pass `[]` so vaul renders a plain
-// full-slide right drawer (`hasSnapPoints=false`), overriding the live-behind ladder.
-const drawerSnapPoints: number[] = [];
 
 const hasFilter = computed(() => Boolean(filterBody.value));
 
@@ -237,31 +220,16 @@ function cancelSave(): void {
         <!-- The right live-behind filter Drawer — closed by default. `mode="live-behind"`
              bundles `modal:false` + no scale-down; `:show-overlay="false"` drops the
              scrim so the viz stays LIVE + interactive behind. `direction="right"` slides
-             from the right edge; `:snap-points="[]"` makes it a plain full-slide lens.
-             `:dismissible="true"` RESTORES Esc-to-dismiss (D2.b): the glass-ui `Drawer`
-             declares `dismissible: {type:Boolean}` with no default, so an ABSENT prop
-             resolves to `false` and spreads into vaul — clobbering vaul's own `default:true`
-             and making vaul `preventDefault()` the Escape (the dismissable-layer never fires).
-             Passing it explicitly true lets the real Escape close the lens + reka returns
-             focus to the summoning trigger (the AX round-trip). The surface geometry + the
-             FLOATING glass tier live in `platform/design/chrome-overlays.css` (UNSCOPED — the
-             body-teleported DrawerContent never receives this SFC's Vue scope attr).
-             THE LIQUID REVEAL (arm b · §H4 · i0-filter-liquid): the `.glass-reveal` class composes
-             the PUBLISHED BB.W-LIQUID-REVEAL recipe (the spring-snappy-clocked scale + blur-settle +
-             fade, keyed off the content's `data-state`), so the lens BLOOMS in over multiple eased
-             frames instead of the discrete §H2/§H4 height-step. The `scale:`/`translate:` LONGHANDS
-             compose with vaul's own slide `transform` (no clobber), and the recipe carries its own
-             PRM carve (the spatial channels snap, the fade survives). -->
+             from the right edge; Glass DrawerContent owns the material, geometry, motion,
+             and Reka dismissal semantics. -->
         <Drawer
             v-model:open="open"
             mode="live-behind"
             direction="right"
-            :snap-points="drawerSnapPoints"
-            :dismissible="true"
         >
             <DrawerContent
                 :show-overlay="false"
-                class="cp-drawer glass-reveal"
+                class="cp-drawer"
                 @interact-outside.prevent
                 data-testid="filter-panel"
                 aria-label="Filters"
@@ -342,14 +310,9 @@ function cancelSave(): void {
 
 <style scoped>
 /* ── THE RIGHT LIVE-BEHIND LENS — surface seam ─────────────────────────────────
-   The drawer SURFACE (the right-anchor geometry + the `--cp-drawer-w` width clamp +
-   the FLOATING glass tier + the grip kill) is NOT here. It cannot be: glass-ui's
-   DrawerContent body-teleports through reka's DialogPortal, and a Vue `<style scoped>`
-   block's `data-v-*` scope attr does NOT cross the Portal — so a scoped `.cp-drawer`
-   rule is DEAD CSS on the teleported element. The surface lives UNSCOPED in
-   `platform/design/chrome-overlays.css` (the teleport target sees the global cascade).
+   Glass owns the teleported DrawerContent surface, motion, and directional geometry.
    Only the INNER chrome below (title / close / scrubber / body / foot — authored in
-   THIS template, so they DO carry the scope attr) is styled here. */
+   THIS template, so they carry the scope attr) is styled here. */
 
 /* The header title — the lens crest. */
 .cp-drawer__title {

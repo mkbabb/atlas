@@ -6,17 +6,10 @@ import { describe, expect, it } from "vitest";
 const read = (rel: string): string =>
     readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8");
 
-const DOCK = read("../../src/platform/chrome/dock/Dock.vue");
 const DOCK_CSS = read("../../src/platform/chrome/dock/Dock.css");
 const DOCK_CREST = read("../../src/platform/chrome/dock/components/DockCrest.vue");
 
 describe("mobile dock crest ownership", () => {
-    it("keeps the interactive crest persistent and the decorative summary in the collapsed slot", () => {
-        expect(DOCK).toContain("<DockCrest");
-        expect(DOCK).toContain("<DockSummary");
-        expect(DOCK).toContain(":as-button=\"isPhone\"");
-    });
-
     it("lets the phone crest click own disclosure without Glass focus pre-expansion", () => {
         expect(DOCK_CREST).toContain(
             '@focusin="props.asButton && $event.stopPropagation()"',
@@ -37,9 +30,6 @@ describe("mobile dock crest ownership", () => {
         expect(errors).toEqual([]);
         expect(code).toContain(".usf-dock[data-v-test]");
         expect(code).not.toContain("[data-v-test] .usf-dock");
-        expect(code).toContain(
-            ".usf-dock.collapsed[data-v-test]:not(.usf-dock--phone) .dock-persistent",
-        );
         expect(code).toContain(
             ".usf-dock--phone.collapsed[data-v-test] .dock-layers",
         );

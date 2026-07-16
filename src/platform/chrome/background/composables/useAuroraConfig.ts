@@ -44,7 +44,6 @@ import {
     type ComputedRef,
     type MaybeRefOrGetter,
 } from "vue";
-import { useSelection } from "@/platform/stores/useSelection";
 import { useThemeKey } from "@/platform/composables/useThemeKey";
 
 import {
@@ -65,7 +64,11 @@ import { useDocumentScrollProgress } from "@/motion/useScrollProgress";
 import { blendOklch, type Oklab } from "@/charts/scale/oklab";
 import type { DashboardContext, DepositionProfile } from "@/contract";
 import { selectAtmosphere } from "@/platform/chrome/background/composables/atmosphere";
-import { nucleiSpecs, nucleusAt, SELECTION_LEAN } from "@/platform/chrome/background/composables/aurora-nuclei";
+import {
+    nucleiSpecs,
+    nucleusAt,
+    SELECTION_LEAN,
+} from "@/platform/chrome/background/composables/aurora-nuclei";
 
 // ── THE ATMOSPHERE RESOLUTION (N.WD2 §4.D2 — the ruled departure) ─────────────────────────────
 // The per-surface `surfacePoles`/`surfaceProfile` slug-switch is DELETED (D2.5). The poles + the
@@ -182,6 +185,9 @@ export interface UseAuroraConfigOptions {
         warm + primary cool lobe only), the low-tier "flat wash". `false` (tier A/B) keeps the full
         5-nucleus pole-derived gradient. Default `false`. */
     flatWash?: MaybeRefOrGetter<boolean>;
+    /** Optional selection state injected by dashboard hosts. Neutral/static hosts omit it and
+        therefore never instantiate the dashboard selection store. */
+    selectionActive?: MaybeRefOrGetter<boolean>;
 }
 
 /** The composable's reactive surface. `config` is a REACTIVE `AuroraConfig` (glass-ui
@@ -215,14 +221,10 @@ export function useAuroraConfig(
 ): UseAuroraConfig {
     // The O-F5 device-tier gates (default tier-A: Tide live, no flat-wash) — an absent options object
     // is the pre-O-F5 field, byte-exact. `Aurora.vue` feeds these from the shared `useAtmosphereTier`.
-    const { tide = true, flatWash = false } = options;
+    const { tide = true, flatWash = false, selectionActive = false } = options;
     const palette = useVizPalette();
     // C6's close obligation: the Aurora-`p` BIND drives the Tide off C5's exposed scalar.
     const p = useDocumentScrollProgress();
-    // M12 — the selection lean reads the D1 selection SET (a READER, never a writer). A non-empty
-    // set commits the field toward the data (cool) pole; an empty set leaves the section default.
-    const selection = useSelection();
-
     // THE AURORA OPACITY CEILING (J-CLOSE re-gate arm b) — the theme-aware outer envelope, owned
     // HERE so the aurora light-stock ceiling is the deft floor by composition (not a brighter wash
     // the dock plate bleeds through). `useThemeKey` BUMPS on any `.dark` flip, so the ceiling switches
@@ -323,8 +325,9 @@ export function useAuroraConfig(
         // Both leans are GATED on the Tide: a static field (tier B/C) never leans on scroll or
         // selection — it holds the neutral rest emphasis.
         const scrollLean = tideOn ? 2 * t - 1 : 0; // [0,1] scroll → [-1,1] warm↔cool emphasis
-        const selectionLean = tideOn && selection.hasSelection ? SELECTION_LEAN : 0;
-        const lean = Math.max(-1, Math.min(1, scrollLean + selectionLean));
+        const selectedLean =
+            tideOn && toValue(selectionActive) ? SELECTION_LEAN : 0;
+        const lean = Math.max(-1, Math.min(1, scrollLean + selectedLean));
         // O-F5 · the FLAT-WASH gate (motion-arch §2.3): tier C collapses the 2+2+1 rule-of-thirds
         // field to a flat 2-stop wash — the primary warm (0) + primary cool (2) lobe only. Tier A/B
         // keep the full 5-nucleus pole-derived gradient.

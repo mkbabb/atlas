@@ -163,7 +163,8 @@ const sourceDataOpen = computed(
 );
 const stageRoot = ref<HTMLElement | null>(null);
 const { materialized, placeholderStyle } = useVirtualSectionWindow(stageRoot, {
-    keepAlive: () => view.narrativeAt?.beatId === props.beatId,
+    keepAlive: () =>
+        sourceDataOpen.value || view.narrativeAt?.beatId === props.beatId,
 });
 </script>
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { Filter, SlidersHorizontal } from "@lucide/vue";
+import { Button } from "@mkbabb/glass-ui/button";
 import { DASHBOARD_KEY } from "@/contract";
 import { useMobileRegister } from "@/platform/composables/useMobileRegister";
 import { useReducedMotion } from "@/motion/useReducedMotion";
@@ -60,8 +61,9 @@ onBeforeUnmount(cancelSettle);
         @pointerenter="showLedger"
         @focusin="showLedger"
     >
-        <button
+        <Button
             type="button"
+            variant="glass"
             class="filter-continuum__trigger"
             :aria-expanded="open"
             :aria-label="open ? 'Close filters' : 'Open filters'"
@@ -76,13 +78,13 @@ onBeforeUnmount(cancelSettle);
                 <span v-for="chip in chips" :key="chip.key" class="filter-continuum__chip">{{ chip.label }}</span>
                 <span v-if="selectionCount" class="filter-continuum__chip" data-selection-count>{{ selectionCount }} selected</span>
             </span>
-        </button>
+        </Button>
     </aside>
 </template>
 
 <style scoped>
 .filter-continuum { position: fixed; inset-inline-end: 0; inset-block-start: 66.667%; z-index: var(--z-dock); }
-.filter-continuum__trigger { display: flex; min-block-size: 44px; min-inline-size: 44px; align-items: center; gap: .4rem; padding: .55rem; border: 1px solid var(--border); border-inline-end: 0; border-radius: var(--radius-control) 0 0 var(--radius-control); background: var(--background); color: var(--foreground); transition: inline-size var(--instrument-spring-duration) var(--instrument-spring-ease); }
+.filter-continuum__trigger { min-block-size: 44px; min-inline-size: 44px; transition: inline-size var(--instrument-spring-duration) var(--instrument-spring-ease); }
 .filter-continuum__trigger > svg { inline-size: 1.15rem; block-size: 1.15rem; flex: none; }
 .filter-continuum__count { display: grid; min-inline-size: 1.1rem; block-size: 1.1rem; place-items: center; border-radius: 999px; background: var(--foreground); color: var(--background); font: 700 .625rem/1 var(--font-mono); }
 .filter-continuum__ledger { display: flex; align-items: center; gap: .3rem; white-space: nowrap; }

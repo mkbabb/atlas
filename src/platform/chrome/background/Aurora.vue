@@ -70,6 +70,7 @@ import { DASHBOARD_KEY } from "@/contract";
 import { useAuroraConfig } from "@/platform/chrome/background/composables/useAuroraConfig";
 import { useAtmosphereActivity } from "@/platform/chrome/background/composables/useAtmosphereActivity";
 import { useAtmosphereTier } from "@/platform/chrome/background/composables/useAtmosphereTier";
+import { useSelection } from "@/platform/stores/useSelection";
 
 // THE HIGH-TIER SHADER OPT-IN (O-F2 · motion-arch §2.1 "on killing WebGPU"). The default is the
 // CSS-baked field (0 WebGPU); `shader` is the ONLY door back to the WebGPU substrate — an explicit,
@@ -88,6 +89,7 @@ const renderMode: AuroraRenderMode = shader ? "webgl" : "css";
 // unknown route) → the NEUTRAL paper wash, NOT USF's tide (the deliberate D2.5 delta, render-matrix-
 // verified): an unknown route never wears the fund's directional currents.
 const ctx = inject(DASHBOARD_KEY, undefined);
+const selection = ctx ? useSelection() : undefined;
 
 // The pole-derived reactive config + the live Tide scalar (the f(p) seam) + the theme-aware
 // compositing ceiling. useAuroraConfig resolves the route's declared → chromeIdentity → NEUTRAL
@@ -103,7 +105,11 @@ const ctx = inject(DASHBOARD_KEY, undefined);
 // derivation — no per-component tier logic); `tier` is surfaced on the wrapper for the standing gate.
 const { tier, tide, flatWash } = useAtmosphereTier();
 
-const { config, opacityCeiling } = useAuroraConfig(() => ctx, { tide, flatWash });
+const { config, opacityCeiling } = useAuroraConfig(() => ctx, {
+    tide,
+    flatWash,
+    selectionActive: () => selection?.hasSelection ?? false,
+});
 
 // THE O-F4 ACTIVITY BELT (motion-arch §2.1 MOVE 4). glass-ui's <Aurora> exposes imperative
 // `pause()`/`resume()` (the substrate's "manual" suspend reason). The belt drives them off the ONE

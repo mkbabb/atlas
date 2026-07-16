@@ -59,10 +59,6 @@
        3-step `--cp-radius` relay (O-D1 stop-write → O-C6 re-point → O-B8b delete); the token is NOT
        deleted here. */
     --dock-card-radius: var(--cp-radius, 1.75rem);
-    /* THE COLLAPSED DISC (L34 §4.1.44) — glass floors `.dock-layer--summary` to a perfect circle at
-       this token (default `--dock-layer-height`); pin it to the 4rem (64px) dome-hugging disc the
-       `#collapsed` silhouette (`DockSummary`) paints into. */
-    --dock-collapsed-summary-min-size: 4rem;
 }
 
 /* ── THE DOCK LIQUID-MORPH GLASS SURFACE (C3-desktop · J-GLASS §5 — the DESKTOP glass SURFACE) ──
@@ -131,19 +127,6 @@
     min-block-size: 0;
 }
 
-/* ── THE COLLAPSED SILHOUETTE — the DESKTOP register (O-D1 · L34 §4.1.44) ─────────────────────────
-   On the desktop register the dock rests EXPANDED and SCROLL-collapses (O-A21) to the `#collapsed`
-   disc (`DockSummary`, floored to the 64px circle by glass's `.dock-layer--summary` rule + the
-   `--dock-collapsed-summary-min-size` token above). The persistent crest is the EXPANDED-state home
-   mark; when collapsed it YIELDS so the disc is the SOLE dome (not stacked below the crest — the
-   glass grid renders `.dock-persistent` above `.dock-layers`). A scroll-up / at-top re-expands the
-   rail (A21), restoring the crest — so the collapsed disc needs no separate keyboard toggle. This is
-   SCOPED OUT of the phone register (`:not(.usf-dock--phone)`): on phone the crest-BUTTON stays the
-   collapsed pill (the a11y menu toggle) and the layers/summary are hidden by the phone rule below. */
-.usf-dock.collapsed:not(.usf-dock--phone) :deep(.dock-persistent) {
-    display: none;
-}
-
 /* ══ THE PHONE REGISTER (M.W1 D2, ratified · N.WG1 Arm B — the I-MOBILE law) ══════════════════
    ONE responsive dock, two machine states restyled — never a bottom/horizontal fork:
    · COLLAPSED — the rail condenses INTO the TIL crest (the lone gilt dome pill; the empty deck
@@ -159,10 +142,8 @@
         gap: 0;
     }
     /* the collapsed deck is hidden so the phone pill HUGS the persistent crest dome (the a11y menu
-       toggle IS the collapsed pill — collapse-into-the-TIL-logo). The `#collapsed` summary silhouette
-       is authored + measured on the DESKTOP register (above); on phone the crest is the pill and the
-       layers rest hidden (this atlas collapse machine is O-B8b's to delete on the glass-morph
-       consume — O-D1 keeps it). */
+       toggle IS the collapsed pill — collapse-into-the-TIL-logo). The persistent crest is the
+       collapsed endpoint on every register; the body layers rest hidden on phone. */
     .usf-dock--phone.collapsed :deep(.dock-layers) {
         display: none;
     }

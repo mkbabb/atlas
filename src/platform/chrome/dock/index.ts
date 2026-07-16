@@ -1,6 +1,6 @@
 // @mkbabb/atlas · chrome/dock — the floating Dock instrument (src-rearchitecture §A.2; O-B8a — the
 // L12 §0 dock submodule). The dock is ONE submodule: the GlassDock-consumed instrument, its band
-// sub-components (DockCrest / DockStepperRender / DockNavItem / DockFoot / DockSummary, each owning the
+// sub-components (DockCrest / DockStepperRender / DockNavItem / DockFoot, each owning the
 // composable it consumes, under components/), and its composables/ (collapse / stepper / gear /
 // data-state + the scroll-chrome edge hook).
 //

@@ -7,7 +7,7 @@
 // ── THE ORCHESTRATOR SHELL (K-H-ARCH · the TEMPLATE-axis split) ──────────────────────────
 // K-H-ARCH split the 300-L template into FOUR colocated sub-components under `./components/`,
 // each owning the composable it consumes (the composable moves WITH its sub-component):
-//   • band 1 — `DockCrest`           (the #persistent TIL crest; zero state)
+//   • band 1 — `DockCrest`           (the #persistent TIL crest + progress rim)
 //   • band 2 — `DockStepperRender`   (the FadingScroll Roman stepper; owns `useDockStepper` — the
 //                                     dock's ONE IntersectionObserver relocates here, never a second)
 //   •          `DockNavItem`         (the repeating beat/view rung the stepper v-fors)
@@ -44,7 +44,6 @@ import { GlassDock } from "@mkbabb/glass-ui/dock";
 import DockCrest from "./components/DockCrest.vue";
 import DockStepperRender from "./components/DockStepperRender.vue";
 import DockFoot from "./components/DockFoot.vue";
-import DockSummary from "./components/DockSummary.vue";
 import {
     useDockCollapse,
     type DockExposed,
@@ -249,6 +248,8 @@ onBeforeUnmount(() => {
                 :expanded="sheetOpen"
                 :crest="ctx?.crest"
                 :morph-stage="collapsed ? 'seed' : 'full'"
+                :progress="scrollProgress"
+                :stops="identityRamp"
                 @toggle="onCrestToggle"
             />
         </template>
@@ -279,15 +280,6 @@ onBeforeUnmount(() => {
             />
         </template>
 
-        <!-- THE COLLAPSED SILHOUETTE (#collapsed slot, O-D1 · L34 §4.1.44). glass renders this into
-             `.dock-layer--summary` — the pane the height-spring measures for its COLLAPSED endpoint.
-             Authoring a REAL dome-hugging disc here gives collapse a target so the spring stops
-             measuring an empty summary (the ghost-pill root, dock-chrome §2.2). It is the visible
-             collapsed pill on the DESKTOP register (scroll-collapse); on phone the persistent
-             crest-BUTTON stays the collapsed pill (the a11y menu toggle, the CSS below). -->
-        <template #collapsed>
-            <DockSummary :progress="scrollProgress" :stops="identityRamp" />
-        </template>
     </GlassDock>
 </template>
 

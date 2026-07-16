@@ -14,6 +14,7 @@
 // The desktop crest stays the home LINK (home rides the sheet's labeled first ROW on the phone).
 // `focusCrest` is exposed so the sheet's Esc/scrim close can return focus without scrolling.
 import { ref, type Component } from "vue";
+import { ScrollProgressRim } from "@mkbabb/glass-ui/scroll-progress-rim";
 import BrandMark from "@/platform/chrome/masthead/BrandMark.vue";
 
 const props = withDefaults(
@@ -24,6 +25,8 @@ const props = withDefaults(
         expanded?: boolean;
         crest?: Component;
         morphStage?: "seed" | "full";
+        progress: number;
+        stops: readonly string[];
     }>(),
     { asButton: false, expanded: false, crest: undefined, morphStage: "full" },
 );
@@ -50,24 +53,35 @@ defineExpose({ focusCrest });
          gold budget (D7.b). Phone (D2): the SAME mark as the section-menu BUTTON
          (aria-expanded/aria-controls) firing the collapse machine — reachable without expanding
          in both registers (touch/keyboard always-on). -->
-    <BrandMark
-        ref="markRef"
-        variant="crest"
-        :as="props.asButton ? 'button' : 'link'"
-        :crest="props.crest"
-        :data-morph-stage="props.morphStage"
-        to="/"
-        :label="props.asButton ? 'Page sections' : undefined"
-        :aria-expanded="props.asButton ? String(props.expanded) : undefined"
-        :aria-controls="props.asButton ? 'dock-sheet' : undefined"
-        data-testid="dock-brand"
-        class="usf-dock__crest glass-material glass-gilt focus-ring focus-ring-gold"
-        @focusin="props.asButton && $event.stopPropagation()"
-        @click="props.asButton && emit('toggle')"
-    />
+    <span class="usf-dock__crest-register">
+        <ScrollProgressRim :value="props.progress" :stops="props.stops" />
+        <BrandMark
+            ref="markRef"
+            variant="crest"
+            :as="props.asButton ? 'button' : 'link'"
+            :crest="props.crest"
+            :data-morph-stage="props.morphStage"
+            to="/"
+            :label="props.asButton ? 'Page sections' : undefined"
+            :aria-expanded="props.asButton ? String(props.expanded) : undefined"
+            :aria-controls="props.asButton ? 'dock-sheet' : undefined"
+            data-testid="dock-brand"
+            class="usf-dock__crest glass-material glass-gilt focus-ring focus-ring-gold"
+            @focusin="props.asButton && $event.stopPropagation()"
+            @click="props.asButton && emit('toggle')"
+        />
+    </span>
 </template>
 
 <style scoped>
+.usf-dock__crest-register {
+    position: relative;
+    display: grid;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    place-items: center;
+}
+
 /* ── THE GILT CREST (D7.b · M3+M12) — the dome geometry + the ONE gold focus ────────
    The `glass-floating glass-gilt` classes (glass-ui 3.10) paint the frosted dome + the
    tooled gold edge + the gold-tinted hover specular; here we seat the raster INSIDE the
