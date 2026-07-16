@@ -234,10 +234,6 @@ function cancelSave(): void {
                 data-testid="filter-panel"
                 aria-label="Filters"
             >
-                <!-- O-D3/CH-E-2 SEAM (glass-fenced, carried to WG-E·O-E8): reka's DialogPortal
-                     drops this `data-testid`/`aria-label` on teleport (the name survives only via
-                     reka's OWN internal DialogTitle backstop below); the O-E8 wrapper restores
-                     both, queued behind the 5.0.0 cut — unchanged until then. -->
                 <DrawerTitle class="cp-drawer__title">
                     <SlidersHorizontal class="h-4 w-4" aria-hidden="true" />
                     Filters

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // ControlPlaneSpine.vue — the ONE wayfinding spine of the floating instrument
 // (C.W3.2, C3.md §Scope 3, CP-5/A4a). It carries the net-retention RAMP as the dock's identity rail;
-// the Roman figure-rungs (Dock.vue) ride above it and ARE the beats. The published
-// ScrollProgressRim owns whole-document progress on the collapsed dock frame.
+// the Roman figure-rungs (Dock.vue) ride above it and ARE the beats. Whole-document progress lives
+// separately on the persistent crest's published ScrollProgressRim.
 //
 //   · Layer A — the net-retention ramp fill (`spine__fill`), the fused Barometer thread
 //     (SCI's rainbow / ECF's sequential / USF's single-accent fade), a thin vertical

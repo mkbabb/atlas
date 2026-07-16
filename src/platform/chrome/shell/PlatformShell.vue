@@ -71,7 +71,7 @@ const routeIdentityStyle = computed<Record<string, string>>(() => {
 // Escape PRIORITY (the documented order):
 //   (a) a topmost OVERLAY is open → DEFER. The overlays each carry their OWN Escape-to-close:
 //       the expand fullscreen (glass-ui ExpandableContainer's `useKeyboardShortcuts`), the
-//       filter drawer (vaul's `dismissible:true`, D2.b), and the save-popover (its input's
+//       filter drawer (Glass Drawer/Reka dismissal), and the save-popover (its input's
 //       `@keydown.esc`). This seam must NOT also clear the selection on that same Escape (the
 //       double-handle), so when ANY overlay is open it returns and lets the overlay's handler
 //       run. expand → drawer → save-popover is the close order, each self-closing; we only need
@@ -219,8 +219,8 @@ useDismissArbiter(dismissArbiter).claim(() =>
 </style>
 
 <!-- C7.c (FIX 5) · the right live-behind filter Drawer's SAFE-AREA inset. The Drawer
-     (FilterPanel's DrawerContent, `data-testid="filter-panel"`) is body-TELEPORTED by
-     vaul-vue, so a scoped `:deep()` from the shell cannot reach it — this UN-scoped block is
+     (FilterPanel's DrawerContent, `data-testid="filter-panel"`) is body-teleported through
+     Reka's DialogPortal, so a scoped `:deep()` from the shell cannot reach it — this unscoped block is
      the within-bounds binding that pushes the floating drawer's foot clear of the home
      indicator / gesture bar (the right-drawer idiom, NOT a bottom sheet). MOBILE-ONLY (the
      @media gates it) and env(safe-area-inset-bottom) is 0 on every non-notched surface, so

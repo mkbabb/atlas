@@ -53,7 +53,7 @@ defineExpose({ focusCrest });
          gold budget (D7.b). Phone (D2): the SAME mark as the section-menu BUTTON
          (aria-expanded/aria-controls) firing the collapse machine — reachable without expanding
          in both registers (touch/keyboard always-on). -->
-    <span class="usf-dock__crest-register">
+    <div class="usf-dock__crest-register">
         <ScrollProgressRim :value="props.progress" :stops="props.stops" />
         <BrandMark
             ref="markRef"
@@ -70,7 +70,7 @@ defineExpose({ focusCrest });
             @focusin="props.asButton && $event.stopPropagation()"
             @click="props.asButton && emit('toggle')"
         />
-    </span>
+    </div>
 </template>
 
 <style scoped>
