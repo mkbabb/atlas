@@ -47,7 +47,8 @@
 // PRM). The @supports fallback is thus the timeline's terminal `seek(1)`-equivalent: ONE reveal
 // engine on ONE clock. (Phase-A SHAPE: subscribes to each section's own scroll position; on the
 // Phase-C re-pin the source re-seats onto the BC `useScrollTrigger` page-reader — a one-line swap.)
-import { computed, provide, ref, type Component, type VNodeChild } from "vue";
+import { computed, provide, ref, watch, type Component, type VNodeChild } from "vue";
+import { useDeck } from "@mkbabb/glass-ui/deck";
 import { useSectionReveal } from "../motion/useScrollTimeline.js";
 import { supportsViewTimeline } from "../motion/useScrollProgress.js";
 import { useReducedMotion } from "../motion/useReducedMotion.js";
@@ -83,6 +84,8 @@ import {
 import { resolveSkin, skinCssVars, SKIN_KEY } from "../skin/index.js";
 import StoryCorridor from "../story/StoryCorridor.vue";
 import { useActiveDashboard } from "../platform/stores/useActiveDashboard.js";
+import { useActiveBeat } from "../platform/stores/useActiveBeat.js";
+import { useMobileRegister } from "../platform/composables/useMobileRegister.js";
 import { resolveHeroSystem } from "./hero-system.js";
 import { useComponentPointLoading } from "./useComponentPointLoading.js";
 import type { RuleVariant } from "./rule-register.js";
@@ -131,6 +134,25 @@ function setBeatEl(el: HTMLElement | null, i: number): void {
 const reveals = chapterShape.map((c, i) =>
     useSectionReveal(beatEls[i], { tail: c.reveal?.tier === "tail" }),
 );
+
+// ── PA-5 · PHONE PAGING — native document scroll snap + Glass `useDeck` for a11y ONLY ────────────
+// On phone each beat is a DOCUMENT scroll-snap page (the CSS below; the page scrolls on <html>, so
+// there is NO nested scroller). Glass `useDeck` is consumed ONLY for the SETTLED-page index, the
+// `aria-current` stamp, and the polite "Slide N of M: <name>" live announcement — it drives NO
+// scroll clock and mounts NO observer. The settled page is read off the dock's EXISTING active-beat
+// store (`activeBeatId`, the ONE upper-third observer), so there is no second observer or rAF clock,
+// and no `useDeckDetent`. Desktop sets no snap-type (continuous, unchanged).
+const { isPhone } = useMobileRegister();
+const activeBeat = useActiveBeat();
+const deck = useDeck(chapterShape.length, {
+    label: (i) => chapterShape[i]?.eyebrow ?? chapterShape[i]?.id ?? "",
+});
+const settledIndex = computed(() =>
+    Math.max(0, chapterShape.findIndex((c) => c.id === activeBeat.activeBeatId)),
+);
+watch(settledIndex, (i) => deck.go(i));
+/** Glass's portable "Slide N of M: <name>" announcement off the settled index (the sole a11y read). */
+const pageAnnouncement = deck.liveMessage;
 
 // ── N.WB1 · THE STORY DIRECTOR + THE CORRIDOR RECEDE (the T1 primitives, LIVE — guarded) ──────────
 // The essay is the story host. When ANY chapter declares a `transition` facet, it mounts the ONE
@@ -345,6 +367,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
             "
             class="essay-beat"
             :class="{ 'essay-beat--aside': chapter.reveal?.aside }"
+            :aria-current="isPhone && i === settledIndex ? 'true' : undefined"
             :style="revealStyles[i]?.value"
             :data-scroll-tl="
                 chapter.reveal?.aside || chapter.reveal?.scrub ? '' : undefined
@@ -491,6 +514,11 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
             :director="director"
             :chapters="storyChapters"
         />
+        <!-- PA-5 · the polite paging announcement — Glass `useDeck`'s portable "Slide N of M:
+             <name>" seam surfaced in ONE sr-only status region. Phone only (desktop is continuous). -->
+        <p v-if="isPhone" class="sr-only" role="status" aria-live="polite">
+            {{ pageAnnouncement }}
+        </p>
     </div>
 </template>
 
@@ -638,6 +666,21 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
         .essay-beat {
             reading-flow: normal; /* explicit no-op for the HUG; the RAIL extension re-keys it */
         }
+    }
+}
+
+/* ── PA-5 · PHONE PAGING — native DOCUMENT scroll snap (the page scrolls on <html>, so this is the
+   root scroller, NOT a nested one). Each beat is a snap page; `proximity` (never `mandatory`) so a
+   taller-than-viewport beat never TRAPS the reader on a pathologically long phone page. Desktop sets
+   no snap-type (continuous, unchanged). The root rule is a no-op on routes with no `.essay-beat`
+   targets (home/gallery), so it needs no route gate. The settled page + its `aria-current`/live
+   announcement ride Glass `useDeck` off the existing active-beat observer (no second clock). */
+@media (--phone) {
+    :global(html) {
+        scroll-snap-type: y proximity;
+    }
+    .essay-beat {
+        scroll-snap-align: start;
     }
 }
 </style>
