@@ -1,31 +1,14 @@
-/* @mkbabb/atlas · design/tokens/radius.css — the RADIUS family, split byte-for-byte from tokens.css
-   at O-B2 (the §D radius ladder). THE WG-C successor home for the radius ladder (R-032). */
+/* @mkbabb/atlas · design/tokens/radius.css — the RADIUS family.
 
-/* §D — the engraved-atlas grounds (FD1 §1.1, §7.2; C.W1.a WG-1/WG-2/WG-3/WG-7). The
-   warm-ground retune, now landing the keystone values verbatim from the verified palette
-   (audit/fd-warm-ground-palette.md §1.4/§2.3): ONE warm hue spine — paper 47° · plate 55° ·
-   ink 55° (light), espresso 55° · plate 57° · ivory ink 80° (dark). Chroma is lifted above
-   the near-white JND so the warmth READS (the C 0.008 below-JND defect retired); L is dropped
-   off the 0.985 ceiling so --card SEPARATES (the C1 engraved plate). The dark stock is re-hued
-   OUT of cool-250 onto warm 55–80° so ground and ivory ink share ONE temperature ("an atlas
-   printed on dark stock with ivory ink," D1 §3.2). Overriding glass-ui's
-   --background/--card/--foreground/--muted-foreground here recolors the page warm; glass-ui's
-   glass-tier tokens (--glass-*) read these grounds, so the chrome warms in lockstep. */
+   Atlas no longer mints its own radius ladder or overrides Glass's canon (PA-4). Glass owns the
+   semantic scale (`--radius-sm 4 · --radius-md 6 · --radius-xl 12 · --radius-2xl 16 · --radius-3xl
+   24 · --radius-pill`), loaded ahead of this file via `@mkbabb/glass-ui/styles`. `--radius-pill`
+   is Glass's — Atlas's duplicate is gone, and the stray 6.4px `--radius-control` twin folds onto
+   the 6px canon. The three remaining Atlas ROLE tokens COMPOSE Glass semantic tokens (no raw
+   literals), so the whole platform reads from one Glass-sourced ladder. */
+
 :root {
-    --radius-plate: 6px; /* FD1 §7.2 — the print-crisp plate radius (the atlas tell) */
-    /* THE RADIUS LADDER (d-hierarchy M4 / IC-1 — the radius-sprawl close). The platform
-       carried a ZOO of one-off corner literals (1px · 2px · 3px · 4px · 0.375rem · 0.4rem ·
-       0.5rem · AND both 999px and 9999px for the SAME "pill" intent — 12 distinct values, no
-       mid-tier token). Mint the missing rungs so every corner reads from ONE ladder and the
-       sprawl can't regrow (the radius-tier inverse-gate, src/lib/gates/radius-tier.gate.ts,
-       fails any new raw literal). Four rungs, coarsest → finest:
-         --radius-plate (6px, above)   the engraved data plate — the atlas tell.
-         --radius-control (0.4rem)     the toggle/chip/segment corner — the control register.
-         --radius-pill (9999px)        the ONE true pill — retires the 999px/9999px split.
-         --radius-mark (2px)           the crisp micro-mark — ramp ends, hinge ticks, swatch
-                                       corners, the playhead, the focus-ring corner (the 1/2/3px
-                                       sub-control literals collapse onto one tick radius). */
-    --radius-control: 0.4rem; /* the toggle/chip/segment corner — the control register */
-    --radius-pill: 9999px; /* the ONE true pill — retires the 999px/9999px split */
-    --radius-mark: 2px; /* the crisp micro-mark — tick/swatch/ramp-end/playhead corner */
+    --radius-plate: var(--radius-md); /* the engraved data plate — Glass's 6px md (the atlas tell) */
+    --radius-control: var(--radius-md); /* the toggle/chip/segment corner — folds the 6.4px twin onto 6px */
+    --radius-mark: var(--radius-sm); /* the crisp micro-mark — Glass's 4px floor (tick/swatch/playhead) */
 }
