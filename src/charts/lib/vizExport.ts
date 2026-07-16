@@ -54,37 +54,69 @@ function csvCell(s: string): string {
     return s;
 }
 
+/** The LIVE reproducibility legs a CSV needs so a filtered export is DISTINGUISHABLE from a full one
+    (PA-6 COLO-3). Because `export.rows()` returns the DRAWN rows, a filtered export was otherwise
+    byte-indistinguishable from the whole dataset and un-reproducible. The caller resolves these off
+    the coordinator's live predicate + the freshness vintage; the drawn count is the row set's own
+    length (never hand-passed). Absent ⇒ the export is byte-identical to the pre-cure form. */
+export interface ExportFilterContext {
+    /** the round-trippable `?filter=` query (`encodeFilter`); `""` when unfiltered. */
+    query: string;
+    /** the human filter explanation (`explain` / humanized clauses); `""` when unfiltered. */
+    explain: string;
+    /** the UNFILTERED dataset total (drawn = the row set length, computed here). */
+    total: number;
+    /** the resolved primary "data as of …" vintage; `""` before the feed lands. */
+    asOf: string;
+    /** an explicit secondary-source as-of, when the plate reads a secondary feed. */
+    secondaryAsOf?: string;
+}
+
 /** Serialize the a11y rows to a CSV string (the §E3 payload — the `ChartDataTable` rows ARE the
-    export). Declared provenance, when present, leads as a two-column metadata preamble; the blank
-    line keeps the contract's data header + rows byte-for-byte tabular and easy to locate. */
+    export). Declared provenance + the live filter context, when present, lead as a two-column
+    metadata preamble (source · then the filter query/explanation, the drawn-of-total count, and the
+    as-of vintage); the blank line keeps the contract's data header + rows byte-for-byte tabular. */
 export function rowsToCsv(
     rows: ChartDataRow[],
     rowHeader: string,
     valueHeader: string,
     provenance?: ProvenanceFacet | null,
+    filter?: ExportFilterContext | null,
 ): string {
     const data = [
         `${csvCell(rowHeader)},${csvCell(valueHeader)}`,
         ...rows.map((r) => `${csvCell(r.name)},${csvCell(r.value)}`),
     ];
-    if (!provenance) return data.join("\r\n");
 
-    const metadata = [
-        ["# Source", provenance.dataset],
-        ["# Sections", provenance.sections?.join(" · ")],
-        ["# Attributes", provenance.attributes?.join(" · ")],
-        ["# Analysis", provenance.analysis],
-        ["# Data range", provenance.yearRange],
-        [
-            "# Encoding",
-            provenance.encoding
-                ? `${provenance.encoding.y} vs ${provenance.encoding.x}`
-                : undefined,
-        ],
-    ]
+    const meta: Array<[string, string | undefined]> = [];
+    if (provenance) {
+        meta.push(
+            ["# Source", provenance.dataset],
+            ["# Sections", provenance.sections?.join(" · ")],
+            ["# Attributes", provenance.attributes?.join(" · ")],
+            ["# Analysis", provenance.analysis],
+            ["# Data range", provenance.yearRange],
+            [
+                "# Encoding",
+                provenance.encoding
+                    ? `${provenance.encoding.y} vs ${provenance.encoding.x}`
+                    : undefined,
+            ],
+        );
+    }
+    if (filter) {
+        if (filter.query) {
+            meta.push(["# Filter query", filter.query], ["# Filter", filter.explain]);
+        }
+        meta.push(["# Rows", `${rows.length} of ${filter.total}`]);
+        if (filter.asOf) meta.push(["# As of", filter.asOf]);
+        if (filter.secondaryAsOf) meta.push(["# Secondary as of", filter.secondaryAsOf]);
+    }
+
+    const preamble = meta
         .filter((row): row is [string, string] => Boolean(row[1]))
         .map(([key, value]) => `${csvCell(key)},${csvCell(value)}`);
-    return [...metadata, "", ...data].join("\r\n");
+    return preamble.length ? [...preamble, "", ...data].join("\r\n") : data.join("\r\n");
 }
 
 /** Export the contract rows as a CSV download. */
@@ -94,9 +126,10 @@ export function exportCsv(
     valueHeader: string,
     filename: string,
     provenance?: ProvenanceFacet | null,
+    filter?: ExportFilterContext | null,
 ): void {
     triggerDownload(
-        rowsToCsv(rows, rowHeader, valueHeader, provenance),
+        rowsToCsv(rows, rowHeader, valueHeader, provenance, filter),
         filename,
         "text/csv;charset=utf-8",
     );
