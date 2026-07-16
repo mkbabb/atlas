@@ -44,8 +44,9 @@ import {
     type ComputedRef,
     type Ref,
 } from "vue";
-import { NumericAnimation } from "@mkbabb/keyframes.js";
-import { clamp, easeOutExpo, type TimingFunction } from "@mkbabb/value.js";
+import { NumericAnimation, type TimingFunction } from "@mkbabb/keyframes.js";
+import { clamp } from "@mkbabb/value.js/math";
+import { easeOutExpo } from "@mkbabb/value.js/easing";
 import { useReducedMotion } from "../../motion/useReducedMotion.js";
 
 /** A record of numeric figures the count-up tweens together (e.g. `{in, out, net}`). */

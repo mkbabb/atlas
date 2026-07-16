@@ -49,11 +49,12 @@
 // single-scroll-scalar discipline; the hot path is the band arithmetic, pure).
 
 import { computed, type ComputedRef } from "vue";
-import { clamp, type TimingFunction } from "@mkbabb/value.js";
+import { clamp } from "@mkbabb/value.js/math";
 import {
     stagger,
     springTimingFunction,
     type StaggerOrigin,
+    type TimingFunction,
 } from "@mkbabb/keyframes.js";
 import { useReducedMotion } from "./useReducedMotion.js";
 
