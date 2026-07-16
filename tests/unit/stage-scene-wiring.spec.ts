@@ -1,52 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
+// Stage/scene wiring behavior, rehomed from the retired `planv3-stage-consumption` spec. That spec
+// existed to consume the now-deleted `src/stage` barrel; its barrel-shape restatement (a scene-encode
+// readback + a compile-time grain-guard @ts-expect-error) carried no runtime assertion and was dropped
+// under test-parsimony. The two genuine behavioral assertions survive here, imported from their real
+// producers: scene-anchor promotion (`useViewParams`) and the hub → four-event stage facade
+// (`scene-contract`).
+import { describe, expect, it } from "vitest";
 import { createAtlasEventHub } from "../../src/events";
-import {
-    stageEventsFromHub,
-    type ChapterStage,
-    type SceneOption,
-} from "../../src/stage";
+import { stageEventsFromHub } from "../../src/charts/contract/scene-contract";
 import { resolveSceneAnchor } from "../../src/platform/stores/useViewParams";
 
-vi.mock("../../src/charts/scene/ChapterStage.vue", () => ({ default: {} }));
-
-describe("stageEventsFromHub", () => {
-    it("ties every scene encode to the stage grain", () => {
-        const scene: SceneOption<"district"> = {
-            id: "district-scene",
-            prose: "District",
-            state: {},
-            encode: { x: "district:x", y: "district:y" },
-        };
-        const events = createAtlasEventHub();
-        const stage: ChapterStage<"district"> = {
-            kind: "stage",
-            id: "district-stage",
-            grain: "district",
-            instance: () => null,
-            scenes: [scene],
-            identity: { field: "leaNumber" },
-            transition: { mode: "blend" },
-            events,
-            anatomy: {
-                foot: { title: "District stage" },
-                gear: { label: "District controls" },
-                provenance: { peekLabel: "District source" },
-                export: { open: () => undefined, panel: () => null },
-            },
-        };
-        expect(stage.scenes[0]?.encode.x).toBe("district:x");
-
-        const stateScene: SceneOption<"state"> = {
-            id: "state-scene",
-            prose: "State",
-            state: {},
-            encode: { x: "state:x", y: "state:y" },
-        };
-        const acceptsDistrict = (_scene: SceneOption<"district">): void => {};
-        // @ts-expect-error A state-grain scene cannot enter a district-grain stage.
-        acceptsDistrict(stateScene);
-    });
-
+describe("resolveSceneAnchor", () => {
     it("promotes only an authored scene onto its owning coarse beat anchor", () => {
         const scenes = ["utilization", "scale", "equity", "cost"];
         expect(resolveSceneAnchor("stage", "equity", scenes, null)).toEqual({
@@ -63,7 +26,9 @@ describe("stageEventsFromHub", () => {
             resolveSceneAnchor("stage", "equity", scenes, { beatId: "later" }),
         ).toEqual({ beatId: "later" });
     });
+});
 
+describe("stageEventsFromHub", () => {
     it("adapts the shared hub into the exact four-event stage facade", () => {
         const hub = createAtlasEventHub();
         const events = stageEventsFromHub(hub, "stage-a");
