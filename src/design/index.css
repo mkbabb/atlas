@@ -39,4 +39,4 @@
 @import "./overlays/scroll-driven.css"; /* the native view() per-beat reveal (C.W5.1) — binds [data-reveal-beat] to --beat-tl */
 @import "./overlays/spot-graphics.css"; /* the injected SPOT-GRAPHICS vocabulary (J-PAPER arm b §2) — static CSS marks within the --spot-graphic-max budget, warm ink only */
 @import "./overlays/measure.css"; /* the dock-aware ASYMMETRIC measure (J-STORY §8/§9/§13) — .dashboard-body outer figure track + the ~70ch prose clamp */
-@import "./overlays/chrome-overlays.css"; /* UNSCOPED chrome the body-teleported overlays see (D2.b) — the right filter-lens geometry + the floating tier + the grip kill */
+@import "./overlays/chrome-overlays.css"; /* unscoped affordance and active-rim rules for foreign feature surfaces */

@@ -163,9 +163,6 @@
        term). fluid: the 358px phone floor up to the ~72ch desktop measure, so ONE token governs
        both registers and the heading recipe never widens past the column at any width. */
     --measure: clamp(22.375rem, 92vw, 72ch); /* 358px floor · 72ch desktop cap */
-    /* the right lens drawer width — Drawer has NO size="dock" prop, so the width is an
-       EXPLICIT term the C3.3 Drawer re-seat consumes (do NOT block on a size token). */
-    --cp-drawer-w: 22rem; /* the right lens drawer (352px) */
     /* the timeline spine rail — fat enough to read as a RAIL, not the old 2px hairline. */
     --cp-rail-w: 3px; /* the ContinuousTimeline spine width */
     /* the floating-tier GLASS — the frost/saturate that keeps cream reading CREAM through
