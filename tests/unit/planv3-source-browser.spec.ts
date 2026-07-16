@@ -103,7 +103,7 @@ describe("SourceDataBrowser", () => {
         });
 
         expect(seen).toEqual([
-            { predicate: "⊤", active: false },
+            { predicate: "All rows — no filter active", active: false },
             { predicate: "state ∈ {NC,VA}", active: true },
         ]);
     });

@@ -210,13 +210,18 @@ export function isIdentity<Row>(p: Predicate<Row> | null): boolean {
     }
 }
 
+/** The identity/empty predicate reads as reader prose — a facet with no active constraint says so
+    in words, never a bare ⊤. */
+const IDENTITY_PROSE = "All rows — no filter active";
+
 /** Structural pretty-print — the introspectability payoff (predicate-as-data): a filter state is
-    a readable STRING, not an opaque closure. Drives debug + the `?filter=` deep-link codec (GP10). */
+    a readable STRING, not an opaque closure. The identity reads as prose (`IDENTITY_PROSE`); every
+    compound keeps the symbolic algebra below. Drives debug + the source panel's FILTER facet. */
 export function explain<Row>(p: Predicate<Row> | null): string {
-    if (p == null) return "⊤";
+    if (p == null) return IDENTITY_PROSE;
     switch (p.op) {
         case "any":
-            return "⊤";
+            return IDENTITY_PROSE;
         case "oneOf":
             return `${p.key ?? "?"} ∈ {${[...p.values].join(",")}}`;
         case "range": {
