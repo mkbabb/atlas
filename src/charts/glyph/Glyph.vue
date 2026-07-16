@@ -26,8 +26,7 @@
 //
 // THE GLASS SEAMS (CONSUMED on the published 4.1.0 cut): `metal` applies the glass-ui
 // W-METAL-SHIMMER rim (`.metal-{gold,silver,bronze}`, the MEDAL-SCARCITY one-gilt law) — the
-// published cut ships the family, so the rim runs the live shimmer (the `.text-gilt` register
-// rides alongside as the static gilt ink). `accent` threads the data hue to the published
+// published cut ships the family, so the rim runs the live shimmer. `accent` threads the data hue to the published
 // W-GLASS-ACCENT seam (`--glass-accent`); the `--glyph-accent` `<feDropShadow>` inner-glow is the
 // SVG-native glow channel a `<path>` needs (a backdrop-filter glass tier cannot light an SVG
 // silhouette), bound to the SAME hue so the two read as one. Both INERT / byte-identical at rest
@@ -91,7 +90,7 @@ const props = withDefaults(
         /** SELECT register (the pinned-mark FRAME) — the choropleth's `data-selected`. */
         selected?: boolean;
         /** The I1 glass-ui W-METAL-SHIMMER rim (the MEDAL-SCARCITY one-gilt law) — the I5 awarded
-            member only. INERT on the BA base (degrades to the shipped `.text-gilt`). */
+            member only. INERT on the BA base (no rim when omitted). */
         metal?: "gold" | "silver" | "bronze";
         /** The W-GLASS-ACCENT data-hue glow — threads `--glass-accent` (and the `--glyph-accent`
             `<feDropShadow>` fallback). Omit ⇒ no glow (byte-identical at rest). */
@@ -174,11 +173,10 @@ const accessibleName = computed(() => {
 const uid = useId();
 const accentFilterId = computed(() => `glyph-accent-${uid}`);
 
-// The `metal` rim class (the BB-5 `.metal-{gold,silver,bronze}` utility) — the published 4.1.0 cut
-// ships `.metal-*`, so the prop activates the live shimmer rim; `.text-gilt` rides alongside as the
-// static gilt ink the rim sits over (the calm register the PRM/at-rest reader sees).
+// The `metal` rim class (the BB-5 `.metal-{gold,silver,bronze}` utility) — the published cut ships
+// `.metal-*`, so the prop activates the live shimmer rim.
 const metalClass = computed(() =>
-    props.metal ? [`metal-${props.metal}`, "text-gilt"] : null,
+    props.metal ? `metal-${props.metal}` : null,
 );
 </script>
 
