@@ -1,22 +1,107 @@
-// scroll-anchor.ts — the dock's ONE section-scroll anchor machinery (O-A3).
-//
-// The ≤4px-accurate deep-link scroll routes stepper rung clicks through this ONE primitive. A plain,
-// pure helper — `getElementById(id).scrollIntoView` at the top-aligned reading
-// line (the O-A3 anchor accuracy). No listener, no `preventDefault`, no observer: it is the native
-// smooth scroll, nothing more (AG8-safe by construction).
-//
-// (The stepper's `?at`-restore path keeps its OWN PRM-aware `scrollIntoView` — it must pass
-// `behavior:"auto"` under reduced-motion, which this shared caller intentionally does not; a rung/row
-// CLICK is an explicit user act, so the smooth scroll is the right register.)
+import { watchNarrativeAnchorLayout } from "../../../motion/narrative-restore.js";
+
+const ANCHOR_EPSILON_PX = 4;
+
+type CancelSectionScroll = () => void;
+
+function cssPixels(value: string): number {
+    const pixels = Number.parseFloat(value);
+    return Number.isFinite(pixels) ? pixels : 0;
+}
+
+function sectionScrollEndpoint(target: HTMLElement): number {
+    const scroller = document.scrollingElement!;
+    const marginTop = cssPixels(
+        window.getComputedStyle(target).scrollMarginTop,
+    );
+    const paddingTop = cssPixels(
+        window.getComputedStyle(scroller).scrollPaddingTop,
+    );
+    const maxScrollY = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    const targetY =
+        target.getBoundingClientRect().top +
+        scroller.scrollTop -
+        marginTop -
+        paddingTop;
+    return Math.min(maxScrollY, Math.max(0, targetY));
+}
 
 /**
- * Smooth-scroll the document to a beat section by id, top-aligned (the O-A3 ≤4px anchor). A no-op when
- * the id resolves to no element (a stale/wrong-route link stays put, never throws), and DOM-guarded so
- * an SSR/off-DOM call is a silent no-op (the `typeof document` idiom Dock.vue already uses).
+ * Scroll to one semantic section and correct its position once if lazy hydration moves it. Reader
+ * input cancels the correction; reduced motion uses the same resting endpoints without a smooth leg.
  */
-export function scrollToSection(id: string): void {
-    if (typeof document === "undefined") return;
-    document
-        .getElementById(id)
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+export function scrollToSection(
+    id: string,
+    reducedMotion = false,
+): CancelSectionScroll {
+    if (typeof document === "undefined" || typeof window === "undefined")
+        return () => undefined;
+    const target = document.getElementById(id);
+    if (!target) return () => undefined;
+    const scroller = document.scrollingElement!;
+    const requestedScrollY = sectionScrollEndpoint(target);
+    const alreadyAligned =
+        Math.abs(scroller.scrollTop - requestedScrollY) <= ANCHOR_EPSILON_PX;
+
+    let active = true;
+    let settleFrame = 0;
+    let settled = false;
+    let scrollEndListening = false;
+    const passive: AddEventListenerOptions = { capture: true, passive: true };
+    const removeScrollEnd = (): void => {
+        if (!scrollEndListening) return;
+        scrollEndListening = false;
+        document.removeEventListener("scrollend", settle);
+    };
+    const cleanup = (): void => {
+        if (!active) return;
+        active = false;
+        if (settleFrame) window.cancelAnimationFrame(settleFrame);
+        removeScrollEnd();
+        window.removeEventListener("wheel", abort, true);
+        window.removeEventListener("touchmove", abort, true);
+        window.removeEventListener("keydown", abort, true);
+    };
+    const heal = watchNarrativeAnchorLayout({
+        target,
+        root: document.body,
+        reanchor: () => target.scrollIntoView({ behavior: "auto", block: "start" }),
+        onStop: cleanup,
+    });
+    const abort = (): void => {
+        if (!active) return;
+        heal.abort();
+    };
+    const settle = (): void => {
+        if (!active || settled) return;
+        if (Math.abs(scroller.scrollTop - requestedScrollY) > ANCHOR_EPSILON_PX)
+            return;
+        settled = true;
+        removeScrollEnd();
+        heal.settle();
+    };
+
+    window.addEventListener("wheel", abort, passive);
+    window.addEventListener("touchmove", abort, passive);
+    window.addEventListener("keydown", abort, true);
+    if (!reducedMotion) {
+        scrollEndListening = true;
+        document.addEventListener("scrollend", settle);
+    }
+    target.scrollIntoView({
+        behavior: reducedMotion ? "auto" : "smooth",
+        block: "start",
+    });
+    if (alreadyAligned) {
+        settle();
+    } else if (reducedMotion) {
+        settleFrame = window.requestAnimationFrame(() => {
+            settleFrame = window.requestAnimationFrame(() => {
+                settleFrame = 0;
+                settle();
+            });
+        });
+    }
+
+    return abort;
 }

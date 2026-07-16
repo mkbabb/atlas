@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.0.1 — 2026-07-16
+
+### Fixed
+
+- Interactive dock rung navigation re-anchors once when lazy hydration moves the target, and yields
+  immediately to fresh reader input. This correction targets Baseline 2025 browsers, including
+  Safari 26.2 and later, and does not change Atlas's public API.
+
 ## 6.0.0 — 2026-07-16
 
 ### Breaking changes

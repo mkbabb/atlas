@@ -137,8 +137,10 @@ export function useDockStepper(
     );
 
     // The rung-click scroll — the shared O-A3 anchor machinery (`scrollToSection`).
+    let cancelSectionScroll: (() => void) | null = null;
     function scrollTo(id: string) {
-        scrollToSection(id);
+        cancelSectionScroll?.();
+        cancelSectionScroll = scrollToSection(id, reduced.value);
     }
 
     // ── THE `?at` NARRATIVE ANCHOR — the ONE debounced writer + the restore (K-ANIM A1·§3.B) ──────
@@ -392,6 +394,7 @@ export function useDockStepper(
     });
 
     onBeforeUnmount(() => {
+        cancelSectionScroll?.();
         observer?.disconnect();
         observer = null;
         if (yearFadeTimer) clearTimeout(yearFadeTimer);
