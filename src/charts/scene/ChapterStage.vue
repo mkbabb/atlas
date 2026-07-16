@@ -179,6 +179,7 @@ const { materialized, placeholderStyle } = useVirtualSectionWindow(stageRoot, {
         ref="stageRoot"
         class="chapter-stage"
         :data-stage-id="stage.id"
+        :data-source-open="sourceDataOpen || undefined"
         :style="placeholderStyle"
     >
         <StickyScene
@@ -268,6 +269,18 @@ const { materialized, placeholderStyle } = useVirtualSectionWindow(stageRoot, {
 <style scoped>
 .chapter-stage {
     overflow: clip;
+}
+
+/* When the source panel owns the stage, the prose story card yields: the pinned graphic (which
+   hosts the source panel) spans the whole stage and the narrated steps hide, so there is no
+   viewport-tall empty gold frame beside four lines of text, and the live-behind figure is fully
+   covered (no floating readout can occlude the data table). */
+.chapter-stage[data-source-open] :deep(.sticky-scene__graphic) {
+    grid-column: 1 / -1;
+}
+
+.chapter-stage[data-source-open] :deep(.sticky-scene__steps) {
+    visibility: hidden;
 }
 
 .chapter-stage__source-data {
