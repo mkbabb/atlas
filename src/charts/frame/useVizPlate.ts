@@ -103,7 +103,10 @@ function bodyEl(): Element | null {
     return document.querySelector(`[data-viz-body="${props.contract.id}"]`);
 }
 
-/** Export the CSV (the a11y rows ARE the payload, one source). */
+/** Export the CSV (the a11y rows ARE the payload, one source). The declared provenance AND the
+    live filter context (PA-6 COLO-3 — the round-trip query, drawn-of-total, and as-of vintage the
+    consumer resolves off its coordinator) lead as the reproducibility preamble; absent ⇒ byte-
+    identical to the unfiltered form. */
 function onExportCsv(): void {
     const rows = props.contract.export.rows();
     exportCsv(
@@ -112,6 +115,7 @@ function onExportCsv(): void {
         props.contract.export.valueHeader,
         `${props.contract.id}.csv`,
         props.contract.provenance,
+        props.contract.export.filterContext?.() ?? null,
     );
 }
 

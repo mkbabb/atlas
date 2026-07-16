@@ -25,6 +25,7 @@ import type { ColorKind } from "../scale/colorKind.js";
 import type { VizOptionSpec } from "../composables/useVizOptions.js";
 import type { VizSetContract } from "../viz-set.js";
 import type { ChartDataRow } from "../legend/ChartDataTable.vue";
+import type { ExportFilterContext } from "../lib/vizExport.js";
 import type { SelectionKind } from "./selection-contract.js";
 import type { VariantSpec } from "../../motion/variant-spec.js";
 import type { ProvenanceFacet } from "../../platform/provenance/provenance-contract.js";
@@ -170,6 +171,12 @@ export interface ExportSpec {
     rowHeader: string;
     /** The CSV value-header column label (e.g. `"Net retention"`). */
     valueHeader: string;
+    /** PA-6 COLO-3 — the live reproducibility legs a CSV needs so a FILTERED export is
+        distinguishable from a full one. The consumer resolves them off its own coordinator predicate
+        (`encodeFilter`/`explain`), the drawn-of-total, and the feed vintage (`resolveAsOf`); the host
+        threads the result into the CSV preamble. Omit (or return null) ⇒ the export is byte-identical
+        to the unfiltered form. */
+    filterContext?: () => ExportFilterContext | null;
 }
 
 /** The one host-to-source-panel prop contract shared by ordinary plates and persistent stages. */
