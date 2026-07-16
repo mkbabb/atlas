@@ -115,6 +115,15 @@ const figures = chapterShape.map((c, i) =>
 );
 const layouts = chapterShape.map((c, i) => resolveLayout(c, phases[i]!));
 
+// ── P1 · CLS RESERVE — THE FIRST FIGURE BEAT (CLS-02) ────────────────────────────────────────
+// The first figure-bearing beat is the data plate sitting directly below the cover — on-screen at
+// first paint, so its `content-visibility` skip (Beat.vue) never fires and never reserves its box.
+// Its plate then resolves its height a frame late (the ECharts/canvas mount) and reflows the whole
+// column beneath. Below-fold beats are reserved by `content-visibility`; only this one on-screen beat
+// needs an explicit floor. The stamp lets the CSS reserve its settled height (`--beat-cis`, the same
+// route-measured median the skip uses) from first paint, so the mount fills reserved space.
+const firstFigureIndex = chapterShape.findIndex((c) => hasFigure(c));
+
 // ── THE REVEAL FACET — one per chapter, mounted ONCE (the §7 `kind:"reveal"` fallback writer) ──
 // The per-beat `<section ref>` the bodies hand-rolled is hoisted here: ONE ref + ONE
 // `useSectionReveal` per chapter (the thin page-clock subscriber — the §7 `kind:"reveal"` enter
@@ -373,6 +382,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                 chapter.reveal?.aside || chapter.reveal?.scrub ? '' : undefined
             "
             :data-reveal-shape="revealShapeAttr(chapter)"
+            :data-first-figure="i === firstFigureIndex ? '' : undefined"
             :data-title="hasMasthead(chapter) ? layouts[i]!.title : undefined"
             :data-dock="hasMasthead(chapter) ? layouts[i]!.dock : undefined"
             :data-scroll-in="hasMasthead(chapter) ? layouts[i]!.scrollIn : undefined"
@@ -538,20 +548,27 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
     isolation: isolate;
 }
 
+/* P1 · CLS RESERVE — THE FIRST FIGURE BEAT (CLS-02). The beat stamped `data-first-figure` is the
+   data plate directly below the cover: on-screen at first paint, so Beat.vue's `content-visibility`
+   skip never fires for it and never reserves its box — its plate resolves height a frame late and
+   reflows the column. Reserve its settled height (`--beat-cis`, the SAME route-measured median the
+   below-fold skip reserves with) from first paint, so the mount fills reserved space instead of
+   growing into it. Below-fold beats keep their `content-visibility` reservation; this floors the ONE
+   on-screen beat the skip cannot reach. */
+.essay-beat[data-first-figure] {
+    min-block-size: var(--beat-cis, 720px);
+}
+
+/* THE STRUCTURAL ORNAMENT — a chapter's optional botanical/figure ornament, seated LOCALLY in the
+   beat flow (centred at its own measure). S2/VFT retired the per-beat ornament consumers, so the
+   absolute-margin placement rule (which floated the ornament out over the trailing AnimatedRule and
+   past the right viewport edge at wide desktop) is retired with them — a declared ornament now seats
+   in flow, never absolutely across the rule. */
 .essay-ornament {
     inline-size: clamp(3rem, 5vw, 4.5rem);
     max-block-size: 9rem;
     margin-inline: auto;
     color: var(--route-accent);
-}
-
-@media (min-width: 1024px) {
-    .essay-ornament {
-        position: absolute;
-        inset-inline-end: clamp(-5rem, -5vw, -3rem);
-        inset-block-start: 1rem;
-        z-index: 1;
-    }
 }
 
 /* N.WB1 · THE MASTHEAD CLUSTER — the ONE wrapper the corridor recede's single opacity write rides

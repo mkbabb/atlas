@@ -111,11 +111,25 @@
        mobile-base + `min-width:640px` split mirrors the §4c measure (UNCHANGED, so CLS does not move). */
     min-block-size: 460px;
 }
+/* THE BANNER TWO-ROW RESERVATION (P1 · CLS-02). A ranked-FOUR banner (usf/demand) wraps the crown
+   onto its OWN row with the flanks beneath — two rows, not one — so the flat `min-block-size` above
+   under-reserved it and the second row grew the cover at data-attach (the +130px desktop / one-more-
+   -stack phone shift the flat floor never caught). The `--banner` state reserves both rows; the flat
+   register (ecf/sci — one row) is unchanged, so ecf's clean 0.05 holds. (Empty-first banner routes
+   that build `figures` from live data cross the flat→banner floor at attach — those reserve route-side,
+   the --beat-cis idiom.) */
+.dashboard-hero__series--banner {
+    min-block-size: 480px;
+}
 @media (min-width: 640px) {
-    /* the desktop one-row band — every DashboardHero route settles at ~129px (the audacious row);
+    /* the desktop one-row band — a flat/ranked route settles at ~129px (the audacious row);
        reserve it so the cover stays its settled ~270–303px from first paint (no 173→303 jump). */
     .dashboard-hero__series {
         min-block-size: 128px;
+    }
+    /* the desktop banner settles at ~258px (the crown row + the flank row) — reserve both. */
+    .dashboard-hero__series--banner {
+        min-block-size: 258px;
     }
 }
 .dashboard-hero__series--ranked {
