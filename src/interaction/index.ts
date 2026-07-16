@@ -15,7 +15,7 @@
 //   · `useSelectionTreatment` → `stores/useSelection` (O-B9).
 //   · `HoverCard.vue` + `ReadoutDrill.vue` — the drill-down SURFACES re-homed here from the flat
 //     charts bag [ANSWERS Q68]; value-import `stores/{useHoverReadout,useSelection,useViewParams}`
-//     (O-B9) + charts `ReadoutFacts`/`useCardPlacement` (O-B4R). Land with O-B9; the WG-A drill-down
+//     (O-B9) + charts `ReadoutFacts` + the local `useCardPlacement` (O-B4R). Land with O-B9; the WG-A drill-down
 //     successor then wires the gesture.
 // The monorepo import flip to this home is O-B11.
 
