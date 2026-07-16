@@ -5,7 +5,7 @@
 // (the K-FRAMEWORK ?? idiom). PURE — no DOM, no clock, no Vue ref (the k-variety-parity gate asserts
 // purity). PRM collapses to terminal (a variant NEVER changes the END-STATE, only the path).
 
-import { clamp } from "@mkbabb/value.js";
+import { clamp } from "@mkbabb/value.js/math";
 import type { VariantSpec, Direction, EaseToken, DurationToken } from "./variant-spec.js";
 import {
     DIRECTION,

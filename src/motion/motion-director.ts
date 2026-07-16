@@ -18,7 +18,8 @@
 
 import { computed, onScopeDispose, ref, watch, type ComputedRef, type Ref } from "vue";
 import { SpringProgress, NumericAnimation } from "@mkbabb/keyframes.js";
-import { clamp, easeOutExpo } from "@mkbabb/value.js";
+import { clamp } from "@mkbabb/value.js/math";
+import { easeOutExpo } from "@mkbabb/value.js/easing";
 import type { MotionTrigger } from "./triggers.js";
 import type { VariantSpec } from "./variant-spec.js";
 import {

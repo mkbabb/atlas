@@ -34,7 +34,7 @@
 // degrades to a settled 1 — the chart shows fully drawn (the missing-stage-terminal law's peer).
 
 import { computed, type ComputedRef, type Ref } from "vue";
-import { clamp } from "@mkbabb/value.js";
+import { clamp } from "@mkbabb/value.js/math";
 import { useReducedMotion } from "./useReducedMotion.js";
 import { useDocumentScrollProgress } from "./useScrollProgress.js";
 import { readScrubHostProgress } from "../charts/composables/activeViz.js";

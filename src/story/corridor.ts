@@ -10,7 +10,8 @@
 // before the count's cover-0.50 centre (the title leads the count). The count half is proven live
 // (`reveal-register.ts` `countAt`); THIS module lands the un-demonstrated title half.
 
-import { clamp, smoothStep3 } from "@mkbabb/value.js";
+import { clamp } from "@mkbabb/value.js/math";
+import { smoothStep3 } from "@mkbabb/value.js/easing";
 import { COVER_CENTRE } from "./centreAxis.js";
 
 // ── The corridor register values (P2-B Ruling 2, verbatim) ────────────────────────────────────────

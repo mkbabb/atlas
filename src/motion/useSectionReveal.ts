@@ -5,7 +5,8 @@
 // subscribe to. Moved verbatim; `useScrollTimeline` re-exports it so the `@/motion` surface holds.
 
 import { computed, type ComputedRef, type Ref } from "vue";
-import { clamp, smoothStep3 } from "@mkbabb/value.js";
+import { clamp } from "@mkbabb/value.js/math";
+import { smoothStep3 } from "@mkbabb/value.js/easing";
 import { useElementBounding, useWindowSize } from "@vueuse/core";
 import { useReducedMotion } from "./useReducedMotion.js";
 import { titleRevealProgress } from "../story/corridor.js";

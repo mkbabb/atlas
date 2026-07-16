@@ -42,7 +42,8 @@ import {
     type Ref,
 } from "vue";
 import { ManualTimeline, type TimingFunction } from "@mkbabb/keyframes.js";
-import { clamp, smoothStep3 } from "@mkbabb/value.js";
+import { clamp } from "@mkbabb/value.js/math";
+import { smoothStep3 } from "@mkbabb/value.js/easing";
 import {
     supportsViewTimeline,
     useScrollProgress,

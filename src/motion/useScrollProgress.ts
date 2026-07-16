@@ -14,7 +14,8 @@
 
 import { computed, ref, type ComputedRef, type Ref } from "vue";
 import { useElementBounding, useWindowScroll, useWindowSize } from "@vueuse/core";
-import { clamp, smoothStep3 } from "@mkbabb/value.js";
+import { clamp } from "@mkbabb/value.js/math";
+import { smoothStep3 } from "@mkbabb/value.js/easing";
 import { supportsViewTimeline as glSupportsViewTimeline } from "@mkbabb/glass-ui";
 import { useReducedMotion } from "./useReducedMotion.js";
 

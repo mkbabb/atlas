@@ -11,7 +11,8 @@
 // styleFor form here is the JS seam a plate binds when it declares a `RevealUp`/`CountDial` MotionSegment
 // through the director (the crown reveal + the number dial), so the reveal is DECLARED, not hand-wired.
 
-import { clamp, easeOutExpo } from "@mkbabb/value.js";
+import { clamp } from "@mkbabb/value.js/math";
+import { easeOutExpo } from "@mkbabb/value.js/easing";
 
 const clamp01 = (x: number): number => clamp(x, 0, 1);
 

@@ -8,7 +8,7 @@
 // SAME mulberry32 algorithm for non-pen marks (the atlas-side seed home). The beeswarm's FNV-1a
 // `crnJitter` lifts here verbatim as `hashSeed` (the K-REPOINT lockstep — byte-identical output).
 
-import { clamp } from "@mkbabb/value.js";
+import { clamp } from "@mkbabb/value.js/math";
 import { MICRO_BOUNDS } from "./variant-bounds.js";
 
 /** mulberry32 — the deterministic PRNG (the handmark boil engine). `seed` masked to u32 then the

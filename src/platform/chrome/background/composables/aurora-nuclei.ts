@@ -4,7 +4,7 @@
 // resolver, and the drift/selection lean constants. useAuroraConfig owns the reactive wiring; this
 // module owns the geometry it maps over.
 
-import { lerp } from "@mkbabb/value.js";
+import { lerp } from "@mkbabb/value.js/math";
 import type { AuroraNucleus } from "@mkbabb/glass-ui/aurora";
 import type { DepositionProfile } from "../../../../contract/index.js";
 
