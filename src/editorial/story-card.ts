@@ -11,7 +11,6 @@ export interface StoryCardFacet {
     frame?: "none" | "keyline";
     pole?: TitleAlign;
     figureScale?: "contained" | "breakout";
-    numeral?: number;
     seamRule?: boolean;
 }
 
