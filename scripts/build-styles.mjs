@@ -7,13 +7,12 @@
 // re-skin guarantee) — var() references PRESERVED (no oklch/hex baking where a token exists),
 // injection-by-JS REJECTED (one <link>-able stylesheet). The per-component SFC <style> chunks
 // merge into the aggregate — the JS lib build collapses them into ONE `dist/assets/core.css`
-// (cssCodeSplit:false); this pass folds that into `@layer atlas.components`. A second export
-// `./styles/tokens` (dist/tokens.css) ships the token layer alone.
+// (cssCodeSplit:false); this pass folds that into `@layer atlas.components`.
 //
 // Pipeline: (1) Vite-compile styles/index.css → the tokens+recipes+base body; (2) Vite-compile
-// styles/tokens.css → the token-only body; (3) read the SFC aggregate from the JS build
-// (dist/assets/core.css, absent while the scaffold has no SFC); (4) wrap each body in its named
-// cascade sub-layer and emit dist/style.css + dist/tokens.css.
+// styles/tokens.css → the token-only body (the atlas.tokens sub-layer of the aggregate); (3) read
+// the SFC aggregate from the JS build (dist/assets/core.css, absent while the scaffold has no SFC);
+// (4) wrap each body in its named cascade sub-layer and emit dist/style.css.
 import { build } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { readFile, writeFile, rm, mkdir, readdir } from "node:fs/promises";
@@ -80,10 +79,6 @@ const styleCss =
     (sfcBody ? `@layer atlas.components {\n${sfcBody}\n}\n` : "");
 await writeFile(resolve(DIST, "style.css"), styleCss);
 
-// dist/tokens.css — the token layer alone (the theming-only consumer).
-const tokensCss = header + "@layer atlas, atlas.tokens;\n" + `@layer atlas.tokens {\n${tokensBody}\n}\n`;
-await writeFile(resolve(DIST, "tokens.css"), tokensCss);
-
 // dist/breakpoints.css — the RAW `@custom-media` author-surface (the `./styles/breakpoints` export;
 // v1.0.1 · O-B10). The compiled aggregates above ship 0 raw `@custom-media` (Tailwind + the token
 // layer resolve them away), but the consumer's build glue — a local zero-dep PostCSS plugin that
@@ -101,5 +96,5 @@ await rm(resolve(DIST, "assets/core.css"), { force: true });
 await rm(TMP, { recursive: true, force: true });
 
 console.log(
-    `build-styles: dist/style.css (${styleCss.length}B) + dist/tokens.css (${tokensCss.length}B) — @layer atlas wrapped, SFC folded.`,
+    `build-styles: dist/style.css (${styleCss.length}B) — @layer atlas wrapped, SFC folded.`,
 );
