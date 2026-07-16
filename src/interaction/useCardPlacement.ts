@@ -1,4 +1,4 @@
-// platform/charts/composables/useCardPlacement.ts — the HoverCard PLACEMENT geometry (I-ARCH.AR-8 ·
+// interaction/useCardPlacement.ts — the HoverCard PLACEMENT geometry (I-ARCH.AR-8 ·
 // the HoverCard sub-form). HoverCard is the ONE platform-owned entity card — not an ECharts-option
 // plate and not N readout layouts (the payload renders through ONE uniform projection), so its §Y
 // discharge is the PLACEMENT math: the viewport-clamp + the right-peek mobile dock + the compare-

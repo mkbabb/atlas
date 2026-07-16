@@ -53,7 +53,7 @@ import ReadoutFacts from "../charts/readout/ReadoutFacts.vue";
 import { useHoverReadout, type HoverReadout } from "../platform/stores/useHoverReadout.js";
 import { useAffordanceHint } from "./useAffordanceHint.js";
 import { MQ } from "../design/foundations/breakpoints.js";
-import { transientSeat } from "../charts/composables/useCardPlacement.js";
+import { transientSeat } from "./useCardPlacement.js";
 import { useDismissArbiter } from "../platform/interaction/useDismissArbiter.js";
 import { createHoverBridge } from "./hover-bridge.js";
 
