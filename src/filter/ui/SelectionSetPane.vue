@@ -374,7 +374,7 @@ function release(m: FilterMember): void {
     min-width: 2rem;
     min-height: 2rem;
     padding: 0.25rem;
-    border-radius: var(--radius-control, 0.5rem);
+    border-radius: var(--radius-control);
 }
 
 /* (2) THE EXPANDABLE GRANULAR LIST — the `Collapsible`-floor accordion. */
@@ -384,7 +384,7 @@ function release(m: FilterMember): void {
     gap: 0.35rem;
 }
 .filter-view__section {
-    border-radius: var(--radius-control, 0.5rem);
+    border-radius: var(--radius-control);
 }
 .filter-view__section-head {
     display: flex;
@@ -404,7 +404,7 @@ function release(m: FilterMember): void {
     cursor: pointer;
     text-align: left;
     color: var(--foreground);
-    border-radius: var(--radius-control, 0.4rem);
+    border-radius: var(--radius-control);
 }
 .filter-view__trigger:focus-visible {
     outline: 2px solid color-mix(in oklab, var(--route-accent), transparent 40%);

@@ -174,7 +174,7 @@ const brandHref = computed(() => props.colophon?.brandHref ?? "https://www.fi.nc
     background: var(--card);
     border: 1px solid var(--engrave, var(--border));
     border-left: 3px solid var(--colophon-accent);
-    border-radius: var(--radius-plate, 6px);
+    border-radius: var(--radius-plate);
     padding: 1rem 1.25rem;
 }
 /* C-1 (K-DESIGN-SUFFUSE · the one-voice colophon pops) — the §2.2 `eyebrow` recipe opens "About" with a
