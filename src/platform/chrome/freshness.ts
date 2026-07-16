@@ -21,6 +21,7 @@
 import { computed, watch, type ComputedRef } from "vue";
 import { useDocumentVisibility, useDebounceFn } from "@vueuse/core";
 import { useActiveDashboard } from "../stores/useActiveDashboard.js";
+import type { FeedMeta } from "../../data/contract.js";
 
 /** How long a return-to-tab must settle before we refetch (coalesces flutter). */
 const REVALIDATE_DEBOUNCE_MS = 400;
@@ -53,6 +54,23 @@ function formatAsOf(generatedAt: string | null, fallbackYear: number | null): st
 }
 
 /**
+ * PURE — resolve the colophon as-of stamp off the feed meta. A FROZEN program (ECF) is stamped by
+ * its EXTRACT vintage (`extractAsOf`, the workbook "as of" date), NEVER `generatedAt` (the emit
+ * stamp): reading `generatedAt` for a frozen feed painted the ECF dual as-of ("Jun 16, 2026" beside
+ * the true "May 27, 2022"). `frozenAsOf` (the program-terminal FY) is the coarse fallback. A LIVE
+ * feed reads `generatedAt`, falling back to its latest data year (the interim no-stamp feed).
+ */
+export function resolveAsOf(meta: FeedMeta | null): string {
+    if (!meta) return "";
+    if (meta.frozen) {
+        if (meta.extractAsOf) return formatAsOf(meta.extractAsOf, null);
+        if (meta.frozenAsOf) return `FY${meta.frozenAsOf}`;
+    }
+    const latestYear = meta.years[meta.years.length - 1] ?? null;
+    return formatAsOf(meta.generatedAt, latestYear);
+}
+
+/**
  * The freshness composable. Reads the active dashboard's feed meta for the as-of
  * stamp and wires a regain-of-focus revalidate. Must be called inside a component
  * setup (it touches the Pinia store + a @vueuse window listener).
@@ -62,17 +80,8 @@ export function useFreshness(): Freshness {
 
     const generatedAt = computed<string | null>(() => store.meta?.generatedAt ?? null);
 
-    // The fallback vintage — the active feed's latest year (a feed without a
-    // generatedAt names its data year instead, so the chip is honest about the
-    // vintage without inventing a precision it lacks).
-    const fallbackYear = computed<number | null>(() => {
-        const years = store.meta?.years;
-        if (years && years.length > 0) return years[years.length - 1] ?? null;
-        return null;
-    });
-
     const label = computed<string>(() => {
-        const stamp = formatAsOf(generatedAt.value, fallbackYear.value);
+        const stamp = resolveAsOf(store.meta);
         return stamp ? `data as of ${stamp}` : "";
     });
 
