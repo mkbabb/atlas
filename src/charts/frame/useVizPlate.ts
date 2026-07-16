@@ -267,7 +267,7 @@ const focusedStat = computed(() => {
 // viz hand-rolling a filter-set / reveal / stats block inline is the parallel-layer anti-pattern
 // J-FEEDBACK-5 §2 forbids). J-FRAME renders NOTHING here: it reads the contract's facets and hands
 // each to its owning-wave seam (a scoped slot the owning wave fills — `reveal` → J-SCROLL,
-// `glyphs` → J-GLYPH, `aggregateStats` → J-STORY, `provenance` → J-VOICE, `filterDimensions` →
+// `aggregateStats` → J-STORY, `provenance` → J-VOICE, `filterDimensions` →
 // J-WORKBOOK/J-VIZDOCK). The seam is PURELY declarative — every facet OPTIONAL, so a viz that
 // declares none reads exactly as today (the clean-extension make-or-break, J-FEEDBACK-5 §8 D1).
 
@@ -278,8 +278,6 @@ const filterDimensions = computed(() => props.contract.filterDimensions ?? []);
 const filterResponse = computed(() => props.contract.filterResponse ?? "responsive");
 /** FACET 2 — the declared scroll-reveal facet (null when undeclared). J-SCROLL §9 renders it. */
 const reveal = computed(() => props.contract.reveal ?? null);
-/** FACET 3 — the declared entity-glyph grain (null when undeclared). J-GLYPH resolves it. */
-const glyphs = computed(() => props.contract.glyphs ?? null);
 /** FACET 4 — the declared aggregate stats (or [] when undeclared). J-STORY places them OUTSIDE the
     grid. The host READS the thunk's face; J-STORY owns the placement. */
 const aggregateStats = computed(() => props.contract.aggregateStats?.() ?? []);
@@ -332,8 +330,8 @@ function toggleFilterDock(): void {
 }
 
 // ── THE SELF-REGISTER (K-FILTER-UNIFIED §4.D · the Component-altitude seam) ──────────────────────
-// Each mounted plate self-registers its `filterDimensions` facet (+ its E2 options controller + the
-// cross-HIGHLIGHT veil policy) so the unified panel can PROJECT it off the K-ACTIVE active viz-set —
+// Each mounted plate self-registers its `filterDimensions` facet (+ its E2 options controller) so
+// the unified panel can PROJECT it off the K-ACTIVE active viz-set —
 // the contract is invisible at the chapter `<component :is>` altitude. A per-MOUNT token guards the
 // HMR / keep-alive double-mount (the deregister deletes ONLY this instance's key).
 const vizRegistry = useVizRegistry();
@@ -343,7 +341,6 @@ onMounted(() => {
         vizId: props.contract.id,
         dims: filterDimensions.value,
         filterResponse: filterResponse.value,
-        crossHighlight: props.contract.crossHighlight ?? true,
         optionsController: hasOptions.value ? optionsController : null,
         imageExport: {
             format: renderKind.value === "echarts" ? "png" : "svg",
@@ -504,7 +501,6 @@ watchEffect(() => {
         focusedStat,
         filterDimensions,
         reveal,
-        glyphs,
         aggregateStats,
         keyStats,
         provenance,

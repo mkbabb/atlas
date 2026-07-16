@@ -67,7 +67,6 @@ const {
     focusedStat,
     filterDimensions,
     reveal,
-    glyphs,
     aggregateStats,
     keyStats,
     provenance,
@@ -299,13 +298,11 @@ defineExpose({ archetype });
                  beat subtree). It reads beneath the <h2>, above the chart body, and travels cleanly
                  into the ?fig= expand + export. -->
             <VizDescription :description="contract.description" />
-            <!-- J-FRAME · FACET 2 (`reveal` → J-SCROLL §9) + FACET 3 (`glyphs` → J-GLYPH) — the host
-                 hands each declared facet to its owning-wave renderer via a scoped slot. J-FRAME
-                 READS the declaration (the grain / the reveal steps), it RESOLVES nothing: J-SCROLL
-                 orchestrates the reveal over the ONE page-clock, J-GLYPH resolves the grain to a REAL
-                 silhouette (NO void-ring, NO proxy). Absent when the facet is undeclared. -->
+            <!-- J-FRAME · FACET 2 (`reveal` → J-SCROLL §9) — the host hands the declared facet to its
+                 owning-wave renderer via a scoped slot. J-FRAME READS the declaration (the reveal
+                 steps), it RESOLVES nothing: J-SCROLL orchestrates the reveal over the ONE page-clock.
+                 Absent when the facet is undeclared. -->
             <slot v-if="reveal" name="reveal" :reveal="reveal" :contract-id="contract.id" />
-            <slot v-if="glyphs" name="glyphs" :glyphs="glyphs" :contract-id="contract.id" />
 
             <!-- N.WD1 §4.D1.2 — THE 4-RUNG READINESS LADDER. The HOST branches (plates do not): the
                  hub's pure readiness fold picks the rung, and `isEmpty()` is read ONLY at the `figure`/

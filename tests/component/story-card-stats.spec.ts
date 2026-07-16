@@ -62,7 +62,6 @@ vi.mock("../../src/charts/frame/useVizPlate", async () => {
         focusedStat: null,
         filterDimensions: [],
         reveal: null,
-        glyphs: null,
         aggregateStats: computed(() => props.contract.aggregateStats?.() ?? []),
         keyStats: computed(() => props.contract.keyStats?.() ?? []),
         provenance: null,

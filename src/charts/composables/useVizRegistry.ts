@@ -35,8 +35,8 @@ export interface NativeImageExport {
     export(): boolean;
 }
 
-/** ONE registered viz's facet — its id, the per-mount token, the declared `filterDimensions` (the
-    panel projects ⋃ over the active set, de-duped by key), and the cross-HIGHLIGHT veil policy. */
+/** ONE registered viz's facet — its id, the per-mount token, and the declared `filterDimensions` (the
+    panel projects ⋃ over the active set, de-duped by key). */
 export interface RegisteredViz {
     /** The viz's stable id (`contract.id`) — the registry key + the panel-pin target. */
     vizId: string;
@@ -47,8 +47,6 @@ export interface RegisteredViz {
     dims: readonly FilterDimension[];
     /** The contract's explicit filter-response policy, normalized by the mounting host. */
     filterResponse: FilterResponse;
-    /** `VizContract.crossHighlight ?? true` — the per-viz veil policy (a mark-render policy, H4). */
-    crossHighlight: boolean;
     /** The E2 per-viz options controller (the dials the retired inline dock used to host — they
         re-home into the unified panel's OPTIONS band, projected off the pinned/active viz). Null when
         the viz declares no options. */

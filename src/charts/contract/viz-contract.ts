@@ -232,8 +232,8 @@ export type EvidenceTier = "FACT" | "HYPOTHESIS" | "SPECULATION";
 // declarations already carry, and the platform `VizPlate` host READS each declared facet and
 // routes it to its OWNING-WAVE implementation through ONE declarative seam. J-FRAME owns ONLY the
 // FIELD-SET + the host-read policy; it names ZERO renderers — each facet's render is the owning
-// wave's (J-SCROLL=`reveal`, J-GLYPH=`glyphs`, J-STORY=`aggregateStats`, J-VOICE=`provenance`,
-// J-WORKBOOK consumes `filterDimensions`). All five facets are OPTIONAL fields, so the shipped
+// wave's (J-SCROLL=`reveal`, J-STORY=`aggregateStats`, J-VOICE=`provenance`,
+// J-WORKBOOK consumes `filterDimensions`). The facets are OPTIONAL fields, so the shipped
 // `ScatterPlate`/`GeoPlate` thin declarations compile BYTE-UNCHANGED (a viz that declares none of
 // the five reads exactly as today — the clean-extension make-or-break, J-FEEDBACK-5 §8 Decision 1).
 // ═════════════════════════════════════════════════════════════════════════════
@@ -340,35 +340,6 @@ export interface RevealFacet {
     /** A3 (K-ANIM) — the per-viz reveal variant DEFAULT (merged by `resolveVariant`). All-optional; a
         viz declaring none renders the register defaults. */
     variant?: VariantSpec;
-}
-
-// ── FACET 3 — `glyphs` (the per-viz entity-glyph grain · IMPL is J-GLYPH) ─────────────────────
-
-/** A glyph GRAIN a viz may declare — the entity silhouette J-GLYPH's generalized real-polygon
-    facility resolves to a REAL outline (NO void-ring, NO proxy — J-FEEDBACK-5 Decision 1). Mirrors
-    J-GLYPH's `GlyphGrain` vocabulary (`src/lib/gates/j0-glyph.gate.ts` `GLYPH_GRAINS`) as the
-    contract-side declaration — the viz NAMES its grain, J-GLYPH RESOLVES it (J-GLYPH owns the
-    resolver; the contract owns only the declared grain). */
-export type GlyphGrain =
-    | "state"
-    | "territory"
-    | "county"
-    | "district"
-    | "charter";
-
-/** FACET 3 — the per-viz `glyphs` facet. The viz DECLARES its entity-glyph `grain` (state/territory/
-    county/district/charter); J-GLYPH's generalized facility RESOLVES the declared grain to a REAL
-    silhouette (the make-or-break "glyphs for EVERY entity, NO proxy", J-FEEDBACK-5 Decision 1; J-GLYPH
-    SUBSUMES the I-GLYPH.a territory follow-on). The optional `asMarks` declares the dots-as-glyphs mode
-    (the viz's marks ARE the entity silhouettes, generalizing the SHIPPED size API past the named rungs).
-    J-FRAME declares the facet TYPE + the grain a viz may name; J-GLYPH resolves it — J-FRAME renders
-    NOTHING. */
-export interface GlyphsFacet {
-    /** The entity grain the viz's marks carry — the silhouette J-GLYPH resolves (NO proxy/void-ring). */
-    grain: GlyphGrain;
-    /** Dots-as-glyphs — the viz's marks render AS the resolved entity silhouettes (J-GLYPH's size API
-        generalization), not bare discs. Defaults to the plate's resting mark when omitted. */
-    asMarks?: boolean;
 }
 
 // ── FACET 4 — `aggregateStats` (the outside-the-grid stats · IMPL is J-STORY) ─────────────────
@@ -501,24 +472,12 @@ export interface VizContract {
         scroll-driven.css compositor over the ONE page-clock — the `data-reveal-*` bands, NOT a second
         clock) + a declared `MotionDeclaration` on the motion director for the per-mark/number tiers. */
     reveal?: RevealFacet;
-    /** FACET 3 — the per-viz entity-glyph grain. The viz declares its `grain`; the IMPL is J-GLYPH's
-        generalized real-polygon facility (a REAL silhouette for EVERY grain — NO void-ring, NO proxy). */
-    glyphs?: GlyphsFacet;
     /** FACET 4 — the per-viz aggregate stats placed OUTSIDE the viz/grid. A thunk off the store
         reducers; the IMPL is J-STORY's outside-the-grid placement (the viz-area-is-viz-only law). */
     aggregateStats?: AggregateStatsFacet;
     /** FACET 5 — the per-viz structured provenance lockup + the x-vs-y encoding declaration. The IMPL
         is J-VOICE's lockup (the forthright-data-analysis principle). */
     provenance?: ProvenanceFacet;
-
-    /** K-FILTER-UNIFIED §4.B — the cross-HIGHLIGHT veil policy. Default `true` ⇒ a selection
-        cross-HIGHLIGHTS this viz's non-matching marks via the shipped `veilHue` (context-preserving,
-        the editorial inversion of PowerBI's cross-filter-on-by-default); `false` ⇒ the viz opts OUT of
-        the veil. A MARK-RENDER policy ONLY — NEVER a shared-fold removal (H4); cross-FILTER (removal)
-        engages route-wide ONLY inside a `?fig=` expand. OPTIONAL ⇒ the shipped contracts compile
-        byte-unchanged. */
-    crossHighlight?: boolean;
-
 }
 
 /** THE WATCHERS / USF-Integrity contract type (X3-2) — a `VizContract` with `evidenceTier` made

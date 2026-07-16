@@ -19,7 +19,6 @@ describe("reactive viz registry facets", () => {
             vizId: "sci-stage",
             dims: [],
             filterResponse: "responsive",
-            crossHighlight: true,
         });
 
         registry.updateFilterFacet("sci-stage", token, {
@@ -49,13 +48,11 @@ describe("reactive viz registry facets", () => {
             vizId: "static",
             dims: [],
             filterResponse: "static",
-            crossHighlight: true,
         });
         registry.register({
             vizId: "responsive",
             dims: [],
             filterResponse: "responsive",
-            crossHighlight: true,
         });
 
         expect(resolveFilterResponse(registry.facetsFor(["static"]))).toBe("static");
