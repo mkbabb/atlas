@@ -5,6 +5,7 @@ export type StoryCardSurface = Extract<CardSurface, "veil" | "opaque">;
 
 /** The declared, fixed-sector StoryCard register. Omitted fields retain the quiet veil default. */
 export interface StoryCardFacet {
+    mode?: "plate" | "stage";
     surface?: StoryCardSurface;
     tier?: CardTier;
     frame?: "none" | "keyline";

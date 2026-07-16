@@ -26,6 +26,13 @@ describe("StoryCard composition", () => {
         const essay = source("src/editorial/DashboardEssay.vue");
         const rule = source("src/editorial/AnimatedRule.vue");
         expect(card).toContain(':surface="surface"');
+        expect(card).toContain(":data-card-mode=\"facet.mode ?? 'plate'\"");
+        expect(card).toMatch(
+            /\.story-card\[data-card-mode="stage"\]\s*{[^}]*overflow:\s*clip;/s,
+        );
+        expect(card).not.toMatch(
+            /\.story-card\[data-card-mode="stage"\][^{]*{[^}]*overflow:\s*(?:auto|hidden|scroll)/s,
+        );
         expect(card).toContain(":tier=\"facet.tier ?? 'quiet'\"");
         expect(card).toContain("<Beat");
         expect(card.match(/<AnimatedRule/g)).toHaveLength(2);

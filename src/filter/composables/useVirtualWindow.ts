@@ -8,20 +8,18 @@ import {
     type ComputedRef,
     type MaybeRefOrGetter,
 } from "vue";
+import {
+    buildVirtualOffsets,
+    resolveVirtualRange,
+    roundedVirtualWidth,
+    virtualMeasurementSession,
+    type VirtualItem,
+    type VirtualKey,
+    type VirtualOffset,
+} from "./virtual-window-core";
 
-export type VirtualKey = string | number;
-
-export interface VirtualOffset<Key extends VirtualKey = VirtualKey> {
-    readonly key: Key;
-    readonly index: number;
-    readonly top: number;
-    readonly bottom: number;
-}
-
-export interface VirtualItem<Item, Key extends VirtualKey = VirtualKey>
-    extends VirtualOffset<Key> {
-    readonly item: Item;
-}
+export { buildVirtualOffsets, resolveVirtualRange } from "./virtual-window-core";
+export type { VirtualItem, VirtualKey, VirtualOffset } from "./virtual-window-core";
 
 export interface UseVirtualWindowOptions<Item, Key extends VirtualKey = VirtualKey> {
     items: MaybeRefOrGetter<readonly Item[]>;
@@ -40,47 +38,6 @@ export interface UseVirtualWindowReturn<Item, Key extends VirtualKey = VirtualKe
     observe(key: Key, element: Element): () => void;
 }
 
-/** Build cumulative offsets once per item/measurement change. */
-export function buildVirtualOffsets<Item, Key extends VirtualKey>(
-    items: readonly Item[],
-    keyOf: (item: Item, index: number) => Key,
-    sizes: ReadonlyMap<Key, number>,
-    estimateSize: number,
-): readonly VirtualItem<Item, Key>[] {
-    let top = 0;
-    return items.map((item, index) => {
-        const key = keyOf(item, index);
-        const size = sizes.get(key) ?? estimateSize;
-        const row = { item, key, index, top, bottom: top + size };
-        top = row.bottom;
-        return row;
-    });
-}
-
-/** Binary-search a cumulative layout for the visible interval. */
-export function resolveVirtualRange<Key extends VirtualKey>(
-    offsets: readonly VirtualOffset<Key>[],
-    start: number,
-    end: number,
-): readonly [number, number] {
-    let lo = 0;
-    let hi = offsets.length;
-    while (lo < hi) {
-        const mid = (lo + hi) >>> 1;
-        if (offsets[mid].bottom <= start) lo = mid + 1;
-        else hi = mid;
-    }
-    const first = lo;
-    lo = first;
-    hi = offsets.length;
-    while (lo < hi) {
-        const mid = (lo + hi) >>> 1;
-        if (offsets[mid].top < end) lo = mid + 1;
-        else hi = mid;
-    }
-    return [first, lo];
-}
-
 /** One row-grain virtualizer: cumulative-offset binary search, 1×-before/2×-after overscan,
     resize remeasurement, and synchronous target mounting before focus. */
 export function useVirtualWindow<Item, Key extends VirtualKey = VirtualKey>(
@@ -91,6 +48,7 @@ export function useVirtualWindow<Item, Key extends VirtualKey = VirtualKey>(
     const measurements = new Set<ResizeObserver>();
     const scrollTop = ref(0);
     const viewportSize = ref(0);
+    let activeWidth: number | undefined;
     const layout = computed(() =>
         buildVirtualOffsets(toValue(options.items), options.key, sizes.value, estimate),
     );
@@ -119,6 +77,13 @@ export function useVirtualWindow<Item, Key extends VirtualKey = VirtualKey>(
         (element, _old, cleanup) => {
             if (!element) return;
             const sync = (): void => {
+                const width = roundedVirtualWidth(element.clientWidth);
+                if (width !== activeWidth) {
+                    activeWidth = width;
+                    sizes.value = new Map(
+                        virtualMeasurementSession<Key>(options.key, width),
+                    );
+                }
                 scrollTop.value = element.scrollTop;
                 viewportSize.value = element.clientHeight;
             };
@@ -149,9 +114,12 @@ export function useVirtualWindow<Item, Key extends VirtualKey = VirtualKey>(
     function observe(key: Key, element: Element): () => void {
         const commit = (size: number): void => {
             if (!(size > 0) || sizes.value.get(key) === size) return;
-            const next = new Map(sizes.value);
+            const next =
+                activeWidth == null
+                    ? new Map(sizes.value)
+                    : virtualMeasurementSession<Key>(options.key, activeWidth);
             next.set(key, size);
-            sizes.value = next;
+            sizes.value = new Map(next);
         };
         commit(element.getBoundingClientRect().height);
         if (typeof ResizeObserver === "undefined") return () => undefined;

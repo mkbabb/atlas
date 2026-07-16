@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { effectScope } from "vue";
 import {
     compile,
     createRowsReader,
@@ -8,7 +9,9 @@ import {
 import {
     buildVirtualOffsets,
     resolveVirtualRange,
+    useVirtualWindow,
 } from "@/filter/composables/useVirtualWindow";
+import { virtualOffset } from "@/filter/composables/virtual-window-core";
 
 interface Row {
     id: string;
@@ -103,5 +106,49 @@ describe("virtual-window core", () => {
         ]);
         expect(resolveVirtualRange(offsets, 12, 55)).toEqual([1, 3]);
         expect(resolveVirtualRange(offsets, 10, 30)).toEqual([1, 2]);
+    });
+
+    it("applies the same range law at row and indivisible-section grain", () => {
+        const rows = buildVirtualOffsets(["stage"], (key) => key, new Map(), 1000);
+        const section = [virtualOffset("stage", 0, -999, 1000)];
+
+        expect(resolveVirtualRange(rows, 0, 3000)).toEqual([0, 1]);
+        expect(resolveVirtualRange(section, -1000, 3000)).toEqual([0, 1]);
+        expect(resolveVirtualRange([virtualOffset("stage", 0, 3001, 1000)], -1000, 3000)).toEqual([0, 0]);
+    });
+
+    it("reuses measurements at the same rounded width and isolates a changed width", () => {
+        const items = [{ id: "a" }, { id: "b" }];
+        const key = (item: (typeof items)[number]): string => item.id;
+        const viewport = (width: number) =>
+            ({
+                scrollTop: 0,
+                clientHeight: 100,
+                clientWidth: width,
+                addEventListener: () => undefined,
+                removeEventListener: () => undefined,
+            }) as unknown as HTMLElement;
+        const row = (height: number) =>
+            ({ getBoundingClientRect: () => ({ height }) }) as unknown as Element;
+        const mount = (width: number) => {
+            const scope = effectScope();
+            const virtual = scope.run(() =>
+                useVirtualWindow({ items, viewport: viewport(width), key }),
+            )!;
+            return { scope, virtual };
+        };
+
+        const first = mount(799.6);
+        first.virtual.observe("a", row(72));
+        expect(first.virtual.totalSize.value).toBe(112);
+        first.scope.stop();
+
+        const sameWidth = mount(800.4);
+        expect(sameWidth.virtual.totalSize.value).toBe(112);
+        sameWidth.scope.stop();
+
+        const changedWidth = mount(801);
+        expect(changedWidth.virtual.totalSize.value).toBe(80);
+        changedWidth.scope.stop();
     });
 });

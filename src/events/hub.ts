@@ -10,6 +10,7 @@ import type {
 type Listener = {
     readonly scope?: EventScope["grain"];
     readonly callback: (event: never) => void;
+    last?: string;
 };
 
 const EMPTY_SNAPSHOT: AtlasEventSnapshot = {
@@ -43,8 +44,7 @@ export function createAtlasEventHub(
         listeners.set(type, bucket);
 
         const current = latest.get(type) as AtlasEventOf<Type> | undefined;
-        if (options?.immediate && current && matchesScope(listener, current))
-            callback(current);
+        if (options?.immediate && current) deliver(listener, current);
 
         return () => {
             bucket.delete(listener);
@@ -57,9 +57,7 @@ export function createAtlasEventHub(
         state = reduceSnapshot(state, event);
         const bucket = listeners.get(event.type);
         if (!bucket) return;
-        for (const listener of [...bucket]) {
-            if (matchesScope(listener, event)) listener.callback(event as never);
-        }
+        for (const listener of [...bucket]) deliver(listener, event);
     }
 
     return {
@@ -67,6 +65,27 @@ export function createAtlasEventHub(
         emit,
         snapshot: () => copySnapshot(state),
     };
+}
+
+function deliver(listener: Listener, event: AtlasEvent): void {
+    if (!matchesScope(listener, event)) return;
+    const key = structuralKey(event);
+    if (listener.last === key) return;
+    listener.last = key;
+    listener.callback(event as never);
+}
+
+/** Atlas event payloads are plain data; object-key order is not semantic. */
+function structuralKey(value: unknown): string {
+    return (
+        JSON.stringify(value, (_key, item) =>
+            item && typeof item === "object" && !Array.isArray(item)
+                ? Object.fromEntries(
+                      Object.entries(item).sort(([a], [b]) => a.localeCompare(b)),
+                  )
+                : item,
+        ) ?? ""
+    );
 }
 
 function matchesScope(listener: Listener, event: AtlasEvent): boolean {

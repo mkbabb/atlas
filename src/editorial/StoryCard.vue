@@ -83,6 +83,7 @@ const secondSeam = computed(
                 :grain="false"
                 class="story-card"
                 :class="{ 'story-card--keyline': facet.frame === 'keyline' }"
+                :data-card-mode="facet.mode ?? 'plate'"
                 :data-figure-scale="facet.figureScale ?? 'contained'"
                 data-testid="story-card"
             >
@@ -121,6 +122,9 @@ const secondSeam = computed(
 .story-card {
     display: grid;
     padding: var(--card-pad-block) var(--card-pad-inline);
+}
+.story-card[data-card-mode="stage"] {
+    overflow: clip;
 }
 .story-card > * + * {
     margin-block-start: var(--card-pad-section-gap);

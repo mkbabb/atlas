@@ -1,7 +1,7 @@
 import { defineAsyncComponent, type Component } from "vue";
 import type { ChapterTitle, RevealSpec, TitlePole } from "@/contract";
 import type { VizContract } from "@/charts/contract/viz-contract";
-import type { ChapterScene, ChapterStage } from "@/charts/contract/scene-contract";
+import type { ChapterStage } from "@/charts/contract/scene-contract";
 import type { ColorKind } from "@/charts/scale/colorKind";
 import type { HeroFacet } from "@/editorial/editorial-contract";
 import type { EditorialChapter } from "@/editorial/editorial-contract";
@@ -17,15 +17,10 @@ import type { EdgeSpec, FocusEffect, StoryChapter } from "./story-contract";
 export type PointKind = "cover" | "beat" | "colophon";
 export type SkinRef = SkinId;
 
-/** Compatibility name for early manifest authors; the canonical persistent-stage contract now owns
-    the shape directly. */
-export type StoryStage = ChapterStage;
-
 /** A point owns its figure binding. The closed union prevents parallel per-route viz maps. */
 export type PointViz<Stage extends ChapterStage = ChapterStage> =
     | { readonly kind: "component"; readonly load: () => Promise<{ default: Component }> }
     | { readonly kind: "contract"; readonly contract: VizContract }
-    | { readonly kind: "scene"; readonly scene: ChapterScene }
     | { readonly kind: "stage"; readonly stage: Stage }
     | { readonly kind: "hero"; readonly hero: HeroFacet }
     | { readonly kind: "colophon"; readonly colophon?: Colophon };
@@ -141,8 +136,7 @@ function revealOf<Stage extends ChapterStage>(
 
 /**
  * Project the canonical manifest directly into the chapter contract consumed by DashboardEssay.
- * Stage points are deliberately not adapted to the legacy ChapterScene arm: ChapterStage will own
- * that renderer seam in the following lane.
+ * Stage points project directly onto the persistent-stage renderer seam.
  */
 export function chaptersOf<Stage extends ChapterStage>(
     story: StoryManifest<Stage>,
@@ -158,9 +152,6 @@ export function chaptersOf<Stage extends ChapterStage>(
                 break;
             case "contract":
                 figure = { viz: point.viz.contract as VizContract };
-                break;
-            case "scene":
-                figure = { viz: point.viz.scene };
                 break;
             case "hero":
                 figure = { viz: "hero", hero: point.viz.hero };

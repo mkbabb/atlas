@@ -12,7 +12,7 @@ import {
     resolveSceneAnchor,
     useViewParams,
 } from "@/platform/stores/useViewParams";
-import { createAtlasEventHub } from "@/events";
+import { useReducedMotion } from "@/motion/useReducedMotion";
 import { useVirtualSectionWindow } from "@/filter/composables/useVirtualSectionWindow";
 import type {
     ChapterScene,
@@ -22,6 +22,7 @@ import {
     STAGE_EVENTS_KEY,
     STAGE_EVENT_HUB_KEY,
     STAGE_ANATOMY_KEY,
+    stageEventsFromHub,
 } from "@/charts/contract/scene-contract";
 import type { AppendixDetent } from "@/platform/provenance/appendix";
 
@@ -30,24 +31,26 @@ const props = defineProps<{
     index?: number;
     beatId?: string;
 }>();
+const reduced = useReducedMotion();
 
 const morph = createStageMorphDriver({
     initialSceneId: props.stage.scenes[0]?.id ?? props.stage.id,
     identity: props.stage.identity,
     transition: props.stage.transition,
+    reducedMotion: reduced,
 });
 provide(STAGE_MORPH_KEY, morph);
 
-// Stage declarations are static for a mounted story. Preserve the authored option objects and only
-// translate the canonical vocabulary (`scenes`) to StickyScene's legacy vocabulary (`steps`).
+// Stage declarations are static for a mounted story. Preserve the authored option objects while
+// bridging the stage's scenes onto StickyScene's ordered steps.
 const scene: Readonly<ChapterScene> = Object.freeze({
     kind: "scene",
-    graphic: props.stage.graphic,
+    graphic: props.stage.instance,
     steps: props.stage.scenes,
     focal: props.stage.focal,
     anchor: props.stage.anchor,
-    // The adapter's steps are the stage's SceneOption objects; ChapterScene keeps its wider legacy
-    // callback type for non-stage consumers, so this is a safe narrowing at the one bridge.
+    // These steps are the stage's SceneOption objects; ChapterScene accepts a wider callback
+    // type for standalone consumers, so this is a safe narrowing at the one bridge.
     apply: props.stage.apply as ChapterScene["apply"],
 });
 
@@ -63,17 +66,18 @@ const sceneAnchor = resolveSceneAnchor(
 );
 if (sceneAnchor && sceneAnchor !== initialAnchor)
     view.setNarrativeAt(sceneAnchor.beatId, sceneAnchor.stepId);
-const events = props.stage.events ?? createAtlasEventHub();
+const events = props.stage.events;
+const stageEvents = stageEventsFromHub(events, props.stage.id);
 const activeSceneIndex = ref(0);
 const linkedDrawer = view.param("drawer");
 const appendixDetent = ref<AppendixDetent>(
     linkedDrawer === "peek" || linkedDrawer === "full"
         ? linkedDrawer
-        : (props.stage.anatomy?.provenance.detent ?? "shut"),
+        : (props.stage.anatomy.provenance.detent ?? "shut"),
 );
-provide(STAGE_EVENTS_KEY, props.stage.anatomy?.on ?? null);
+provide(STAGE_EVENTS_KEY, stageEvents);
 provide(STAGE_EVENT_HUB_KEY, events);
-provide(STAGE_ANATOMY_KEY, Boolean(props.stage.anatomy));
+provide(STAGE_ANATOMY_KEY, true);
 watch(
     () => view.param("drawer"),
     (detent) => {
@@ -91,7 +95,7 @@ function emitActiveViz(index = activeSceneIndex.value): void {
         vizId: props.stage.id,
         beat: {
             id: option.id,
-            label: props.stage.anatomy?.foot.title ?? props.stage.id,
+            label: props.stage.anatomy.foot.title,
         },
     });
 }
@@ -146,7 +150,7 @@ const sceneReadout = computed(
 );
 
 function openSourceData(): void {
-    props.stage.anatomy?.export.open(scope);
+    props.stage.anatomy.export.open(scope);
 }
 
 function closeSourceData(): void {
@@ -155,7 +159,7 @@ function closeSourceData(): void {
 }
 
 const sourceDataOpen = computed(
-    () => Boolean(props.stage.anatomy) && view.param("browse") === props.stage.id,
+    () => view.param("browse") === props.stage.id,
 );
 const stageRoot = ref<HTMLElement | null>(null);
 const { materialized, placeholderStyle } = useVirtualSectionWindow(stageRoot, {
@@ -181,7 +185,7 @@ const { materialized, placeholderStyle } = useVirtualSectionWindow(stageRoot, {
             @active-change="onActiveChange"
         >
             <template #anatomy>
-                <FootAnatomy v-if="stage.anatomy" :contract="stage.anatomy.foot">
+                <FootAnatomy :contract="stage.anatomy.foot">
                     <template #legend>
                         <component
                             :is="stage.anatomy.legend"
@@ -230,7 +234,7 @@ const { materialized, placeholderStyle } = useVirtualSectionWindow(stageRoot, {
                     </template>
                 </FootAnatomy>
                 <aside
-                    v-if="stage.anatomy && sourceDataOpen"
+                    v-if="sourceDataOpen"
                     class="chapter-stage__source-data"
                     :aria-label="
                         stage.anatomy.export.ariaLabel ?? 'Source data browser'

@@ -75,7 +75,11 @@ import type { EditorialChapter, HeroFacet } from "./editorial-contract";
 import { provideStoryDirector } from "@/story/story-director-provide";
 import { recedeStyle } from "@/story/corridor";
 import type { StoryChapter } from "@/story/story-contract";
-import { chaptersOf, type StoryManifest } from "@/story/manifest";
+import {
+    chaptersOf,
+    type ManifestChapter,
+    type StoryManifest,
+} from "@/story/manifest";
 import { resolveSkin, skinCssVars, SKIN_KEY } from "@/skin";
 import StoryCorridor from "@/story/StoryCorridor.vue";
 import { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
@@ -89,7 +93,7 @@ const props = defineProps<{
 const storySkin = props.story.skin ? resolveSkin(props.story.skin) : null;
 const storySkinStyle = storySkin ? skinCssVars(storySkin) : undefined;
 if (storySkin) provide(SKIN_KEY, storySkin);
-const chapters = computed<readonly Chapter[]>(() => chaptersOf(props.story));
+const chapters = computed<readonly ManifestChapter[]>(() => chaptersOf(props.story));
 // The host's index-keyed composable pools require a static chapter shape for the lifetime of a route.
 // Chapter content remains live through `chapters`; only this setup-time shape snapshot is fixed.
 const chapterShape = chapters.value;
@@ -195,6 +199,7 @@ const revealStyles = reveals.map((r, i) =>
         // A SCENE beat emits NO beat-level reveal transform (the steps ARE its reveal) — a transform
         // ancestor perturbs the scene graphic's `position:sticky` pin (the K-SCENE pin-safety guard).
         if (
+            chapters.value[i]!.card?.mode === "stage" ||
             isChapterStage(chapters.value[i]!.viz) ||
             isChapterScene(chapters.value[i]!.viz)
         )
@@ -317,7 +322,11 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
             :testid="chapter.id"
             :data-point="chapter.id"
             :title-owned="hasMasthead(chapter)"
-            :sticky="isChapterStage(chapter.viz) || isChapterScene(chapter.viz)"
+            :sticky="
+                chapter.card?.mode === 'stage' ||
+                isChapterStage(chapter.viz) ||
+                isChapterScene(chapter.viz)
+            "
             class="essay-beat"
             :class="{ 'essay-beat--aside': chapter.reveal?.aside }"
             :style="revealStyles[i]?.value"

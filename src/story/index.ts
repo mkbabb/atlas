@@ -40,5 +40,6 @@ export type {
     StageExport,
     StageSourcePanelProps,
 } from "@/charts/contract/scene-contract";
+export type { SceneSequenceContract } from "@/charts/viz-set";
 export { stageEventsFromHub } from "@/charts/contract/scene-contract";
 export { default as ChapterStageView } from "@/charts/scene/ChapterStage.vue";

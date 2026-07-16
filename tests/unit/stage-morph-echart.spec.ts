@@ -98,7 +98,8 @@ describe("useEChart stage ownership", () => {
         const driver = createStageMorphDriver<"district">({
             initialSceneId: "one",
             identity: { field: "id" },
-            transition: { mode: "blend", reduced: false },
+            transition: { mode: "blend" },
+            reducedMotion: false,
         });
         let api: UseEChart | undefined;
 

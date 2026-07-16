@@ -30,6 +30,16 @@ export function withMorphIdentity(option: EChartsOption, identity: MarkIdentity)
     return copy;
 }
 
+/** Remove the keyed-fly marker when a scene requests a crossfade or PRM disables motion. */
+export function withoutMorphIdentity(option: EChartsOption): EChartsOption {
+    const copy = { ...option } as EChartsOption & { series?: Series | Series[] };
+    const series = copy.series == null ? [] : Array.isArray(copy.series) ? copy.series : [copy.series];
+    copy.series = series.map(
+        ({ universalTransition: _transition, ...rest }) => rest,
+    ) as Series[];
+    return copy;
+}
+
 /** Add animation only to the one option pushed for a view change. */
 export function armMorphPush(option: EChartsOption, transition: MorphTransition): EChartsOption {
     if (transition.reduced) return { ...option, animation: false };

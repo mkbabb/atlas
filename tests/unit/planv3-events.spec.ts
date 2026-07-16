@@ -114,4 +114,34 @@ describe("AtlasEvent", () => {
         });
         expect(other.snapshot().activeVizId).toBe("");
     });
+
+    it("delivers only structurally distinct payloads per subscription", () => {
+        const hub = createAtlasEventHub();
+        const scope = { grain: "viz" as const, vizId: "table" };
+        const event = {
+            type: "selected-viz" as const,
+            scope,
+            vizId: "table",
+            primaryKey: "row-1",
+            selectedKeys: ["row-1"],
+        };
+        hub.emit(event);
+
+        const replayed: string[] = [];
+        const fresh: string[] = [];
+        hub.on("selected-viz", (next) => replayed.push(next.primaryKey ?? ""), {
+            immediate: true,
+        });
+        hub.on("selected-viz", (next) => fresh.push(next.primaryKey ?? ""));
+
+        hub.emit({
+            ...event,
+            scope: { vizId: "table", grain: "viz" },
+            selectedKeys: ["row-1"],
+        });
+        hub.emit({ ...event, primaryKey: "row-2", selectedKeys: ["row-2"] });
+
+        expect(replayed).toEqual(["row-1", "row-2"]);
+        expect(fresh).toEqual(["row-1", "row-2"]);
+    });
 });

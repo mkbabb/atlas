@@ -15,7 +15,8 @@ import { inject, type Component, type ComputedRef, type InjectionKey } from "vue
 import type { ChapterTitle } from "@/contract";
 import type { VizContract } from "@/charts/contract/viz-contract";
 import type { LegendSpec } from "@/charts/contract/viz-contract";
-import type { MarkIdentity, MorphTransition } from "@/charts/viz-set";
+import type { SceneSequenceContract } from "@/charts/viz-set";
+import type { MorphTransition } from "@/charts/viz-set";
 import type { useViewParams } from "@/platform/stores/useViewParams";
 import type { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
 import type { AtlasEventContract } from "@/events";
@@ -168,8 +169,9 @@ export interface StageAnatomy {
         readonly detent?: AppendixDetent;
     };
     readonly export: StageExport;
-    readonly on: StageEvents;
 }
+
+export type StageTransition = Pick<MorphTransition, "mode">;
 
 /** The runtime the host hands a scene's `apply` effect — the platform stores the scene drives. */
 export interface SceneRuntime {
@@ -213,25 +215,26 @@ export interface ChapterScene {
     apply?: (step: SceneStep, rt: SceneRuntime) => void;
 }
 
-/** A canonical persistent chapter stage. Unlike the legacy `ChapterScene`, a stage has its own
+/** A canonical persistent chapter stage. Unlike `ChapterScene`, a stage has its own
     stable identity and names its ordered states as `scenes`; the renderer adapts those states to the
-    existing StickyScene host so the graphic mounts once and no second clock is introduced. */
-export interface ChapterStage<G extends Grain = Grain> {
+    existing StickyScene host so the instance mounts once and no second clock is introduced. */
+export interface ChapterStage<G extends Grain = Grain>
+    extends SceneSequenceContract<
+        SceneOption<G>,
+        Component | VizContract,
+        StageTransition
+    > {
     readonly kind: "stage";
     readonly id: string;
     /** The one instance host and its ordered options share this grain. */
     readonly grain: G;
-    graphic: Component | VizContract;
-    readonly scenes: readonly SceneOption<G>[];
-    readonly identity: MarkIdentity;
-    readonly transition: MorphTransition;
     focal?: boolean;
     anchor?: SceneAnchor;
     apply?(scene: SceneOption<G>, rt: SceneRuntime): void;
-    /** When declared, the stage hoists the fixed foot rather than repeating it per scene. */
-    anatomy?: StageAnatomy;
-    /** One typed event path shared with selection/filter producers and browser consumers. */
-    events?: AtlasEventContract;
+    /** The fixed foot is declared once at stage grain, never repeated per scene. */
+    readonly anatomy: StageAnatomy;
+    /** The one required event authority; StageEvents is derived from this hub. */
+    readonly events: AtlasEventContract;
 }
 
 /** The injected scene runtime — a graphic (or a scene-aware sibling) reads the active step THROUGH

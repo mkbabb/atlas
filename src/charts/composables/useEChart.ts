@@ -121,7 +121,7 @@ export interface UseEChart {
 export function useEChart(opts: UseEChartOptions): UseEChart {
     const chart = shallowRef<EChartsType | null>(null);
     const stageMorph = useOptionalStageMorphDriver();
-    const releaseStageMorph = stageMorph?.bind({ chart, option: opts.option });
+    const releaseStageMorph = stageMorph?.bind({ chart, host: opts.host, option: opts.option });
     if (releaseStageMorph) onScopeDispose(releaseStageMorph);
     const dark = useGlobalDark(); // the flip arbiter — drives the settle-batched retint (E9b)
 

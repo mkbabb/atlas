@@ -17,6 +17,18 @@ export interface VizSetContract {
     transition: MorphTransition;
 }
 
+/** An ordered scroll narrative over one persistent render instance. */
+export interface SceneSequenceContract<
+    Scene extends { readonly id: string } = VizView,
+    Instance = VizView,
+    Transition = MorphTransition,
+> {
+    readonly instance: Instance;
+    readonly scenes: readonly [Scene, ...Scene[]];
+    readonly identity: MarkIdentity;
+    readonly transition: Transition;
+}
+
 export function morphTransition(
     reduced: boolean,
     mode: MorphTransition["mode"] = "blend",

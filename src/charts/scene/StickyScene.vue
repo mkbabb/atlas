@@ -259,7 +259,7 @@ onMounted(() => {
     );
     for (const r of stepEls) if (r.value) io.observe(r.value);
 
-    // Legacy ChapterScene keeps its established whole-root exit observer. Persistent stages return
+    // Standalone ChapterScene keeps its established whole-root exit observer. Persistent stages return
     // above and derive both winner and membership from the central conductor with zero local IO.
     if (sceneRootEl.value) {
         sceneIo = new IntersectionObserver((entries) => {

@@ -17,14 +17,22 @@ describe("stageEventsFromHub", () => {
             state: {},
             encode: { x: "district:x", y: "district:y" },
         };
+        const events = createAtlasEventHub();
         const stage: ChapterStage<"district"> = {
             kind: "stage",
             id: "district-stage",
             grain: "district",
-            graphic: () => null,
+            instance: () => null,
             scenes: [scene],
             identity: { field: "leaNumber" },
-            transition: { mode: "blend", reduced: false },
+            transition: { mode: "blend" },
+            events,
+            anatomy: {
+                foot: { title: "District stage" },
+                gear: { label: "District controls" },
+                provenance: { peekLabel: "District source" },
+                export: { open: () => undefined, panel: () => null },
+            },
         };
         expect(stage.scenes[0]?.encode.x).toBe("district:x");
 
