@@ -115,6 +115,7 @@ function onSelect(s: Shape, ev: MouseEvent) {
 const hasTable = computed(() => props.valueFormat != null);
 const tableRows = computed(() =>
     shapes.value.map((s) => ({
+        key: s.key,
         name: s.name,
         value: props.valueFormat ? props.valueFormat(s.key) : "",
     })),

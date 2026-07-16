@@ -35,10 +35,15 @@
 // the off-screen recipe centralize. (G-F6.7c pins it: a mounted `<ChartDataTable>` reports
 // `getBoundingClientRect().height ≤ 2px` regardless of row count.)
 
-/** One accessible row — a name (the row header) and its formatted value. */
+/** One accessible row — a name (the row header) and its formatted value. `key` is an OPTIONAL
+    stable unique id (an entity id + year, say); rows are keyed by it, falling back to the row
+    index — NEVER the display `name`, which collides when two entities share a name (e.g. two
+    "Honor Preparatory Charter School" rows raised Vue's duplicate-key warning in the SchoolMap
+    table). */
 export interface ChartDataRow {
     name: string;
     value: string;
+    key?: string;
 }
 
 withDefaults(
@@ -75,7 +80,7 @@ withDefaults(
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="r in rows" :key="r.name">
+                <tr v-for="(r, i) in rows" :key="r.key ?? i">
                     <th scope="row">{{ r.name }}</th>
                     <td>{{ r.value }}</td>
                 </tr>
