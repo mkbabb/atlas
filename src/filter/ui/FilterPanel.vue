@@ -448,6 +448,25 @@ function cancelSave(): void {
     inline-size: 1.15rem;
     block-size: 1.15rem;
 }
+/* OF-20 — at rest the surface is a PULL TAB, not a full-viewport rail. The DrawerContent's own
+   glass material collapses at the pip register, so only the door tab (funnel glyph, left-rounded
+   grab lip) paints and the invisible side lens is click-through — the figure reads live behind it,
+   nonmodal. The ledger/drawer registers keep Glass's full material. */
+.cp-drawer[data-register="pip"] {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    pointer-events: none;
+}
+.cp-drawer[data-register="pip"] .cp-continuum__door {
+    pointer-events: auto;
+    border-start-start-radius: var(--radius-pill);
+    border-end-start-radius: var(--radius-pill);
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+}
 .cp-continuum__count {
     position: absolute;
     inset-block-start: 0.2rem;
