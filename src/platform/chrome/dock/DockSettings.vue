@@ -4,10 +4,9 @@
 // At @media(--phone) the dock's four secondary controls (the year-range compare toggle, the
 // ⤓-save door, the filter pull-out, and the dark-mode toggle) collapse behind ONE Lucide
 // `Settings` glyph — the gear. This component IS the gear: a glass `DropdownMenu` whose
-// `DockTrigger` is the gear glyph and whose `DropdownMenuContent` is the controls sheet
-// (`[data-testid="dock-settings-sheet"]`). It consumes glass-ui's OWN disclosure (the same
-// `DropdownMenu` + `DockTrigger` idiom VizPlate's download menu rides) — NO hand-rolled
-// popover.
+// `DockTrigger` is the gear glyph and whose `DropdownMenuContent` is the controls sheet. It
+// consumes glass-ui's OWN disclosure (the same `DropdownMenu` + `DockTrigger` idiom VizPlate's
+// download menu rides) — NO hand-rolled popover.
 //
 // THE STATE BOUNDARY (§approach-6). DockSettings is PRESENTATIONAL — it RENDERS the four
 // affordances, it does NOT re-own their state. The year-range mode + the ⤓-save flash live in
@@ -71,15 +70,13 @@ const emit = defineEmits<{
 
         <!-- THE CONTROLS SHEET — the four secondary affordances, resolved INSIDE the opened gear
              (NOT inline rail rungs at --phone). They render as glass-ui `<Button>`s (the G2
-             glassy-Button swap folded here); each carries its rail `data-testid` so the gate finds
-             the four controls inside `[data-testid="dock-settings-sheet"]`, not as direct rail
-             children. The controls are TOGGLES, not menu commands — they sit in the content as
-             buttons (no `DropdownMenuItem` auto-dismiss), so a year-range flip keeps the sheet open. -->
+             glassy-Button swap folded here). The controls are TOGGLES, not menu commands — they sit
+             in the content as buttons (no `DropdownMenuItem` auto-dismiss), so a year-range flip
+             keeps the sheet open. -->
         <DropdownMenuContent
             align="start"
             :side-offset="8"
             class="usf-dock-settings"
-            data-testid="dock-settings-sheet"
         >
             <!-- The year-range compare toggle (the third arm of the year grammar). -->
             <Button
