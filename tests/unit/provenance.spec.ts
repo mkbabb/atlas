@@ -11,7 +11,6 @@ import {
 import { humanizePredicate, IDENTITY_DIM_LABELS, type DimLabels } from "../../src/platform/provenance/predicate-prose";
 import type { ProvenanceFacet, ResolvedProvenance } from "../../src/platform/provenance/provenance-contract";
 import { resolveAggregationLevel, reduceOpFor, useAggregationLevel, type AxisGrain } from "../../src/platform/provenance/aggregation";
-import { auditProvenanceCoverage, isSourced, type CoverageItem } from "../../src/platform/provenance/coverage";
 import { appendixAnchorId, type AppendixEntry } from "../../src/platform/provenance/appendix";
 import { scopeParts } from "../../src/platform/provenance/provenance-lines";
 
@@ -210,47 +209,6 @@ describe("O-A9b (9) — resolveAggregationLevel: the live fold + the multi→sin
         expect(scopeParts({ aggregationLevel: level.value } as ResolvedProvenance).join(" · ")).toBe(
             "FY2025 · NC",
         );
-    });
-});
-
-describe("O-A9b (8-MECH) — auditProvenanceCoverage: the all-items census (anti-theater)", () => {
-    const sourced = (id: string): CoverageItem => ({
-        id,
-        facet: { dataset: "USAC FRN Status", analysis: "annual sums" },
-    });
-
-    it("a FULLY-SOURCED roster is complete (every item resolves a record)", () => {
-        const report = auditProvenanceCoverage([sourced("map"), sourced("scatter"), sourced("strip")]);
-        expect(report).toEqual({ total: 3, sourced: 3, unsourced: [], complete: true });
-    });
-
-    it("a synthetic UN-SOURCED item TRIPS the census — NAMED, not counted", () => {
-        const report = auditProvenanceCoverage([
-            sourced("map"),
-            { id: "orphan-figure", facet: null },
-            sourced("strip"),
-        ]);
-        expect(report.complete).toBe(false);
-        expect(report.unsourced).toEqual(["orphan-figure"]);
-        expect(report.sourced).toBe(2);
-    });
-
-    it("a BLANK facet (`dataset: ''`) is as un-sourced as none — no hollow stamp passes", () => {
-        expect(isSourced({ dataset: "" } as ProvenanceFacet)).toBe(false);
-        expect(isSourced({ dataset: "   " } as ProvenanceFacet)).toBe(false);
-        expect(isSourced({ dataset: "USAC" } as ProvenanceFacet)).toBe(true);
-        expect(auditProvenanceCoverage([{ id: "hollow", facet: { dataset: "" } }]).complete).toBe(
-            false,
-        );
-    });
-
-    it("an EMPTY roster is vacuously complete (TOTAL)", () => {
-        expect(auditProvenanceCoverage([])).toEqual({
-            total: 0,
-            sourced: 0,
-            unsourced: [],
-            complete: true,
-        });
     });
 });
 

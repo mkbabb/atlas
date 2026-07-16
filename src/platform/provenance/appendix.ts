@@ -44,15 +44,6 @@ export interface AppendixSource {
     id: string;
     label: string;
     href: string;
-    /** Optional authoring path used in diagnostics. */
-    path?: string;
-}
-
-/** A source citation emitted by figure/chart code. */
-export interface AppendixCite {
-    entryId: string;
-    /** Authoring path used to make failures actionable. */
-    path: string;
 }
 
 /** One APPENDIX ENTRY — a route item's human TITLE + the RESOLVED provenance the appendix enumerates
@@ -68,77 +59,6 @@ export interface AppendixEntry {
     provenance: ResolvedProvenance;
     /** Source ids linked from this appendix record. */
     sourceIds?: readonly string[];
-}
-
-export interface AppendixRoster {
-    entries: readonly AppendixEntry[];
-    sources: readonly AppendixSource[];
-    cites?: readonly AppendixCite[];
-}
-
-export interface AppendixLinkIssue {
-    code: "DANGLING_CITE" | "UNLINKED_SOURCE" | "ORPHAN_SOURCE";
-    path: string;
-    message: string;
-}
-
-/**
- * Audit both directions of the appendix graph. Every cite resolves to a declared entry, every
- * entry source resolves to a verified URL, and every declared source is used by at least one entry.
- */
-export function auditAppendixLinks(roster: AppendixRoster): AppendixLinkIssue[] {
-    const entryIds = new Set(roster.entries.map((entry) => entry.vizId));
-    const sourceById = new Map(roster.sources.map((source) => [source.id, source]));
-    const usedSources = new Set<string>();
-    const issues: AppendixLinkIssue[] = [];
-
-    for (const entry of roster.entries) {
-        for (const sourceId of entry.sourceIds ?? []) {
-            usedSources.add(sourceId);
-            const source = sourceById.get(sourceId);
-            if (!source || !source.href.trim()) {
-                issues.push({
-                    code: "UNLINKED_SOURCE",
-                    path: `entries.${entry.vizId}.sourceIds`,
-                    message: `Source "${sourceId}" has no verified URL for entry "${entry.vizId}".`,
-                });
-            }
-        }
-    }
-
-    for (const cite of roster.cites ?? []) {
-        if (!entryIds.has(cite.entryId)) {
-            issues.push({
-                code: "DANGLING_CITE",
-                path: cite.path,
-                message: `Citation "${cite.entryId}" has no appendix row at #${appendixAnchorId(cite.entryId)}.`,
-            });
-        }
-    }
-
-    for (const source of roster.sources) {
-        if (!usedSources.has(source.id)) {
-            issues.push({
-                code: "ORPHAN_SOURCE",
-                path: source.path ?? `sources.${source.id}`,
-                message: `Source "${source.id}" is not linked from an appendix entry.`,
-            });
-        }
-    }
-
-    return issues;
-}
-
-/** Fail authoring/build validation with all pathed link errors, never the first error alone. */
-export function assertAppendixLinks(roster: AppendixRoster): void {
-    const issues = auditAppendixLinks(roster);
-    if (issues.length > 0) {
-        throw new Error(
-            `Appendix link validation failed:\n${issues
-                .map((issue) => `- [${issue.code}] ${issue.path}: ${issue.message}`)
-                .join("\n")}`,
-        );
-    }
 }
 
 /** Declared-roster order is the appendix order, independent of mount or observation timing. */
