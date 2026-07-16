@@ -28,10 +28,10 @@
 
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { Fact } from "@/interaction/HoverCard.vue";
-import type { SelectionKey } from "@/charts/contract/selection-contract";
-import { useActiveBeat } from "@/platform/stores/useActiveBeat";
-import { useHoverReadout } from "@/platform/stores/useHoverReadout";
+import type { Fact } from "../../interaction/HoverCard.vue";
+import type { SelectionKey } from "../../charts/contract/selection-contract.js";
+import { useActiveBeat } from "./useActiveBeat.js";
+import { useHoverReadout } from "./useHoverReadout.js";
 
 /** The contextual stat a beat resolver returns — a labelled band of fact rows the card renders
     through the shared `<ReadoutFacts>` grammar. `null` ⇒ this beat has no stat for this key (the

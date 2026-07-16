@@ -35,12 +35,12 @@ import { computed, watch, type ComputedRef, type Ref } from "vue";
 import type {
     MotionDrivers,
     MotionDriverSources,
-} from "@/motion/motion-director";
-import { useCoverProgress } from "@/motion/useCoverProgress";
-import { useReducedMotion } from "@/motion/useReducedMotion";
-import { useSelection } from "@/platform/stores/useSelection";
-import { useActiveBeat } from "@/platform/stores/useActiveBeat";
-import { useViewParams } from "@/platform/stores/useViewParams";
+} from "../motion/motion-director.js";
+import { useCoverProgress } from "../motion/useCoverProgress.js";
+import { useReducedMotion } from "../motion/useReducedMotion.js";
+import { useSelection } from "../platform/stores/useSelection.js";
+import { useActiveBeat } from "../platform/stores/useActiveBeat.js";
+import { useViewParams } from "../platform/stores/useViewParams.js";
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 // THE READ-ONLY FACETS (the substrate O-A9 / O-A11 consume beyond the motion edges)

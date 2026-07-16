@@ -4,7 +4,7 @@
 // the option reads — moved verbatim, zero behaviour change. `useTimeSeriesOption` re-exports the
 // public members so the family surface stays byte-stable.
 
-import type { LineSeries } from "@/charts/marks/TimeSeries.vue";
+import type { LineSeries } from "../marks/TimeSeries.vue";
 
 /** Round a value UP to a "nice" round number (1·10^k, 2·10^k, 2.5·10^k, 5·10^k) — the same family
     ECharts auto-fits, applied deterministically so the ceiling reserve lands on a clean tick rather

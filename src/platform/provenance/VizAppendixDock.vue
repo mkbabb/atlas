@@ -10,12 +10,12 @@ import {
     DrawerTrigger,
 } from "@mkbabb/glass-ui/drawer";
 import { Button } from "@mkbabb/glass-ui/button";
-import { useMobileRegister } from "@/platform/composables/useMobileRegister";
+import { useMobileRegister } from "../composables/useMobileRegister.js";
 import {
     resolveAppendixDetent,
     type AppendixDetent,
     type AppendixDockIntent,
-} from "./appendix";
+} from "./appendix.js";
 
 const props = withDefaults(
     defineProps<{

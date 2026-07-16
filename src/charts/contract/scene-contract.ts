@@ -12,20 +12,20 @@
 // `transitionT` lands HERE when a graphic consumer reads it — an optional field never breaks readers.
 
 import { inject, type Component, type ComputedRef, type InjectionKey } from "vue";
-import type { ChapterTitle } from "@/contract";
-import type { VizContract } from "@/charts/contract/viz-contract";
-import type { LegendSpec } from "@/charts/contract/viz-contract";
-import type { SceneSequenceContract } from "@/charts/viz-set";
-import type { MorphTransition } from "@/charts/viz-set";
-import type { useViewParams } from "@/platform/stores/useViewParams";
-import type { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
-import type { AtlasEventContract } from "@/events";
-import type { FootAnatomyContract } from "@/charts/frame/foot-anatomy";
-import type { AppendixDetent } from "@/platform/provenance/appendix";
+import type { ChapterTitle } from "../../contract/index.js";
+import type { SourcePanelProps, VizContract } from "./viz-contract.js";
+import type { LegendSpec } from "./viz-contract.js";
+import type { SceneSequenceContract } from "../viz-set.js";
+import type { MorphTransition } from "../viz-set.js";
+import type { useViewParams } from "../../platform/stores/useViewParams.js";
+import type { useActiveDashboard } from "../../platform/stores/useActiveDashboard.js";
+import type { AtlasEventContract } from "../../events/index.js";
+import type { FootAnatomyContract } from "../frame/foot-anatomy.js";
+import type { AppendixDetent } from "../../platform/provenance/appendix.js";
 
 /** Re-export the prose carrier so the host + consumers read it from ONE place (the host imports
     `ChapterTitle` FROM here — scene-contract is the archetype's single barrel). */
-export type { ChapterTitle } from "@/contract";
+export type { ChapterTitle } from "../../contract/index.js";
 
 /** Which side the pinned graphic sits (D2 alternation). 'auto' ⇒ zebra by the chapter index. */
 export type SceneSide = "left" | "right" | "auto";
@@ -71,14 +71,6 @@ export interface SceneOption<G extends Grain = Grain> extends SceneStep {
     readonly morph?: SceneMorphMode;
 }
 
-/** Props every consumer-provided stage source panel receives from the host. The panel uses the
-    stage-owned event hub, so its real selection/filter producers and browser consumers stay on one
-    declarative path. */
-export interface StageSourcePanelProps {
-    readonly eventHub: AtlasEventContract;
-    readonly stageId: string;
-}
-
 export interface StageSceneChange {
     readonly from: string;
     readonly to: string;
@@ -105,7 +97,7 @@ export function stageEventsFromHub(
     hub: AtlasEventContract,
     stageId: string,
 ): StageEvents {
-    const atStage = (scope: import("@/events").EventScope): boolean =>
+    const atStage = (scope: import("../../events/index.js").EventScope): boolean =>
         scope.grain === "stage" && scope.stageId === stageId;
     return {
         onSceneChange: (cb) =>
@@ -151,7 +143,7 @@ export function stageEventsFromHub(
 /** The stage export callback remains the delegating seat; panel content is additive. */
 export interface StageExport {
     open(scope: { readonly grain: "stage"; readonly stageId: string }): void;
-    readonly panel: Component;
+    readonly panel: Component<SourcePanelProps>;
     readonly ariaLabel?: string;
 }
 
@@ -255,7 +247,11 @@ export interface SceneContext {
 export const SCENE_KEY: InjectionKey<SceneContext | null> = Symbol("sticky-scene");
 export const STAGE_EVENTS_KEY: InjectionKey<StageEvents | null> =
     Symbol("stage-events");
-export const STAGE_EVENT_HUB_KEY: InjectionKey<AtlasEventContract | null> =
+export interface StageEventContext {
+    readonly hub: AtlasEventContract;
+    readonly scope: { readonly grain: "stage"; readonly stageId: string };
+}
+export const STAGE_EVENT_HUB_KEY: InjectionKey<StageEventContext | null> =
     Symbol("stage-event-hub");
 export const STAGE_ANATOMY_KEY: InjectionKey<boolean> = Symbol("stage-anatomy");
 
@@ -272,8 +268,8 @@ export function useOptionalStageEvents(): StageEvents | null {
     return inject(STAGE_EVENTS_KEY, null);
 }
 
-/** Read the one per-instance hub from an always-mounted stage graphic. */
-export function useOptionalStageEventHub(): AtlasEventContract | null {
+/** Read the one per-instance event context from an always-mounted stage graphic. */
+export function useOptionalStageEventHub(): StageEventContext | null {
     return inject(STAGE_EVENT_HUB_KEY, null);
 }
 

@@ -7,8 +7,8 @@
 import { computed, type ComputedRef, type Ref } from "vue";
 import { clamp, smoothStep3 } from "@mkbabb/value.js";
 import { useElementBounding, useWindowSize } from "@vueuse/core";
-import { useReducedMotion } from "@/motion/useReducedMotion";
-import { titleRevealProgress } from "@/story/corridor";
+import { useReducedMotion } from "./useReducedMotion.js";
+import { titleRevealProgress } from "../story/corridor.js";
 
 // ── THE THIN PAGE-CLOCK SUBSCRIBER (J-SCROLL §6/§7 — the demotion target) ──────────────────────
 // A SECTION-WINDOWED 0..1 scalar that does NOT mint a `ManualTimeline`, register a scrub host with

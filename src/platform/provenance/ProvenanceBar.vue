@@ -20,15 +20,15 @@
 //
 // Each rung is a `<dt>/<dd>` pair in a `<dl>` — screen-reader legible AND its text is exportable.
 import { computed } from "vue";
-import { useProvenance, type ProvenanceSources } from "./useProvenance";
-import type { ProvenanceFacet } from "./provenance-contract";
-import { appendixAnchorId } from "./appendix";
+import { useProvenance, type ProvenanceSources } from "./useProvenance.js";
+import type { ProvenanceFacet } from "./provenance-contract.js";
+import { appendixAnchorId } from "./appendix.js";
 import {
     sourceLine as sourceLineOf,
     measureLine as measureLineOf,
     methodParts as methodPartsOf,
     scopeParts as scopePartsOf,
-} from "./provenance-lines";
+} from "./provenance-lines.js";
 
 const {
     facet,

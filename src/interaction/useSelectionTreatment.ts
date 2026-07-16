@@ -30,7 +30,7 @@
 // primitive's `dimmed:` branch applies); this composable only decides WHICH branch fires.
 
 import { computed, toValue, type ComputedRef, type MaybeRefOrGetter } from "vue";
-import { useSelection } from "@/platform/stores/useSelection";
+import { useSelection } from "../platform/stores/useSelection.js";
 
 /** The per-mark treatment a primitive applies under the live selection. Mutually consistent by
     construction: `selected` and `dimmed` are never both true (a key is in the set or it is not);

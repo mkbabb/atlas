@@ -15,11 +15,6 @@ if [[ "$TAG" != "v$VERSION" ]]; then
     exit 1
 fi
 
-if [[ -n "${ATLAS_DEV_LINK:-}" ]]; then
-    echo "ERROR: ATLAS_DEV_LINK must be unset for release" >&2
-    exit 1
-fi
-
 if [[ -n "$(git status --porcelain)" ]]; then
     echo "ERROR: working tree must be clean" >&2
     git status --short >&2

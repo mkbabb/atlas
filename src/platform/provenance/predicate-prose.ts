@@ -12,7 +12,7 @@
 // arg the coordinator threads (`selection.resolved(vizId)` leave-one-out vs `selection.resolved()`
 // global) — ONE algebra, three non-redundant surfaces, ONE formatter [provenance-surface §3.4].
 
-import type { Predicate } from "@/filter/engine/predicate";
+import type { Predicate } from "../../filter/engine/predicate.js";
 
 /** The route-supplied dim/value dictionary — the ONE route-authored piece (each route has ≤~6
     categorical dims, co-located with the route's dim declaration so labels + filter accessors share

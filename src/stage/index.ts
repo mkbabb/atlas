@@ -1,5 +1,5 @@
-export * from "./useStageDeck";
-export * from "@/charts/scene/stage-morph";
+export * from "./useStageDeck.js";
+export * from "../charts/scene/stage-morph.js";
 
 export type {
     ChapterStage,
@@ -7,8 +7,7 @@ export type {
     StageAnatomy,
     StageEvents,
     StageExport,
-    StageSourcePanelProps,
-} from "@/charts/contract/scene-contract";
-export type { SceneSequenceContract } from "@/charts/viz-set";
-export { stageEventsFromHub } from "@/charts/contract/scene-contract";
-export { default as ChapterStageView } from "@/charts/scene/ChapterStage.vue";
+} from "../charts/contract/scene-contract.js";
+export type { SceneSequenceContract } from "../charts/viz-set.js";
+export { stageEventsFromHub } from "../charts/contract/scene-contract.js";
+export { default as ChapterStageView } from "../charts/scene/ChapterStage.vue";

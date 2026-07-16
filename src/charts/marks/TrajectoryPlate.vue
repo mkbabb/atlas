@@ -17,14 +17,14 @@
 // SYS-4 reads surface off the DOM regardless of the renderer. The REAL marks are the ECharts
 // option fragments; these markers are aria-hidden zero-weight nodes mirroring the count.
 import { computed } from "vue";
-import VizPlate from "@/charts/frame/VizPlate.vue";
-import TimeSeries, { type LineSeries } from "@/charts/marks/TimeSeries.vue";
-import type { FilterResponse, VizContract } from "@/charts/contract/viz-contract";
-import { useVizPalette } from "@/charts/composables/useVizPalette";
-import { trajectory, type TrajectoryPoint } from "@/data/multiYear";
-import { trajectoryRivet } from "@/data/useYearScope";
-import { markPointRivet, markAreaBand } from "@/charts/marks/trajectory-marks";
-import type { Feed } from "@/data/contract";
+import VizPlate from "../frame/VizPlate.vue";
+import TimeSeries, { type LineSeries } from "./TimeSeries.vue";
+import type { FilterResponse, VizContract } from "../contract/viz-contract.js";
+import { useVizPalette } from "../composables/useVizPalette.js";
+import { trajectory, type TrajectoryPoint } from "../../data/multiYear.js";
+import { trajectoryRivet } from "../../data/useYearScope.js";
+import { markPointRivet, markAreaBand } from "./trajectory-marks.js";
+import type { Feed } from "../../data/contract.js";
 
 const props = withDefaults(
     defineProps<{

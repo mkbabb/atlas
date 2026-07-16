@@ -16,7 +16,7 @@
 // EAGER maps would re-collect at module-eval and regress that fix — the thunk is non-negotiable.
 
 import type { Component } from "vue";
-import type { DashboardContext, DashboardEntry, DashboardMeta } from "./types";
+import type { DashboardContext, DashboardEntry, DashboardMeta } from "./types.js";
 
 /** The instance-supplied discovery globs — the three `import.meta.glob` maps over
     `dashboards/<slug>/{meta,dashboard,context}.ts`. The instance constructs these inside the

@@ -4,9 +4,9 @@ import {
     defineSkin,
     resolveSkin,
     skinCssVars,
-} from "@/skin/category";
-import type { StoryManifest } from "@/story";
-import { resolveCompletionSeal } from "@/design/recipes/completion";
+} from "../../src/skin/category";
+import type { StoryManifest } from "../../src/story";
+import { resolveCompletionSeal } from "../../src/design/recipes/completion";
 
 const invalidStorySkin: StoryManifest = {
     id: "invalid-skin",

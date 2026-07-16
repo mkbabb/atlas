@@ -35,8 +35,8 @@
 import { computed } from "vue";
 import { Button } from "@mkbabb/glass-ui/button";
 import { Pin, GitCompareArrows, Crosshair } from "@lucide/vue";
-import { useSelection } from "@/platform/stores/useSelection";
-import { useViewParams } from "@/platform/stores/useViewParams";
+import { useSelection } from "../platform/stores/useSelection.js";
+import { useViewParams } from "../platform/stores/useViewParams.js";
 
 const props = defineProps<{
     /** The composite `{kind}:{id}` selection key this card is pinned under — the verbs all act on it

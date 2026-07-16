@@ -30,7 +30,7 @@
 // static (the structure shows; the motion is gated). NO consumer `--liquid-reveal-*` fallback envelope.
 import { computed, toRef } from "vue";
 import { Surface } from "@mkbabb/glass-ui/surface";
-import { useAuroraVeil, type VeilCentroid } from "@/platform/chrome/background/composables/useAuroraVeil";
+import { useAuroraVeil, type VeilCentroid } from "./composables/useAuroraVeil.js";
 
 const props = withDefaults(
     defineProps<{

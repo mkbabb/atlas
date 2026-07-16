@@ -22,7 +22,7 @@
 // event plumbing: the URL is the single source, chrome + derivation both read it.
 
 import { computed, reactive, type ComputedRef } from "vue";
-import { useViewParams } from "@/platform/stores/useViewParams";
+import { useViewParams } from "../../platform/stores/useViewParams.js";
 
 /** One choice of an enumerated option (a segmented item or a select entry). */
 export interface VizOptionChoice {

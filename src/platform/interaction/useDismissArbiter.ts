@@ -10,7 +10,7 @@ import {
     type ShallowRef,
 } from "vue";
 import { toValue } from "vue";
-import { createDismissArbiter, type DismissArbiter, type DismissClaim } from "./dismiss-arbiter";
+import { createDismissArbiter, type DismissArbiter, type DismissClaim } from "./dismiss-arbiter.js";
 
 const DISMISS_ARBITER_KEY: InjectionKey<ShallowRef<DismissArbiter | null>> = Symbol("atlas-dismiss-arbiter");
 

@@ -18,21 +18,21 @@
 // NEVER-INCRIMINATE (dashboard-facing): the consultant hub seats a de-identified LETTER pseudonym only
 // — never `building-2`, never a real firm name (the resolver coerces the token; this render draws it).
 import { computed } from "vue";
-import Glyph from "@/charts/glyph/Glyph.vue";
+import Glyph from "./Glyph.vue";
 import {
     resolveEntityIcon,
     type EntityGrain,
     type FillPolicy,
     type EntityStroke,
     type ResolveEntityIconOptions,
-} from "@/charts/glyph/resolveEntityIcon";
+} from "./resolveEntityIcon.js";
 import {
     ICON_VIEWBOX,
     hexPolygonPoints,
     hubGeometry,
     type IconPoint,
-} from "@/charts/glyph/iconPrimitives";
-import type { GlyphSize, GlyphGeom } from "@/data/entityGeometry";
+} from "./iconPrimitives.js";
+import type { GlyphSize, GlyphGeom } from "../../data/entityGeometry.js";
 
 const {
     entityKey,

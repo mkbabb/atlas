@@ -20,8 +20,8 @@
 
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import type { ECharts } from "echarts/core";
-import { EXPAND_SETTLE_KEY } from "@/charts/scene/expand-settle";
-import type { VizAnnotationPlacement } from "@/charts/contract/viz-contract";
+import { EXPAND_SETTLE_KEY } from "../scene/expand-settle.js";
+import type { VizAnnotationPlacement } from "../contract/viz-contract.js";
 
 const props = withDefaults(
     defineProps<{

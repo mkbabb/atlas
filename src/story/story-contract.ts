@@ -12,8 +12,8 @@
 // selection, focus, and object constancy; NO new codec (a mark that morphs A→B is the same mark the
 // cross-viz highlight lifts).
 
-import type { Chapter } from "@/contract";
-import type { RuleVariant } from "@/editorial/rule-register";
+import type { Chapter } from "../contract/index.js";
+import type { RuleVariant } from "../editorial/rule-register.js";
 // ── The mark identity — the object-constancy key (REUSED, never re-minted) ────────────────────────
 
 /** A stable mark identity — the object-constancy key. REUSES the selection-contract codec

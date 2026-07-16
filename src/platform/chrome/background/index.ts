@@ -7,4 +7,4 @@ export { default as Atmosphere } from "./Atmosphere.vue";
 export { default as Aurora } from "./Aurora.vue";
 export { default as AuroraVeilStage } from "./AuroraVeilStage.vue";
 export { default as Constellation } from "./Constellation.host.vue";
-export * from "./composables";
+export * from "./composables/index.js";

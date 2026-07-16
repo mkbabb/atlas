@@ -27,14 +27,14 @@
 // origin lands exactly on the datum.
 
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import HandMark from "@/charts/glyph/HandMark.vue";
+import HandMark from "../glyph/HandMark.vue";
 import {
     solveCallout,
     type CalloutPlacement,
     type ChipBox,
     type OccupancyBox,
     type PlateBox,
-} from "@/charts/scene/usePaperCallout";
+} from "./usePaperCallout.js";
 
 const props = withDefaults(
     defineProps<{

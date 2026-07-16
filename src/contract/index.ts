@@ -7,7 +7,7 @@
 // this single curated subpath (the `./contract` export L5 publishes). `dashboards/{types,
 // registry}.ts` stay as re-export SHIMS so the dashboard-side import paths resolve unchanged.
 
-export * from "./types";
-export * from "./registry";
-export * from "./registry-inject";
-export * from "./site";
+export * from "./types.js";
+export * from "./registry.js";
+export * from "./registry-inject.js";
+export * from "./site.js";

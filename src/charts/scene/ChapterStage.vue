@@ -1,30 +1,31 @@
 <script setup lang="ts">
 import { computed, provide, ref, watch } from "vue";
 import StickyScene from "./StickyScene.vue";
-import FootAnatomy from "@/charts/frame/FootAnatomy.vue";
-import VizGearDock from "@/charts/frame/VizGearDock.vue";
-import VizAppendixDock from "@/platform/provenance/VizAppendixDock.vue";
+import FootAnatomy from "../frame/FootAnatomy.vue";
+import VizGearDock from "../frame/VizGearDock.vue";
+import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
 import {
     createStageMorphDriver,
     STAGE_MORPH_KEY,
-} from "@/charts/scene/stage-morph";
+} from "./stage-morph.js";
 import {
     resolveSceneAnchor,
     useViewParams,
-} from "@/platform/stores/useViewParams";
-import { useReducedMotion } from "@/motion/useReducedMotion";
-import { useVirtualSectionWindow } from "@/filter/composables/useVirtualSectionWindow";
+} from "../../platform/stores/useViewParams.js";
+import { useReducedMotion } from "../../motion/useReducedMotion.js";
+import { useVirtualSectionWindow } from "../../filter/composables/useVirtualSectionWindow.js";
 import type {
     ChapterScene,
     ChapterStage as ChapterStageContract,
-} from "@/charts/contract/scene-contract";
+} from "../contract/scene-contract.js";
+import type { SourcePanelProps } from "../contract/viz-contract.js";
 import {
     STAGE_EVENTS_KEY,
     STAGE_EVENT_HUB_KEY,
     STAGE_ANATOMY_KEY,
     stageEventsFromHub,
-} from "@/charts/contract/scene-contract";
-import type { AppendixDetent } from "@/platform/provenance/appendix";
+} from "../contract/scene-contract.js";
+import type { AppendixDetent } from "../../platform/provenance/appendix.js";
 
 const props = defineProps<{
     stage: ChapterStageContract;
@@ -68,6 +69,7 @@ if (sceneAnchor && sceneAnchor !== initialAnchor)
     view.setNarrativeAt(sceneAnchor.beatId, sceneAnchor.stepId);
 const events = props.stage.events;
 const stageEvents = stageEventsFromHub(events, props.stage.id);
+const scope = { grain: "stage" as const, stageId: props.stage.id };
 const activeSceneIndex = ref(0);
 const linkedDrawer = view.param("drawer");
 const appendixDetent = ref<AppendixDetent>(
@@ -76,7 +78,7 @@ const appendixDetent = ref<AppendixDetent>(
         : (props.stage.anatomy.provenance.detent ?? "shut"),
 );
 provide(STAGE_EVENTS_KEY, stageEvents);
-provide(STAGE_EVENT_HUB_KEY, events);
+provide(STAGE_EVENT_HUB_KEY, { hub: events, scope });
 provide(STAGE_ANATOMY_KEY, true);
 watch(
     () => view.param("drawer"),
@@ -84,7 +86,11 @@ watch(
         appendixDetent.value = detent === "peek" || detent === "full" ? detent : "shut";
     },
 );
-const scope = { grain: "stage" as const, stageId: props.stage.id };
+const sourcePanelProps = {
+    eventHub: events,
+    eventScope: scope,
+    vizId: props.stage.id,
+} satisfies SourcePanelProps;
 
 function emitActiveViz(index = activeSceneIndex.value): void {
     const option = props.stage.scenes[index];
@@ -250,9 +256,7 @@ const { materialized, placeholderStyle } = useVirtualSectionWindow(stageRoot, {
                     </button>
                     <component
                         :is="stage.anatomy.export.panel"
-                        :event-hub="events"
-                        :event-scope="scope"
-                        :viz-id="stage.id"
+                        v-bind="sourcePanelProps"
                         @close="closeSourceData"
                     />
                 </aside>

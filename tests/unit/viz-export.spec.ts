@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rowsToCsv } from "@/charts/lib/vizExport";
+import { rowsToCsv } from "../../src/charts/lib/vizExport";
 
 describe("rowsToCsv", () => {
     const rows = [{ name: "North Carolina", value: "42%" }];

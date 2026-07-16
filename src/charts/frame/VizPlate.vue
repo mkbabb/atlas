@@ -33,18 +33,18 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
 } from "@mkbabb/glass-ui/dropdown-menu";
-import ChartFrame from "@/charts/frame/ChartFrame.vue";
-import VizGearDock from "@/charts/frame/VizGearDock.vue";
-import VizDescription from "@/charts/legend/VizDescription.vue";
-import VizKeyStats from "@/charts/legend/VizKeyStats.vue";
-import ChartLegend from "@/charts/legend/ChartLegend.vue";
-import ChartDataTable from "@/charts/legend/ChartDataTable.vue";
-import PlateVoid from "@/charts/frame/PlateVoid.vue";
-import PlateSkeleton from "@/charts/frame/PlateSkeleton.vue";
-import VizAppendixDock from "@/platform/provenance/VizAppendixDock.vue";
-import { STORY_CARD_KEY } from "@/charts/frame/story-card-context";
-import { useVizPlate, type VizPlateProps } from "./useVizPlate";
-import { STAGE_ANATOMY_KEY } from "@/charts/contract/scene-contract";
+import ChartFrame from "./ChartFrame.vue";
+import VizGearDock from "./VizGearDock.vue";
+import VizDescription from "../legend/VizDescription.vue";
+import VizKeyStats from "../legend/VizKeyStats.vue";
+import ChartLegend from "../legend/ChartLegend.vue";
+import ChartDataTable from "../legend/ChartDataTable.vue";
+import PlateVoid from "./PlateVoid.vue";
+import PlateSkeleton from "./PlateSkeleton.vue";
+import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
+import { STORY_CARD_KEY } from "./story-card-context.js";
+import { useVizPlate, type VizPlateProps } from "./useVizPlate.js";
+import { STAGE_ANATOMY_KEY } from "../contract/scene-contract.js";
 
 const props = withDefaults(defineProps<VizPlateProps>(), { chart: null, nav: null });
 const suppressFoot = inject(STAGE_ANATOMY_KEY, false);
@@ -78,6 +78,7 @@ const {
     activeFilterCount,
     showAppliedSummary,
     sourceData,
+    sourceEventHub,
     sourceDataOpen,
     openSourceData,
     closeSourceData,
@@ -417,6 +418,7 @@ defineExpose({ archetype });
                 </button>
                 <component
                     :is="sourceData"
+                    :event-hub="sourceEventHub"
                     :viz-id="contract.id"
                     :event-scope="{ grain: 'viz', vizId: contract.id }"
                 />

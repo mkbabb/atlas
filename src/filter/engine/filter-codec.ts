@@ -22,7 +22,7 @@
 // THROWS a NAMED error on them rather than silently lying (N1: no dead affordance). Value escaping (a
 // region token containing `;:,`) is a v2 concern — NC region tokens carry none.
 
-import type { DimAccessor, Predicate, Leaf } from "./predicate";
+import type { DimAccessor, Predicate, Leaf } from "./predicate.js";
 
 /** key → accessor: the route's declared-dim fields, the ONLY thing parse cannot carry over the wire.
     Built ONCE from the route's `DeclaredDim[]` via `deriveRegistry` (never a second hand-written map). */

@@ -28,15 +28,15 @@
 // the EXISTING `DeclaredDim<Row>[]` → `DimCell` → predicate BRIDGE (`cellToClause`/`dimsToPredicate`),
 // its current route dims fold UNCHANGED — no re-invention.
 
-import { signal, computed, type Signal } from "./signals";
+import { signal, computed, type Signal } from "./signals.js";
 import {
     assertNever,
     isIdentity,
     type DimAccessor,
     type Predicate,
-} from "./predicate";
-import type { Selection, Clause } from "./selection";
-import type { DimCell } from "@/filter/composables/useFilterDimensions";
+} from "./predicate.js";
+import type { Selection, Clause } from "./selection.js";
+import type { DimCell } from "../composables/useFilterDimensions.js";
 
 // ── PARAMS-AS-SIGNALS: the one reactive param bag (≙ useViewParams, but a signal graph node) ─────
 
@@ -335,7 +335,7 @@ export function createCoordinator<Row>(
 }
 
 // Re-exports for consumers/tests.
-export { createSelection } from "./selection";
-export type { Selection, Resolution, Clause } from "./selection";
-export { compile, explain, isIdentity } from "./predicate";
-export type { DimAccessor, Predicate, Leaf } from "./predicate";
+export { createSelection } from "./selection.js";
+export type { Selection, Resolution, Clause } from "./selection.js";
+export { compile, explain, isIdentity } from "./predicate.js";
+export type { DimAccessor, Predicate, Leaf } from "./predicate.js";

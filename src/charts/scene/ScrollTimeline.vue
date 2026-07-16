@@ -21,7 +21,7 @@
 //     the end position (every dot lit-through), still operable but with no scrub animation
 //     (the dots don't slide; the active mark is set, not sprung) — information parity.
 import { computed, watch } from "vue";
-import type { UseScrollTimeline } from "@/motion/useScrollTimeline";
+import type { UseScrollTimeline } from "../../motion/useScrollTimeline.js";
 
 const props = withDefaults(
     defineProps<{

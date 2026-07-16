@@ -23,13 +23,13 @@
 export { default as EasterEgg } from "./EasterEgg.vue";
 
 // ── O-A15 · the AnimatedRule bounded rule-variant register (the tier-rotated resolver) ────────
-export * from "./rule-register";
+export * from "./rule-register.js";
 
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
-export * from "./useBeatLayout";
-export * from "./title-align";
-export * from "./story-card";
-export * from "./hero-system";
+export * from "./useBeatLayout.js";
+export * from "./title-align.js";
+export * from "./story-card.js";
+export * from "./hero-system.js";
 export { default as AnimatedRule } from "./AnimatedRule.vue";
 export { default as DataAside } from "./DataAside.vue";
 export { default as PullFigure } from "./PullFigure.vue";
@@ -41,8 +41,8 @@ export { default as StoryCard } from "./StoryCard.vue";
 // v1.0.1 (O-B10 re-cut) — the `HeroFigure` contract (the hero's figure descriptor a route declares);
 // the `default`-only re-export dropped the named `<script>` type. Re-exported by name from the SFC.
 export type { HeroFigure } from "./DashboardHero.vue";
-export * from "@/skin/category";
-export * from "@/design/recipes/completion";
+export * from "../skin/category.js";
+export * from "../design/recipes/completion.js";
 
 // ── O-B8a (the chrome-blocked residue closes) — Beat/DashboardEssay/editorial-contract land ────
 // These value-imported the chrome family (Beat → masthead/FigureInitial · DashboardEssay →
@@ -50,7 +50,7 @@ export * from "@/design/recipes/completion";
 // O-B8a chrome split homed them, so the editorial essay surface is now whole.
 export { default as Beat } from "./Beat.vue";
 export { default as DashboardEssay } from "./DashboardEssay.vue";
-export * from "./editorial-contract";
+export * from "./editorial-contract.js";
 
 // ── O-A26 (DIR-5 ARM D) — the ONCE-classified typewriter title (demand/usf-integrity/vft-
 // germination's ScrollLetteringHeading-equivalent; the 4 lettering routes never mount it) ────────

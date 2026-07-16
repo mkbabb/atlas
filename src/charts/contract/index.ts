@@ -5,7 +5,7 @@
 // (motion/variant-spec + composables/useVizOptions) + `scene-contract` (stores + the top-level
 // `@/contract`) once their stores/motion/composables closure lands. `chartRecipe` (→ `TimeSeries.vue`
 // → the marks family) rides the marks-subtree landing; the barrel drops it until then.
-export * from "./selection-contract";
-export * from "./aggregate";
-export * from "./viz-contract";
-export * from "./scene-contract";
+export * from "./selection-contract.js";
+export * from "./aggregate.js";
+export * from "./viz-contract.js";
+export * from "./scene-contract.js";

@@ -19,15 +19,15 @@ import { use } from "echarts/core";
 import { TreemapChart } from "echarts/charts";
 import { TooltipComponent } from "echarts/components";
 import type { EChartsOption } from "echarts";
-import { useMobileRegister } from "@/platform/composables/useMobileRegister";
-import { useEChart } from "@/charts/composables/useEChart";
-import { useVizPalette } from "@/charts/composables/useVizPalette";
-import { useReducedMotion } from "@/motion/useReducedMotion";
-import { RAISE_ONLY } from "@/charts/scale/emphasis-policy";
+import { useMobileRegister } from "../../platform/composables/useMobileRegister.js";
+import { useEChart } from "../composables/useEChart.js";
+import { useVizPalette } from "../composables/useVizPalette.js";
+import { useReducedMotion } from "../../motion/useReducedMotion.js";
+import { RAISE_ONLY } from "../scale/emphasis-policy.js";
 import {
     isMultiSelect,
     type SelectionEmits,
-} from "@/charts/contract/selection-contract";
+} from "../contract/selection-contract.js";
 
 // Treemap + the (kept-OFF) tooltip module — registered here so the bundle only carries
 // the box renderer when a dashboard actually draws one (modular registration, CH2 §B).

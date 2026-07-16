@@ -15,7 +15,7 @@
 
 import { inject, watch, onBeforeUnmount, type Ref, type ShallowRef } from "vue";
 import type { EChartsType } from "echarts/core";
-import { EXPAND_SETTLE_KEY } from "@/charts/scene/expand-settle"; // the SHIPPED seam — consumed, not re-minted
+import { EXPAND_SETTLE_KEY } from "../scene/expand-settle.js"; // the SHIPPED seam — consumed, not re-minted
 
 /** A declared hero leaf — a class hook + a thunk producing its data-space points (re-projected to pixels
     each reanchor). `as` is the SVG tag. The data-space points: [[seriesIndex,[x,y]],…]. */

@@ -27,8 +27,8 @@
 // fragments read it AS-IS — NO second `opacity: var(--attn-legend)` layered on top (a second multiply
 // would double-attenuate the grid to a ghost). ONE attenuation, baked in the token.
 
-import type { VizPalette } from "@/charts/composables/useVizPalette";
-import type { LineSeries } from "@/charts/marks/TimeSeries.vue";
+import type { VizPalette } from "../composables/useVizPalette.js";
+import type { LineSeries } from "../marks/TimeSeries.vue";
 
 /** The seven editorial-ink rungs — the typed exhaustive proof for the frozen `ATTN` mirror. A
     missing/typo'd rung fails `tsc` (the `satisfies Record<AttnRung, number>` below) BEFORE the

@@ -12,14 +12,14 @@ import {
 } from "vue";
 import type { EChartsOption } from "echarts";
 import type { EChartsType } from "echarts/core";
-import type { Grain, SceneOption } from "@/charts/contract/scene-contract";
+import type { Grain, SceneOption } from "../contract/scene-contract.js";
 import {
     armMorphPush,
     withMorphIdentity,
     withoutMorphIdentity,
-} from "@/charts/morph";
-import type { StageTransition } from "@/charts/contract/scene-contract";
-import type { MarkIdentity } from "@/charts/viz-set";
+} from "../morph.js";
+import type { StageTransition } from "../contract/scene-contract.js";
+import type { MarkIdentity } from "../viz-set.js";
 
 export interface StageMorphTarget {
     chart: Readonly<ShallowRef<Pick<EChartsType, "setOption"> | null>>;

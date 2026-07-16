@@ -27,11 +27,11 @@ the real source and delete the monorepo originals at the O-B11 consumer flip.
 |---|---|---|
 | `atlas/src/contract/**` | `src/contract/**` | O-B (contract move) |
 | `atlas/src/platform/**` (charts, chrome, editorial, composables, data, stores, motion, filter, story, interaction, design, context, provenance) | `src/platform/**` | O-B (per-family moves) |
-| `atlas/src/vite/**` (preset + seal-compositor) | `src/vite/**` | O-B (vite move) |
+| `atlas/src/vite/**` (preset; former seal compositor retired) | `src/vite/**` | O-B (vite move) |
 | `atlas/src/lib/**` (framework-free helpers) | `src/lib/**` | O-B (lib move) |
 | `atlas/src/views/**` (partial: GalleryView, DashboardView, NotFound, RouteError) | `src/views/**` | O-B (views move) |
-| `packages/atlas-core/**` (the build vehicle: `vite.lib.config.mts`, `tsconfig.dts.json`, `scripts/build-styles.mjs`, `scripts/repoint-dts.mjs`) | repo root (`vite.lib.config.mts`, `tsconfig.dts.json`, `scripts/*`) | **O-B0 (this wave — copied + adapted)** |
-| `atlas/tests/gates/**` (library gates: altitude, cream-law, chrome/dock/filter topology) | `tests/gates/**` | O-B (gate re-home) |
+| `packages/atlas-core/**` (the former build vehicle, including a declaration rewrite) | repo root (`vite.lib.config.mts`, `tsconfig.dts.json`, `scripts/*`) | **O-B0 (this wave — copied + adapted)** |
+| `atlas/tests/gates/**` (former altitude, cream-law, and topology checks) | — | Retired after extraction; not carried by the current package |
 
 **Explicitly NOT extracted:** `atlas/src/dashboards/**` — the 7 narrative dashboards stay
 in `sci-report` (the consumer side), each consuming `@mkbabb/atlas` after the flip. The
@@ -55,13 +55,38 @@ npm 11 because pencil-boil is a required Atlas peer with that published engine f
 
 ## Publish posture
 
-- **Name:** `@mkbabb/atlas` (ROUND-RULED; `@atlas/core` was a dev-local vite alias, never a
-  publishable name — `~/.npmrc` carries only `@mkbabb` auth).
-- **Version:** `1.0.0` from the first cut (§5.5 owner override of the 0.x recommendation).
-- **Private at genesis** ([ANSWERS Q59]): consumed as a **git-dependency** off the private
-  remote, NOT published to npm. No `publishConfig` at genesis; `npm publish` (and the
-  `publishConfig.access` flip) is deferred to the owner-gated public-flip successor O-B17.
-- **LICENSE deferred** to the O-B10 cut (mirrors `@mkbabb/glass-ui`; Q59-private does not
-  force a LICENSE into genesis) [ANSWERS Q60].
-- **Publish pipeline** mirrors glass-ui: local `scripts/release.sh` + a `prepublishOnly`
-  gate; CI is PR-gate-only with no `npm publish` and no `NPM_TOKEN` [ANSWERS Q71].
+- **Name:** `@mkbabb/atlas`; the package is public on npm with
+  `publishConfig.access: "public"`.
+- **Current published release:** `5.0.0`. Immutable tarball inspection shows that it already publishes
+  `RowsProjection`/`project`, `SourcePanelProps`, the worker-infrastructure recovery, and the
+  gesture-bound dismissal fix. Those bytes disagree with the older tracked source at the artifact's
+  recorded gitHead; retain that discrepancy as provenance rather than inferring a breaking successor.
+  Against the current producer pack, the immutable tarball differs in the bounded narrative
+  re-anchor runtime; package dependency metadata for the public Vite preset and declaration
+  carriers; the topology export's equivalent named-module emission and portable `Topology`
+  declaration; and title-alignment's move from a declaration-side CSS import into the compiled
+  stylesheet aggregate. The export map is unchanged, and these packaging, declaration, and CSS
+  aggregation corrections preserve the public semantics. The same cut also removes the publicly
+  exported but otherwise dead `INSTRUMENT_SPRING`, `InstrumentSpringStyle`,
+  `instrumentSpringStyle`, and `DOCK_COLLAPSE_SPRING` symbols. That clean break changes the public
+  symbol set, so the successor is
+  correctly a `6.0.0` major rather than the previously planned patch.
+  Packed `skipLibCheck: false` acceptance is deliberately scoped to the changed `./data` and `./vite`
+  carriers under bundler resolution, plus their native runtime and Vite-build paths. It is not a
+  whole-package strict-declaration claim: importing every component-bearing subpath also traverses
+  unchanged declaration faults in Glass UI 6, keyframes.js 5.3.5, Reka UI, and VueUse. Those upstream
+  faults are held for the coherent W33 successor tuple rather than masked here.
+  Published data carriers are source-folded through `?raw` into native-ESM-safe JavaScript modules.
+  The two county-registry consumers share one typed module, while lazy registries remain split
+  chunks; no runtime JSON import, output rewrite, duplicate private asset, or attribute-mismatch
+  warning remains.
+  The former Glass completion-seal CSS rewrite is likewise retired; dependency CSS is consumed
+  without Atlas-owned postprocessing.
+  The in-flight `6.0.0` is not immutable until package, lock, tag, and registry agree. The
+  private `1.0.0` git-dependency posture was genesis history, superseded when the package moved to
+  the public registry.
+- **License:** the repository ships its `LICENSE`; the genesis deferral ended at O-B10.
+- **Publish pipeline:** `scripts/release.sh` performs the local clean-tree preflight. A matching
+  `v*.*.*` tag invokes `.github/workflows/release.yml`, which verifies the tag/package version and
+  publishes to npm with provenance. Pull requests run the ordinary type, build, package, and test
+  checks in `.github/workflows/ci.yml`.

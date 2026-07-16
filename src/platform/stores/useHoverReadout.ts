@@ -37,9 +37,9 @@
 
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
-import type { Fact } from "@/interaction/HoverCard.vue";
-import type { Anchor } from "@/charts/contract/selection-contract";
-import { useSelection } from "@/platform/stores/useSelection";
+import type { Fact } from "../../interaction/HoverCard.vue";
+import type { Anchor } from "../../charts/contract/selection-contract.js";
+import { useSelection } from "./useSelection.js";
 
 /**
  * THE UNMEASURED-FLOOR GUARD (H.W1.a · the Anchor|null contract enforcement). A producer whose

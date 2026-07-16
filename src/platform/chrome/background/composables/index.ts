@@ -3,9 +3,9 @@
 // disperse out of the flat platform/composables/ bag into the background submodule that consumes them.
 // `aurora-nuclei` (the Tide/drift geometry the config maps over) is the O-B8a altitude-split of
 // useAuroraConfig — deep-import-only internal helper, NOT re-exported here.
-export * from "./useAuroraConfig";
-export * from "./useAuroraVeil";
-export * from "./useAtmosphereActivity";
-export * from "./constellation-register";
-export * from "./useAtmosphereTier";
-export * from "./atmosphere";
+export * from "./useAuroraConfig.js";
+export * from "./useAuroraVeil.js";
+export * from "./useAtmosphereActivity.js";
+export * from "./constellation-register.js";
+export * from "./useAtmosphereTier.js";
+export * from "./atmosphere.js";

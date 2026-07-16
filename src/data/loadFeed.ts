@@ -27,15 +27,14 @@
 // Light slugs (usf/ecf/speedtest — small, row-shaped) stay synchronous: the worker
 // round-trip is not worth its postMessage clone for a cheap parse.
 import {
-    isFeed,
     decodeColumnar,
-    isColumnarFeed,
     type Feed,
     type FeedColumnar,
     type FeedRow,
-} from "./contract";
-import type { FeedParseReply, FeedParseRequest } from "./feedParse.worker";
-import { prefersReducedData } from "./dataSaver";
+} from "./contract.js";
+import type { FeedParseReply, FeedParseRequest } from "./feedParse.worker.js";
+import { parseFeedBody } from "./feedParse.js";
+import { prefersReducedData } from "./dataSaver.js";
 
 const TIMEOUT_MS = 4000;
 
@@ -62,8 +61,8 @@ export function snapshotUrl(slug: string): string {
  * grains (district `leaNumber`, entity `ben`) carry their own padding rule and are
  * left untouched here until their dashboards land (G6 §6.1).
  *
- * Exported so the worker (`feedParse.worker.ts`) runs the IDENTICAL coercion off-thread
- * — the parity law: the worker-decoded Feed is byte-equal to the main-thread parse.
+ * Kept at the shared materialization boundary so worker-parsed and synchronously parsed
+ * envelopes receive the identical main-thread coercion.
  */
 export function normalize<Row extends FeedRow>(feed: Feed<Row>): Feed<Row> {
     const { keyField, entityGrain } = feed.meta;
@@ -88,22 +87,41 @@ let nextId = 0;
 const pending = new Map<
     number,
     {
+        text: string;
+        url: string;
         resolve: (envelope: FeedColumnar | Feed) => void;
         reject: (err: Error) => void;
     }
 >();
 
+/** Retire only the failed singleton, then finish its fetched bodies on this thread. */
+function retireWorker(failed: Worker | null): void {
+    if (failed ? worker !== failed : worker !== null) return;
+    failed?.terminate();
+    worker = null;
+
+    const entries = [...pending.values()];
+    pending.clear();
+    for (const entry of entries) {
+        try {
+            entry.resolve(parseFeedBody(entry.text, entry.url));
+        } catch (error) {
+            entry.reject(error instanceof Error ? error : new Error(String(error)));
+        }
+    }
+}
+
 function getWorker(): Worker {
     if (worker) return worker;
     // Vite resolves `new Worker(new URL(…, import.meta.url), {type:"module"})` natively —
     // it bundles `feedParse.worker.ts` into its own module-worker chunk (ZERO new dep, no
-    // `?worker` suffix, no comlink). The worker imports only contract.ts's pure type guards
-    // (`isColumnarFeed`/`isFeed`) — no decode, no `normalize`; the row materialization lives
-    // main-side now (the double-materialize transpose), so the worker chunk stays minimal.
-    worker = new Worker(new URL("./feedParse.worker.ts", import.meta.url), {
+    // `?worker` suffix, no comlink). The worker imports the shared envelope parser, but neither
+    // decodes columnar rows nor normalizes them; row materialization stays main-side.
+    const candidate = new Worker(new URL("./feedParse.worker.ts", import.meta.url), {
         type: "module",
     });
-    worker.onmessage = (e: MessageEvent<FeedParseReply>) => {
+    worker = candidate;
+    candidate.onmessage = (e: MessageEvent<FeedParseReply>) => {
         const reply = e.data;
         const entry = pending.get(reply.id);
         if (!entry) return;
@@ -111,16 +129,9 @@ function getWorker(): Worker {
         if (reply.ok) entry.resolve(reply.envelope);
         else entry.reject(new Error(reply.error));
     };
-    worker.onerror = (e) => {
-        // A worker-level failure rejects EVERY in-flight parse so the caller can fall
-        // through to the snapshot floor (or surface the error) — never a silent hang.
-        const err = new Error(`feedParse.worker failed: ${e.message}`);
-        worker?.terminate();
-        worker = null;
-        for (const [, entry] of pending) entry.reject(err);
-        pending.clear();
-    };
-    return worker;
+    candidate.onerror = () => retireWorker(candidate);
+    candidate.onmessageerror = () => retireWorker(candidate);
+    return candidate;
 }
 
 /**
@@ -135,12 +146,17 @@ function parseInWorker<Row extends FeedRow>(
     text: string,
     url: string,
 ): Promise<Feed<Row>> {
-    const w = getWorker();
     const id = nextId++;
     return new Promise<FeedColumnar | Feed>((resolve, reject) => {
-        pending.set(id, { resolve, reject });
+        pending.set(id, { text, url, resolve, reject });
         const req: FeedParseRequest = { id, url, text };
-        w.postMessage(req);
+        let w: Worker | null = null;
+        try {
+            w = getWorker();
+            w.postMessage(req);
+        } catch {
+            retireWorker(w);
+        }
     }).then((envelope) => materializeValidated<Row>(envelope));
 }
 
@@ -148,8 +164,8 @@ function parseInWorker<Row extends FeedRow>(
  * Parse a heavy slug OFF the main thread: the main thread does the (non-blocking)
  * `fetch` + `res.text()`, the worker does the (blocking) JSON.parse + validate and posts
  * the validated COLUMNAR envelope back; `parseInWorker` materializes it main-side once.
- * If the worker is unavailable (an environment with no Worker, e.g. a jsdom test), fall
- * back to a synchronous main-thread parse so the loader never hard-fails on platform gaps.
+ * If Worker is absent, or its constructor/message channel fails, parse the already-fetched body
+ * synchronously so infrastructure failure does not force a second network request.
  */
 async function fetchHeavy<Row extends FeedRow>(
     url: string,
@@ -157,17 +173,16 @@ async function fetchHeavy<Row extends FeedRow>(
 ): Promise<Feed<Row>> {
     const res = await fetch(url, { signal, headers: { accept: "application/json" } });
     if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
-    // The no-Worker fallback (jsdom tests / a platform with no Worker) parses on the main
-    // thread; the live browser path NEVER does — the worker owns the heavy JSON.parse.
-    if (typeof Worker === "undefined") {
-        const json: unknown = await res.json();
-        return decodeAndNormalize<Row>(json, url);
-    }
     const text = await res.text();
+    // The ordinary browser path parses off-thread. No-Worker environments parse here; worker
+    // infrastructure failures are recovered from in `retireWorker` using the same fetched text.
+    if (typeof Worker === "undefined") {
+        return materializeValidated<Row>(parseFeedBody(text, url));
+    }
     return parseInWorker<Row>(text, url);
 }
 
-/** Materialize an envelope already validated by `feedParse.worker`. The boundary is trusted:
+/** Materialize an envelope already validated by the shared parser. The boundary is trusted:
     decoding and state-key normalization run once without repeating the strict O(n) guards. */
 function materializeValidated<Row extends FeedRow>(
     envelope: FeedColumnar | Feed,
@@ -176,32 +191,17 @@ function materializeValidated<Row extends FeedRow>(
     return normalize(feed as Feed<Row>);
 }
 
-/**
- * Validate and materialize raw main-thread JSON: columnar-decode-if-columnar → strict row
- * validation → normalize. Shared by light feeds and the no-Worker heavy fallback.
- */
-function decodeAndNormalize<Row extends FeedRow>(
-    json: unknown,
-    url: string,
-): Feed<Row> {
-    const rowFeed: unknown = isColumnarFeed(json) ? decodeColumnar(json) : json;
-    if (!isFeed(rowFeed)) throw new Error(`${url} → not a Feed envelope`);
-    return normalize(rowFeed as Feed<Row>);
-}
-
 async function fetchFeed<Row extends FeedRow>(
     slug: string,
     url: string,
     signal?: AbortSignal,
 ): Promise<Feed<Row>> {
-    // Heavy slugs route the parse through the worker; light slugs (cheap parse) stay
-    // synchronous on the main thread via the existing `res.json()` door — the worker
-    // round-trip is not worth its postMessage clone for a small body.
+    // Heavy slugs route the shared parser through the worker; light slugs run that same parser
+    // synchronously because the worker round-trip is not worth its postMessage clone.
     if (HEAVY_SLUGS.has(slug)) return fetchHeavy<Row>(url, signal);
     const res = await fetch(url, { signal, headers: { accept: "application/json" } });
     if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
-    const json: unknown = await res.json();
-    return decodeAndNormalize<Row>(json, url);
+    return materializeValidated<Row>(parseFeedBody(await res.text(), url));
 }
 
 /**

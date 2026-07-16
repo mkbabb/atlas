@@ -1,5 +1,5 @@
 import { onScopeDispose, type Ref } from "vue";
-import { createHoverBridge } from "./hover-bridge";
+import { createHoverBridge } from "./hover-bridge.js";
 
 export function useHoverBridge(anchor: Ref<HTMLElement | null>, card: Ref<HTMLElement | null>) {
     const bridge = createHoverBridge({

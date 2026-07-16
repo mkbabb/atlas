@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { computed, provide, useSlots } from "vue";
 import { Card } from "@mkbabb/glass-ui/card";
-import type { ColorKind } from "@/charts/scale/colorKind";
+import type { ColorKind } from "../charts/scale/colorKind.js";
 import {
     createStoryCardContext,
     STORY_CARD_KEY,
-} from "@/charts/frame/story-card-context";
+} from "../charts/frame/story-card-context.js";
 import Beat from "./Beat.vue";
 import AnimatedRule from "./AnimatedRule.vue";
 import GhostNumeral, { type GhostNumeralSource } from "./GhostNumeral.vue";
 import StoryCardStats from "./StoryCardStats.vue";
-import { resolveTitleAlign } from "./title-align";
-import { storyCardSurface, type StoryCardFacet } from "./story-card";
+import { resolveTitleAlign } from "./title-align.js";
+import { storyCardSurface, type StoryCardFacet } from "./story-card.js";
 
 const props = withDefaults(
     defineProps<{

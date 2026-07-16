@@ -10,7 +10,7 @@ import {
     resolveRankBand,
     reparameterizeBand as reshape,
     type RankTier,
-} from "./rankMotionBand";
+} from "./rankMotionBand.js";
 
 export interface UseRankMotion {
     /** The reveal-stage band re-parameterizer (ORDER + DURATION). Pure + reactive:

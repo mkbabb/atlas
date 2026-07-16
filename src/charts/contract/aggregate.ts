@@ -118,7 +118,7 @@ import type {
     AggregateResult,
     MeasureKind,
     ReduceOp,
-} from "@/platform/provenance/aggregate-contract";
+} from "../../platform/provenance/aggregate-contract.js";
 
 /**
  * THE LAW's pure op selection (the fence): an EXTENSIVE measure folds via `Σ`; an INTENSIVE measure

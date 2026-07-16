@@ -55,8 +55,8 @@ export const schoolPointsVersion = shallowRef(0);
 export async function loadSchoolPoints(): Promise<SchoolPointsRegistry> {
     if (cache) return cache;
     if (inFlight) return inFlight;
-    inFlight = import("./glyphs/school-points.json", { with: { type: "json" } }).then((mod) => {
-        cache = mod.default as unknown as SchoolPointsRegistry;
+    inFlight = import("./glyphs/school-points.json?raw").then((mod) => {
+        cache = JSON.parse(mod.default) as SchoolPointsRegistry;
         schoolPointsVersion.value++; // reactive nudge — consumers re-resolve.
         return cache;
     });

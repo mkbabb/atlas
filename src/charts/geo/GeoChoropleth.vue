@@ -33,19 +33,19 @@ import {
 import { feature } from "topojson-client";
 import type { Topology, GeometryCollection } from "topojson-specification";
 import type { Feature, Geometry } from "geojson";
-import type { FeedMeta } from "@/data/contract";
+import type { FeedMeta } from "../../data/contract.js";
 import {
     isMultiSelect,
     type SelectionEmits,
-} from "@/charts/contract/selection-contract";
-import ChartDataTable from "@/charts/legend/ChartDataTable.vue";
+} from "../contract/selection-contract.js";
+import ChartDataTable from "../legend/ChartDataTable.vue";
 // K-D-GEO §4.B — the DEV (topology,projection,viewport) coherence backstop reuses the gate's ONE
 // pure predicate (no drift). The `import.meta.env.DEV` branch that calls it is tree-shaken out of
 // the prod build, so this gate module never ships in the bundle (it is side-effect-free).
 import {
     isCoherent,
     type GeoCoherenceSample,
-} from "@/charts/geo/geo-coherence";
+} from "./geo-coherence.js";
 // O-A22 — the sighted-colorblind redundant channel (the a11y P3 pattern/value-label fallback). The
 // PURE mechanism (the tier-bin math + the density decision + the disjointness law) lives beside the
 // SFC so the component and the O-A22 gate read ONE source (no drift), the geo-coherence precedent.
@@ -59,15 +59,15 @@ import {
     PATTERN_TIER_MAX,
     type RedundantChannel,
     type ResolvedChannel,
-} from "@/charts/geo/redundant-channel";
+} from "./redundant-channel.js";
 // X10-LIB — the label-vs-A22 reconcile's CONTRAST leg: resolve the label ink + a region's own
 // resolved fill to OKLab and measure WCAG contrast between them (the `regionClearsLabelGate` size
 // gate's sibling axis). `useGeoPaletteEpoch` is the SAME settle-epoch seam `GeoPlate.vue` owns
 // (idempotent — one subscription per module), so a theme flip re-derives the per-region gate in
 // the post-settle task, not the critical flip frame.
-import { type Oklab, wcagContrast } from "@/charts/scale/oklab";
-import { cssColorToOklab, readLabelInk } from "@/charts/scale/colorRamp";
-import { useGeoPaletteEpoch } from "@/charts/composables/useGeoPaletteEpoch";
+import { type Oklab, wcagContrast } from "../scale/oklab.js";
+import { cssColorToOklab, readLabelInk } from "../scale/colorRamp.js";
+import { useGeoPaletteEpoch } from "../composables/useGeoPaletteEpoch.js";
 
 // The choropleth joins on a feed's entity key — the value under `FeedMeta.keyField`
 // (a zero-padded FIPS, an LEA number, an entity id). Binding the type to the

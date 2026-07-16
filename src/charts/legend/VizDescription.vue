@@ -16,8 +16,8 @@
 // render each token as a `<span data-axis-key>` tinted via `color: var(<colorVar>)`. The `data-axis-key`
 // marker is the i0-perviz-keystat gate's axis-keyed-description selector — present on every plate.
 import { computed } from "vue";
-import type { AxisDescription } from "@/charts/contract/viz-contract";
-import { inkFromAccent } from "@/design/tokens/ink";
+import type { AxisDescription } from "../contract/viz-contract.js";
+import { inkFromAccent } from "../../design/tokens/ink.js";
 
 const props = defineProps<{
     /** The contract's axis-keyed description (the prose template + the tinted axis words). */

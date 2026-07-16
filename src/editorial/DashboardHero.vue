@@ -41,14 +41,14 @@
 // ground, DESIGN §2). It is closed by `<AnimatedRule weight="hero">` (the assembler seats that
 // below it — the hero band ends; the lead beat begins).
 import { computed, onMounted, ref } from "vue";
-import FigureSlug from "@/charts/frame/FigureSlug.vue";
-import { useCountUp } from "@/platform/composables/useCountUp";
-import type { ColorKind } from "@/charts/scale/colorKind";
-import type { DashboardCategory } from "@/contract";
-import { resolveSkin } from "@/skin/category";
-import { CompletionSeal, resolveCompletionSeal } from "@/design/recipes/completion";
-import type { TitlePole } from "@/contract";
-import { resolveTitleAlign, type TitleAlign } from "./title-align";
+import FigureSlug from "../charts/frame/FigureSlug.vue";
+import { useCountUp } from "../platform/composables/useCountUp.js";
+import type { ColorKind } from "../charts/scale/colorKind.js";
+import type { DashboardCategory } from "../contract/index.js";
+import { resolveSkin } from "../skin/category.js";
+import { CompletionSeal, resolveCompletionSeal } from "../design/recipes/completion.js";
+import type { TitlePole } from "../contract/index.js";
+import { resolveTitleAlign, type TitleAlign } from "./title-align.js";
 import GhostNumeral, { type GhostNumeralSource } from "./GhostNumeral.vue";
 
 /** One audacious cover figure — the pre-formatted value (routed through format.ts at the

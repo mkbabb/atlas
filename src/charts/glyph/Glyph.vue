@@ -34,7 +34,7 @@
 // when `metal`/`accent` are omitted. The shimmer/glow keyframes are NOT authored here
 // (root-repo-law): the glyph only CONSUMES the facilities.
 import { computed, useId } from "vue";
-import type { GlyphGeom, GlyphSize } from "@/data/entityGeometry";
+import type { GlyphGeom, GlyphSize } from "../../data/entityGeometry.js";
 
 /** The entity grain the glyph identifies — drives nothing in render (the `geom` is pre-resolved by
     `entityGeometry`), carried so the consumer/contract declares its key grain on the mark. */

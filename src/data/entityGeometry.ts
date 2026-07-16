@@ -44,19 +44,19 @@
 // Because `entityGeometry` is pulled by the chrome's `SelectionPreview` on EVERY route, fusing all 12
 // registries here statically made every route pay ~343 KB-gz of geometry it never draws (the measured
 // per-route-budget breach). The split keeps the eager floor synchronous and defers the rest.
-import usStateCoarse from "./glyphs/us-state.coarse.json" with { type: "json" };
-import usStateMed from "./glyphs/us-state.med.json" with { type: "json" };
-import ncCountyCoarse from "./glyphs/nc-county.coarse.json" with { type: "json" };
-import ncCountyMed from "./glyphs/nc-county.med.json" with { type: "json" };
-import ncDistrictCoarse from "./glyphs/nc-district.coarse.json" with { type: "json" };
-import ncDistrictMed from "./glyphs/nc-district.med.json" with { type: "json" };
+import usStateCoarseJson from "./glyphs/us-state.coarse.json?raw";
+import usStateMedJson from "./glyphs/us-state.med.json?raw";
+import { countyGlyphRegistry } from "./countyGlyphRegistry.js";
+import ncCountyMedJson from "./glyphs/nc-county.med.json?raw";
+import ncDistrictCoarseJson from "./glyphs/nc-district.coarse.json?raw";
+import ncDistrictMedJson from "./glyphs/nc-district.med.json?raw";
 import { shallowRef } from "vue";
 // The LEA name-joins are TOPOLOGY-FREE (read from `./leaJoin`, NOT `./geometry`) — so the glyph
 // resolver (which the chrome's SelectionPreview pulls on EVERY route) does NOT statically link the
 // map topology (the `geo-*.js` chunk), the J-PERF geo-leak bound. Only the `leaToGeoid` true-LEA
 // spine is imported now — the county-proxy floor's `leaToCountyFips` is RETIRED (J-GLYPH Decision 1,
 // "NO proxy hacking"; the charter grain resolves a real heuristic polygon, no grain floors to county).
-import { leaToGeoid } from "./leaJoin";
+import { leaToGeoid } from "./leaJoin.js";
 
 // ── The registry entry shape (the I-GLYPH bake contract) ────────────────────────────────
 
@@ -93,6 +93,7 @@ interface RegistryEntry {
 }
 
 type Registry = Record<string, RegistryEntry>;
+const parseRegistry = (json: string): Registry => JSON.parse(json) as Registry;
 
 // ── The public GlyphGeom + the size→LOD contract ────────────────────────────────────────
 
@@ -179,16 +180,16 @@ type Grain = "state" | "county" | "district" | "charter";
 // coercion `geometry.ts` applies to its topology imports), so callers see one type.
 const EAGER_TIERS: Readonly<Record<Grain, Partial<Record<Lod, Registry>>>> = {
     state: {
-        coarse: usStateCoarse as unknown as Registry,
-        med: usStateMed as unknown as Registry,
+        coarse: parseRegistry(usStateCoarseJson),
+        med: parseRegistry(usStateMedJson),
     },
     county: {
-        coarse: ncCountyCoarse as unknown as Registry,
-        med: ncCountyMed as unknown as Registry,
+        coarse: countyGlyphRegistry as unknown as Registry,
+        med: parseRegistry(ncCountyMedJson),
     },
     district: {
-        coarse: ncDistrictCoarse as unknown as Registry,
-        med: ncDistrictMed as unknown as Registry,
+        coarse: parseRegistry(ncDistrictCoarseJson),
+        med: parseRegistry(ncDistrictMedJson),
     },
     charter: {}, // the whole charter grain is lazy (drawn on no live route).
 };
@@ -201,28 +202,30 @@ const EAGER_TIERS: Readonly<Record<Grain, Partial<Record<Lod, Registry>>>> = {
 // an entry means the tier is eager (resolved from `EAGER_TIERS`). The `import()` specifiers are STATIC
 // string literals so Rollup can see + split each registry into its own async chunk.
 type Loader = () => Promise<{ default: unknown }>;
+const loadRegistry = (load: Promise<{ default: string }>): Promise<{ default: unknown }> =>
+    load.then(({ default: json }) => ({ default: parseRegistry(json) }));
 // The O-A14 `icon` tier is registered here for EVERY Class-A grain — it is additive-LAZY (a dynamic
 // `import()` off every route's eager closure), so the icon facility does NOT grow the eager floor
 // (icon-facility §3.3). An icon-scale dropdown/inline mark loads its tier on interaction, re-resolving
 // reactively via `glyphRegistryVersion` exactly as the `fine`/charter tiers already do.
 const LAZY_LOADERS: Readonly<Partial<Record<Grain, Partial<Record<Lod, Loader>>>>> = {
     state: {
-        icon: () => import("./glyphs/us-state.icon.json", { with: { type: "json" } }),
-        fine: () => import("./glyphs/us-state.fine.json", { with: { type: "json" } }),
+        icon: () => loadRegistry(import("./glyphs/us-state.icon.json?raw")),
+        fine: () => loadRegistry(import("./glyphs/us-state.fine.json?raw")),
     },
     county: {
-        icon: () => import("./glyphs/nc-county.icon.json", { with: { type: "json" } }),
-        fine: () => import("./glyphs/nc-county.fine.json", { with: { type: "json" } }),
+        icon: () => loadRegistry(import("./glyphs/nc-county.icon.json?raw")),
+        fine: () => loadRegistry(import("./glyphs/nc-county.fine.json?raw")),
     },
     district: {
-        icon: () => import("./glyphs/nc-district.icon.json", { with: { type: "json" } }),
-        fine: () => import("./glyphs/nc-district.fine.json", { with: { type: "json" } }),
+        icon: () => loadRegistry(import("./glyphs/nc-district.icon.json?raw")),
+        fine: () => loadRegistry(import("./glyphs/nc-district.fine.json?raw")),
     },
     charter: {
-        icon: () => import("./glyphs/nc-charter.icon.json", { with: { type: "json" } }),
-        coarse: () => import("./glyphs/nc-charter.coarse.json", { with: { type: "json" } }),
-        med: () => import("./glyphs/nc-charter.med.json", { with: { type: "json" } }),
-        fine: () => import("./glyphs/nc-charter.fine.json", { with: { type: "json" } }),
+        icon: () => loadRegistry(import("./glyphs/nc-charter.icon.json?raw")),
+        coarse: () => loadRegistry(import("./glyphs/nc-charter.coarse.json?raw")),
+        med: () => loadRegistry(import("./glyphs/nc-charter.med.json?raw")),
+        fine: () => loadRegistry(import("./glyphs/nc-charter.fine.json?raw")),
     },
 };
 

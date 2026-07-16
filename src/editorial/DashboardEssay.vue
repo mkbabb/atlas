@@ -48,44 +48,44 @@
 // engine on ONE clock. (Phase-A SHAPE: subscribes to each section's own scroll position; on the
 // Phase-C re-pin the source re-seats onto the BC `useScrollTrigger` page-reader — a one-line swap.)
 import { computed, provide, ref, type Component, type VNodeChild } from "vue";
-import { useSectionReveal } from "@/motion/useScrollTimeline";
-import { supportsViewTimeline } from "@/motion/useScrollProgress";
-import { useReducedMotion } from "@/motion/useReducedMotion";
-import { toRoman } from "@/platform/composables/useRomanNumeral";
-import Beat from "@/editorial/Beat.vue";
-import AnimatedRule from "@/editorial/AnimatedRule.vue";
-import DashboardHero from "@/editorial/DashboardHero.vue";
-import GhostNumeral from "@/editorial/GhostNumeral.vue";
-import StoryCard from "@/editorial/StoryCard.vue";
-import SiteColophon from "@/platform/chrome/masthead/SiteColophon.vue";
-import VizPlate from "@/charts/frame/VizPlate.vue";
-import VizAggregateStats from "@/charts/legend/VizAggregateStats.vue";
-import ChapterStageView from "@/charts/scene/ChapterStage.vue";
-import StickyScene from "@/charts/scene/StickyScene.vue";
-import { isVizContract, type VizContract } from "@/charts/contract/viz-contract";
+import { useSectionReveal } from "../motion/useScrollTimeline.js";
+import { supportsViewTimeline } from "../motion/useScrollProgress.js";
+import { useReducedMotion } from "../motion/useReducedMotion.js";
+import { toRoman } from "../platform/composables/useRomanNumeral.js";
+import Beat from "./Beat.vue";
+import AnimatedRule from "./AnimatedRule.vue";
+import DashboardHero from "./DashboardHero.vue";
+import GhostNumeral from "./GhostNumeral.vue";
+import StoryCard from "./StoryCard.vue";
+import SiteColophon from "../platform/chrome/masthead/SiteColophon.vue";
+import VizPlate from "../charts/frame/VizPlate.vue";
+import VizAggregateStats from "../charts/legend/VizAggregateStats.vue";
+import ChapterStageView from "../charts/scene/ChapterStage.vue";
+import StickyScene from "../charts/scene/StickyScene.vue";
+import { isVizContract, type VizContract } from "../charts/contract/viz-contract.js";
 import {
     isChapterScene,
     isChapterStage,
     type ChapterScene,
     type ChapterStage,
-} from "@/charts/contract/scene-contract";
-import type { Chapter, ChapterTitle } from "@/contract";
-import { resolveLayout, beatPhases, hasMasthead, figureLabelFor } from "./useBeatLayout";
-import type { EditorialChapter, HeroFacet } from "./editorial-contract";
-import { provideStoryDirector } from "@/story/story-director-provide";
-import { recedeStyle } from "@/story/corridor";
-import type { StoryChapter } from "@/story/story-contract";
+} from "../charts/contract/scene-contract.js";
+import type { Chapter, ChapterTitle } from "../contract/index.js";
+import { resolveLayout, beatPhases, hasMasthead, figureLabelFor } from "./useBeatLayout.js";
+import type { EditorialChapter, HeroFacet } from "./editorial-contract.js";
+import { provideStoryDirector } from "../story/story-director-provide.js";
+import { recedeStyle } from "../story/corridor.js";
+import type { StoryChapter } from "../story/story-contract.js";
 import {
     chaptersOf,
     type ManifestChapter,
     type StoryManifest,
-} from "@/story/manifest";
-import { resolveSkin, skinCssVars, SKIN_KEY } from "@/skin";
-import StoryCorridor from "@/story/StoryCorridor.vue";
-import { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
-import { resolveHeroSystem } from "./hero-system";
-import { useComponentPointLoading } from "./useComponentPointLoading";
-import type { RuleVariant } from "./rule-register";
+} from "../story/manifest.js";
+import { resolveSkin, skinCssVars, SKIN_KEY } from "../skin/index.js";
+import StoryCorridor from "../story/StoryCorridor.vue";
+import { useActiveDashboard } from "../platform/stores/useActiveDashboard.js";
+import { resolveHeroSystem } from "./hero-system.js";
+import { useComponentPointLoading } from "./useComponentPointLoading.js";
+import type { RuleVariant } from "./rule-register.js";
 
 const props = defineProps<{
     /** The canonical route story and sole source of essay order. */

@@ -6,7 +6,7 @@
 // pattern the B4 wave names).
 
 import { computed, type ComputedRef } from "vue";
-import { colorKindStops, type ColorKind } from "@/charts/scale/colorKind";
+import { colorKindStops, type ColorKind } from "../scale/colorKind.js";
 
 /** The reactive inputs the legend derivation reads — the structural subset of the SFC props
     (so `withDefaults(defineProps<…>())` is assignable without a type cycle back into the SFC). */

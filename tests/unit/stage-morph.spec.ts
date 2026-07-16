@@ -5,8 +5,8 @@ import type { EChartsType } from "echarts/core";
 import {
     createStageMorphDriver,
     type StageMorphTarget,
-} from "@/charts/scene/stage-morph";
-import type { SceneOption } from "@/charts/contract/scene-contract";
+} from "../../src/charts/scene/stage-morph";
+import type { SceneOption } from "../../src/charts/contract/scene-contract";
 
 const scene = (
     id: string,

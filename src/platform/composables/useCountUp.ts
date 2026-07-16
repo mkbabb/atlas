@@ -46,7 +46,7 @@ import {
 } from "vue";
 import { NumericAnimation } from "@mkbabb/keyframes.js";
 import { clamp, easeOutExpo, type TimingFunction } from "@mkbabb/value.js";
-import { useReducedMotion } from "@/motion/useReducedMotion";
+import { useReducedMotion } from "../../motion/useReducedMotion.js";
 
 /** A record of numeric figures the count-up tweens together (e.g. `{in, out, net}`). */
 export type CountFigures = Record<string, number>;

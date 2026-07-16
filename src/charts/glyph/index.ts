@@ -23,7 +23,7 @@ export {
     type EntityHubMark,
     type EntityUnknownMark,
     type ResolveEntityIconOptions,
-} from "./resolveEntityIcon";
+} from "./resolveEntityIcon.js";
 export {
     pxToLod,
     hexPolygonPoints,
@@ -34,4 +34,4 @@ export {
     type IconPoint,
     type HubGeometry,
     type HubSpoke,
-} from "./iconPrimitives";
+} from "./iconPrimitives.js";

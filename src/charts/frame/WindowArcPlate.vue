@@ -21,12 +21,12 @@
 // into TimeSeries' markArea / markLine. The crown anatomy (the rivet, the void stamp, the DOM
 // markers, the ChartFrame posture) is M1's — M2 adds only the window grammar.
 import { computed } from "vue";
-import TrajectoryPlate from "@/charts/marks/TrajectoryPlate.vue";
-import { useVizPalette } from "@/charts/composables/useVizPalette";
-import { trajectory, type TrajectoryPoint } from "@/data/multiYear";
-import { forecastBoundaryX as forecastBoundary } from "@/charts/marks/trajectory-marks";
-import type { Feed } from "@/data/contract";
-import type { FilterResponse } from "@/charts/contract/viz-contract";
+import TrajectoryPlate from "../marks/TrajectoryPlate.vue";
+import { useVizPalette } from "../composables/useVizPalette.js";
+import { trajectory, type TrajectoryPoint } from "../../data/multiYear.js";
+import { forecastBoundaryX as forecastBoundary } from "../marks/trajectory-marks.js";
+import type { Feed } from "../../data/contract.js";
+import type { FilterResponse } from "../contract/viz-contract.js";
 
 const props = withDefaults(
     defineProps<{

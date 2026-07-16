@@ -1,7 +1,7 @@
-import { divergingScatterDomain, makeDivergingScale, makeSequentialScale } from "./ColorScale";
-import { vizCategoryToken } from "./colorKind";
-import type { SequentialMode } from "./colorRamp";
-import type { VizLegendSpec } from "../contract/viz-contract";
+import { divergingScatterDomain, makeDivergingScale, makeSequentialScale } from "./ColorScale.js";
+import { vizCategoryToken } from "./colorKind.js";
+import type { SequentialMode } from "./colorRamp.js";
+import type { VizLegendSpec } from "../contract/viz-contract.js";
 
 export type ColorChannelScale =
     | { kind: "diverging"; hinge?: number; domain?: readonly [number, number] | "robust"; markSafe?: boolean }

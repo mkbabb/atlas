@@ -23,13 +23,13 @@ import { use } from "echarts/core";
 import { BarChart } from "echarts/charts";
 import { GridComponent, TooltipComponent, MarkLineComponent } from "echarts/components";
 import type { EChartsOption } from "echarts";
-import { useEChart } from "@/charts/composables/useEChart";
-import { useVizPalette } from "@/charts/composables/useVizPalette";
-import { boundedBlur } from "@/charts/scale/emphasis-policy";
-import { BOUNDARY_AXIS } from "@/charts/marks/TimeSeries.vue";
-import { VIZ_GRID_CROWN } from "@/charts/lib/grid";
-import { isMultiSelect, type SelectEvent } from "@/charts/contract/selection-contract";
-import type { FeedRow } from "@/data/contract";
+import { useEChart } from "../composables/useEChart.js";
+import { useVizPalette } from "../composables/useVizPalette.js";
+import { boundedBlur } from "../scale/emphasis-policy.js";
+import { BOUNDARY_AXIS } from "./TimeSeries.vue";
+import { VIZ_GRID_CROWN } from "../lib/grid.js";
+import { isMultiSelect, type SelectEvent } from "../contract/selection-contract.js";
+import type { FeedRow } from "../../data/contract.js";
 
 // A category is one bucket on the stack's x-axis — typically a feed's `year` (the
 // `FeedRow` grain) or an entity label. Binding to the shared contract keeps the

@@ -38,7 +38,7 @@ import {
     type Ref,
 } from "vue";
 import type { HandShape } from "@mkbabb/glass-ui/handmark";
-import { HIGHLIGHT_WEIGHT_VB } from "@/charts/marks/mark-tokens";
+import { HIGHLIGHT_WEIGHT_VB } from "../charts/marks/mark-tokens.js";
 
 /** The mark instrument family — the columns of the K-HANDMARK matrix (the rows are `HandShape`). */
 export type MarkVariant = "pen" | "pencil" | "crayon" | "marker" | "highlighter";

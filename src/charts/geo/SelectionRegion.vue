@@ -27,7 +27,7 @@
 // still announces each option it lands on. Pointer selection is UNAFFECTED — it lives entirely on
 // the plate's own SVG marks (this layer is `pointer-events:none`), never on these option nodes.
 import { computed, ref, watch } from "vue";
-import { isMultiSelect, type SelectEvent } from "@/charts/contract/selection-contract";
+import { isMultiSelect, type SelectEvent } from "../contract/selection-contract.js";
 
 const props = defineProps<{
     /** The ordered key list — the offscreen table's row order (the meaningful traversal order). */

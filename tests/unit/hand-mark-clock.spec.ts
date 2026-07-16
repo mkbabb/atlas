@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clockAnimation } from "@/motion/useHandMarkClock";
+import { clockAnimation } from "../../src/motion/useHandMarkClock";
 
 describe("hand-mark clock", () => {
     it("boils only a live load-clock mark", () => {

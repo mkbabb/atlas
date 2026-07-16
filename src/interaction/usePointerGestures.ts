@@ -40,7 +40,7 @@ import {
     type PointerPhase,
     type Intent,
     type BrushRect,
-} from "./pointer-machine";
+} from "./pointer-machine.js";
 
 /** The plate-supplied SINKS — the shipped store verbs the intent bus drives. `hitTest` resolves the
     nearest mark within the effective hit radius (`coarse` picks 24px vs 12px); `pin`/`clear` are the

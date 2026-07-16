@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { inject } from "vue";
-import { STORY_CARD_KEY } from "@/charts/frame/story-card-context";
-import VizAggregateStats from "@/charts/legend/VizAggregateStats.vue";
+import { STORY_CARD_KEY } from "../charts/frame/story-card-context.js";
+import VizAggregateStats from "../charts/legend/VizAggregateStats.vue";
 
 const storyCard = inject(STORY_CARD_KEY);
 </script>

@@ -22,14 +22,14 @@
 // stayed frozen. Sharing the one bag makes `?year=` a live, reactive read for every
 // consumer (the thumb, the freshness chip, the barometer, the morph trigger).
 import { computed, shallowRef, type ComputedRef, type Ref } from "vue";
-import type { UseUrlState } from "@/platform/composables/useUrlState";
-import type { Feed, FeedRow } from "./contract";
+import type { UseUrlState } from "../platform/composables/useUrlState.js";
+import type { Feed, FeedRow } from "./contract.js";
 import {
     aggregateRows,
     compareYears,
     sliceYear,
     type TrajectoryPoint,
-} from "./multiYear";
+} from "./multiYear.js";
 
 /** The three year-scope query keys the scrubber owns on the shared URL bag. */
 type YearScopeKey = "yearMode" | "year" | "years";

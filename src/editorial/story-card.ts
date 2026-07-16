@@ -1,5 +1,5 @@
 import type { CardSurface, CardTier } from "@mkbabb/glass-ui/card";
-import type { TitleAlign } from "./title-align";
+import type { TitleAlign } from "./title-align.js";
 
 export type StoryCardSurface = Extract<CardSurface, "veil" | "opaque">;
 

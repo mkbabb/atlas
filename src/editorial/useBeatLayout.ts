@@ -12,9 +12,9 @@
 // the publishable `DashboardEssay` assembler — so the essay host + its placement resolver are ONE
 // core-clean editorial unit (the type dep now points at the core contract, not `@/dashboards`).
 
-import type { BeatLayout, Chapter, TitlePole } from "@/contract";
-import { toRoman } from "@/platform/composables/useRomanNumeral";
-import type { EditorialChapter } from "./editorial-contract";
+import type { BeatLayout, Chapter, TitlePole } from "../contract/index.js";
+import { toRoman } from "../platform/composables/useRomanNumeral.js";
+import type { EditorialChapter } from "./editorial-contract.js";
 
 export type ResolvedLayout = {
     /** The resolved title pole — `left|center|right` (the O-A15 `center` third pole, spent

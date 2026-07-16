@@ -21,10 +21,10 @@
 // canvas parse identically. This file is the scale-ASSEMBLY half: the three factory functions,
 // the tier helpers, and the promoted `colorFor` registry — over `./colorRamp`'s primitives.
 
-import { type Oklab, lerpOklab, oklabToRgb } from "./oklab";
-import { VIZ_DIVERGING_MID_FALLBACK } from "./colorKind";
-import { parseSelKey, type SelectionKey } from "../contract/selection-contract";
-import { formatUsdCompact, formatCountCompact } from "../lib/format";
+import { type Oklab, lerpOklab, oklabToRgb } from "./oklab.js";
+import { VIZ_DIVERGING_MID_FALLBACK } from "./colorKind.js";
+import { parseSelKey, type SelectionKey } from "../contract/selection-contract.js";
+import { formatUsdCompact, formatCountCompact } from "../lib/format.js";
 import {
     type Scale,
     type SequentialMode,
@@ -36,7 +36,7 @@ import {
     readGround,
     liftToMarkFloor,
     buildPosition,
-} from "./colorRamp";
+} from "./colorRamp.js";
 
 // The ramp-math substrate re-exports through the family's ORIGINAL surface — the split is a no-op
 // render-identity refactor, so `charts/scale/ColorScale` keeps every member it exported pre-split.
@@ -49,7 +49,7 @@ export {
     SPEED_TIERS,
     clearVarMemo,
     liftToMarkFloor,
-} from "./colorRamp";
+} from "./colorRamp.js";
 
 // ── ① DIVERGING ───────────────────────────────────────────────────────────────
 export interface DivergingOptions {

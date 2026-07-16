@@ -19,23 +19,23 @@
 //     successor then wires the gesture.
 // The monorepo import flip to this home is O-B11.
 
-export * from "./keyboard";
-export * from "./pointer-machine";
-export * from "./usePointerGestures";
-export * from "./useAffordance";
-export * from "./useAffordanceHint";
-export * from "./hover-bridge";
-export * from "./useHoverBridge";
+export * from "./keyboard.js";
+export * from "./pointer-machine.js";
+export * from "./usePointerGestures.js";
+export * from "./useAffordance.js";
+export * from "./useAffordanceHint.js";
+export * from "./hover-bridge.js";
+export * from "./useHoverBridge.js";
 
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
-export * from "./useVizContext";
-export * from "./useSelectionTreatment";
+export * from "./useVizContext.js";
+export * from "./useSelectionTreatment.js";
 
 // ── v1.0.4 (O-A9) — THE ACTIVE-VIZ HOOK: the scrolled-to/selected viz as a NAMED READ-ONLY event
 // source (provenance-surface §4). A thin subscription façade over `useActiveBeat` + the route
 // coordinator + `useSelection`; writes NOTHING (the single-writer gates hold). Consumed by the
 // provenance ProvenanceChip binding + O-A11 drill-down.
-export * from "./useActiveViz";
+export * from "./useActiveViz.js";
 export { default as HoverCard } from "./HoverCard.vue";
 export { default as ReadoutDrill } from "./ReadoutDrill.vue";
 
@@ -46,14 +46,14 @@ export { default as ReadoutDrill } from "./ReadoutDrill.vue";
 // beyond the selection it dismisses. Consumed per-route (usf/sci/ecf placements + the abrogation).
 export { default as SelectionDrilldownPanel } from "./SelectionDrilldownPanel.vue";
 export type { DrilldownPlacement } from "./SelectionDrilldownPanel.vue";
-export * from "./projectDrilldown";
+export * from "./projectDrilldown.js";
 export {
     parseViewBox,
     unionExtent,
     extentToViewBox,
     boundedMinimapViewBox,
     type ExtentBox,
-} from "./minimapExtent";
+} from "./minimapExtent.js";
 
 // ── v1.0.1 (O-B10 re-cut) — THE VIZ-CONTEXT HUB PROVIDER SURFACE ───────────────────────────────
 // The N.WD1 hub (`platform/context/hub.ts`) rides no barrel of its own, so v1.0.0 tree-shook the
@@ -74,7 +74,7 @@ export {
     useOptionalVizHub,
     useOptionalVizContext,
     VIZ_HUB_KEY,
-} from "@/platform/context/hub";
+} from "../platform/context/hub.js";
 export type {
     C,
     ResolvedAtmosphere,
@@ -84,7 +84,7 @@ export type {
     VizContext,
     VizContextHub,
     VizContextHubDeps,
-} from "@/platform/context/hub";
+} from "../platform/context/hub.js";
 
 // ── v1.0.2 (O-B10 re-cut) — THE HUB PER-VIZ READER, UNDER AN HONEST DISTINCT NAME ──────────────
 // v1.0.1 re-exported the hub PROVIDER surface (above) but had to OMIT the hub's own per-viz reader,
@@ -98,9 +98,9 @@ export type {
 // `useVizContext` name stays the motion export). A plate reading the N-era hub context imports
 // `useVizHubContext` from `@mkbabb/atlas/interaction` (its silent SSR/gallery half, `useOptionalVizContext`,
 // already lands unaliased above). RankedStrip / RainbowStack / ConsultantsRankedBar re-point to this.
-export { useVizContext as useVizHubContext } from "@/platform/context/hub";
+export { useVizContext as useVizHubContext } from "../platform/context/hub.js";
 
 // The readiness contract the hub folds each source phase through (`SourcePhase` — a route store's
 // per-source `{loading, error, resolved}` shape it registers via `hub.registerSource`).
-export type { Readiness, SourcePhase } from "@/platform/context/readiness";
-export { foldReadiness, aggregateReadiness, mayEvaluateEmpty } from "@/platform/context/readiness";
+export type { Readiness, SourcePhase } from "../platform/context/readiness.js";
+export { foldReadiness, aggregateReadiness, mayEvaluateEmpty } from "../platform/context/readiness.js";

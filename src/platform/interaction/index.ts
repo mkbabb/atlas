@@ -1,2 +1,2 @@
-export * from "./dismiss-arbiter";
-export * from "./useDismissArbiter";
+export * from "./dismiss-arbiter.js";
+export * from "./useDismissArbiter.js";

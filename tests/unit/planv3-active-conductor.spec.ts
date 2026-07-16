@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveActiveHost } from "@/charts/composables/activeViz";
+import { resolveActiveHost } from "../../src/charts/composables/activeViz";
 
 describe("W-L2 host-grain conductor", () => {
     it("selects a private scene host while preserving the stage's public viz identity", () => {

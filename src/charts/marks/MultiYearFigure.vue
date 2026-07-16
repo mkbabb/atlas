@@ -21,15 +21,15 @@
 // renders full-ink twice (the NEG_AXIOM5_RESOLVED shape). The crown traces the trajectory; the
 // hero owns the audacious figure.
 import { computed } from "vue";
-import TrajectoryPlate from "@/charts/marks/TrajectoryPlate.vue";
-import WindowArcPlate from "@/charts/frame/WindowArcPlate.vue";
+import TrajectoryPlate from "./TrajectoryPlate.vue";
+import WindowArcPlate from "../frame/WindowArcPlate.vue";
 import {
     trajectory,
     isTrajectoryWindow,
     type TrajectoryPoint,
-} from "@/data/multiYear";
-import type { Feed } from "@/data/contract";
-import type { FilterResponse } from "@/charts/contract/viz-contract";
+} from "../../data/multiYear.js";
+import type { Feed } from "../../data/contract.js";
+import type { FilterResponse } from "../contract/viz-contract.js";
 
 const props = withDefaults(
     defineProps<{

@@ -6,7 +6,7 @@
 
 import { lerp } from "@mkbabb/value.js";
 import type { AuroraNucleus } from "@mkbabb/glass-ui/aurora";
-import type { DepositionProfile } from "@/contract";
+import type { DepositionProfile } from "../../../../contract/index.js";
 
 /** Clamp a scalar into [0,1] — a valid `paletteBias` / fraction (local, no import churn). */
 function clamp01(t: number): number {

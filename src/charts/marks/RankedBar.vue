@@ -26,16 +26,16 @@ import { use } from "echarts/core";
 import { BarChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import type { EChartsOption } from "echarts";
-import { useEChart } from "@/charts/composables/useEChart";
-import { useVizPalette } from "@/charts/composables/useVizPalette";
-import { useReducedMotion } from "@/motion/useReducedMotion";
-import { RAISE_ONLY } from "@/charts/scale/emphasis-policy";
-import { VIZ_GRID_BAR } from "@/charts/lib/grid";
+import { useEChart } from "../composables/useEChart.js";
+import { useVizPalette } from "../composables/useVizPalette.js";
+import { useReducedMotion } from "../../motion/useReducedMotion.js";
+import { RAISE_ONLY } from "../scale/emphasis-policy.js";
+import { VIZ_GRID_BAR } from "../lib/grid.js";
 import {
     isMultiSelect,
     type SelectionEmits,
-} from "@/charts/contract/selection-contract";
-import type { RankHue } from "@/charts/scale/ColorScale";
+} from "../contract/selection-contract.js";
+import type { RankHue } from "../scale/ColorScale.js";
 
 // Bar + grid; the TooltipComponent is registered but every option keeps it OFF (the modular
 // registration law — the bundle carries the bar renderer only when a dashboard draws one).

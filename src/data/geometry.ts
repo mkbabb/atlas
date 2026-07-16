@@ -20,13 +20,16 @@
 // projection below is unchanged — only the eager bundle weight is. us-atlas's national
 // counties file leaves the runtime graph entirely; the states-albers file rides the
 // async `geo` chunk (the `vite.config.ts` manualChunks split), off the gallery preload.
-import statesTopology from "us-atlas/states-albers-10m.json" with { type: "json" };
-import countiesTopology from "./nc-counties.json" with { type: "json" };
+import statesTopologyJson from "us-atlas/states-albers-10m.json?raw";
+import countiesTopologyJson from "./nc-counties.json?raw";
 import { feature } from "topojson-client";
 import { geoAlbersUsa, geoConicConformal } from "d3-geo";
 import type { GeoProjection } from "d3-geo";
 import type { Topology, GeometryCollection } from "topojson-specification";
 import type { Feature, Geometry } from "geojson";
+
+const statesTopology = JSON.parse(statesTopologyJson) as Topology;
+const countiesTopology = JSON.parse(countiesTopologyJson) as Topology;
 
 /** A choropleth-ready state feature: its FIPS key and the GeoJSON polygon. */
 export interface StateFeature {
@@ -228,4 +231,4 @@ export {
     leaToCountyFips,
     leaToGeoid,
     geoidAbbr,
-} from "./leaJoin";
+} from "./leaJoin.js";

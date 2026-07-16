@@ -38,8 +38,8 @@ import {
     type ComputedRef,
     type MaybeRefOrGetter,
 } from "vue";
-import { useReducedMotion } from "@/motion/useReducedMotion";
-import { prefersReducedData } from "@/data/dataSaver";
+import { useReducedMotion } from "../../../../motion/useReducedMotion.js";
+import { prefersReducedData } from "../../../../data/dataSaver.js";
 
 /** The three atmosphere tiers (motion-arch §2.3). A = high (rich field + Tide), B = mid (rich field,
     static), C = low (flat 2-stop wash, static). PRM / save-data / a low-core device land C. */

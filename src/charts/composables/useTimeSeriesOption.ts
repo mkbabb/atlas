@@ -13,27 +13,27 @@
 // through `dials`.
 
 import type { EChartsOption } from "echarts";
-import { VIZ_GRID_CROWN } from "@/charts/lib/grid";
-import type { VizPalette } from "@/charts/composables/useVizPalette";
-import { boundedBlur } from "@/charts/scale/emphasis-policy";
-import { useTrendline } from "@/charts/composables/useTrendline";
-import { dropRule } from "@/charts/marks/trajectory-marks";
-import { BOUNDARY_AXIS, type LineSeries, type SeriesPoint } from "@/charts/marks/TimeSeries.vue";
-import { dashedHairline, recessedBaseline, directEndLabel } from "@/charts/contract/chartRecipe";
+import { VIZ_GRID_CROWN } from "../lib/grid.js";
+import type { VizPalette } from "./useVizPalette.js";
+import { boundedBlur } from "../scale/emphasis-policy.js";
+import { useTrendline } from "./useTrendline.js";
+import { dropRule } from "../marks/trajectory-marks.js";
+import { BOUNDARY_AXIS, type LineSeries, type SeriesPoint } from "../marks/TimeSeries.vue";
+import { dashedHairline, recessedBaseline, directEndLabel } from "../contract/chartRecipe.js";
 
 import {
     niceCeil,
     timeSeriesXAxisValues,
     pinnedTickSpec,
     type TimeSeriesDials,
-} from "./timeSeriesAxis";
+} from "./timeSeriesAxis.js";
 export {
     niceCeil,
     niceFloor,
     timeSeriesXAxisValues,
     pinnedTickSpec,
     type TimeSeriesDials,
-} from "./timeSeriesAxis";
+} from "./timeSeriesAxis.js";
 
 /** THE PURE OPTION BUILDER — `(series, dials, palette) → EChartsOption`. No refs, no side-effects. */
 export function buildTimeSeriesOption(

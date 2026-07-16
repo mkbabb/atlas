@@ -16,7 +16,7 @@ import {
     plateAnchorId,
     type AppendixEntry,
     type AppendixSource,
-} from "./appendix";
+} from "./appendix.js";
 import SourceLink from "./SourceLink.vue";
 import {
     sourceLine,
@@ -24,7 +24,7 @@ import {
     methodParts,
     scopeParts,
     filterLine,
-} from "./provenance-lines";
+} from "./provenance-lines.js";
 
 const { entries, heading = "Provenance", sources = [], figureNos } = defineProps<{
     /** the route's provenance roster — each item's title + resolved provenance, the route's own order. */

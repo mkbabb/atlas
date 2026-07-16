@@ -7,7 +7,7 @@
 // `useDashboardRegistry()`. Core NEVER imports the instance's `dashboards/registry`.
 
 import { inject, type App, type InjectionKey } from "vue";
-import type { DashboardRegistry } from "./registry";
+import type { DashboardRegistry } from "./registry.js";
 
 /** The provide/inject token the chrome reads the instance-built registry through. */
 export const REGISTRY_KEY: InjectionKey<DashboardRegistry> = Symbol(

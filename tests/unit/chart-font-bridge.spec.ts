@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     bumpVizPaletteEpoch,
     useVizPalette,
-} from "@/charts/composables/useVizPalette";
-import { directEndLabel } from "@/charts/contract/chartRecipe";
-import { dropRule, markPointRivet } from "@/charts/marks/trajectory-marks";
+} from "../../src/charts/composables/useVizPalette";
+import { directEndLabel } from "../../src/charts/contract/chartRecipe";
+import { dropRule, markPointRivet } from "../../src/charts/marks/trajectory-marks";
 
 vi.mock("@mkbabb/glass-ui/dark", () => ({
     useGlobalDark: () => ({ onFlipSettled: vi.fn() }),

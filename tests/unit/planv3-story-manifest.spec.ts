@@ -9,15 +9,15 @@ import {
     scenesOf,
     toDeck,
     type StoryManifest,
-} from "@/story/manifest";
-import type { VizContract } from "@/charts/contract/viz-contract";
+} from "../../src/story/manifest";
+import type { VizContract } from "../../src/charts/contract/viz-contract";
 import {
     isChapterStage,
     type ChapterStage,
     type StageAnatomy,
-} from "@/charts/contract/scene-contract";
-import { createAtlasEventHub } from "@/events";
-import { hasMasthead } from "@/editorial/useBeatLayout";
+} from "../../src/charts/contract/scene-contract";
+import { createAtlasEventHub } from "../../src/events";
+import { hasMasthead } from "../../src/editorial/useBeatLayout";
 
 const load = async () => ({ default: {} });
 const anatomy = {

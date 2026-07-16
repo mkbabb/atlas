@@ -14,24 +14,23 @@
 //   · the dock/aurora families → `chrome/*` (O-B7/B8).
 //
 // WHAT SURVIVES HERE: the ~6 GENUINELY-GLOBAL helpers — cross-cutting utilities that name no
-// component and no feature. This is the anti-god fence's positive space (the fence:
-// `tests/gates/composables-anti-god.gate.ts` REJECTS any survivor that names a component/feature —
-// a `useDock*`/`useViz*`/`useFilter*` reappearing here is a topology-gate failure).
+// component and no feature. Component-owned `useDock*`, `useViz*`, and `useFilter*` composables
+// belong to their chrome, charts, and filter families rather than this global barrel.
 //
 // The monorepo import flip to this home is O-B11.
 
 // — the URL-as-document substrate: the query-state codec + the saved-views shelf —
-export * from "./useUrlState";
-export * from "./useSavedViews";
+export * from "./useUrlState.js";
+export * from "./useSavedViews.js";
 
 // — the theme key (the light/dark reactive signal every re-derive keys off) —
-export * from "./useThemeKey";
+export * from "./useThemeKey.js";
 
 // — the audacious-figure count-up tween (the crown-number settle) —
-export * from "./useCountUp";
+export * from "./useCountUp.js";
 
 // — the roman-numeral formatter (the beat/section enumerator) —
-export * from "./useRomanNumeral";
+export * from "./useRomanNumeral.js";
 
 // — the responsive register (the phone/deck MQ seam, one home for the breakpoint strings) —
-export * from "./useMobileRegister";
+export * from "./useMobileRegister.js";

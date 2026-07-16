@@ -18,21 +18,21 @@
 // O-A9b's aggregation-aware resolver POPULATES `aggregationLevel` through this SAME seam [CH-A H1/H4].
 
 import { computed, toValue, type ComputedRef, type MaybeRefOrGetter } from "vue";
-import type { Predicate } from "@/filter/engine/predicate";
-import { isIdentity } from "@/filter/engine/predicate";
-import { useFreshness } from "@/platform/chrome/freshness";
-import type { ProvenanceKind } from "@/contract/types";
+import type { Predicate } from "../../filter/engine/predicate.js";
+import { isIdentity } from "../../filter/engine/predicate.js";
+import { useFreshness } from "../chrome/freshness.js";
+import type { ProvenanceKind } from "../../contract/types.js";
 import {
     humanizePredicate,
     IDENTITY_DIM_LABELS,
     type DimLabels,
-} from "./predicate-prose";
+} from "./predicate-prose.js";
 import type {
     AggregationLevel,
     ProvenanceFacet,
     ResolvedProvenance,
     VintageLine,
-} from "./provenance-contract";
+} from "./provenance-contract.js";
 
 /** The cadence word off the route `ProvenanceKind` (the vintage leg's second field). `seeded` is a
     frozen static extract; `seeded-on-cycle` the annual pipeline; `continually-updated` the live feed. */

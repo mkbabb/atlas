@@ -27,7 +27,7 @@
 // present. a11y: a `<p>` in the reading order; the picked word is a `<span>` the underline
 // decorates (the SVG mark is `aria-hidden` inside HandMark — the word text reads plainly,
 // no pronunciation change).
-import HandMark from "@/charts/glyph/HandMark.vue";
+import HandMark from "../charts/glyph/HandMark.vue";
 
 withDefaults(
     defineProps<{

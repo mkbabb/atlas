@@ -1,4 +1,4 @@
-import type { SelectionKey, SelectionKind } from "@/charts/contract/selection-contract";
+import type { SelectionKey, SelectionKind } from "../charts/contract/selection-contract.js";
 
 export type DrilldownProjection<Item, Aggregate> =
     | { mode: "hidden" }

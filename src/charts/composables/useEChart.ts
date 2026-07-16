@@ -47,15 +47,15 @@ import { CanvasRenderer } from "echarts/renderers";
 import type { EChartsOption } from "echarts";
 import { useResizeObserver, useIntersectionObserver } from "@vueuse/core";
 import { useGlobalDark } from "@mkbabb/glass-ui/dark";
-import { EXPAND_SETTLE_KEY } from "@/charts/scene/expand-settle";
-import { useOptionalStageMorphDriver } from "@/charts/scene/stage-morph";
+import { EXPAND_SETTLE_KEY } from "../scene/expand-settle.js";
+import { useOptionalStageMorphDriver } from "../scene/stage-morph.js";
 
 // The canvas renderer is the shared base every viz needs; chart/component
 // modules (BarChart, GridComponent…) register at the call site so the bundle
 // only carries what a viz actually draws (modular registration, CH2 §B).
 use([CanvasRenderer]);
 
-import { RETINTING, scheduleRetint, enqueuePaint } from "./echart-pumps";
+import { RETINTING, scheduleRetint, enqueuePaint } from "./echart-pumps.js";
 
 export interface UseEChartOptions {
     /** The host element the chart mounts into (a fixed-height box). */

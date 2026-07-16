@@ -18,7 +18,7 @@ import type {
     AtmosphereFacet,
     ChromeIdentity,
     DepositionProfile,
-} from "@/contract";
+} from "../../../../contract/index.js";
 
 /** Clamp a scalar into [lo, hi] (local, no import churn). */
 function clampRange(x: number, lo: number, hi: number): number {

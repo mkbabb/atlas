@@ -32,9 +32,9 @@
 
 import { computed, inject, type ComputedRef } from "vue";
 import { storeToRefs } from "pinia";
-import { useSelection } from "@/platform/stores/useSelection";
-import { DASHBOARD_KEY, type DashboardContext } from "@/contract";
-import type { SelectionKey } from "@/charts/contract/selection-contract";
+import { useSelection } from "../../platform/stores/useSelection.js";
+import { DASHBOARD_KEY, type DashboardContext } from "../../contract/index.js";
+import type { SelectionKey } from "../../charts/contract/selection-contract.js";
 
 /**
  * The set of `DashboardContext.selectionKey` values that name a TEMPORAL axis (a year/time scrub) rather

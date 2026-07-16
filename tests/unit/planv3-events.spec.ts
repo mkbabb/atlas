@@ -4,7 +4,7 @@ import {
     createAtlasEventHub,
     type AtlasEvent,
     type AtlasEventOf,
-} from "@/events";
+} from "../../src/events";
 
 describe("AtlasEvent", () => {
     it("covers the exact eight discrete classes", () => {

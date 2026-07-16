@@ -36,9 +36,9 @@
 // in the reading order), the unit + gloss as `<figcaption>`; the count never changes the
 // accessible name (the rendered text IS the final value).
 import { computed, ref } from "vue";
-import FigureSlug from "@/charts/frame/FigureSlug.vue";
-import { useCountUp } from "@/platform/composables/useCountUp";
-import type { ColorKind } from "@/charts/scale/colorKind";
+import FigureSlug from "../charts/frame/FigureSlug.vue";
+import { useCountUp } from "../platform/composables/useCountUp.js";
+import type { ColorKind } from "../charts/scale/colorKind.js";
 
 const props = withDefaults(
     defineProps<{

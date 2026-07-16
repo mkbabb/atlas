@@ -1,5 +1,5 @@
 import { ref, watch, type Ref } from "vue";
-import { useActiveBeat } from "@/platform/stores/useActiveBeat";
+import { useActiveBeat } from "../platform/stores/useActiveBeat.js";
 
 export interface ComponentPointLoad {
     id: string;

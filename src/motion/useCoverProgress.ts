@@ -35,9 +35,9 @@
 
 import { computed, type ComputedRef, type Ref } from "vue";
 import { clamp } from "@mkbabb/value.js";
-import { useReducedMotion } from "@/motion/useReducedMotion";
-import { useDocumentScrollProgress } from "@/motion/useScrollProgress";
-import { readScrubHostProgress } from "@/charts/composables/activeViz";
+import { useReducedMotion } from "./useReducedMotion.js";
+import { useDocumentScrollProgress } from "./useScrollProgress.js";
+import { readScrubHostProgress } from "../charts/composables/activeViz.js";
 
 /** The cover-host attribute the ancestor-walk terminates at — the beat/essay scrub host the page
     already animates (the scroll-driven.css enumerated set). REUSED, never re-declared (verdict-B). */

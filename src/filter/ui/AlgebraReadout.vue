@@ -20,13 +20,13 @@
 // injected route algebra source, forward-ready: a route that wires its coordinator's global resolved
 // predicate lights the band; a route that binds none renders nothing). PURE presentation.
 import { computed } from "vue";
-import { isIdentity, type Predicate } from "@/filter/engine/predicate";
+import { isIdentity, type Predicate } from "../engine/predicate.js";
 import {
     humanizePredicate,
     IDENTITY_DIM_LABELS,
     type DimLabels,
-} from "@/platform/provenance/predicate-prose";
-import type { AggregationLevel } from "@/platform/provenance/provenance-contract";
+} from "../../platform/provenance/predicate-prose.js";
+import type { AggregationLevel } from "../../platform/provenance/provenance-contract.js";
 
 const {
     predicate = null,

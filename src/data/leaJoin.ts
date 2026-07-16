@@ -20,14 +20,14 @@
 // ONLY by components that actually mount a map (the lazy `geo-*.js` chunk now rides only the four
 // geo-bearing routes' bodies).
 
-import countyGlyphs from "./glyphs/nc-county.coarse.json" with { type: "json" };
-import leaToGeoidCrosswalk from "./glyphs/lea-to-geoid.json" with { type: "json" };
+import { countyGlyphRegistry } from "./countyGlyphRegistry.js";
+import leaToGeoidCrosswalkJson from "./glyphs/lea-to-geoid.json?raw";
 
 // ── The county name→FIPS table (read from the committed glyph registry, NOT the topology) ──
 // The county-glyph registry is FIPS-keyed `{ name, d, abbr, … }`; we invert the name→FIPS half it
 // already carries. Lower-cased, matching the `bareLeaName` normalization below. Built once (a 100-
 // entry map), memoized — the registry is a static import so this is synchronous + topology-free.
-const COUNTY_REGISTRY = countyGlyphs as Record<string, { name?: string }>;
+const COUNTY_REGISTRY = countyGlyphRegistry;
 let _fipsByName: Map<string, string> | null = null;
 function fipsByCountyName(): Map<string, string> {
     if (_fipsByName) return _fipsByName;
@@ -124,7 +124,7 @@ interface NullLeaEntry {
     fallback: string;
 }
 
-const CROSSWALK = leaToGeoidCrosswalk as {
+const CROSSWALK = JSON.parse(leaToGeoidCrosswalkJson) as {
     geoidPrefix: string;
     /** bareLeaName → the floored federal/reservation district (geoid resolves to null). */
     nullLea: Record<string, NullLeaEntry>;

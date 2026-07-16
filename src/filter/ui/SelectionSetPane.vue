@@ -31,20 +31,20 @@ import {
 } from "@mkbabb/glass-ui/collapsible";
 import { ToggleGroup, ToggleGroupItem } from "@mkbabb/glass-ui/toggle-group";
 import { StatusDot } from "@mkbabb/glass-ui/status-dot";
-import Glyph, { type GlyphGrain } from "@/charts/glyph/Glyph.vue";
-import ReadoutFacts from "@/charts/readout/ReadoutFacts.vue";
+import Glyph, { type GlyphGrain } from "../../charts/glyph/Glyph.vue";
+import ReadoutFacts from "../../charts/readout/ReadoutFacts.vue";
 import {
     stateGlyph,
     countyGlyph,
     districtGlyph,
     glyphRegistryVersion,
     type GlyphGeom,
-} from "@/data/entityGeometry";
-import { markColorFor } from "@/charts/scale/ColorScale";
-import type { SelectionKey } from "@/charts/contract/selection-contract";
-import { useHoverReadout, PIN_CAP } from "@/platform/stores/useHoverReadout";
-import { useSelection } from "@/platform/stores/useSelection";
-import { useSelectionStat } from "@/platform/stores/useSelectionStat";
+} from "../../data/entityGeometry.js";
+import { markColorFor } from "../../charts/scale/ColorScale.js";
+import type { SelectionKey } from "../../charts/contract/selection-contract.js";
+import { useHoverReadout, PIN_CAP } from "../../platform/stores/useHoverReadout.js";
+import { useSelection } from "../../platform/stores/useSelection.js";
+import { useSelectionStat } from "../../platform/stores/useSelectionStat.js";
 
 const store = useHoverReadout();
 const selection = useSelection();

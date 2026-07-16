@@ -36,7 +36,7 @@ import {
     type AnimationEngine,
     type CSSKeyframesAnimation,
 } from "@mkbabb/keyframes.js";
-import { useReducedMotion } from "./useReducedMotion";
+import { useReducedMotion } from "./useReducedMotion.js";
 
 /** The engine surface `loadAnimationEngine()` resolves to (the value.js-bearing factories
     — `CSSKeyframesAnimation`, `fromDrawSVG`, `stagger`-fed fans — that build the

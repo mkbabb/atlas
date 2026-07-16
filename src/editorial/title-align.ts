@@ -1,5 +1,4 @@
-import type { TitlePole } from "@/contract";
-import "./title-align.css";
+import type { TitlePole } from "../contract/index.js";
 
 export type TitleAlign = TitlePole | "auto";
 

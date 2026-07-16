@@ -40,9 +40,9 @@
 // adjudicate the cross-route membership itself (it exposes the tagged cell the guard reads).
 
 import { computed, type ComputedRef } from "vue";
-import type { SelectionKind } from "@/charts/contract/selection-contract";
-import { useSelection } from "@/platform/stores/useSelection";
-import { useViewParams } from "@/platform/stores/useViewParams";
+import type { SelectionKind } from "../../charts/contract/selection-contract.js";
+import { useSelection } from "../../platform/stores/useSelection.js";
+import { useViewParams } from "../../platform/stores/useViewParams.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE ARITY + THE ROUTE-UNIVERSE — the per-dim shape declarations.

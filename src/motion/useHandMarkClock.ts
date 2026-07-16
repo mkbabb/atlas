@@ -24,7 +24,7 @@
 // grounds — passed straight to the brush fill), else the token pair with its light/dark lift.
 
 import { computed, type ComputedRef } from "vue";
-import { useThemeKey } from "@/platform/composables/useThemeKey";
+import { useThemeKey } from "../platform/composables/useThemeKey.js";
 
 export type MarkClock = "load" | "scroll" | "static";
 

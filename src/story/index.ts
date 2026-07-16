@@ -14,20 +14,20 @@
 //     transitively consume `story-contract`, so they land with it once scene-contract (O-B4R) lands.
 // The monorepo import flip to this home is O-B11.
 
-export * from "./centreAxis";
-export * from "./corridor";
-export * from "./clone-overlay";
+export * from "./centreAxis.js";
+export * from "./corridor.js";
+export * from "./clone-overlay.js";
 
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
-export * from "./story-contract";
-export * from "./useStoryDirector";
-export * from "./story-director-provide";
+export * from "./story-contract.js";
+export * from "./useStoryDirector.js";
+export * from "./story-director-provide.js";
 export { default as StoryCorridor } from "./StoryCorridor.vue";
 
 // ── O-A15 · the variation-axes + template-as-data algebra ─────────────────────────────────────
-export * from "./beat-template";
-export * from "./superlative";
-export * from "./manifest";
+export * from "./beat-template.js";
+export * from "./superlative.js";
+export * from "./manifest.js";
 
 // The canonical persistent stage is authored from the story surface as well as the charts surface;
 // both routes resolve to the same contract and thin StickyScene adapter.
@@ -37,8 +37,7 @@ export type {
     StageAnatomy,
     StageEvents,
     StageExport,
-    StageSourcePanelProps,
-} from "@/charts/contract/scene-contract";
-export type { SceneSequenceContract } from "@/charts/viz-set";
-export { stageEventsFromHub } from "@/charts/contract/scene-contract";
-export { default as ChapterStageView } from "@/charts/scene/ChapterStage.vue";
+} from "../charts/contract/scene-contract.js";
+export type { SceneSequenceContract } from "../charts/viz-set.js";
+export { stageEventsFromHub } from "../charts/contract/scene-contract.js";
+export { default as ChapterStageView } from "../charts/scene/ChapterStage.vue";

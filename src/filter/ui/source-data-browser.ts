@@ -1,7 +1,12 @@
-import type { ExportPayload } from "@/charts/lib/source-data";
-import type { AtlasEventContract, EventScope } from "@/events";
-import type { ExportGrain, RowsReader } from "@/filter/engine/rows";
-import type { VirtualKey } from "@/filter/composables/useVirtualWindow";
+import type { ExportPayload } from "../../charts/lib/source-data.js";
+import type { AtlasEventContract } from "../../events/index.js";
+import type { SourcePanelProps } from "../../charts/contract/viz-contract.js";
+import type {
+    ExportGrain,
+    RowsReader,
+    RowsProjection,
+} from "../engine/rows.js";
+import type { VirtualKey } from "../composables/useVirtualWindow.js";
 import { getCurrentScope, onScopeDispose, readonly, ref, type Ref } from "vue";
 
 export interface SourceDataColumn<Row> {
@@ -20,14 +25,9 @@ export type SourceDataAvailableGrain<Scope = unknown> =
     | SourceDataGrainOption<Scope>;
 
 export type SourceDataExportFactory<Row, Scope = unknown> = (
-    rows: readonly Row[],
-    grain: ExportGrain<Scope>,
+    projection: RowsProjection<Row, Scope>,
     vizId: string,
 ) => ExportPayload<Row, Scope>;
-
-export type SourceDataRowsReader<Row, Scope = unknown> =
-    | RowsReader<Row, Scope>
-    | ((vizId: string) => RowsReader<Row, Scope>);
 
 export interface SourceBrowserEventState {
     readonly activeVizId: Readonly<Ref<string>>;
@@ -48,18 +48,17 @@ export function reconcileMountedFocus<Key extends VirtualKey>(
     return mounted[0] ?? null;
 }
 
-/** The five P-budgeted event consumers. The browser projects their state; it mints no writer. */
+/** The five live event consumers. The browser projects their state; it mints no writer. */
 export function useSourceBrowserEvents(
-    hub: AtlasEventContract | undefined,
-    initialVizId = "source-data",
+    hub: AtlasEventContract,
+    initialVizId: string,
 ): SourceBrowserEventState {
     const activeVizId = ref(initialVizId);
     const selectedKeys = ref<readonly string[]>([]);
     const grain = ref<string | null>(null);
     const fields = ref<readonly string[]>([]);
     const filter = ref({ predicate: "", active: false });
-    const stops = hub
-        ? [
+    const stops = [
               hub.on(
                   "active-viz",
                   (event) => {
@@ -104,8 +103,7 @@ export function useSourceBrowserEvents(
                   },
                   { immediate: true },
               ),
-          ]
-        : [];
+          ];
     const stop = (): void => stops.splice(0).forEach((dispose) => dispose());
     if (getCurrentScope()) onScopeDispose(stop);
     return {
@@ -122,15 +120,12 @@ export interface SourceDataBrowserProps<
     Row,
     Scope = unknown,
     Key extends VirtualKey = VirtualKey,
-> {
-    readonly rowsReader: SourceDataRowsReader<Row, Scope>;
+> extends SourcePanelProps {
+    readonly rowsReader: RowsReader<Row, Scope>;
     readonly availableGrains: readonly SourceDataAvailableGrain<Scope>[];
     readonly columns: readonly SourceDataColumn<Row>[];
     readonly rowKey: (row: Row, index: number) => Key;
     /** Always built from the currently projected rows; a static second payload path is forbidden. */
     readonly exportPayload: SourceDataExportFactory<Row, Scope>;
-    readonly eventHub?: AtlasEventContract;
-    readonly vizId?: string;
-    readonly eventScope?: EventScope;
     readonly ariaLabel?: string;
 }

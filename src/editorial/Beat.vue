@@ -32,9 +32,9 @@
 // `<FigureInitial>` is `role="img"` (the library wrapper); the `#header` slot carries the
 // eyebrow + `<h2>` + dek triplet the plate header owns (interstitials omit it).
 import { computed, provide } from "vue";
-import FigureInitial from "@/platform/chrome/masthead/FigureInitial.vue";
-import { BEAT_TITLE_KEY } from "@/charts/legend/beat-title";
-import type { ColorKind } from "@/charts/scale/colorKind";
+import FigureInitial from "../platform/chrome/masthead/FigureInitial.vue";
+import { BEAT_TITLE_KEY } from "../charts/legend/beat-title.js";
+import type { ColorKind } from "../charts/scale/colorKind.js";
 
 const props = withDefaults(
     defineProps<{

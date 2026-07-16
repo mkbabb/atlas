@@ -19,15 +19,15 @@
 import { computed, onScopeDispose, ref, watch, type ComputedRef, type Ref } from "vue";
 import { SpringProgress, NumericAnimation } from "@mkbabb/keyframes.js";
 import { clamp, easeOutExpo } from "@mkbabb/value.js";
-import type { MotionTrigger } from "@/motion/triggers";
-import type { VariantSpec } from "@/motion/variant-spec";
+import type { MotionTrigger } from "./triggers.js";
+import type { VariantSpec } from "./variant-spec.js";
 import {
     LEAN_CATALOG,
     type LeanPreset,
     type LeanPresetName,
-} from "@/motion/lean-catalog";
-import { useCoverProgress } from "@/motion/useCoverProgress";
-import { useReducedMotion } from "@/motion/useReducedMotion";
+} from "./lean-catalog.js";
+import { useCoverProgress } from "./useCoverProgress.js";
+import { useReducedMotion } from "./useReducedMotion.js";
 
 const clamp01 = (x: number): number => clamp(x, 0, 1);
 
@@ -366,7 +366,7 @@ export function createDirectorCore(
 
 // buildMarkAnimation (the D4 primitive runtime) lives in its own module (O-B4R god-split); re-
 // exported so the `@/motion` surface is unchanged (an SVG plate imports it from `@/motion`).
-export * from "./buildMarkAnimation";
+export * from "./buildMarkAnimation.js";
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 // 6 · THE DRIVER BUILDER + THE COMPOSABLE

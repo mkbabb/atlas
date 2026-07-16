@@ -42,8 +42,8 @@ import {
     type MaybeRefOrGetter,
     type Ref,
 } from "vue";
-import { useDocumentScrollProgress } from "@/motion/useScrollProgress";
-import { useReducedMotion } from "@/motion/useReducedMotion";
+import { useDocumentScrollProgress } from "../../../../motion/useScrollProgress.js";
+import { useReducedMotion } from "../../../../motion/useReducedMotion.js";
 
 /** The scroll-travel direction the edge derives from — `null` before the first supra-tolerance move. */
 export type ScrollDirection = "up" | "down" | null;

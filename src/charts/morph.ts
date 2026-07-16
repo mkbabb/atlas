@@ -1,5 +1,5 @@
 import type { EChartsOption } from "echarts";
-import type { MarkIdentity, MorphTransition } from "./viz-set";
+import type { MarkIdentity, MorphTransition } from "./viz-set.js";
 
 type Series = Record<string, unknown> & { data?: unknown[] };
 

@@ -66,11 +66,11 @@
 import { inject, ref, watchPostEffect } from "vue";
 import { Aurora as GlassAurora } from "@mkbabb/glass-ui/aurora";
 import type { AuroraRenderMode } from "@mkbabb/glass-ui/aurora";
-import { DASHBOARD_KEY } from "@/contract";
-import { useAuroraConfig } from "@/platform/chrome/background/composables/useAuroraConfig";
-import { useAtmosphereActivity } from "@/platform/chrome/background/composables/useAtmosphereActivity";
-import { useAtmosphereTier } from "@/platform/chrome/background/composables/useAtmosphereTier";
-import { useSelection } from "@/platform/stores/useSelection";
+import { DASHBOARD_KEY } from "../../../contract/index.js";
+import { useAuroraConfig } from "./composables/useAuroraConfig.js";
+import { useAtmosphereActivity } from "./composables/useAtmosphereActivity.js";
+import { useAtmosphereTier } from "./composables/useAtmosphereTier.js";
+import { useSelection } from "../../stores/useSelection.js";
 
 // THE HIGH-TIER SHADER OPT-IN (O-F2 · motion-arch §2.1 "on killing WebGPU"). The default is the
 // CSS-baked field (0 WebGPU); `shader` is the ONLY door back to the WebGPU substrate — an explicit,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AppendixSource } from "./appendix";
+import type { AppendixSource } from "./appendix.js";
 
 defineProps<{
     source: AppendixSource;

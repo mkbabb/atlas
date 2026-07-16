@@ -6,7 +6,7 @@ import {
     resolveVizSurface,
     viewsToOptionSpec,
     type VizSetContract,
-} from "@/charts/viz-set";
+} from "../../src/charts/viz-set";
 const option = (): EChartsOption => ({ series: [] });
 const set: VizSetContract = {
     views: [

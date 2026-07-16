@@ -35,12 +35,8 @@
 // from the TBT-outcome arm). The main thread, awaiting the posted message, carries ZERO
 // Long-Tasks attribution for the parse.
 
-import {
-    isColumnarFeed,
-    isFeed,
-    type Feed,
-    type FeedColumnar,
-} from "./contract";
+import type { Feed, FeedColumnar } from "./contract.js";
+import { parseFeedBody } from "./feedParse.js";
 
 /** The request the main thread posts: the raw response text + the source URL (for errors). */
 export interface FeedParseRequest {
@@ -76,21 +72,11 @@ function parse(text: string, url: string): FeedColumnar | Feed {
     const endMark = "feed-parse:end";
     performance.mark(startMark);
 
-    const json: unknown = JSON.parse(text);
-
     // Validate the envelope on the worker (fail-loud parity — a hostile body rejects here so
     // the main thread falls to the snapshot floor), but do NOT decode the columnar rows: the
     // heavy columnar envelope rides the boundary in its compact form and the consumer side
     // (`loadFeed.materializeValidated`) materializes the rows ONCE. A light/row feed flows through.
-    let envelope: FeedColumnar | Feed;
-    if (isColumnarFeed(json)) {
-        envelope = json;
-    } else if (isFeed(json)) {
-        envelope = json;
-    } else {
-        performance.mark(endMark);
-        throw new Error(`${url} → not a Feed envelope`);
-    }
+    const envelope = parseFeedBody(text, url);
 
     performance.mark(endMark);
     // The MEASURABLE proof (hard gate arm 2): the parse mark on the worker timeline.

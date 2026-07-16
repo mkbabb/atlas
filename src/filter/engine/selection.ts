@@ -20,9 +20,9 @@
 // formalized. The per-client resolver is MEMOIZED (one `computed` per client), so a route reading
 // `sel.predicate("usf-map")` on each render reuses the same reactive node (no computed churn).
 
-import { signal, computed, type Signal } from "./signals";
-import { compile, type Predicate } from "./predicate";
-import { markFilterStart } from "@/lib/perf/inp-probe";
+import { signal, computed, type Signal } from "./signals.js";
+import { compile, type Predicate } from "./predicate.js";
+import { markFilterStart } from "../../lib/perf/inp-probe.js";
 
 export type Resolution = "single" | "union" | "intersect" | "crossfilter";
 

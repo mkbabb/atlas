@@ -35,7 +35,7 @@ import {
     useScrollLettering,
     splitGraphemes,
     type UseScrollLetteringOptions,
-} from "@/motion/useScrollLettering";
+} from "../../motion/useScrollLettering.js";
 
 const props = withDefaults(
     defineProps<{

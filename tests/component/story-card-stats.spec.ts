@@ -1,9 +1,9 @@
 import { createSSRApp, defineComponent, h } from "vue";
 import { renderToString } from "@vue/server-renderer";
 import { describe, expect, it, vi } from "vitest";
-import type { VizContract } from "@/charts/contract/viz-contract";
+import type { VizContract } from "../../src/charts/contract/viz-contract";
 
-vi.mock("@/charts/frame/ChartFrame.vue", async () => {
+vi.mock("../../src/charts/frame/ChartFrame.vue", async () => {
     const { defineComponent, h } = await import("vue");
     return {
         default: defineComponent({
@@ -14,15 +14,15 @@ vi.mock("@/charts/frame/ChartFrame.vue", async () => {
     };
 });
 
-vi.mock("@/editorial/Beat.vue", async () => {
+vi.mock("../../src/editorial/Beat.vue", async () => {
     const { defineComponent, h } = await import("vue");
     return { default: defineComponent({ setup: (_, { slots }) => () => h("section", slots.figure?.()) }) };
 });
-vi.mock("@/editorial/GhostNumeral.vue", async () => {
+vi.mock("../../src/editorial/GhostNumeral.vue", async () => {
     const { defineComponent } = await import("vue");
     return { default: defineComponent(() => () => null) };
 });
-vi.mock("@/editorial/AnimatedRule.vue", async () => {
+vi.mock("../../src/editorial/AnimatedRule.vue", async () => {
     const { defineComponent } = await import("vue");
     return { default: defineComponent(() => () => null) };
 });
@@ -30,7 +30,7 @@ vi.mock("@mkbabb/glass-ui/card", async () => {
     const { defineComponent, h } = await import("vue");
     return { Card: defineComponent({ setup: (_, { slots }) => () => h("article", slots.default?.()) }) };
 });
-vi.mock("@/charts/legend/VizAggregateStats.vue", async () => {
+vi.mock("../../src/charts/legend/VizAggregateStats.vue", async () => {
     const { defineComponent, h } = await import("vue");
     return {
         default: defineComponent({
@@ -43,7 +43,7 @@ vi.mock("@/charts/legend/VizAggregateStats.vue", async () => {
     };
 });
 
-vi.mock("@/charts/frame/useVizPlate", async () => {
+vi.mock("../../src/charts/frame/useVizPlate", async () => {
     const { computed, ref, useSlots } = await import("vue");
     return { useVizPlate: (props: { contract: VizContract }) => ({
         slots: useSlots(),
@@ -84,8 +84,8 @@ vi.mock("@/charts/frame/useVizPlate", async () => {
     }) };
 });
 
-import StoryCard from "@/editorial/StoryCard.vue";
-import VizPlate from "@/charts/frame/VizPlate.vue";
+import StoryCard from "../../src/editorial/StoryCard.vue";
+import VizPlate from "../../src/charts/frame/VizPlate.vue";
 
 describe("StoryCard aggregate-stat registration", () => {
     it("hoists a wrapper component's VizPlate stats into sector 3 without an internal duplicate", async () => {

@@ -39,7 +39,7 @@
 // is RE-ENABLED here via `useDockCollapse`. The posture is gear-TOGGLED + collapse-on-phone, NOT
 // forced-collapsed-everywhere; the desktop register may still rest expanded (a register OPTION,
 // J-PATH §8 Decision 2). The `:always-expanded` true-literal opt-OUT is DELETED.
-import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
+import { computed, inject, ref, watch } from "vue";
 import { GlassDock } from "@mkbabb/glass-ui/dock";
 import DockCrest from "./components/DockCrest.vue";
 import DockStepperRender from "./components/DockStepperRender.vue";
@@ -47,11 +47,12 @@ import DockFoot from "./components/DockFoot.vue";
 import {
     useDockCollapse,
     type DockExposed,
-} from "@/platform/chrome/dock/composables/useDockCollapse";
-import { useMobileRegister } from "@/platform/composables/useMobileRegister";
-import { useScrollChrome } from "@/platform/chrome/dock/composables/useScrollChrome";
-import { useDocumentScrollProgress } from "@/motion/useScrollProgress";
-import { DASHBOARD_KEY } from "@/contract";
+} from "./composables/useDockCollapse.js";
+import { useMobileRegister } from "../../composables/useMobileRegister.js";
+import { useScrollChrome } from "./composables/useScrollChrome.js";
+import { useDocumentScrollProgress } from "../../../motion/useScrollProgress.js";
+import { useDismissArbiter } from "../../interaction/useDismissArbiter.js";
+import { DASHBOARD_KEY } from "../../../contract/index.js";
 
 const props = withDefaults(
     defineProps<{
@@ -120,7 +121,7 @@ watch(dockRef, (inst) => bindDock(inst), { immediate: true });
 watch(
     [dockRef, isPhone],
     ([inst, phone]) => {
-        if (!inst) return; // no-op until the glass machine binds; the bind itself re-fires this
+        if (!inst) return;
         setIntent("register", phone ? true : null);
     },
     { immediate: true },
@@ -183,24 +184,11 @@ function closeSheet(): void {
     attr forwarding does not carry listeners to a real node, so a template `@keydown` never
     binds). Document keydown fires BEFORE PlatformShell's window-level Esc arbiter, and the
     preventDefault makes that arbiter defer (no double-handle — the sheet owns this Escape). */
-function onSheetEscape(e: KeyboardEvent): void {
-    if (e.key !== "Escape" || !sheetOpen.value) return;
-    e.preventDefault();
-    closeSheet();
-}
-watch(
-    sheetOpen,
-    (open) => {
-        if (typeof document === "undefined") return;
-        if (open) document.addEventListener("keydown", onSheetEscape);
-        else document.removeEventListener("keydown", onSheetEscape);
-    },
-    { immediate: true },
+useDismissArbiter().claim(() =>
+    sheetOpen.value
+        ? { id: "dock-sheet", priority: 40, escape: true, onDismiss: closeSheet }
+        : null,
 );
-onBeforeUnmount(() => {
-    if (typeof document !== "undefined")
-        document.removeEventListener("keydown", onSheetEscape);
-});
 </script>
 
 <template>

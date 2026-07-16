@@ -16,14 +16,14 @@ import {
     rotateRevealShape,
     REVEAL_SHAPES,
     type BeatVariationPolicy,
-} from "@/story/beat-template";
-import { resolveLayout } from "@/editorial/useBeatLayout";
-import { rotateRuleVariant, RULE_VARIANTS } from "@/editorial/rule-register";
+} from "../../src/story/beat-template";
+import { resolveLayout } from "../../src/editorial/useBeatLayout";
+import { rotateRuleVariant, RULE_VARIANTS } from "../../src/editorial/rule-register";
 import {
     SuperlativeRegister,
     isWithinCeiling,
     superlativeTone,
-} from "@/story/superlative";
+} from "../../src/story/superlative";
 
 const stub = { name: "Stub" } as never;
 

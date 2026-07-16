@@ -64,16 +64,16 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { Constellation } from "@mkbabb/glass-ui/constellation";
 import type { ConstellationField } from "@mkbabb/glass-ui/constellation";
 import { useDebounceFn } from "@vueuse/core";
-import { useAtmosphereActivity } from "@/platform/chrome/background/composables/useAtmosphereActivity";
+import { useAtmosphereActivity } from "./composables/useAtmosphereActivity.js";
 import {
     constellationShouldRun,
     nextConstellationPhase,
     WAKE_CROSSFADE_MS,
     type ConstellationPhase,
     type ConstellationRegister,
-} from "@/platform/chrome/background/composables/constellation-register";
-import { useAtmosphereTier } from "@/platform/chrome/background/composables/useAtmosphereTier";
-import { useThemeKey } from "@/platform/composables/useThemeKey";
+} from "./composables/constellation-register.js";
+import { useAtmosphereTier } from "./composables/useAtmosphereTier.js";
+import { useThemeKey } from "../../composables/useThemeKey.js";
 
 const props = withDefaults(
     defineProps<{

@@ -17,25 +17,25 @@ import {
 } from "@mkbabb/glass-ui/drawer";
 import { Button } from "@mkbabb/glass-ui/button";
 import { Filter, SlidersHorizontal, X } from "@lucide/vue";
-import { DASHBOARD_KEY, useDashboardRegistry } from "@/contract";
-import { useFilterPane } from "@/filter/composables/useFilterPane";
-import { useFilterPanel } from "@/filter/composables/useFilterPanel";
-import { useFilterLedger } from "@/filter/composables/useFilterLedger";
-import { useFreshness } from "@/platform/chrome/freshness";
-import { useMobileRegister } from "@/platform/composables/useMobileRegister";
-import { useSavedViews, currentUrl } from "@/platform/composables/useSavedViews";
-import { useSelection } from "@/platform/stores/useSelection";
-import { useViewParams } from "@/platform/stores/useViewParams";
-import type { YearMode } from "@/data/useYearScope";
+import { DASHBOARD_KEY, useDashboardRegistry } from "../../contract/index.js";
+import { useFilterPane } from "../composables/useFilterPane.js";
+import { useFilterPanel } from "../composables/useFilterPanel.js";
+import { useFilterLedger } from "../composables/useFilterLedger.js";
+import { useFreshness } from "../../platform/chrome/freshness.js";
+import { useMobileRegister } from "../../platform/composables/useMobileRegister.js";
+import { useSavedViews, currentUrl } from "../../platform/composables/useSavedViews.js";
+import { useSelection } from "../../platform/stores/useSelection.js";
+import { useViewParams } from "../../platform/stores/useViewParams.js";
+import type { YearMode } from "../../data/useYearScope.js";
 import YearScrubber from "./components/YearScrubber.vue";
 import FilterDrawerFoot from "./components/FilterDrawerFoot.vue";
-import { useDismissArbiter } from "@/platform/interaction/useDismissArbiter";
+import { useDismissArbiter } from "../../platform/interaction/useDismissArbiter.js";
 import {
     FILTER_SNAP,
     filterRegisterFor,
     filterSnapFor,
     filterSnapPoints,
-} from "./filter-continuum";
+} from "./filter-continuum.js";
 
 // The consumer (DashboardView) mounts this shell in PlatformShell's `filter` slot and
 // passes the active dashboard's filter BODY as `body`. The shell owns only the chrome

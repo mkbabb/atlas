@@ -29,11 +29,11 @@
 //                bottom/horizontal fork. One Dock, one orientation, re-collapsed responsively.
 //   `filter`   — the right live-behind filter Drawer (C3.3 fills; a peer at --z-panel).
 import { computed, inject } from "vue";
-import Dock from "@/platform/chrome/dock/Dock.vue";
-import { DASHBOARD_KEY } from "@/contract";
-import { useSelection } from "@/platform/stores/useSelection";
-import { useFilterPane } from "@/filter/composables/useFilterPane";
-import { provideDismissArbiter, useDismissArbiter } from "@/platform/interaction/useDismissArbiter";
+import Dock from "../dock/Dock.vue";
+import { DASHBOARD_KEY } from "../../../contract/index.js";
+import { useSelection } from "../../stores/useSelection.js";
+import { useFilterPane } from "../../../filter/composables/useFilterPane.js";
+import { provideDismissArbiter, useDismissArbiter } from "../../interaction/useDismissArbiter.js";
 
 // The active dashboard's context — the dock reads its nav at every register (the filter is the
 // floating Drawer, one affordance for both). Bound here as the `--route-*` cascade + injected by

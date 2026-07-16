@@ -21,13 +21,14 @@
 
 import { isVNode, type Component } from "vue";
 import type { EChartsOption } from "echarts";
-import type { ColorKind } from "@/charts/scale/colorKind";
-import type { VizOptionSpec } from "@/charts/composables/useVizOptions";
-import type { VizSetContract } from "@/charts/viz-set";
-import type { ChartDataRow } from "@/charts/legend/ChartDataTable.vue";
-import type { SelectionKind } from "@/charts/contract/selection-contract";
-import type { VariantSpec } from "@/motion/variant-spec";
-import type { ProvenanceFacet } from "@/platform/provenance/provenance-contract";
+import type { ColorKind } from "../scale/colorKind.js";
+import type { VizOptionSpec } from "../composables/useVizOptions.js";
+import type { VizSetContract } from "../viz-set.js";
+import type { ChartDataRow } from "../legend/ChartDataTable.vue";
+import type { SelectionKind } from "./selection-contract.js";
+import type { VariantSpec } from "../../motion/variant-spec.js";
+import type { ProvenanceFacet } from "../../platform/provenance/provenance-contract.js";
+import type { AtlasEventContract, EventScope } from "../../events/index.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // E1 — THE AXIS-COLOURED DESCRIPTION.
@@ -171,9 +172,16 @@ export interface ExportSpec {
     valueHeader: string;
 }
 
+/** The one host-to-source-panel prop contract shared by ordinary plates and persistent stages. */
+export interface SourcePanelProps {
+    readonly eventHub: AtlasEventContract;
+    readonly eventScope: EventScope;
+    readonly vizId: string;
+}
+
 /** The viz-scoped source-browser panel. Query, grains, and serializers remain consumer-owned. */
 export interface SourceDataSpec {
-    readonly panel: Component;
+    readonly panel: Component<SourcePanelProps>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

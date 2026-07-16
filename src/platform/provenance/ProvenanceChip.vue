@@ -17,10 +17,10 @@
 // `aria-hidden` DECORATIVE-ADJACENT: the authoritative copy is the ProvenanceBar's `<dl>` (its rungs
 // are the SR-announced source; the chip would double-announce), so the chip is muted to assistive tech.
 import { computed } from "vue";
-import { useActiveBeat } from "@/platform/stores/useActiveBeat";
-import { useProvenance, type ProvenanceSources } from "./useProvenance";
-import type { ProvenanceFacet } from "./provenance-contract";
-import { scopeParts as scopePartsOf } from "./provenance-lines";
+import { useActiveBeat } from "../stores/useActiveBeat.js";
+import { useProvenance, type ProvenanceSources } from "./useProvenance.js";
+import type { ProvenanceFacet } from "./provenance-contract.js";
+import { scopeParts as scopePartsOf } from "./provenance-lines.js";
 
 const {
     facet,

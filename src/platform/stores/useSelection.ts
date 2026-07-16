@@ -29,9 +29,9 @@ import {
     parseSelKey,
     type SelectionKey,
     type SelectionKind,
-} from "@/charts/contract/selection-contract";
-import { markColorFor } from "@/charts/scale/ColorScale";
-import { useViewParams } from "@/platform/stores/useViewParams";
+} from "../../charts/contract/selection-contract.js";
+import { markColorFor } from "../../charts/scale/ColorScale.js";
+import { useViewParams } from "./useViewParams.js";
 
 export const useSelection = defineStore("platform:selection", () => {
     /** The transiently-hovered entity key, or null when the pointer is off the marks. */

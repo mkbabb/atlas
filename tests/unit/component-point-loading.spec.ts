@@ -1,8 +1,8 @@
 import { effectScope, nextTick } from "vue";
 import { createPinia, setActivePinia } from "pinia";
 import { describe, expect, it } from "vitest";
-import { useActiveBeat } from "@/platform/stores/useActiveBeat";
-import { useComponentPointLoading } from "@/editorial/useComponentPointLoading";
+import { useActiveBeat } from "../../src/platform/stores/useActiveBeat";
+import { useComponentPointLoading } from "../../src/editorial/useComponentPointLoading";
 
 describe("component-point loading", () => {
     it("warms only eager and active-adjacent components from the existing beat signal", async () => {

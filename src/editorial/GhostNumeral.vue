@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { toRoman } from "@/platform/composables/useRomanNumeral";
+import { toRoman } from "../platform/composables/useRomanNumeral.js";
 
 export interface GhostNumeralSource {
     /** The ordinal on the same chapter record that owns the visible masthead. */

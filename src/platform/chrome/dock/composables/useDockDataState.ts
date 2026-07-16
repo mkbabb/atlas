@@ -10,9 +10,9 @@
 // end-to-end (`useYearScope.setRange`, `?yearMode=range&years=`); this owns only the
 // CONTROL that enters it. ZERO behavior change — a content-MOVE from Dock.vue.
 import { computed, onBeforeUnmount, ref, type ComputedRef, type Ref } from "vue";
-import { useViewParams } from "@/platform/stores/useViewParams";
-import { useSavedViews, currentUrl } from "@/platform/composables/useSavedViews";
-import type { DashboardContext } from "@/contract";
+import { useViewParams } from "../../../stores/useViewParams.js";
+import { useSavedViews, currentUrl } from "../../../composables/useSavedViews.js";
+import type { DashboardContext } from "../../../../contract/index.js";
 
 /** The data-state register's reactive surface — the dock composes this into its template. */
 export interface UseDockDataState {

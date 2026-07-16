@@ -15,7 +15,7 @@
 // from the reduced row, never silently summed. Summing a rate across years is wrong;
 // only `aggregable` makes the fold right, so an undeclared column is dropped fail-loud
 // rather than guessed.
-import type { AggregateRule, Feed, FeedMeta, FeedRow } from "./contract";
+import type { AggregateRule, Feed, FeedMeta, FeedRow } from "./contract.js";
 
 /** Coerce a row cell to a finite number, or `null` for missing / non-numeric. */
 function num(v: string | number | null | undefined): number | null {

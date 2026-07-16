@@ -9,7 +9,7 @@
 
 import { useMediaQuery } from "@vueuse/core";
 import type { Ref } from "vue";
-import { MQ } from "@/design/foundations/breakpoints";
+import { MQ } from "../../design/foundations/breakpoints.js";
 
 export interface MobileRegister {
     /** the --phone register (MQ.phone). */

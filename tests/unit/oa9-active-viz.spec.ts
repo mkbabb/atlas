@@ -2,12 +2,12 @@
 // activation, at the pure-core layer. The write-spy: `buildActiveVizEvent` READS its sources and
 // mutates NOTHING (the single-writer gates hold). Pure, no mount.
 import { describe, it, expect } from "vitest";
-import type { Predicate, Leaf } from "@/filter/engine/predicate";
+import type { Predicate, Leaf } from "../../src/filter/engine/predicate";
 import {
     resolveActiveVizId,
     buildActiveVizEvent,
     type ActiveVizSources,
-} from "@/interaction/useActiveViz";
+} from "../../src/interaction/useActiveViz";
 
 const oneOf = (key: string, ...values: string[]): Leaf<unknown> => ({
     op: "oneOf",

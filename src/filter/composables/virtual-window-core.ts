@@ -12,7 +12,7 @@ export interface VirtualItem<Item, Key extends VirtualKey = VirtualKey>
     readonly item: Item;
 }
 
-type MeasurementSurface = object | string;
+export type VirtualMeasurementSurface = object | string;
 type WidthSessions = Map<number, Map<VirtualKey, number>>;
 
 const objectSessions = new WeakMap<object, WidthSessions>();
@@ -24,7 +24,7 @@ export function roundedVirtualWidth(width: number): number {
 
 /** One session bucket per stable surface and rounded layout width. */
 export function virtualMeasurementSession<Key extends VirtualKey>(
-    surface: MeasurementSurface,
+    surface: VirtualMeasurementSurface,
     width: number,
 ): Map<Key, number> {
     let sessions =

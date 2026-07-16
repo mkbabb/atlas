@@ -1,5 +1,5 @@
-import type { VizOptionSpec } from "@/charts/composables/useVizOptions";
-import type { VizView } from "@/charts/contract/viz-contract";
+import type { VizOptionSpec } from "./composables/useVizOptions.js";
+import type { VizView } from "./contract/viz-contract.js";
 
 export interface MarkIdentity {
     /** Data field that carries the stable mark key across views and scene encodes. */

@@ -4,7 +4,7 @@ import type {
     AtmosphereFacet,
     ChromeIdentity,
     DashboardCategory,
-} from "@/contract";
+} from "../contract/index.js";
 
 export type BackgroundFamily = "aurora" | "constellation";
 export type SkinBackground = "liquid-grid" | "watercolor-dot" | "blob";

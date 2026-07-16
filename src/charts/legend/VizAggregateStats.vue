@@ -26,8 +26,8 @@
 // hex). The data is the contract's thunk off the store reducers (the live face) — J-STORY PLACES it,
 // it never re-computes the magnitude (J-DATA's).
 import { computed } from "vue";
-import FigureSlug from "@/charts/frame/FigureSlug.vue";
-import type { AggregateStat } from "@/charts/contract/viz-contract";
+import FigureSlug from "../frame/FigureSlug.vue";
+import type { AggregateStat } from "../contract/viz-contract.js";
 
 const props = withDefaults(
     defineProps<{

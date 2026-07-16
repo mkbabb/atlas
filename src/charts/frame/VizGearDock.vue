@@ -1,14 +1,26 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue";
+import { onBeforeUnmount, ref, useId } from "vue";
 import { Download, Settings2 } from "@lucide/vue";
-import { useReducedMotion } from "@/motion/useReducedMotion";
-import { instrumentSpringStyle } from "@/motion/instrument-spring";
+import { useDismissArbiter } from "../../platform/interaction/useDismissArbiter.js";
 
 defineProps<{ label: string; appliedCount?: number; sourceData?: boolean }>();
 const emit = defineEmits<{ "open-source-data": [] }>();
 const open = ref(false);
-const reducedMotion = useReducedMotion();
-const style = computed(() => instrumentSpringStyle(reducedMotion.value));
+const root = ref<HTMLElement | null>(null);
+const claimId = useId();
+useDismissArbiter().claim(() =>
+    open.value
+        ? {
+              id: claimId,
+              priority: 20,
+              outsidePointer: true,
+              escape: true,
+              within: (path) =>
+                  path.some((node) => node instanceof Node && root.value?.contains(node)),
+              onDismiss: () => (open.value = false),
+          }
+        : null,
+);
 let dwell: ReturnType<typeof setTimeout> | null = null;
 function schedule(value: boolean): void {
     if (dwell) clearTimeout(dwell);
@@ -19,9 +31,9 @@ onBeforeUnmount(() => dwell && clearTimeout(dwell));
 
 <template>
     <div
+        ref="root"
         class="viz-gear-dock"
         :class="{ 'viz-gear-dock--open': open }"
-        :style="style"
         role="group"
         :aria-label="label"
         data-viz-gear-dock
@@ -62,6 +74,15 @@ onBeforeUnmount(() => dwell && clearTimeout(dwell));
 .viz-gear-dock__source { display: grid; inline-size: 44px; block-size: 44px; place-items: center; border: 0; border-radius: var(--radius-control); background: transparent; color: inherit; }
 .viz-gear-dock__source svg { inline-size: 1.1rem; block-size: 1.1rem; }
 .viz-gear-dock__badge { position: absolute; inset-block-start: 0; inset-inline-end: 0; font: 700 .625rem/1 var(--font-mono); }
-.viz-gear-dock__bloom { max-inline-size: 0; opacity: 0; overflow: clip; transform: translateX(.35rem); transition: max-inline-size var(--instrument-spring-duration) var(--instrument-spring-ease), opacity var(--instrument-spring-duration) var(--instrument-spring-ease), transform var(--instrument-spring-duration) var(--instrument-spring-ease); }
+.viz-gear-dock__bloom {
+    max-inline-size: 0;
+    opacity: 0;
+    overflow: clip;
+    transform: translateX(.35rem);
+    transition-property: max-inline-size, opacity, transform;
+    transition-duration: var(--spring-smooth-duration);
+    transition-timing-function: var(--spring-smooth);
+}
 .viz-gear-dock--open .viz-gear-dock__bloom { max-inline-size: 16rem; opacity: 1; overflow: visible; transform: none; }
+@media (prefers-reduced-motion: reduce) { .viz-gear-dock__bloom { transition: none; } }
 </style>

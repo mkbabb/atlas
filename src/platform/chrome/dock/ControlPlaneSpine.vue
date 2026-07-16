@@ -26,7 +26,7 @@
 // `ctx.barometerRamp` painted base→apex — SCI's rainbow, ECF's ramp) and the SINGLE-ACCENT
 // path (the accent fading from a recessive foot to a saturated crown, OKLab-mixed).
 import { computed } from "vue";
-import { useReducedMotion } from "@/motion/useReducedMotion";
+import { useReducedMotion } from "../../../motion/useReducedMotion.js";
 
 const props = withDefaults(
     defineProps<{

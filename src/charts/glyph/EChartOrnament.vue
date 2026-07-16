@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import type { EChartsType } from "echarts/core";
 import HandMark from "./HandMark.vue";
-import { useEChartOrnament } from "@/charts/composables/useEChartOrnament";
+import { useEChartOrnament } from "../composables/useEChartOrnament.js";
 
 const props = defineProps<{ chart: EChartsType | null; markKey: string | null }>();
 const { anchor } = useEChartOrnament(() => props.chart, () => props.markKey);

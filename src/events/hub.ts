@@ -5,7 +5,7 @@ import type {
     AtlasEventSnapshot,
     AtlasEventType,
     EventScope,
-} from "./index";
+} from "./index.js";
 
 type Listener = {
     readonly scope?: EventScope["grain"];

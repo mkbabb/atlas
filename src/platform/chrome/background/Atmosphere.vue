@@ -62,14 +62,14 @@
 // NOT consumer-overridden here.
 import { computed } from "vue";
 import { PaperBackdrop } from "@mkbabb/glass-ui/paper-backdrop";
-import Aurora from "@/platform/chrome/background/Aurora.vue";
-import { useThemeKey } from "@/platform/composables/useThemeKey";
-import type { BackgroundFamily } from "@/skin";
+import Aurora from "./Aurora.vue";
+import { useThemeKey } from "../../composables/useThemeKey.js";
+import type { BackgroundFamily } from "../../../skin/index.js";
 // The brand field IS C.W6.b's seeded Constellation.host (the reproducible seed + the ONE
 // NCSU-red anomaly node — the emergent-tricolor red leg), NOT a bare glass-ui <Constellation>.
 // The arbiter owns the SINGLE brand field so "one field per surface" holds (the gallery mounts
 // only <Atmosphere kind="brand">, never a second constellation canvas).
-import ConstellationHost from "@/platform/chrome/background/Constellation.host.vue";
+import ConstellationHost from "./Constellation.host.vue";
 
 /** The civic scalar the brand constellation seeds its density to — NC's 100 counties (the
     canonical platform geography, geometry.ts). The lattice's node count ECHOES the dataset's

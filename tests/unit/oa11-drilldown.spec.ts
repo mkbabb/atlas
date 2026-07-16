@@ -19,13 +19,13 @@ import {
     reduceOpForKind,
     reduceExtensive,
     reduceIntensive,
-} from "@/charts/contract/aggregate";
+} from "../../src/charts/contract/aggregate";
 import {
     parseViewBox,
     unionExtent,
     boundedMinimapViewBox,
-} from "@/interaction/minimapExtent";
-import { encodeSelKey, parseSelKey } from "@/charts/contract/selection-contract";
+} from "../../src/interaction/minimapExtent";
+import { encodeSelKey, parseSelKey } from "../../src/charts/contract/selection-contract";
 
 describe("O-A11 · the aggregate LAW (the Simpson trap)", () => {
     it("selects the honest op by measure KIND — extensive Σ, intensive pooled", () => {
@@ -90,6 +90,13 @@ describe("O-A11 · the `?sel` canonical round-trip", () => {
 
     it("rejects an empty id at the producer edge", () => {
         expect(() => encodeSelKey("firm", "")).toThrow("selection id cannot be empty");
+    });
+
+    it("rejects blank and outer-whitespace ids at both codec edges", () => {
+        for (const id of ["   ", " 48", "48 "]) {
+            expect(() => encodeSelKey("state", id)).toThrow("outer whitespace");
+            expect(() => parseSelKey(`state:${id}`)).toThrow("outer whitespace");
+        }
     });
 
     it("round-trips canonical keys without changing ids", () => {

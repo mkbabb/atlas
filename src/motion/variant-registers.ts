@@ -11,7 +11,7 @@ import {
     springLinearStops,
     type StaggerOrigin,
 } from "@mkbabb/keyframes.js";
-import type { Direction, EaseToken, DurationToken, StaggerPace } from "./variant-spec";
+import type { Direction, EaseToken, DurationToken, StaggerPace } from "./variant-spec.js";
 
 // ── §3.1 DIRECTION — origin (cadence) + axis/sign (slide) ───────────────────────────────────────
 

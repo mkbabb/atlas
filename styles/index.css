@@ -4,3 +4,4 @@
    build-styles.mjs compiles through the Tailwind pipeline. The folded per-component SFC layer
    lands with the later component-move waves. */
 @import "../src/design/index.css";
+@import "../src/editorial/title-align.css";

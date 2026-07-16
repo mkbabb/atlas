@@ -13,9 +13,9 @@
 //
 // It COMPOSES FigureSlug (the cap-boxed audacious register) — never re-rolling a number layout.
 import { computed } from "vue";
-import FigureSlug from "@/charts/frame/FigureSlug.vue";
-import type { KeyStat } from "@/charts/contract/viz-contract";
-import { inkFromAccent } from "@/design/tokens/ink";
+import FigureSlug from "../frame/FigureSlug.vue";
+import type { KeyStat } from "../contract/viz-contract.js";
+import { inkFromAccent } from "../../design/tokens/ink.js";
 
 const props = defineProps<{
     /** The contract's key stats (off the store reducers — 2–3 per viz). */

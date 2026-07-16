@@ -20,8 +20,8 @@ import { shallowRef, triggerRef, type ShallowRef } from "vue";
 import type {
     FilterDimension,
     FilterResponse,
-} from "@/charts/contract/viz-contract";
-import type { UseVizOptions } from "@/charts/composables/useVizOptions";
+} from "../contract/viz-contract.js";
+import type { UseVizOptions } from "./useVizOptions.js";
 
 /** A per-MOUNT identity token — the deregister guard's key (an HMR / keep-alive double-mount never
     evicts the live instance, the stale unmount is inert). */

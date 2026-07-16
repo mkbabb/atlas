@@ -8,13 +8,13 @@
 // The types are core-clean platform references (the hero series is `DashboardHero`'s own contract; the
 // colophon is `SiteColophon`'s), so the editorial unit stays publishable — no `@/dashboards` reach.
 
-import type { Chapter } from "@/contract";
+import type { Chapter } from "../contract/index.js";
 import type { Component } from "vue";
-import type { ColorKind } from "@/charts/scale/colorKind";
+import type { ColorKind } from "../charts/scale/colorKind.js";
 import type { HeroFigure } from "./DashboardHero.vue";
-import type { Colophon } from "@/platform/chrome/masthead/SiteColophon.vue";
-import type { TitleAlign } from "./title-align";
-import type { StoryCardFacet } from "./story-card";
+import type { Colophon } from "../platform/chrome/masthead/SiteColophon.vue";
+import type { TitleAlign } from "./title-align.js";
+import type { StoryCardFacet } from "./story-card.js";
 
 /** The declared HERO facet — the page cover as DATA. Its shape is the `<DashboardHero>` prop surface
     (the crown lives on the chapter, not hand-mounted in the body), so the host renders it with a bare

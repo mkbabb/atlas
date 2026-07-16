@@ -9,7 +9,7 @@
 // `crnJitter` lifts here verbatim as `hashSeed` (the K-REPOINT lockstep — byte-identical output).
 
 import { clamp } from "@mkbabb/value.js";
-import { MICRO_BOUNDS } from "./variant-bounds";
+import { MICRO_BOUNDS } from "./variant-bounds.js";
 
 /** mulberry32 — the deterministic PRNG (the handmark boil engine). `seed` masked to u32 then the
     canonical mulberry32 mix. ~4e9 period; independent seeds decorrelate. */

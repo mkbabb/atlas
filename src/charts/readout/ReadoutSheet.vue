@@ -35,9 +35,9 @@ import {
     DrawerTitle,
     DrawerDescription,
 } from "@mkbabb/glass-ui/drawer";
-import { useReducedMotion } from "@/motion/useReducedMotion";
-import { useHoverReadout } from "@/platform/stores/useHoverReadout";
-import { useMobileRegister } from "@/platform/composables/useMobileRegister";
+import { useReducedMotion } from "../../motion/useReducedMotion.js";
+import { useHoverReadout } from "../../platform/stores/useHoverReadout.js";
+import { useMobileRegister } from "../../platform/composables/useMobileRegister.js";
 
 // The ONE platform readout store — the sheet renders its live transient `readout` (the SAME payload
 // the desktop HoverCard reads). There are no payload props (D1.2 — the store IS the seam).

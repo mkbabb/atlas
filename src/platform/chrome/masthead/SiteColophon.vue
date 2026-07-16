@@ -21,14 +21,14 @@
 // override) → `var(--route-accent)` on a providing route → the brand teal fallback (the
 // gallery footer, where no dashboard context is provided).
 import { computed, inject } from "vue";
-import { DASHBOARD_KEY, useAtlasSite } from "@/contract";
+import { DASHBOARD_KEY, useAtlasSite } from "../../../contract/index.js";
 // CONSUME the C3-owned TIL crest (C.W6.d · AS-7) — the colophon's `.til-mark` form renders the
 // shared <BrandMark> crest (the TIL raster + its single NCSU-red anomaly fleck) instead of a plain
 // monogram text, KEEPING the HOME affordance: BrandMark is a RouterLink to `/` (the gallery root).
 // C3 SOLELY creates BrandMark.vue + public/til-logo-padded.png; C6 CONSUMES (never re-creates the
 // component or re-vendors the asset — ch-C6 D7/D8). The crest's red anomaly is the RED leg of the
 // user-approved emergent tricolor (red civic mark + ivory paper + teal data pole; NO blue chrome).
-import BrandMark from "@/platform/chrome/masthead/BrandMark.vue";
+import BrandMark from "./BrandMark.vue";
 
 /** A credited author + their link out (a LinkedIn, a profile). */
 export interface ColophonAuthor {

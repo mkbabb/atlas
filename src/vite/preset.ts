@@ -4,13 +4,11 @@
 // vendor cuts every instance needs. The instance `vite.config.ts` COMPOSES this preset and layers
 // its own instance-only plugins on top (`apiSnapshotPreview` reads `./public/data`; `criticalCssPlugin`;
 // the geo/vendor `manualChunks`; the `dashboard-<slug>` chunkFileNames that scan `/src/dashboards`)
-// — those STAY instance-side. The preset carries only what the core OWNS: vue + tailwind +
-// `sealCompositorTransform` (the glass-ui completion-seal compositor fix, glass-ui-coupled → core),
-// and the glass-ui / keyframes / echarts shared-dep vendor cuts.
+// — those stay instance-side. The preset carries only what the core owns: Vue, Tailwind, and
+// shared-dependency vendor cuts.
 
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
-import { sealCompositorTransform } from "./seal-compositor";
 
 /** The shared-dep vendor cut every instance inherits: glass-ui / keyframes / echarts each ride their
     own named async chunk. Returns `undefined` for everything else so the instance can layer its own
@@ -21,9 +19,9 @@ export function coreManualChunks(id: string): string | undefined {
     return undefined;
 }
 
-/** The `@atlas/core` build preset — the core-owned plugins (vue + tailwind + the glass-ui
-    completion-seal compositor fix). The instance composes `[...atlasCorePreset(), ...instancePlugins]`
+/** The `@atlas/core` build preset — the core-owned Vue and Tailwind plugins. The instance composes
+    `[...atlasCorePreset(), ...instancePlugins]`
     and folds `coreManualChunks` into its own `manualChunks` rollup output. */
 export function atlasCorePreset() {
-    return [vue(), tailwindcss(), sealCompositorTransform()];
+    return [vue(), tailwindcss()];
 }

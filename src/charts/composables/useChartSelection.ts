@@ -28,8 +28,8 @@ import {
     encodeSelKey,
     type SelectEvent,
     type SelectionKind,
-} from "@/charts/contract/selection-contract";
-import { useSelection } from "@/platform/stores/useSelection";
+} from "../contract/selection-contract.js";
+import { useSelection } from "../../platform/stores/useSelection.js";
 
 /** The mark-key → selection-grain translator (default identity); a null return drops the gesture. */
 export type MapKeyFn = (markKey: string) => string | null;

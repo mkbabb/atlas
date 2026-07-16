@@ -2,7 +2,7 @@
 // The family barrel — re-exports the family's public surface (components as named default
 // re-exports, the .ts leaves whole). Split-internal helpers stay family-internal.
 
-export * from "./beat-title";
+export * from "./beat-title.js";
 export { default as AxisNameLockup } from "./AxisNameLockup.vue";
 export { default as ChartDataTable } from "./ChartDataTable.vue";
 export { default as ChartLegend } from "./ChartLegend.vue";

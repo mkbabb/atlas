@@ -1,10 +1,10 @@
 import { inject, type Component, type InjectionKey, type VNodeChild } from "vue";
-import type { ColorKind } from "@/charts/scale/colorKind";
-import type { VizContract } from "@/charts/contract/viz-contract";
-import type { ChapterScene, ChapterStage } from "@/charts/contract/scene-contract";
-import type { EntityGrain } from "@/data/contract";
+import type { ColorKind } from "../charts/scale/colorKind.js";
+import type { VizContract } from "../charts/contract/viz-contract.js";
+import type { ChapterScene, ChapterStage } from "../charts/contract/scene-contract.js";
+import type { EntityGrain } from "../data/contract.js";
 
-export type { EntityGrain } from "@/data/contract";
+export type { EntityGrain } from "../data/contract.js";
 
 // The dashboard registry contracts. Structural (duck-typed), not OO: a dashboard
 // is whatever a `meta.ts`/`dashboard.ts` pair under dashboards/<slug>/ exports.

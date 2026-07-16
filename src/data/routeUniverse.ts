@@ -29,11 +29,11 @@
 // visible district vanish. It ONLY excludes a key minted EXPLICITLY in the OTHER universe. The guard is a
 // pure NARROWING of the cross-universe alias, never a regression of the in-universe read.
 
-import type { useSelection } from "@/platform/stores/useSelection";
+import type { useSelection } from "../platform/stores/useSelection.js";
 import {
     encodeSelKey,
     type SelectionKind,
-} from "@/charts/contract/selection-contract";
+} from "../charts/contract/selection-contract.js";
 
 /**
  * The DATASET-UNIVERSE a composite `{kind}:{id}` key lives in — the namespace that disambiguates the

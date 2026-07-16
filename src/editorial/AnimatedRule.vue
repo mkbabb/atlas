@@ -32,8 +32,8 @@
 // chapter SEMANTICS live in the `<h2>` headings, not the rule).
 import { computed } from "vue";
 import { HandMark } from "@mkbabb/glass-ui/handmark";
-import { toRoman } from "@/platform/composables/useRomanNumeral";
-import type { RuleVariant } from "./rule-register";
+import { toRoman } from "../platform/composables/useRomanNumeral.js";
+import type { RuleVariant } from "./rule-register.js";
 
 const props = withDefaults(
     defineProps<{

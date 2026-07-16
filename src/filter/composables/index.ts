@@ -6,12 +6,12 @@
 // (`useSelection` / `useViewParams` / `useActiveBeat` — O-B9), the `charts` contract
 // (`selection-contract` / `viz-contract` — O-B4R) and `useVizRegistry` (O-B9), so they defer to
 // **O-B5R** (the post-B9 filter closure).
-export { useFilterPane } from "./useFilterPane";
+export { useFilterPane } from "./useFilterPane.js";
 
 // — O-B4R (the SCC closure): the dimension/mount/panel hooks —
-export * from "./useFilterDimensions";
-export * from "./useFilterMount";
-export * from "./useFilterPanel";
-export * from "./useFilterLedger";
-export * from "./useVirtualWindow";
-export * from "./useVirtualSectionWindow";
+export * from "./useFilterDimensions.js";
+export * from "./useFilterMount.js";
+export * from "./useFilterPanel.js";
+export * from "./useFilterLedger.js";
+export * from "./useVirtualWindow.js";
+export * from "./useVirtualSectionWindow.js";

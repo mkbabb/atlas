@@ -16,7 +16,7 @@ import {
 } from "@mkbabb/glass-ui/select";
 import { Switch } from "@mkbabb/glass-ui/switch";
 import { LabeledField } from "@mkbabb/glass-ui/labeled-field";
-import type { UseVizOptions, VizOptionSpec } from "@/charts/composables/useVizOptions";
+import type { UseVizOptions, VizOptionSpec } from "../../charts/composables/useVizOptions.js";
 
 const props = defineProps<{
     /** The owning viz id (for the control testids). */

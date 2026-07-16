@@ -8,11 +8,11 @@
 // skin are reproduced BYTE-IDENTICAL to HoverCard's inline `<dl>`/breakdown blocks, so HoverCard's
 // rendered output is unchanged when it swaps the inline markup for `<ReadoutFacts>`. The card-level
 // chrome (the eyebrow / subhead / title / pin pip) STAYS in HoverCard — only the fact grammar moves.
-import FigureSlug from "@/charts/frame/FigureSlug.vue";
+import FigureSlug from "../frame/FigureSlug.vue";
 // `Fact` is canonically declared in HoverCard.vue; `ReadoutBar` in the readout store. Both are
 // type-only imports, so the HoverCard ⇄ ReadoutFacts cycle is elided at compile time (no runtime edge).
-import type { Fact } from "@/interaction/HoverCard.vue";
-import type { ReadoutBar } from "@/platform/stores/useHoverReadout";
+import type { Fact } from "../../interaction/HoverCard.vue";
+import type { ReadoutBar } from "../../platform/stores/useHoverReadout.js";
 
 withDefaults(
     defineProps<{

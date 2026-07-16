@@ -1,17 +1,23 @@
 import { describe, expect, it } from "vitest";
+import {
+    __resetUniverseRegistry,
+    tagUniverse,
+    UNIVERSE_ECF_DISTRICT,
+    UNIVERSE_SCI_LEA,
+} from "../../src/data/routeUniverse";
 import { effectScope } from "vue";
 import {
     compile,
     createRowsReader,
     normalize,
     type Predicate,
-} from "@/filter/engine";
+} from "../../src/filter/engine";
 import {
     buildVirtualOffsets,
     resolveVirtualRange,
     useVirtualWindow,
-} from "@/filter/composables/useVirtualWindow";
-import { virtualOffset } from "@/filter/composables/virtual-window-core";
+} from "../../src/filter/composables/useVirtualWindow";
+import { virtualOffset } from "../../src/filter/composables/virtual-window-core";
 
 interface Row {
     id: string;
@@ -55,33 +61,195 @@ describe("query normal form", () => {
     });
 });
 
-describe("sovereign rows reader", () => {
-    it("projects all three grains from one base frame without mutation", () => {
-        const base: Row[] = [
-            { id: "1", group: "north", value: 2 },
-            { id: "2", group: "north", value: 3 },
-            { id: "3", group: "south", value: 5 },
-        ];
-        const reader = createRowsReader({
-            dataset: () => base,
-            selection: (): Predicate<Row> => ({
-                op: "oneOf",
-                field: group,
-                values: new Set(["north"]),
-            }),
-            aggregate: (rows, scope: "group") => {
-                expect(scope).toBe("group");
-                return [
-                    { id: "north", group: "north", value: 5 },
-                    { id: "south", group: "south", value: 5 },
-                ].filter((row) => rows.some((member) => member.group === row.group));
-            },
-        });
+interface QueryRow {
+    key: string;
+    group: string;
+    ratio: number | null;
+    weight: number | null;
+    total: number | null;
+}
 
-        expect(reader.rowsAt({ kind: "selection" }).map((row) => row.id)).toEqual(["1", "2"]);
-        expect(reader.rowsAt({ kind: "aggregation", scope: "group" })).toHaveLength(2);
-        expect(reader.rowsAt({ kind: "dataset" })).toBe(base);
-        expect(base).toHaveLength(3);
+const identity = <Row>(): Predicate<Row> => ({ op: "any" });
+
+function queryReader(
+    base: readonly QueryRow[],
+    options: {
+        filterPredicate?: () => Predicate<QueryRow>;
+        measures?: readonly {
+            key: keyof QueryRow;
+            kind: "extensive" | "intensive";
+            value: (row: QueryRow) => number | null;
+            weight?: (row: QueryRow) => number | null;
+        }[];
+    } = {},
+) {
+    return createRowsReader<QueryRow, "group">({
+        dataset: () => base,
+        filterPredicate: options.filterPredicate ?? identity<QueryRow>,
+        rowKey: (row) => row.key,
+        routeUniverse: () => UNIVERSE_SCI_LEA,
+        groupings: [
+            {
+                scope: "group",
+                by: (row) => row.group,
+                compare: (a, b) => String(a).localeCompare(String(b)),
+                create: (key) => ({
+                    key: `district:${key}`,
+                    group: String(key),
+                    ratio: null,
+                    weight: null,
+                    total: null,
+                }),
+            },
+        ],
+        measures:
+            options.measures ??
+            [
+                {
+                    key: "total",
+                    kind: "extensive",
+                    value: (row) => row.total,
+                },
+                {
+                    key: "ratio",
+                    kind: "intensive",
+                    value: (row) => row.ratio,
+                    weight: (row) => row.weight,
+                },
+            ],
+    });
+}
+
+describe("sovereign rows reader", () => {
+    it("drops malformed, unknown, foreign-kind, and cross-universe selected keys", () => {
+        __resetUniverseRegistry();
+        const base: QueryRow[] = [
+            { key: "district:1", group: "north", ratio: 0.5, weight: 100, total: 2 },
+            { key: "district:2", group: "north", ratio: 0.9, weight: 10, total: 3 },
+        ];
+        tagUniverse("district:1", UNIVERSE_ECF_DISTRICT);
+
+        const projection = queryReader(base).project(
+            { kind: "selection" },
+            ["bare", "state:1", "district:404", "district:1", "district:2"],
+        );
+
+        expect(projection.selectedKeys).toEqual(["district:2"]);
+        expect(projection.rows).toEqual([base[1]]);
+        expect(base.filter(compile(projection.predicate))).toEqual(projection.rows);
+        __resetUniverseRegistry();
+    });
+
+    it("keeps malformed plan row keys as an author error", () => {
+        const base: QueryRow[] = [
+            { key: "bare", group: "north", ratio: 0.5, weight: 1, total: 1 },
+        ];
+        expect(() => queryReader(base).project({ kind: "dataset" }, [])).toThrow();
+    });
+
+    it("applies the route filter before every grain while keeping grain predicates exact", () => {
+        const base: QueryRow[] = [
+            { key: "district:1", group: "north", ratio: 0.5, weight: 100, total: 2 },
+            { key: "district:2", group: "south", ratio: 0.9, weight: 10, total: 3 },
+        ];
+        const filterPredicate = (): Predicate<QueryRow> => ({
+            op: "oneOf",
+            key: "group",
+            field: (row) => row.group,
+            values: new Set(["north"]),
+        });
+        const reader = queryReader(base, { filterPredicate });
+
+        const dataset = reader.project({ kind: "dataset" }, ["district:1"]);
+        const selection = reader.project(
+            { kind: "selection" },
+            ["district:1", "district:2"],
+        );
+        const aggregation = reader.project(
+            { kind: "aggregation", scope: "group" },
+            ["district:1"],
+        );
+
+        expect(dataset.rows).toEqual([base[0]]);
+        expect(dataset.predicate).toMatchObject({ op: "any" });
+        expect(aggregation.predicate).toMatchObject({ op: "any" });
+        expect(selection.selectedKeys).toEqual(["district:1"]);
+        expect(selection.rows).toEqual([base[0]]);
+        expect(base.filter(compile(selection.filterPredicate)).filter(compile(selection.predicate))).toEqual(
+            selection.rows,
+        );
+    });
+
+    it("reuses one normalized selection accessor across repeated projections", () => {
+        const reader = queryReader([
+            { key: "district:1", group: "north", ratio: 0.5, weight: 1, total: 1 },
+        ]);
+        const first = reader.project({ kind: "selection" }, ["district:1"]);
+        const second = reader.project({ kind: "selection" }, ["district:1"]);
+        expect(second.predicate).toBe(first.predicate);
+    });
+
+    it("orders distinct groups and reduces extensive and intensive values", () => {
+        const base: QueryRow[] = [
+            { key: "district:1", group: "south", ratio: 0.25, weight: 20, total: 5 },
+            { key: "district:2", group: "north", ratio: 0.5, weight: 100, total: 2 },
+            { key: "district:3", group: "north", ratio: 0.9, weight: 10, total: 3 },
+        ];
+
+        const rows = queryReader(base).project(
+            { kind: "aggregation", scope: "group" },
+            [],
+        ).rows;
+
+        expect(rows.map((row) => row.group)).toEqual(["north", "south"]);
+        expect(rows[0]).toMatchObject({
+            total: 5,
+            ratio: (0.5 * 100 + 0.9 * 10) / 110,
+        });
+        expect(rows[1]).toMatchObject({ total: 5, ratio: 0.25 });
+    });
+
+    it("rejects an intensive measure without a weight", () => {
+        const base: QueryRow[] = [
+            { key: "district:1", group: "north", ratio: 0.5, weight: 1, total: 1 },
+        ];
+        const reader = queryReader(base, {
+            measures: [{ key: "ratio", kind: "intensive", value: (row) => row.ratio }],
+        });
+        expect(() =>
+            reader.project({ kind: "aggregation", scope: "group" }, []),
+        ).toThrow("requires a weight");
+    });
+
+    it("returns null for zero pooled weight and pools mixed weights correctly", () => {
+        const zero = queryReader([
+            { key: "district:1", group: "north", ratio: 0.5, weight: 0, total: 1 },
+        ]).project({ kind: "aggregation", scope: "group" }, []).rows[0];
+        expect(zero?.ratio).toBeNull();
+
+        const mixed = queryReader([
+            { key: "district:1", group: "north", ratio: 0.1, weight: 0, total: 1 },
+            { key: "district:2", group: "north", ratio: 0.9, weight: 10, total: 1 },
+            { key: "district:3", group: "north", ratio: 0.2, weight: null, total: 1 },
+        ]).project({ kind: "aggregation", scope: "group" }, []).rows[0];
+        expect(mixed?.ratio).toBe(0.9);
+    });
+
+    it("returns null for an all-null extensive measure", () => {
+        const row = queryReader([
+            { key: "district:1", group: "north", ratio: 0.5, weight: 1, total: null },
+            { key: "district:2", group: "north", ratio: 0.5, weight: 1, total: null },
+        ]).project({ kind: "aggregation", scope: "group" }, []).rows[0];
+        expect(row?.total).toBeNull();
+    });
+
+    it("rejects an unknown aggregation scope", () => {
+        expect(() =>
+            queryReader([]).project(
+                { kind: "aggregation", scope: "missing" as "group" },
+                [],
+            ),
+        ).toThrow("unknown aggregation scope");
     });
 });
 
@@ -117,7 +285,7 @@ describe("virtual-window core", () => {
         expect(resolveVirtualRange([virtualOffset("stage", 0, 3001, 1000)], -1000, 3000)).toEqual([0, 0]);
     });
 
-    it("reuses measurements at the same rounded width and isolates a changed width", () => {
+    it("isolates measurements by default and shares them only through an explicit surface", () => {
         const items = [{ id: "a" }, { id: "b" }];
         const key = (item: (typeof items)[number]): string => item.id;
         const viewport = (width: number) =>
@@ -130,10 +298,15 @@ describe("virtual-window core", () => {
             }) as unknown as HTMLElement;
         const row = (height: number) =>
             ({ getBoundingClientRect: () => ({ height }) }) as unknown as Element;
-        const mount = (width: number) => {
+        const mount = (width: number, measurementSurface?: object | string) => {
             const scope = effectScope();
             const virtual = scope.run(() =>
-                useVirtualWindow({ items, viewport: viewport(width), key }),
+                useVirtualWindow({
+                    items,
+                    viewport: viewport(width),
+                    key,
+                    ...(measurementSurface ? { measurementSurface } : {}),
+                }),
             )!;
             return { scope, virtual };
         };
@@ -143,11 +316,20 @@ describe("virtual-window core", () => {
         expect(first.virtual.totalSize.value).toBe(112);
         first.scope.stop();
 
-        const sameWidth = mount(800.4);
-        expect(sameWidth.virtual.totalSize.value).toBe(112);
-        sameWidth.scope.stop();
+        const isolated = mount(800.4);
+        expect(isolated.virtual.totalSize.value).toBe(80);
+        isolated.scope.stop();
 
-        const changedWidth = mount(801);
+        const sharedSurface = {};
+        const sharedFirst = mount(799.6, sharedSurface);
+        sharedFirst.virtual.observe("a", row(72));
+        sharedFirst.scope.stop();
+
+        const sharedSameWidth = mount(800.4, sharedSurface);
+        expect(sharedSameWidth.virtual.totalSize.value).toBe(112);
+        sharedSameWidth.scope.stop();
+
+        const changedWidth = mount(801, sharedSurface);
         expect(changedWidth.virtual.totalSize.value).toBe(80);
         changedWidth.scope.stop();
     });

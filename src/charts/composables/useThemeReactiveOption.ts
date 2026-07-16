@@ -26,7 +26,7 @@
 // mount. (The sibling `useGeoPaletteEpoch` exposes the bare epoch SCALAR for the family host's slot
 // scope; this exposes the BUILT option for a script-local scale — the same settle clock, two shapes.)
 import { computed, type ComputedRef } from "vue";
-import { useVizPalette } from "@/charts/composables/useVizPalette";
+import { useVizPalette } from "./useVizPalette.js";
 
 /**
  * Wrap a theme-sensitive option/scale `builder` so it re-derives on the POST-SETTLE palette epoch (the

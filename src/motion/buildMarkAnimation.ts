@@ -6,7 +6,7 @@
 import { NumericAnimation } from "@mkbabb/keyframes.js";
 import { MorphSVG } from "@mkbabb/keyframes.js/engine";
 import { clamp, easeOutExpo } from "@mkbabb/value.js";
-import type { LeanMechanism } from "@/motion/lean-catalog";
+import type { LeanMechanism } from "./lean-catalog.js";
 
 const clamp01 = (x: number): number => clamp(x, 0, 1);
 

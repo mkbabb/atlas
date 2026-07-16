@@ -16,7 +16,7 @@
 // it too (their script-level scale computeds need the epoch the slot scope cannot reach). Idempotent —
 // `useVizPalette` wires the settle subscriber ONCE per module no matter how many callers mount.
 import { computed, ref, watch, type ComputedRef } from "vue";
-import { useVizPalette } from "@/charts/composables/useVizPalette";
+import { useVizPalette } from "./useVizPalette.js";
 
 /**
  * The post-settle palette epoch a geo plate's scale/option builder keys reactivity on (the folded

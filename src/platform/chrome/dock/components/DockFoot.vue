@@ -27,9 +27,9 @@ import {
     PanelLeftClose,
 } from "@lucide/vue";
 import DockSettings from "../DockSettings.vue";
-import { useDockGear } from "@/platform/chrome/dock/composables/useDockGear";
-import { useDockDataState } from "@/platform/chrome/dock/composables/useDockDataState";
-import type { DashboardContext } from "@/contract";
+import { useDockGear } from "../composables/useDockGear.js";
+import { useDockDataState } from "../composables/useDockDataState.js";
+import type { DashboardContext } from "../../../../contract/index.js";
 
 const { ctx, disableTransitions, collapsed } = defineProps<{
     /** The active dashboard chrome contract — the data-state register + the filter-body gate read it. */

@@ -15,7 +15,7 @@
 // `focusCrest` is exposed so the sheet's Esc/scrim close can return focus without scrolling.
 import { ref, type Component } from "vue";
 import { ScrollProgressRim } from "@mkbabb/glass-ui/scroll-progress-rim";
-import BrandMark from "@/platform/chrome/masthead/BrandMark.vue";
+import BrandMark from "../../masthead/BrandMark.vue";
 
 const props = withDefaults(
     defineProps<{

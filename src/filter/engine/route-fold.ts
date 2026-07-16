@@ -24,8 +24,8 @@
 // three imperative edges, nothing route-specific.
 
 import { computed, watch, watchEffect, type ComputedRef } from "vue";
-import { createCoordinator, createSelection } from "./coordinator";
-import type { Predicate } from "./predicate";
+import { createCoordinator, createSelection } from "./coordinator.js";
+import type { Predicate } from "./predicate.js";
 
 /** The fold's observable surface — the client's leave-one-out rows, the filter-active flag, and the
     O(1) membership predicate every plate's dimming reads (a presentation adapter over the memoized

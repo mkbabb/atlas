@@ -12,9 +12,9 @@
 // (no lib). The "PDF" affordance the gate looks for is satisfied KISS by the print path the
 // host owns (`window.print()` over the `@media print` expand layer) — no binary-PDF library.
 
-import type { ChartDataRow } from "@/charts/legend/ChartDataTable.vue";
-import type { VizRenderKind } from "@/charts/contract/viz-contract";
-import type { ProvenanceFacet } from "@/platform/provenance/provenance-contract";
+import type { ChartDataRow } from "../legend/ChartDataTable.vue";
+import type { VizRenderKind } from "../contract/viz-contract.js";
+import type { ProvenanceFacet } from "../../platform/provenance/provenance-contract.js";
 
 /** An ECharts-instance shape with the one method the canvas export reaches for. The host passes
     the live `chart` ref through; we only need `getDataURL` (the native PNG seam). */

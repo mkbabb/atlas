@@ -15,16 +15,25 @@ import {
     virtualMeasurementSession,
     type VirtualItem,
     type VirtualKey,
+    type VirtualMeasurementSurface,
     type VirtualOffset,
-} from "./virtual-window-core";
+} from "./virtual-window-core.js";
 
-export { buildVirtualOffsets, resolveVirtualRange } from "./virtual-window-core";
-export type { VirtualItem, VirtualKey, VirtualOffset } from "./virtual-window-core";
+export { buildVirtualOffsets, resolveVirtualRange } from "./virtual-window-core.js";
+export type {
+    VirtualItem,
+    VirtualKey,
+    VirtualMeasurementSurface,
+    VirtualOffset,
+} from "./virtual-window-core.js";
 
 export interface UseVirtualWindowOptions<Item, Key extends VirtualKey = VirtualKey> {
     items: MaybeRefOrGetter<readonly Item[]>;
     viewport: MaybeRefOrGetter<HTMLElement | null>;
     key: (item: Item, index: number) => Key;
+    /** Measurement cache identity. Omit for instance-local measurements; share deliberately to
+        reuse row heights across equivalent surfaces at the same rounded width. */
+    measurementSurface?: VirtualMeasurementSurface;
     estimateSize?: number;
     overscan?: { readonly before?: number; readonly after?: number };
 }
@@ -44,6 +53,7 @@ export function useVirtualWindow<Item, Key extends VirtualKey = VirtualKey>(
     options: UseVirtualWindowOptions<Item, Key>,
 ): UseVirtualWindowReturn<Item, Key> {
     const estimate = Math.max(1, options.estimateSize ?? 40);
+    const measurementSurface = options.measurementSurface ?? {};
     const sizes = shallowRef<ReadonlyMap<Key, number>>(new Map());
     const measurements = new Set<ResizeObserver>();
     const scrollTop = ref(0);
@@ -81,7 +91,7 @@ export function useVirtualWindow<Item, Key extends VirtualKey = VirtualKey>(
                 if (width !== activeWidth) {
                     activeWidth = width;
                     sizes.value = new Map(
-                        virtualMeasurementSession<Key>(options.key, width),
+                        virtualMeasurementSession<Key>(measurementSurface, width),
                     );
                 }
                 scrollTop.value = element.scrollTop;
@@ -117,7 +127,7 @@ export function useVirtualWindow<Item, Key extends VirtualKey = VirtualKey>(
             const next =
                 activeWidth == null
                     ? new Map(sizes.value)
-                    : virtualMeasurementSession<Key>(options.key, activeWidth);
+                    : virtualMeasurementSession<Key>(measurementSurface, activeWidth);
             next.set(key, size);
             sizes.value = new Map(next);
         };

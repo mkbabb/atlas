@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { useStageDeck, type StageStep } from "@/stage/useStageDeck";
+import { useStageDeck, type StageStep } from "../../src/stage/useStageDeck";
 
 describe("useStageDeck", () => {
     it("advances one detent at a time and reverses an in-flight target", () => {

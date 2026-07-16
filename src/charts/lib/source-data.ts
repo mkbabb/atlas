@@ -1,10 +1,12 @@
 export {
     createRowsReader,
-    rowsAt,
     type ExportGrain,
+    type RowsProjection,
     type RowsReader,
-    type RowsSource,
-} from "@/filter/engine/rows";
+    type RowsGrouping,
+    type RowsMeasure,
+    type RowsQueryPlan,
+} from "../../filter/engine/rows.js";
 
 export type ExportFormat = "csv" | "json" | "png" | "svg" | "print";
 
@@ -16,7 +18,7 @@ export interface ExportSource {
 export interface ExportPayload<Row, Scope = unknown> {
     readonly rows: readonly Row[];
     readonly meta: {
-        readonly grain: import("@/filter/engine/rows").ExportGrain<Scope>;
+        readonly grain: import("../../filter/engine/rows.js").ExportGrain<Scope>;
         /** Normalized, machine-readable query for reproducing this exact row slice. */
         readonly filter: string;
         readonly filterExplain: string;

@@ -41,25 +41,25 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@mkbabb/glass-ui/collapsible";
-import EntityIcon from "@/charts/glyph/EntityIcon.vue";
+import EntityIcon from "../charts/glyph/EntityIcon.vue";
 import {
     resolveEntityIconForSelection,
     grainForKind,
     type EntityGrain,
     type ResolveEntityIconOptions,
-} from "@/charts/glyph/resolveEntityIcon";
-import ReadoutFacts from "@/charts/readout/ReadoutFacts.vue";
-import ReadoutDrill from "@/interaction/ReadoutDrill.vue";
-import { boundedMinimapViewBox } from "@/interaction/minimapExtent";
-import { markColorFor } from "@/charts/scale/ColorScale";
+} from "../charts/glyph/resolveEntityIcon.js";
+import ReadoutFacts from "../charts/readout/ReadoutFacts.vue";
+import ReadoutDrill from "./ReadoutDrill.vue";
+import { boundedMinimapViewBox } from "./minimapExtent.js";
+import { markColorFor } from "../charts/scale/ColorScale.js";
 import type {
     SelectionKey,
     SelectionKind,
-} from "@/charts/contract/selection-contract";
-import { useSelection } from "@/platform/stores/useSelection";
-import { useSelectionStat } from "@/platform/stores/useSelectionStat";
-import { PIN_CAP } from "@/platform/stores/useHoverReadout";
-import { projectDrilldown } from "./projectDrilldown";
+} from "../charts/contract/selection-contract.js";
+import { useSelection } from "../platform/stores/useSelection.js";
+import { useSelectionStat } from "../platform/stores/useSelectionStat.js";
+import { PIN_CAP } from "../platform/stores/useHoverReadout.js";
+import { projectDrilldown } from "./projectDrilldown.js";
 
 /** Where the panel docks (selection-drilldown §B.0). `dock-br` (default) floats bottom-right over the
     focal viz's dead-space corner; `dock-tr`/`inset` are the ecf/usf-integrity per-route overrides;

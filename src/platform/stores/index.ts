@@ -15,19 +15,19 @@
 // The monorepo import flip to this home is O-B11.
 
 // — the selection substrate: the global hover/pin state + the mark-colour resolver (§A.6) —
-export * from "./useSelection";
+export * from "./useSelection.js";
 
 // — the active-beat resolver (the scroll-driven beat cursor every viz reads) —
-export * from "./useActiveBeat";
+export * from "./useActiveBeat.js";
 
 // — the active-dashboard feed resolver (route → feed load, keyed on the registry) —
-export * from "./useActiveDashboard";
+export * from "./useActiveDashboard.js";
 
 // — the view-params store (year scope + selection sync + the ?params URL bridge) —
-export * from "./useViewParams";
+export * from "./useViewParams.js";
 
 // — the hover-readout substrate (the drill-down provenance channel) —
-export * from "./useHoverReadout";
+export * from "./useHoverReadout.js";
 
 // — the selection-stat store (the pinned-selection fact readout) —
-export * from "./useSelectionStat";
+export * from "./useSelectionStat.js";

@@ -15,10 +15,10 @@
 // reference sets in its colophon (F5.5 asks for it in BOTH the masthead region and the footer).
 // The dark toggle does NOT float on the masthead — it seats in GalleryView's one quiet glass
 // control top-right (the slides gear posture).
-import { useAtlasSite } from "@/contract";
+import { useAtlasSite } from "../../../contract/index.js";
 import { Surface } from "@mkbabb/glass-ui/surface";
-import BrandMark from "@/platform/chrome/masthead/BrandMark.vue";
-import { useAuroraVeil } from "@/platform/chrome/background/composables/useAuroraVeil";
+import BrandMark from "./BrandMark.vue";
+import { useAuroraVeil } from "../background/composables/useAuroraVeil.js";
 
 // THE MASTHEAD GLASS VEIL (C2 · I6 §A2 · J-GLASS §5 — the consume). The constellation/corner-glow
 // ground reads THROUGH a `Surface tier="floating"` veil seated behind the head, NOT the

@@ -1,5 +1,5 @@
 import { computed, shallowReactive, type ComputedRef, type InjectionKey } from "vue";
-import type { AggregateStat } from "@/charts/contract/viz-contract";
+import type { AggregateStat } from "../contract/viz-contract.js";
 
 export interface StoryCardContext {
     aggregateStats: ComputedRef<AggregateStat[]>;

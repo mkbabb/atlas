@@ -11,7 +11,7 @@
 // (`reveal-register.ts` `countAt`); THIS module lands the un-demonstrated title half.
 
 import { clamp, smoothStep3 } from "@mkbabb/value.js";
-import { COVER_CENTRE } from "./centreAxis";
+import { COVER_CENTRE } from "./centreAxis.js";
 
 // ── The corridor register values (P2-B Ruling 2, verbatim) ────────────────────────────────────────
 

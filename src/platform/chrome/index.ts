@@ -19,8 +19,8 @@
 // `inline-size` width transition + the `--cp-radius` override, in Dock.css); its DELETE + the
 // glass-morph consume are O-B8b, gated on the glass-ui 5.0.0 dock arm. The monorepo import flip to
 // this home is O-B11.
-export * from "./shell";
-export * from "./dock";
-export * from "./background";
-export * from "./masthead";
-export * from "./freshness";
+export * from "./shell/index.js";
+export * from "./dock/index.js";
+export * from "./background/index.js";
+export * from "./masthead/index.js";
+export * from "./freshness.js";

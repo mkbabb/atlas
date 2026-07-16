@@ -12,7 +12,7 @@
 // it uses the reactive-props destructure; no destructured prop is handed to a composable/watch/
 // computed here, so none needs the getter wrapper (the scalars are read directly in the template).
 import { RouterLink } from "vue-router";
-import type { DockNavItem } from "@/contract";
+import type { DockNavItem } from "../../../../contract/index.js";
 
 const { item, index, active, rivetHue, roman } = defineProps<{
     /** The nav entry — its `kind` discriminates the `beat` button from the `view` RouterLink. */

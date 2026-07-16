@@ -33,7 +33,7 @@ import {
     type Ref,
 } from "vue";
 import { useEventListener } from "@vueuse/core";
-import { useReducedMotion } from "@/motion/useReducedMotion";
+import { useReducedMotion } from "../../../../motion/useReducedMotion.js";
 
 /** THE PINNED IDLE-PARK INTERVAL (CH-F L1 · motion-arch §2.1 MOVE 4). Motion parks after EXACTLY this
     many ms of no scroll/interaction. A FIXED export — deterministic, NOT implementer- or

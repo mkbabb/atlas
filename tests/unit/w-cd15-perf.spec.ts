@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { EChartsType } from "echarts/core";
-import { resolveOrnamentAnchor } from "@/charts/composables/useEChartOrnament";
-import { chaptersOf, type StoryManifest } from "@/story/manifest";
+import { resolveOrnamentAnchor } from "../../src/charts/composables/useEChartOrnament";
+import { chaptersOf, type StoryManifest } from "../../src/story/manifest";
 
 describe("W-CD15 keyed ornament", () => {
     it("reads the keyed live element and resolves its transformed center", () => {

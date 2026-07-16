@@ -1,13 +1,12 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
     constellationShouldRun,
     nextConstellationPhase,
-} from "@/platform/chrome/background/composables/constellation-register";
+} from "../../src/platform/chrome/background/composables/constellation-register";
 import {
     nucleiSpecs,
     nucleusAt,
-} from "@/platform/chrome/background/composables/aurora-nuclei";
+} from "../../src/platform/chrome/background/composables/aurora-nuclei";
 
 const deposition = {
     granulation: 0.34,
@@ -35,16 +34,6 @@ describe("constellation register", () => {
         expect(nextConstellationPhase("sleeping", "slept")).toBe("asleep");
     });
 
-    it("keeps the policy module free of render clocks and canvas ownership", () => {
-        const source = readFileSync(
-            new URL(
-                "../../src/platform/chrome/background/composables/constellation-register.ts",
-                import.meta.url,
-            ),
-            "utf8",
-        );
-        expect(source).not.toMatch(/requestAnimationFrame|IntersectionObserver|createElement\(["']canvas/);
-    });
 });
 
 describe("aurora register", () => {

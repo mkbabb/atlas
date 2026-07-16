@@ -36,11 +36,14 @@ export function createDismissArbiter(
 
     function onPointer(event: PointerEvent): void {
         const path = eventPath(event);
+        if ([...claims.values()].some((claim) => claim.within?.(path))) return;
+        if ([...claims.values()].some((claim) => claim.guards?.(path))) return;
+        const winner = top((claim) => claim.outsidePointer === true);
+        if (!winner) return;
         const timer = setTimeout(() => {
             timers.delete(timer);
-            if ([...claims.values()].some((claim) => claim.within?.(path))) return;
-            if ([...claims.values()].some((claim) => claim.guards?.(path))) return;
-            top((claim) => claim.outsidePointer === true)?.onDismiss("outside-pointer");
+            if (claims.get(winner.id) === winner)
+                winner.onDismiss("outside-pointer");
         }, gestureEpsilonMs);
         timers.add(timer);
     }

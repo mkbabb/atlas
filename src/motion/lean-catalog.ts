@@ -15,7 +15,7 @@
 // not revived). `path` stays in the union as the reserved DrawSVG fold-slot (no preset binds it live —
 // the path-family folds into `draw`, cf. `DrawIn.subsumes`).
 
-import type { MotionTrigger } from "./triggers"; // the KEPT closed taxonomy — reused
+import type { MotionTrigger } from "./triggers.js"; // the KEPT closed taxonomy — reused
 
 /** The 8 render MECHANISMS — each ONE binding to a keyframes.js 5.1.0 primitive OR the KEPT reveal
     register. This is the real cardinality of the product's animation vocabulary (the 57 catalog NAMES

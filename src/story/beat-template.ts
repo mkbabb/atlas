@@ -17,11 +17,11 @@
 // PURE + TOTAL — no DOM, no Vue, no clock. Every (policy, phase, seed) yields a concrete
 // `ResolvedBeatTemplate`, unit-testable without mounting.
 
-import type { RevealSpec, ScrollDir, TitlePole } from "@/contract";
-import { rotateRuleVariant, type RuleVariant } from "@/editorial/rule-register";
-import { microGrain, hashSeed, type MicroGrain } from "@/motion/seededVariety";
-import type { Rank } from "@/motion/variant-bounds";
-import type { Superlative } from "./superlative";
+import type { RevealSpec, ScrollDir, TitlePole } from "../contract/index.js";
+import { rotateRuleVariant, type RuleVariant } from "../editorial/rule-register.js";
+import { microGrain, hashSeed, type MicroGrain } from "../motion/seededVariety.js";
+import type { Rank } from "../motion/variant-bounds.js";
+import type { Superlative } from "./superlative.js";
 
 // ── The declared template FIELDS (first-class, no longer derived from index / a string) ────────────
 

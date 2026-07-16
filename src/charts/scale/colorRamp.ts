@@ -18,7 +18,7 @@ import {
     hexToOklab,
     rgbStringToOklab,
     wcagContrast,
-} from "./oklab";
+} from "./oklab.js";
 
 /** The diverging hinge as DATA (FD1 §3.1) — net-retention break-even, not 1.0×. */
 export const NET_RETENTION_HINGE = 0.7;

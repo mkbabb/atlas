@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useVizRegistry } from "@/charts/composables/useVizRegistry";
-import { resolveFilterResponse } from "@/filter/composables/useFilterPanel";
-import type { FilterDimension } from "@/charts/contract/viz-contract";
+import { useVizRegistry } from "../../src/charts/composables/useVizRegistry";
+import { resolveFilterResponse } from "../../src/filter/composables/useFilterPanel";
+import type { FilterDimension } from "../../src/charts/contract/viz-contract";
 
 const cost: FilterDimension = {
     key: "bandwidthkbps",

@@ -6,7 +6,7 @@
 // purity). PRM collapses to terminal (a variant NEVER changes the END-STATE, only the path).
 
 import { clamp } from "@mkbabb/value.js";
-import type { VariantSpec, Direction, EaseToken, DurationToken } from "./variant-spec";
+import type { VariantSpec, Direction, EaseToken, DurationToken } from "./variant-spec.js";
 import {
     DIRECTION,
     EASE,
@@ -16,14 +16,14 @@ import {
     type ResolvedEase,
     type ResolvedDuration,
     type ResolvedStagger,
-} from "./variant-registers";
+} from "./variant-registers.js";
 import {
     RANK_INTENSITY,
     type Rank,
     type FacetRegister,
     type VariantBundle,
-} from "./variant-bounds";
-import { microGrainArray, hashSeed, type MicroGrain } from "./seededVariety";
+} from "./variant-bounds.js";
+import { microGrainArray, hashSeed, type MicroGrain } from "./seededVariety.js";
 
 /** The resolve context — the host-supplied signals (the rank, the sequence index, the base seed for
     auto-vary, the element count for the grain array, the PRM flag). ALL optional except `facetKey` +

@@ -6,7 +6,7 @@
 // PURE — no store, no DOM. Each fn maps a resolved shape to the rung's reader string(s); the render
 // owns only the join separator + the present-when-active gates.
 
-import type { ResolvedProvenance } from "./provenance-contract";
+import type { ResolvedProvenance } from "./provenance-contract.js";
 
 /** SOURCE — dataset · sections (the always-present static head). */
 export function sourceLine(p: ResolvedProvenance): string {

@@ -26,11 +26,9 @@
 // literal is GONE, not that the dock is collapsed at a given viewport.
 
 import { computed, ref, type ComputedRef } from "vue";
-import { INSTRUMENT_SPRING } from "@/motion/instrument-spring";
 
 export type DockCollapseSource = "manual" | "register" | "scroll";
 const COLLAPSE_PRIORITY: Record<DockCollapseSource, number> = { manual: 30, register: 20, scroll: 10 };
-export const DOCK_COLLAPSE_SPRING = INSTRUMENT_SPRING;
 
 export function resolveDockCollapse(
     intents: ReadonlyMap<DockCollapseSource, boolean>,

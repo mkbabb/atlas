@@ -31,11 +31,11 @@
 // invariant; the inner layer is rendered by the consumer slot (the host scaffold is identical across
 // both kinds — the §openQ-2 resolution: ONE GeoPlate with a `kind` discriminator, not two siblings).
 import { computed, ref, watch } from "vue";
-import VizPlate from "@/charts/frame/VizPlate.vue";
-import type { VizContract } from "@/charts/contract/viz-contract";
-import type { ProvenanceFacet } from "@/platform/provenance/provenance-contract";
-import { useHoverReadout, type HoverReadout } from "@/platform/stores/useHoverReadout";
-import { useGeoPaletteEpoch } from "@/charts/composables/useGeoPaletteEpoch";
+import VizPlate from "../frame/VizPlate.vue";
+import type { VizContract } from "../contract/viz-contract.js";
+import type { ProvenanceFacet } from "../../platform/provenance/provenance-contract.js";
+import { useHoverReadout, type HoverReadout } from "../../platform/stores/useHoverReadout.js";
+import { useGeoPaletteEpoch } from "../composables/useGeoPaletteEpoch.js";
 
 /** The settled datum anchor in VIEWPORT space (the mark's bbox top-centre). */
 export interface GeoAnchor {

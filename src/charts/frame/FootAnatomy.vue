@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FootAnatomyContract } from "./foot-anatomy";
+import type { FootAnatomyContract } from "./foot-anatomy.js";
 
 defineProps<{
     contract: FootAnatomyContract;

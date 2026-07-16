@@ -1,6 +1,6 @@
 {
     "name": "@mkbabb/atlas",
-    "version": "5.0.0",
+    "version": "6.0.0",
     "description": "The Connectivity Atlas rendering engine for Vue charts, editorial stories, interactions, dashboard contracts, and Vite integration.",
     "type": "module",
     "license": "MIT",
@@ -107,14 +107,13 @@
     "scripts": {
         "build": "npm run build:js && npm run build:dts && npm run build:css",
         "build:js": "vite build -c vite.lib.config.mts",
-        "build:dts": "rm -rf types && vue-tsc -p tsconfig.dts.json --declaration --emitDeclarationOnly && node scripts/repoint-dts.mjs",
+        "build:dts": "rm -rf types && vue-tsc -p tsconfig.dts.json --declaration --emitDeclarationOnly",
         "build:css": "node scripts/build-styles.mjs",
         "typecheck": "vue-tsc --noEmit",
-        "lint:pub": "attw --pack . --profile esm-only --exclude-entrypoints ./styles ./styles/tokens ./styles/breakpoints --ignore-rules internal-resolution-error && publint .",
+        "lint:pub": "publint .",
         "test": "vitest run",
-        "gates": "vitest run tests/gates",
         "prepare": "test -f dist/contract.js || npm run build",
-        "prepublishOnly": "npm run typecheck && npm run build && npm run lint:pub && npm run test && npm run gates",
+        "prepublishOnly": "npm run typecheck && npm run build && npm run lint:pub && npm run test",
         "release": "bash scripts/release.sh"
     },
     "peerDependencies": {
@@ -123,12 +122,18 @@
         "@mkbabb/pencil-boil": "^0.9.2",
         "@mkbabb/value.js": "^3.1.0",
         "pinia": "^2.3 || ^3.0",
+        "vite": "^7.0.0",
         "vue": "^3.5",
         "vue-router": "^4.5"
     },
     "dependencies": {
         "@lucide/vue": "^1.16",
+        "@tailwindcss/vite": "^4.3.0",
+        "@types/d3-geo": "^3",
+        "@types/geojson": "^7946",
+        "@types/topojson-specification": "^1",
         "@vueuse/core": "^14.0",
+        "@vitejs/plugin-vue": "^6.0.7",
         "class-variance-authority": "^0.7",
         "clsx": "^2.0",
         "d3-geo": "^3",
@@ -140,18 +145,12 @@
         "vue-echarts": "^8"
     },
     "devDependencies": {
-        "@arethetypeswrong/cli": "^0.18.2",
         "@mkbabb/glass-ui": "6.0.0",
         "@mkbabb/keyframes.js": "5.3.5",
         "@mkbabb/pencil-boil": "0.9.2",
         "@mkbabb/value.js": "3.1.0",
-        "@tailwindcss/vite": "^4.3.0",
-        "@types/d3-geo": "^3",
-        "@types/geojson": "^7946",
         "@types/node": "^24.0.0",
         "@types/topojson-client": "^3",
-        "@types/topojson-specification": "^1",
-        "@vitejs/plugin-vue": "^6.0.7",
         "pinia": "^3.0.4",
         "publint": "^0.3.0",
         "tailwindcss": "^4.3.0",

@@ -1,5 +1,30 @@
 # Changelog
 
+## 6.0.0 — 2026-07-16
+
+### Breaking changes
+
+- The dead shared instrument-timing surface is removed: `INSTRUMENT_SPRING`,
+  `InstrumentSpringStyle`, `instrumentSpringStyle`, and `DOCK_COLLAPSE_SPRING` no longer ship.
+  `VizGearDock` owns its bloom
+  transition in component CSS and snaps locally under reduced motion; dock posture remains owned by
+  `useDockCollapse`.
+
+### Fixed
+
+- Narrative restoration performs one bounded late-layout re-anchor, then stops on quiet, deadline, or reader input.
+- Package declarations are emitted directly from Node-ESM-qualified source imports; the obsolete
+  declaration rewrite, development alias, and release-only alias guard are removed.
+- Data JSON carriers are source-folded into native-ESM-safe JavaScript modules, with county glyph
+  consumers sharing one registry; the generated-code attribute rewrite and Vite warning are gone.
+- The Glass completion-seal CSS output rewrite is removed; Atlas no longer patches dependency CSS.
+
+### Packaging notes
+
+- Strict packed-consumer acceptance covers the changed `./data` and `./vite` carriers. Existing
+  all-subpath declaration failures in Glass UI 6, keyframes.js 5.3.5, Reka UI, and VueUse remain
+  upstream-held for W33 and are not represented as whole-package strict acceptance.
+
 ## 5.0.0 — 2026-07-16
 
 ### Breaking changes
@@ -12,11 +37,17 @@
 - Reveal shape `unfold` is removed, and `reveal.aside` no longer aliases right-aligned title placement. Declare `reveal.layout.title` explicitly when placement matters.
 - `useVizRegistry().updateDims` is renamed to `updateFilterFacet` and now updates dimensions with filter response atomically.
 - `directEndLabel`, labeled `markPointRivet`, and `dropRule` now require the resolved canvas mono-family argument instead of embedding a font name.
+- Source readers replace `RowsSource` / `rowsAt` with a declarative `RowsQueryPlan` and one `RowsProjection` returned by `project`; source panels receive the required shared `SourcePanelProps` host contract.
 
 ### Changed
 
 - One Glass Drawer now owns the complete filter PIP → ledger → drawer continuum, including explicit responsive/static filter behavior.
 - Appendix actions use Glass Button primitives; canvas typography resolves from the shared live font tokens; component-backed story points load eagerly only when adjacent to the active point.
+
+### Fixed
+
+- Heavy-feed worker infrastructure failures retire the failed singleton and parse each already-fetched body synchronously; malformed feed data still falls through to the existing snapshot tier.
+- Outside-pointer dismissal snapshots one winning claim per gesture, so delayed arbitration cannot dismiss a replacement surface.
 
 ## 4.0.0 — 2026-07-15
 

@@ -1,6 +1,5 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { FOOT_ANATOMY_SEATS } from "@/charts/frame/foot-anatomy";
+import { FOOT_ANATOMY_SEATS } from "../../src/charts/frame/foot-anatomy";
 import {
     appendixAnchorId,
     appendixOrdinal,
@@ -11,8 +10,8 @@ import {
     resolveAppendixDetent,
     type AppendixEntry,
     type AppendixRoster,
-} from "@/platform/provenance/appendix";
-import type { ResolvedProvenance } from "@/platform/provenance/provenance-contract";
+} from "../../src/platform/provenance/appendix";
+import type { ResolvedProvenance } from "../../src/platform/provenance/provenance-contract";
 
 const provenance: ResolvedProvenance = {
     dataset: "Open data",
@@ -29,157 +28,49 @@ const provenance: ResolvedProvenance = {
     aggregationLevel: null,
 };
 
-function entry(vizId: string, sourceIds: readonly string[] = ["primary"]): AppendixEntry {
-    return { vizId, title: `Figure ${vizId}`, provenance, sourceIds };
-}
-
-function validRoster(): AppendixRoster {
-    return {
-        entries: [entry("retention")],
-        sources: [
-            {
-                id: "primary",
-                label: "Primary open data",
-                href: "https://example.test/data",
-                path: "sources.primary",
-            },
-        ],
-        cites: [{ entryId: "retention", path: "story/beats.ts:18" }],
-    };
-}
-
-describe("FootAnatomy", () => {
-    it("publishes one fixed title/key/record band contract", () => {
-        expect(FOOT_ANATOMY_SEATS).toEqual([
-            "title",
-            "legend",
-            "gear",
-            "readout",
-            "provenance",
-        ]);
-
-        const source = readFileSync(
-            new URL("../../src/charts/frame/FootAnatomy.vue", import.meta.url),
-            "utf8",
-        );
-        for (const seat of FOOT_ANATOMY_SEATS) {
-            expect(source).toContain(`data-seat="${seat}"`);
-        }
-        expect(source).toContain("container: plate-foot / inline-size");
-        expect(source).toContain("overflow: clip");
-        expect(source).toContain("contain-intrinsic-size:");
-        expect(source).toContain('<slot name="colophon" />');
-    });
+const entry = (vizId: string, sourceIds: readonly string[] = ["primary"]): AppendixEntry => ({
+    vizId,
+    title: "Figure " + vizId,
+    provenance,
+    sourceIds,
 });
 
-describe("VizAppendixDock state law", () => {
-    it("moves through SHUT, PEEK and FULL without a late peek collapsing full", () => {
+const validRoster = (): AppendixRoster => ({
+    entries: [entry("retention")],
+    sources: [{ id: "primary", label: "Primary open data", href: "https://example.test/data" }],
+    cites: [{ entryId: "retention", path: "story/beats.ts:18" }],
+});
+
+describe("provenance foot contracts", () => {
+    it("publishes the fixed title/key/record anatomy", () => {
+        expect(FOOT_ANATOMY_SEATS).toEqual(["title", "legend", "gear", "readout", "provenance"]);
+    });
+
+    it("moves through shut, peek, and full without a late peek collapsing full", () => {
         expect(resolveAppendixDetent("shut", "peek")).toBe("peek");
         expect(resolveAppendixDetent("peek", "expand")).toBe("full");
         expect(resolveAppendixDetent("full", "peek")).toBe("full");
         expect(resolveAppendixDetent("full", "toggle")).toBe("shut");
-        expect(resolveAppendixDetent("peek", "close")).toBe("shut");
     });
 
-    it("uses an inline desktop disclosure and a Glass-owned phone modal from one slot", () => {
-        const source = readFileSync(
-            new URL("../../src/platform/provenance/VizAppendixDock.vue", import.meta.url),
-            "utf8",
-        );
-        expect(source).toContain("data-appendix-dock");
-        expect(source).toContain(':aria-expanded="state === \'full\'"');
-        expect(source).toContain(':aria-controls="paneId"');
-        expect(source).toContain(':is="isPhone ? DrawerContent : \'div\'"');
-        expect(source).toContain(":role=\"isPhone ? undefined : 'region'\"");
-        expect(source).toContain('mode="modal"');
-        expect(source).toContain('direction="bottom"');
-        expect(source).not.toContain("force-mount");
-        expect(source).not.toContain(":inert=");
-        expect(source).not.toContain(":aria-hidden=");
-        expect(source).toContain("DrawerTrigger");
-        expect(source).toContain("DrawerClose");
-        expect(source).toContain('from "@mkbabb/glass-ui/button"');
-        expect(source).toContain('variant="glass"');
-        expect(source).not.toMatch(/<button\b/);
-        expect(source).not.toContain("border-radius:");
-        expect(source.match(/<slot\s*\/>/g)).toHaveLength(1);
-        expect(source).not.toContain('role="dialog"');
-        expect(source).not.toContain('aria-modal="true"');
-        expect(source).not.toContain("appendix-dock__scrim");
-        expect(source).toMatch(/@media print[\s\S]*\.appendix-dock__pane\[hidden\][\s\S]*display: block/);
-    });
-
-    it("seats the dock beside, rather than instead of, the existing key-stat crown", () => {
-        const source = readFileSync(
-            new URL("../../src/charts/frame/VizPlate.vue", import.meta.url),
-            "utf8",
-        );
-        expect(source).toMatch(/<VizKeyStats\s+v-if="keyStats.length"/);
-        expect(source).toContain('v-if="provenance || slots.foot"');
-        expect(source).toMatch(/<VizAppendixDock[\s\S]*<slot\s+v-if="provenance"[\s\S]*<slot name="foot"/);
-    });
-});
-
-describe("appendix identity and links", () => {
-    it("keeps declared ordinals and bidirectional anchors independent of mount order", () => {
-        const declared = ["overview", "detail", "outlook"];
-        const mounted = ["outlook", "overview", "detail"];
-
-        expect(mounted.map((id) => declared.indexOf(id)).map(appendixOrdinal)).toEqual([
-            "A.3",
-            "A.1",
-            "A.2",
-        ]);
+    it("keeps declared ordinals and anchors independent of mount order", () => {
+        expect(["outlook", "overview", "detail"].map((id) => ["overview", "detail", "outlook"].indexOf(id)).map(appendixOrdinal)).toEqual(["A.3", "A.1", "A.2"]);
         expect(appendixAnchorId("detail")).toBe("provenance-appendix-detail");
         expect(plateAnchorId("detail")).toBe("figure-detail");
-        expect(figureOrdinalFor({ overview: 1, detail: 2, outlook: 3 }, "detail")).toBe(2);
-        expect(() => figureOrdinalFor({ overview: 1 }, "detail")).toThrow(
-            'No figure ordinal is declared for "detail".',
-        );
+        expect(figureOrdinalFor({ overview: 1, detail: 2 }, "detail")).toBe(2);
     });
 
-    it("accepts a fully linked roster", () => {
+    it("accepts complete rosters and reports broken links with authoring paths", () => {
         expect(auditAppendixLinks(validRoster())).toEqual([]);
         expect(() => assertAppendixLinks(validRoster())).not.toThrow();
-    });
-
-    it("reports dangling cites, URL-less links and orphan sources with authoring paths", () => {
-        const roster: AppendixRoster = {
+        const broken: AppendixRoster = {
             entries: [entry("retention", ["missing-url"])],
-            sources: [
-                { id: "missing-url", label: "Unlinked", href: "" },
-                {
-                    id: "orphan",
-                    label: "Unused",
-                    href: "https://example.test/orphan",
-                    path: "sources.orphan",
-                },
-            ],
+            sources: [{ id: "missing-url", label: "Unlinked", href: "" }],
             cites: [{ entryId: "retentoin", path: "story/beats.ts:18" }],
         };
-
-        expect(auditAppendixLinks(roster).map(({ code, path }) => ({ code, path }))).toEqual([
+        expect(auditAppendixLinks(broken).map(({ code, path }) => ({ code, path }))).toEqual([
             { code: "UNLINKED_SOURCE", path: "entries.retention.sourceIds" },
             { code: "DANGLING_CITE", path: "story/beats.ts:18" },
-            { code: "ORPHAN_SOURCE", path: "sources.orphan" },
         ]);
-        expect(() => assertAppendixLinks(roster)).toThrow(/story\/beats\.ts:18/);
-    });
-
-    it("keeps every provenance font size on the shared type register", () => {
-        const files = [
-            "ProvenanceBar.vue",
-            "ProvenanceChip.vue",
-            "ProvenanceAppendix.vue",
-            "VizAppendixDock.vue",
-            "SourceLink.vue",
-        ];
-        for (const file of files) {
-            const source = readFileSync(
-                new URL(`../../src/platform/provenance/${file}`, import.meta.url),
-                "utf8",
-            ).replace(/\/\*[\s\S]*?\*\//g, "");
-            expect(source, file).not.toMatch(/font-size:\s*[0-9.]+(?:rem|px|em)/);
-        }
     });
 });

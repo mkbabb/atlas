@@ -1,5 +1,5 @@
 import type { Component } from "vue";
-import type { HeroFacet } from "./editorial-contract";
+import type { HeroFacet } from "./editorial-contract.js";
 
 export interface HeroSystemSource {
     /** The same ordinal that the chapter masthead announces. */

@@ -14,7 +14,7 @@ import {
     roundedVirtualWidth,
     virtualMeasurementSession,
     virtualOffset,
-} from "./virtual-window-core";
+} from "./virtual-window-core.js";
 
 export interface VirtualSectionWindowOptions {
     readonly overscanBefore?: number;

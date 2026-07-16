@@ -17,15 +17,15 @@
 
 import { defineStore } from "pinia";
 import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from "vue";
-import { useUrlState } from "@/platform/composables/useUrlState";
-import { useYearScope, type UseYearScope } from "@/data/useYearScope";
-import { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
+import { useUrlState } from "../composables/useUrlState.js";
+import { useYearScope, type UseYearScope } from "../../data/useYearScope.js";
+import { useActiveDashboard } from "./useActiveDashboard.js";
 import {
     encodeSelKey,
     parseSelKey,
     type SelectionKey,
     type SelectionKind,
-} from "@/charts/contract/selection-contract";
+} from "../../charts/contract/selection-contract.js";
 // The LEA→county hop reads the TOPOLOGY-FREE `leaJoin` (NOT `geometry.ts`). `geometry.ts`
 // statically imports the us-atlas states topology (the `geo-*.js` chunk) + the inlined
 // NC-counties arcs; importing the join from THERE would drag that topology into the chrome
@@ -33,7 +33,7 @@ import {
 // route pulls), so /demand (zero geo marks) + the gallery would parse-block the map topology
 // they never draw (J-PERF arm d, the geo leak). `leaJoin.leaToCountyFips` matches county NAMES
 // from the committed glyph registry, so the focus county-hop stays synchronous + geo-free.
-import { leaToCountyFips } from "@/data/leaJoin";
+import { leaToCountyFips } from "../../data/leaJoin.js";
 
 // ── THE `?focus` CROSS-ROUTE CODEC (I-UX.a · UX-S3 · the entity through-line) ──────────────────
 //

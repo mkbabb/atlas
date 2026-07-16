@@ -10,7 +10,7 @@
 // PURE + total — no DOM, no Vue, no clock; the AnimatedRule SFC consumes `RuleVariant` for its prop
 // type, the orchestrator (`beat-template.ts`) consumes `rotateRuleVariant` for the fallback texture.
 
-import type { Rank } from "@/motion/variant-bounds";
+import type { Rank } from "../motion/variant-bounds.js";
 
 /** THE CLOSED RULE-VARIANT REGISTER — the escalating expression AnimatedRule renders. Restraint-first:
     `rule` is the static drawn divider (the boil-forbidden default); `draw`/`numeral` are the one-shot

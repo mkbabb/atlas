@@ -36,12 +36,12 @@ import {
     type FlightRect,
     type FlightEndpoint,
     type Rgb255,
-} from "@/story/clone-overlay";
-import type { StoryDirectorContext } from "@/story/useStoryDirector";
+} from "./clone-overlay.js";
+import type { StoryDirectorContext } from "./useStoryDirector.js";
 import type {
     MarkStageHandle,
     StoryChapter,
-} from "@/story/story-contract";
+} from "./story-contract.js";
 
 const props = defineProps<{
     director: StoryDirectorContext;

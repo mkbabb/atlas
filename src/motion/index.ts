@@ -21,39 +21,38 @@
 // The monorepo import flip to this home is O-B11.
 
 // — the variant grammar: spec vocabulary + resolved registers + micro-bounds + the resolver —
-export * from "./variant-spec";
-export * from "./variant-registers";
-export * from "./variant-bounds";
-export * from "./resolveVariant";
-export * from "./seededVariety";
+export * from "./variant-spec.js";
+export * from "./variant-registers.js";
+export * from "./variant-bounds.js";
+export * from "./resolveVariant.js";
+export * from "./seededVariety.js";
 
 // — the closed trigger taxonomy (the KEPT vocabulary every declaration keys off) —
-export * from "./triggers";
+export * from "./triggers.js";
 
 // — the lean catalog: the mechanism set + presets + per-preset triggers (the post-purge register) —
-export * from "./lean-catalog";
+export * from "./lean-catalog.js";
 
 // — the reveal register: host-style + count-at-progress + the KEPT reveal bindings —
-export * from "./reveal-register";
-export * from "./reveal-score";
-export * from "./instrument-spring";
+export * from "./reveal-register.js";
+export * from "./reveal-score.js";
 
 // — the rank band: the lede/support/ancillary beat budget + reparameterization —
-export * from "./rankMotionBand";
+export * from "./rankMotionBand.js";
 
 // — the dispersed scroll/reveal composables (§A.7) — the base tier (director/timeline defer) —
-export * from "./useReducedMotion";
-export * from "./useScrollProgress";
-export * from "./useScrollLettering";
-export * from "./useRankMotion";
-export * from "./useLoadSequence";
+export * from "./useReducedMotion.js";
+export * from "./useScrollProgress.js";
+export * from "./useScrollLettering.js";
+export * from "./useRankMotion.js";
+export * from "./useLoadSequence.js";
 
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
 // motion-director re-exports ./buildMarkAnimation; useScrollTimeline re-exports ./useSectionReveal.
-export * from "./motion-director";
-export * from "./useCoverProgress";
-export * from "./useScrollTimeline";
-export * from "./useMarkMorphology";
+export * from "./motion-director.js";
+export * from "./useCoverProgress.js";
+export * from "./useScrollTimeline.js";
+export * from "./useMarkMorphology.js";
 // useHandMarkClock's `MarkAnimation` string-union clashes by NAME with buildMarkAnimation's handle
 // interface (two distinct concepts); the union is deep-imported where needed, so the barrel omits it.
 export {
@@ -64,4 +63,4 @@ export {
     clockAppear,
     clockAnimation,
     useHandMarkClock,
-} from "./useHandMarkClock";
+} from "./useHandMarkClock.js";

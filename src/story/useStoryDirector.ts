@@ -21,16 +21,16 @@ import {
     type Ref,
 } from "vue";
 import { useWindowSize } from "@vueuse/core";
-import { useDocumentScrollProgress } from "@/motion/useScrollProgress";
-import { useReducedMotion } from "@/motion/useReducedMotion";
-import { centreAxis, activeIndexAt } from "@/story/centreAxis";
+import { useDocumentScrollProgress } from "../motion/useScrollProgress.js";
+import { useReducedMotion } from "../motion/useReducedMotion.js";
+import { centreAxis, activeIndexAt } from "./centreAxis.js";
 import type {
     BeatTransition,
     EdgeSpec,
     FocusEffect,
     MarkStageHandle,
     StoryChapter,
-} from "@/story/story-contract";
+} from "./story-contract.js";
 
 /** One live edge as the director exposes it — the compiled edge + its scrub `t` + the active flag. */
 export interface EdgeState {

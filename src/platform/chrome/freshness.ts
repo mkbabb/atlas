@@ -20,7 +20,7 @@
 
 import { computed, watch, type ComputedRef } from "vue";
 import { useDocumentVisibility, useDebounceFn } from "@vueuse/core";
-import { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
+import { useActiveDashboard } from "../stores/useActiveDashboard.js";
 
 /** How long a return-to-tab must settle before we refetch (coalesces flutter). */
 const REVALIDATE_DEBOUNCE_MS = 400;

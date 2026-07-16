@@ -14,9 +14,9 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { useRoute } from "vue-router";
-import { loadFeed } from "@/data/loadFeed";
-import type { Feed, FeedMeta, FeedRow } from "@/data/contract";
-import { useDashboardRegistry } from "@/contract";
+import { loadFeed } from "../../data/loadFeed.js";
+import type { Feed, FeedMeta, FeedRow } from "../../data/contract.js";
+import { useDashboardRegistry } from "../../contract/index.js";
 
 export const useActiveDashboard = defineStore("platform:activeDashboard", () => {
     const route = useRoute();

@@ -16,7 +16,7 @@ import { computed, ref, type ComputedRef, type Ref } from "vue";
 import { useElementBounding, useWindowScroll, useWindowSize } from "@vueuse/core";
 import { clamp, smoothStep3 } from "@mkbabb/value.js";
 import { supportsViewTimeline as glSupportsViewTimeline } from "@mkbabb/glass-ui";
-import { useReducedMotion } from "./useReducedMotion";
+import { useReducedMotion } from "./useReducedMotion.js";
 
 /**
  * The single-writer GATE (C.W5.1; scroll-reveal-design §3.1). True when the engine carries a

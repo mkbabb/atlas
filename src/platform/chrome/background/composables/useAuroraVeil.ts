@@ -25,7 +25,7 @@
 // fallback-first seam (ZERO behavioral branch on glass-ui version, ZERO glass-ui source edit).
 
 import { computed, toValue, type ComputedRef, type MaybeRefOrGetter } from "vue";
-import { useThemeKey } from "@/platform/composables/useThemeKey";
+import { useThemeKey } from "../../../composables/useThemeKey.js";
 
 /** The bloom-centroid (§I-VEIL graft A) — the focused glyph's stage-centroid in the stage's own
     coordinate space (CSS position values, e.g. `{ x: "30%", y: "42%" }`). `null` ⇒ the static

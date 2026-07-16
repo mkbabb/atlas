@@ -4,7 +4,7 @@
 // provenance and NEVER diverge — so the anchor id both derive is ONE source (single-derivation, the vft
 // Q-31 in-paper appendix is the sibling precedent) [CH-A H2; ANSWERS Q43].
 
-import type { ResolvedProvenance } from "./provenance-contract";
+import type { ResolvedProvenance } from "./provenance-contract.js";
 
 /** THE APPENDIX ANCHOR id — the ONE derivation the inline bar's cross-link (`#…`) and the appendix
     row's `id` both read, so a link ALWAYS resolves to its row and no row is unreachable. A viz id →

@@ -86,7 +86,7 @@ export interface AtlasEventContract {
     snapshot(): AtlasEventSnapshot;
 }
 
-export { createAtlasEventHub } from "./hub";
+export { createAtlasEventHub } from "./hub.js";
 
 /** Compile-time exhaustiveness helper for consumers projecting all eight classes. */
 export function assertAtlasEventExhaustive(event: AtlasEvent): AtlasEventType {

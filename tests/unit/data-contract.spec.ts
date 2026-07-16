@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import type { EntityGrain as DashboardEntityGrain } from "@/contract/types";
+import type { EntityGrain as DashboardEntityGrain } from "../../src/contract/types";
 import {
     decodeColumnar,
     isColumnarFeed,
@@ -7,7 +7,7 @@ import {
     type EntityGrain,
     type FeedColumnar,
     type FeedRow,
-} from "@/data/contract";
+} from "../../src/data/contract";
 
 function meta(overrides: Record<string, unknown> = {}) {
     return {

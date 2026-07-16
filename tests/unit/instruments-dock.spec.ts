@@ -1,36 +1,34 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath, URL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createDismissArbiter } from "@/platform/interaction/dismiss-arbiter";
-import { createHoverBridge } from "@/interaction/hover-bridge";
-import { instrumentSpringStyle } from "@/motion/instrument-spring";
-import { resolveDockCollapse, type DockCollapseSource } from "@/platform/chrome/dock/composables/useDockCollapse";
+import { createDismissArbiter } from "../../src/platform/interaction/dismiss-arbiter";
+import { createHoverBridge } from "../../src/interaction/hover-bridge";
+import { resolveDockCollapse, type DockCollapseSource } from "../../src/platform/chrome/dock/composables/useDockCollapse";
+import { watchNarrativeAnchorLayout } from "../../src/motion/narrative-restore";
 import {
     FILTER_SNAP,
     filterRegisterFor,
     filterSnapFor,
     filterSnapPoints,
-} from "@/filter/ui/filter-continuum";
+} from "../../src/filter/ui/filter-continuum";
 
-const root = fileURLToPath(new URL("../..", import.meta.url));
-const source = (path: string) => readFileSync(`${root}/${path}`, "utf8");
+afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+});
 
-afterEach(() => vi.useRealTimers());
-
-describe("instrument ownership", () => {
-    it("keeps one expand affordance and one shared gear spring", () => {
-        expect(source("src/charts/frame/ChartFrame.vue")).toContain("<template #expand-trigger />");
-        expect(source("src/charts/frame/VizPlate.vue")).toContain("<VizGearDock");
-        expect(source("src/charts/frame/VizPlate.vue").match(/data-viz-dock-enlarge/g)).toHaveLength(1);
-        expect(source("src/platform/chrome/dock/components/DockFoot.vue")).not.toContain("data-selection-count");
-        expect(instrumentSpringStyle(true)["--instrument-spring-duration"]).toBe("0ms");
-    });
-
-    it("folds dock intents through one deterministic authority", () => {
-        const intents = new Map<DockCollapseSource, boolean>([["scroll", true], ["manual", false]]);
+describe("dock posture", () => {
+    it("resolves every Atlas-owned intent by priority and returns to no intent", () => {
+        const intents = new Map<DockCollapseSource, boolean>([
+            ["scroll", true],
+            ["register", true],
+            ["manual", false],
+        ]);
         expect(resolveDockCollapse(intents)).toBe(false);
         intents.delete("manual");
         expect(resolveDockCollapse(intents)).toBe(true);
+        intents.delete("register");
+        expect(resolveDockCollapse(intents)).toBe(true);
+        intents.clear();
+        expect(resolveDockCollapse(intents)).toBeNull();
     });
 });
 
@@ -51,6 +49,76 @@ describe("filter continuum register", () => {
     });
 });
 
+describe("bounded narrative restore", () => {
+    it("re-anchors only after target movement and stops on quiet", () => {
+        vi.useFakeTimers();
+        let deliver: ResizeObserverCallback = () => undefined;
+        const disconnect = vi.fn();
+        vi.stubGlobal(
+            "ResizeObserver",
+            class {
+                constructor(callback: ResizeObserverCallback) { deliver = callback; }
+                observe() {}
+                disconnect() { disconnect(); }
+            },
+        );
+        vi.stubGlobal("window", { scrollY: 0 });
+        let top = 100;
+        const target = {
+            getBoundingClientRect: () => ({ top }),
+        } as unknown as HTMLElement;
+        const reanchor = vi.fn();
+        const stopped = vi.fn();
+        const heal = watchNarrativeAnchorLayout({
+            target,
+            root: {} as HTMLElement,
+            reanchor,
+            onStop: stopped,
+            quietMs: 40,
+            deadlineMs: 200,
+        });
+        heal.settle();
+        deliver([], {} as ResizeObserver);
+        expect(reanchor).not.toHaveBeenCalled();
+        top = 180;
+        deliver([], {} as ResizeObserver);
+        expect(reanchor).toHaveBeenCalledOnce();
+        top = 260;
+        deliver([], {} as ResizeObserver);
+        expect(reanchor).toHaveBeenCalledOnce();
+        vi.advanceTimersByTime(40);
+        expect(stopped).toHaveBeenCalledWith("quiet");
+        expect(disconnect).toHaveBeenCalledOnce();
+    });
+
+    it("re-anchors movement observed before the smooth restore settles", () => {
+        vi.useFakeTimers();
+        let deliver: ResizeObserverCallback = () => undefined;
+        vi.stubGlobal(
+            "ResizeObserver",
+            class {
+                constructor(callback: ResizeObserverCallback) { deliver = callback; }
+                observe() {}
+                disconnect() {}
+            },
+        );
+        vi.stubGlobal("window", { scrollY: 0 });
+        let top = 100;
+        const reanchor = vi.fn();
+        const heal = watchNarrativeAnchorLayout({
+            target: { getBoundingClientRect: () => ({ top }) } as unknown as HTMLElement,
+            root: {} as HTMLElement,
+            reanchor,
+            onStop: () => undefined,
+        });
+        top = 180;
+        deliver([], {} as ResizeObserver);
+        expect(reanchor).not.toHaveBeenCalled();
+        heal.settle();
+        expect(reanchor).toHaveBeenCalledOnce();
+    });
+});
+
 describe("dismiss and hover interaction cores", () => {
     it("dismisses only the topmost eligible claim", () => {
         vi.useFakeTimers();
@@ -62,6 +130,38 @@ describe("dismiss and hover interaction cores", () => {
         doc.dispatchEvent(new Event("pointerdown"));
         vi.advanceTimersByTime(8);
         expect(dismissed).toEqual(["drawer"]);
+        arbiter.destroy();
+    });
+
+    it("does not retarget one pointer gesture after its winning claim leaves", () => {
+        vi.useFakeTimers();
+        const doc = new EventTarget() as Document;
+        const dismissed: string[] = [];
+        const arbiter = createDismissArbiter(doc, { gestureEpsilonMs: 8 });
+        arbiter.claim({
+            id: "dock",
+            priority: 10,
+            outsidePointer: true,
+            onDismiss: () => dismissed.push("dock"),
+        });
+        const releaseDrawer = arbiter.claim({
+            id: "drawer",
+            priority: 30,
+            outsidePointer: true,
+            onDismiss: () => dismissed.push("old-drawer"),
+        });
+
+        doc.dispatchEvent(new Event("pointerdown"));
+        releaseDrawer();
+        arbiter.claim({
+            id: "drawer",
+            priority: 30,
+            outsidePointer: true,
+            onDismiss: () => dismissed.push("new-drawer"),
+        });
+        vi.advanceTimersByTime(8);
+
+        expect(dismissed).toEqual([]);
         arbiter.destroy();
     });
 

@@ -46,21 +46,21 @@ import { clamp, smoothStep3 } from "@mkbabb/value.js";
 import {
     supportsViewTimeline,
     useScrollProgress,
-} from "@/motion/useScrollProgress";
-import { useReducedMotion } from "@/motion/useReducedMotion";
-import { onNarrativeRestoreSettled } from "@/motion/narrative-restore";
-import { useViewParams } from "@/platform/stores/useViewParams";
+} from "./useScrollProgress.js";
+import { useReducedMotion } from "./useReducedMotion.js";
+import { onNarrativeRestoreSettled } from "./narrative-restore.js";
+import { useViewParams } from "../platform/stores/useViewParams.js";
 import {
     bindRevealGoLive,
     createRevealCuePump,
     projectRevealScore,
     type RevealRestoreEdge,
     type RevealScore,
-} from "@/motion/reveal-score";
+} from "./reveal-score.js";
 import {
     registerScrubHost,
     type ScrubHostRecord,
-} from "@/charts/composables/activeViz";
+} from "../charts/composables/activeViz.js";
 
 /** The facet kinds a viz's nature picks from (the H-INV-3 vocabulary). Free-form `string`
     is also accepted so a viz can name a bespoke track, but the named kinds carry intent.
@@ -535,4 +535,4 @@ export function scrollYearFace(
 
 // useSectionReveal (the thin page-clock subscriber) lives in its own module (O-B4R god-split);
 // re-exported so the `@/motion` surface is unchanged.
-export * from "./useSectionReveal";
+export * from "./useSectionReveal.js";

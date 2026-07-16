@@ -9,6 +9,6 @@
 // O-B5 landed the leaf closure (Signal, useFilterPane, the 3 UI leaves); O-B4R closes the SCC and
 // wires the whole engine + composables + ui. The chrome-blocked `FilterPanel.vue` (→ chrome/
 // freshness) stays deferred to O-B8. The monorepo import flip to this home is O-B11.
-export * from "./engine";
-export * from "./composables";
-export * from "./ui";
+export * from "./engine/index.js";
+export * from "./composables/index.js";
+export * from "./ui/index.js";

@@ -22,9 +22,9 @@
 // store mutation); `onActiveViz` is the thin Vue `watch` shell.
 
 import { watch, type WatchStopHandle } from "vue";
-import type { Predicate } from "@/filter/engine/predicate";
-import { useActiveBeat } from "@/platform/stores/useActiveBeat";
-import { useSelection } from "@/platform/stores/useSelection";
+import type { Predicate } from "../filter/engine/predicate.js";
+import { useActiveBeat } from "../platform/stores/useActiveBeat.js";
+import { useSelection } from "../platform/stores/useSelection.js";
 
 /** The event a subscriber receives on each active-viz transition (provenance-surface §4.1). */
 export interface ActiveVizEvent {

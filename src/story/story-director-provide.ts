@@ -15,11 +15,11 @@ import {
 import type {
     MarkStageHandle,
     StoryChapter,
-} from "@/story/story-contract";
+} from "./story-contract.js";
 import {
     useStoryDirector,
     type StoryDirectorContext,
-} from "@/story/useStoryDirector";
+} from "./useStoryDirector.js";
 
 /** The provide/inject token the figure plates read the active director through (null outside a host). */
 export const STORY_DIRECTOR_KEY: InjectionKey<StoryDirectorContext | null> =

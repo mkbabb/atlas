@@ -108,6 +108,12 @@ export interface SelectionKey {
     key: string;
 }
 
+function assertCanonicalSelectionId(id: string): void {
+    if (id.length === 0) throw new Error("selection id cannot be empty");
+    if (id.trim() !== id)
+        throw new Error("selection id cannot contain outer whitespace");
+}
+
 /**
  * Encode a `{kind}:{id}` composite key — the producer-edge mint. The id is left VERBATIM (it
  * may itself contain `:` — a GEOID, a synthetic cell id); only the FIRST `:` is the kind
@@ -115,7 +121,7 @@ export interface SelectionKey {
  * result is a plain string the Set holds with zero special-casing.
  */
 export function encodeSelKey(kind: SelectionKind, id: string): string {
-    if (id.length === 0) throw new Error("selection id cannot be empty");
+    assertCanonicalSelectionId(id);
     return `${kind}:${id}`;
 }
 
@@ -130,7 +136,7 @@ export function parseSelKey(key: string): SelectionKey {
     const kind = key.slice(0, colon);
     if (!SELECTION_KINDS.has(kind)) throw new Error(`unknown selection kind: ${kind}`);
     const id = key.slice(colon + 1);
-    if (id.length === 0) throw new Error("selection id cannot be empty");
+    assertCanonicalSelectionId(id);
     return { kind: kind as SelectionKind, id, key };
 }
 

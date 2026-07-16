@@ -24,19 +24,19 @@ vi.mock("@mkbabb/glass-ui/dark", async () => {
         }),
     };
 });
-vi.mock("@/charts/composables/echart-pumps", () => ({
+vi.mock("../../src/charts/composables/echart-pumps", () => ({
     RETINTING: Object.freeze({ retinting: true }),
     enqueuePaint: (paint: () => void) => paint(),
     scheduleRetint: vi.fn(),
 }));
 
 import { init } from "echarts/core";
-import { useEChart, type UseEChart } from "@/charts/composables/useEChart";
+import { useEChart, type UseEChart } from "../../src/charts/composables/useEChart";
 import {
     createStageMorphDriver,
     STAGE_MORPH_KEY,
-} from "@/charts/scene/stage-morph";
-import type { SceneOption } from "@/charts/contract/scene-contract";
+} from "../../src/charts/scene/stage-morph";
+import type { SceneOption } from "../../src/charts/contract/scene-contract";
 
 interface HostNode {
     children: HostNode[];

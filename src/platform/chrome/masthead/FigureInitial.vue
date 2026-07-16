@@ -33,8 +33,8 @@
 // and re-weights where the sequential/rainbow ramp's knee sits, so the initial is the
 // plate's LIVING legend, not a static swatch.
 import { computed } from "vue";
-import { colorKindStops, type ColorKind } from "@/charts/scale/colorKind";
-import { toRoman } from "@/platform/composables/useRomanNumeral";
+import { colorKindStops, type ColorKind } from "../../../charts/scale/colorKind.js";
+import { toRoman } from "../../composables/useRomanNumeral.js";
 
 const props = withDefaults(
     defineProps<{

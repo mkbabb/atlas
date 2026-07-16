@@ -21,10 +21,10 @@
 // motion: reduce)` carve (the named transition is ALWAYS bound; the media query kills it — ONE
 // mechanism, KISS). Vue-native FLIP + CSS, NOT keyframes.js (the standing law — list reorder = FLIP).
 import { computed, inject } from "vue";
-import { DASHBOARD_KEY } from "@/contract";
-import { useFilterPanel } from "@/filter/composables/useFilterPanel";
-import { useVizRegistry } from "@/charts/composables/useVizRegistry";
-import { useActiveBeat } from "@/platform/stores/useActiveBeat";
+import { DASHBOARD_KEY } from "../../contract/index.js";
+import { useFilterPanel } from "../composables/useFilterPanel.js";
+import { useVizRegistry } from "../../charts/composables/useVizRegistry.js";
+import { useActiveBeat } from "../../platform/stores/useActiveBeat.js";
 import { storeToRefs } from "pinia";
 import SelectionSetPane from "./SelectionSetPane.vue";
 import DimDial from "./DimDial.vue";

@@ -35,7 +35,7 @@ import {
     SelectItem,
 } from "@mkbabb/glass-ui/select";
 import { Switch } from "@mkbabb/glass-ui/switch";
-import { useVizOptions, type VizOptionSpec } from "@/charts/composables/useVizOptions";
+import { useVizOptions, type VizOptionSpec } from "../charts/composables/useVizOptions.js";
 
 const props = defineProps<{
     /** The SHARED viz id the control writes (NOT a new namespace — the plate's own slug). */

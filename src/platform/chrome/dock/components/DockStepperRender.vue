@@ -19,8 +19,8 @@ import { FadingScroll } from "@mkbabb/glass-ui/fading-scroll";
 import { DockSeparator } from "@mkbabb/glass-ui/dock";
 import ControlPlaneSpine from "../ControlPlaneSpine.vue";
 import DockNavItem from "./DockNavItem.vue";
-import { useDockStepper } from "@/platform/chrome/dock/composables/useDockStepper";
-import type { DashboardContext } from "@/contract";
+import { useDockStepper } from "../composables/useDockStepper.js";
+import type { DashboardContext } from "../../../../contract/index.js";
 
 const { ctx, ramp, progress, sheet } = defineProps<{
     /** The active dashboard chrome contract — the stepper reads `nav` / `accent` / `barometerRamp`. */

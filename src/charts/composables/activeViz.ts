@@ -36,8 +36,8 @@
 // the CSS `@media (prefers-reduced-motion)` guard never reaches this JS rAF — the gate lives here).
 
 import { RAFPlayback } from "@mkbabb/keyframes.js";
-import { useActiveBeat } from "@/platform/stores/useActiveBeat";
-import type { RevealCuePump } from "@/motion/reveal-score";
+import { useActiveBeat } from "../../platform/stores/useActiveBeat.js";
+import type { RevealCuePump } from "../../motion/reveal-score.js";
 
 /** The registered custom property the native `view()` host animates `0 → 1` (declared
     `@property --scroll-tl` in scroll-driven.css). The ONE name read here — the sole `--scroll-tl`

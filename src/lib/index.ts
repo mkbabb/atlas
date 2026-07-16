@@ -9,9 +9,9 @@
 // THIN re-export shim onto the real authority at `charts/lib/format.ts` (so a published `./charts`
 // member no longer reaches into an unpublished instance module). Its authority therefore moves WITH
 // the charts family (WG-B B3/B4); re-homing the shim now would dangle on charts that has not landed.
-export * from "./bounds";
-export * from "./regions";
-export * from "./perf/inp-probe";
+export * from "./bounds.js";
+export * from "./regions.js";
+export * from "./perf/inp-probe.js";
 
 // ── v1.0.2 (O-B10 re-cut) — THE PROSE-FORMATTER LIGHT SURFACE ──────────────────────────────────
 // The precision authority (`formatUsdCompact` / `formatMultiplier` / the full prose-formatter seam)
@@ -26,4 +26,4 @@ export * from "./perf/inp-probe";
 // stays at `charts/lib/format.ts` (ColorScale + the axis faces unmoved); this is an ADDITIVE re-export
 // — `./charts` keeps its copy for the heavy consumers, `./lib` carries the light one. Gallery meta.ts
 // flips to `@mkbabb/atlas/lib` and stays echarts-free by construction.
-export * from "@/charts/lib/format";
+export * from "../charts/lib/format.js";

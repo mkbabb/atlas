@@ -1,4 +1,4 @@
-import type { FacetSpec } from "./useScrollTimeline";
+import type { FacetSpec } from "./useScrollTimeline.js";
 
 /** The three DOM-scale cues RevealScore projects onto the existing scroll conductor. */
 export type RevealCueKind = "reveal" | "rule" | "recede";

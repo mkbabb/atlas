@@ -15,7 +15,7 @@
 //   predicate) ⊕ the CURRENT aggregation level ([ANSWERS Q43] — the shape MUST model multi-year/
 //   multi-state vs single-year/single-state so the render re-resolves LIVE as the selection narrows).
 
-import type { ReduceOp } from "@/platform/provenance/aggregate-contract";
+import type { ReduceOp } from "./aggregate-contract.js";
 
 // ── THE STATIC FACET — the DECLARED provenance a viz authors (lifted from viz-contract) ─────────
 

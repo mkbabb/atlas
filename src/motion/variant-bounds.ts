@@ -7,7 +7,7 @@
 // carries `MICRO_BOUNDS`, `RANK_INTENSITY`/`Rank`, AND the `FacetRegister`/`VariantBundle` shapes + the
 // `TITLE_LETTERING_REGISTER` data (the phantom `variant-bounds-bundles.ts` is RETIRED, H8).
 
-import type { Direction, EaseToken, DurationToken, StaggerPace } from "./variant-spec";
+import type { Direction, EaseToken, DurationToken, StaggerPace } from "./variant-spec.js";
 
 /** The seeded MICRO sub-knob bounds (the tasteful reach). Each is a SMALL bounded delta the seed draws
     via `vary()`. The STRUCTURE (small, bounded, span-proportional) is the law; the magnitudes retune. */

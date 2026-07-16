@@ -18,9 +18,9 @@ import {
     type DimDeclaration,
     type DimCell,
     type RouteUniverse,
-} from "@/filter/composables/useFilterDimensions";
-import { useViewParams } from "@/platform/stores/useViewParams";
-import type { FilterDimension } from "@/charts/contract/viz-contract";
+} from "../composables/useFilterDimensions.js";
+import { useViewParams } from "../../platform/stores/useViewParams.js";
+import type { FilterDimension } from "../../charts/contract/viz-contract.js";
 import PercentileRangeSlider from "./PercentileRangeSlider.vue";
 
 const props = defineProps<{

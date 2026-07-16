@@ -5,8 +5,8 @@
 // (`colorKind`), the canonical OKLab seam (`oklab`), and the render-tier LOD gate.
 // `emphasis-policy` + `colorRamp` stay INTERNAL (the encapsulation boundary — consumed
 // within the family, not re-exported), mirroring the pre-split flat-bag surface.
-export * from "./ColorScale";
-export * from "./colorKind";
-export * from "./colorChannel";
-export * from "./oklab";
-export * from "./render-tier";
+export * from "./ColorScale.js";
+export * from "./colorKind.js";
+export * from "./colorChannel.js";
+export * from "./oklab.js";
+export * from "./render-tier.js";

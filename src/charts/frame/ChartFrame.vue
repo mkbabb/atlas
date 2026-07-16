@@ -71,11 +71,11 @@ import {
     watch,
 } from "vue";
 import { ExpandableContainer } from "@mkbabb/glass-ui/expandable-container";
-import { useViewParams } from "@/platform/stores/useViewParams";
-import { EXPAND_SETTLE_KEY } from "@/charts/scene/expand-settle";
-import PlateError from "@/charts/frame/PlateError.vue";
-import { STORY_CARD_KEY } from "@/charts/frame/story-card-context";
-import { useHeadlineLift } from "./useHeadlineLift";
+import { useViewParams } from "../../platform/stores/useViewParams.js";
+import { EXPAND_SETTLE_KEY } from "../scene/expand-settle.js";
+import PlateError from "./PlateError.vue";
+import { STORY_CARD_KEY } from "./story-card-context.js";
+import { useHeadlineLift } from "./useHeadlineLift.js";
 
 const props = withDefaults(
     defineProps<{

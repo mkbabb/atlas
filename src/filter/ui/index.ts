@@ -29,4 +29,4 @@ export { default as YearScrubber } from "./components/YearScrubber.vue";
 export { default as FilterPanel } from "./FilterPanel.vue";
 
 export { default as SourceDataBrowser } from "./SourceDataBrowser.vue";
-export * from "./source-data-browser";
+export * from "./source-data-browser.js";

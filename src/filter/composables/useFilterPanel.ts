@@ -20,15 +20,15 @@
 
 import { computed, ref, type ComputedRef } from "vue";
 import { storeToRefs } from "pinia";
-import { useActiveBeat } from "@/platform/stores/useActiveBeat";
+import { useActiveBeat } from "../../platform/stores/useActiveBeat.js";
 import {
     useVizRegistry,
     type RegisteredViz,
-} from "@/charts/composables/useVizRegistry";
+} from "../../charts/composables/useVizRegistry.js";
 import type {
     FilterDimension,
     FilterResponse,
-} from "@/charts/contract/viz-contract";
+} from "../../charts/contract/viz-contract.js";
 
 /** The panel-LOCAL pin — a module singleton (NOT a K-ACTIVE write). `null` ⇒ the panel projects the
     in-viewport set; a vizId ⇒ the panel pins to that ONE viz (the dock-toggle target). */

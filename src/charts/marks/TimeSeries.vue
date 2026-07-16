@@ -3,7 +3,7 @@
 // export (BOUNDARY_AXIS) + the public TYPE exports (SeriesPoint/LineSeries) live here so they
 // are real module members StackedBar + the MultiYearFigure family import; <script setup> cannot carry
 // named runtime exports, and an SFC re-exports the plain block's members (not setup's).
-import { type TrendFit } from "@/charts/composables/useTrendline";
+import { type TrendFit } from "../composables/useTrendline.js";
 
 /** One observation on a series. */
 export interface SeriesPoint {
@@ -133,10 +133,10 @@ import {
 } from "echarts/components";
 import { LabelLayout } from "echarts/features";
 import type { EChartsOption } from "echarts";
-import { useEChart } from "@/charts/composables/useEChart";
-import { useVizPalette } from "@/charts/composables/useVizPalette";
-import { buildTimeSeriesOption } from "@/charts/composables/useTimeSeriesOption";
-import ChartLegend, { type LegendChip } from "@/charts/legend/ChartLegend.vue";
+import { useEChart } from "../composables/useEChart.js";
+import { useVizPalette } from "../composables/useVizPalette.js";
+import { buildTimeSeriesOption } from "../composables/useTimeSeriesOption.js";
+import ChartLegend, { type LegendChip } from "../legend/ChartLegend.vue";
 
 // Line + grid; the TooltipComponent is registered but every option keeps it OFF. The canvas
 // LegendComponent is RETIRED (DV-8) — the legend is the shared <ChartLegend> DOM strip.

@@ -25,15 +25,15 @@ import {
     charterGlyph,
     type GlyphGeom,
     type GlyphSize,
-} from "@/data/entityGeometry";
-import type { GlyphGrain } from "@/charts/glyph/Glyph.vue";
-import type { SelectionKey, SelectionKind } from "@/charts/contract/selection-contract";
+} from "../../data/entityGeometry.js";
+import type { GlyphGrain } from "./Glyph.vue";
+import type { SelectionKey, SelectionKind } from "../contract/selection-contract.js";
 import {
     pxToLod,
     viewBoxCenter,
     type IconPoint,
     type IconLod,
-} from "@/charts/glyph/iconPrimitives";
+} from "./iconPrimitives.js";
 
 // ── The grain taxonomy (icon-facility §1) ───────────────────────────────────────────────────────
 

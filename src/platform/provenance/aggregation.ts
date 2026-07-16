@@ -13,8 +13,8 @@
 // that binds the route's LIVE getters so the computed re-resolves on every migration.
 
 import { computed, toValue, type ComputedRef, type MaybeRefOrGetter } from "vue";
-import type { AggregationLevel } from "./provenance-contract";
-import type { MeasureKind, ReduceOp } from "./aggregate-contract";
+import type { AggregationLevel } from "./provenance-contract.js";
+import type { MeasureKind, ReduceOp } from "./aggregate-contract.js";
 
 /** One aggregation AXIS the view spans — its POOLED label (many members are folded) and its SINGLE
     label (the view has narrowed to one member), plus whether the current view HAS narrowed. The

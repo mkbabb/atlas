@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { armMorphPush, withMorphIdentity } from "@/charts/morph";
-import { packSwarm } from "@/charts/lib/swarm";
-import { resolveColorChannel } from "@/charts/scale/colorChannel";
-import { projectDrilldown } from "@/interaction/projectDrilldown";
-import type { SelectionKey } from "@/charts/contract/selection-contract";
+import { armMorphPush, withMorphIdentity } from "../../src/charts/morph";
+import { packSwarm } from "../../src/charts/lib/swarm";
+import { resolveColorChannel } from "../../src/charts/scale/colorChannel";
+import { projectDrilldown } from "../../src/interaction/projectDrilldown";
+import type { SelectionKey } from "../../src/charts/contract/selection-contract";
 
 describe("W-L3 keyed morph and packed swarm", () => {
     it("keys marks by name and arms only the pushed option", () => {

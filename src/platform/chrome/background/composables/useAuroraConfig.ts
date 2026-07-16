@@ -44,7 +44,7 @@ import {
     type ComputedRef,
     type MaybeRefOrGetter,
 } from "vue";
-import { useThemeKey } from "@/platform/composables/useThemeKey";
+import { useThemeKey } from "../../../composables/useThemeKey.js";
 
 import {
     DEFAULT_AURORA_CONFIG,
@@ -59,16 +59,16 @@ import {
     useVizPalette,
     resolveAtmosphereColors,
     type VizPalette,
-} from "@/charts/composables/useVizPalette";
-import { useDocumentScrollProgress } from "@/motion/useScrollProgress";
-import { blendOklch, type Oklab } from "@/charts/scale/oklab";
-import type { DashboardContext, DepositionProfile } from "@/contract";
-import { selectAtmosphere } from "@/platform/chrome/background/composables/atmosphere";
+} from "../../../../charts/composables/useVizPalette.js";
+import { useDocumentScrollProgress } from "../../../../motion/useScrollProgress.js";
+import { blendOklch, type Oklab } from "../../../../charts/scale/oklab.js";
+import type { DashboardContext, DepositionProfile } from "../../../../contract/index.js";
+import { selectAtmosphere } from "./atmosphere.js";
 import {
     nucleiSpecs,
     nucleusAt,
     SELECTION_LEAN,
-} from "@/platform/chrome/background/composables/aurora-nuclei";
+} from "./aurora-nuclei.js";
 
 // ── THE ATMOSPHERE RESOLUTION (N.WD2 §4.D2 — the ruled departure) ─────────────────────────────
 // The per-surface `surfacePoles`/`surfaceProfile` slug-switch is DELETED (D2.5). The poles + the

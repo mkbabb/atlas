@@ -33,8 +33,8 @@
 // ONE <dl>: continuous/stepped emit the ramp/bar as a single <dt>meaning</dt><dd>pole→pole</dd>
 // description pair; discrete emits one <dt>swatch</dt><dd>label</dd> pair per chip. Screen
 // readers read the legend as a definition list (term ⇒ meaning), the chart's key in prose.
-import type { ColorKind } from "@/charts/scale/colorKind";
-import { useChartLegend } from "./useChartLegend";
+import type { ColorKind } from "../scale/colorKind.js";
+import { useChartLegend } from "./useChartLegend.js";
 
 /** A discrete legend entry — a verbatim swatch + its label + an optional count badge. */
 export interface LegendChip {

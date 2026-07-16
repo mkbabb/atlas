@@ -14,33 +14,36 @@ import {
     useSlots,
     watch,
     watchEffect,
+    type Component,
 } from "vue";
-import { BEAT_TITLE_KEY } from "@/charts/legend/beat-title";
-import { useOptionalVizContext } from "@/platform/context/hub";
-import type { Readiness } from "@/platform/context/readiness";
+import { BEAT_TITLE_KEY } from "../legend/beat-title.js";
+import { useOptionalStageEventHub } from "../contract/scene-contract.js";
+import { useOptionalVizContext } from "../../platform/context/hub.js";
+import type { Readiness } from "../../platform/context/readiness.js";
 import {
     keyStep,
     ariaLiveSentence,
     initialNavState,
     type KeyboardNavSpec,
     type NavState,
-} from "@/interaction/keyboard";
-import { parseSelKey } from "@/charts/contract/selection-contract";
-import { useVizOptions } from "@/charts/composables/useVizOptions";
+} from "../../interaction/keyboard.js";
+import { parseSelKey } from "../contract/selection-contract.js";
+import { useVizOptions } from "../composables/useVizOptions.js";
 import {
     useFilterDimensions,
     type DimDeclaration,
     type RouteUniverse,
-} from "@/filter/composables/useFilterDimensions";
-import { useFilterPane } from "@/filter/composables/useFilterPane";
-import { useFilterPanel } from "@/filter/composables/useFilterPanel";
-import { useVizRegistry, type VizToken } from "@/charts/composables/useVizRegistry";
-import { exportCsv, exportImage, type DataUrlSource } from "@/charts/lib/vizExport";
-import type { VizContract } from "@/charts/contract/viz-contract";
-import { useSelection } from "@/platform/stores/useSelection";
-import { useSelectionStat } from "@/platform/stores/useSelectionStat";
-import { useActiveBeat } from "@/platform/stores/useActiveBeat";
-import { useViewParams } from "@/platform/stores/useViewParams";
+} from "../../filter/composables/useFilterDimensions.js";
+import { useFilterPane } from "../../filter/composables/useFilterPane.js";
+import { useFilterPanel } from "../../filter/composables/useFilterPanel.js";
+import { useVizRegistry, type VizToken } from "../composables/useVizRegistry.js";
+import { exportCsv, exportImage, type DataUrlSource } from "../lib/vizExport.js";
+import type { VizContract } from "../contract/viz-contract.js";
+import { useSelection } from "../../platform/stores/useSelection.js";
+import { useSelectionStat } from "../../platform/stores/useSelectionStat.js";
+import { useActiveBeat } from "../../platform/stores/useActiveBeat.js";
+import { useViewParams } from "../../platform/stores/useViewParams.js";
+import { createAtlasEventHub } from "../../events/index.js";
 
 /** VizPlate's props — the declared `VizContract` + the optional live chart + keyboard nav.
     The SFC applies the `{chart:null, nav:null}` withDefaults; the composable reads the resolved
@@ -49,6 +52,14 @@ export interface VizPlateProps {
     contract: VizContract;
     chart?: DataUrlSource | null;
     nav?: KeyboardNavSpec<unknown> | null;
+}
+
+/** A persistent stage owns its source seat; a standalone plate owns its own. */
+export function sourcePanelForHost(
+    panel: Component | undefined,
+    stageOwned: boolean,
+): Component | null {
+    return stageOwned ? null : (panel ?? null);
 }
 
 export function useVizPlate(props: VizPlateProps) {
@@ -394,7 +405,41 @@ const showAppliedSummary = computed(
 const view = useViewParams();
 view.registerKeys(["browse", "grain"]);
 const isFullscreen = computed(() => view.figId === props.contract.id);
-const sourceData = computed(() => props.contract.sourceData?.panel ?? null);
+const stageEventContext = useOptionalStageEventHub();
+const sourceEventHub =
+    stageEventContext?.hub ??
+    (props.contract.sourceData?.panel ? createAtlasEventHub() : null);
+const sourceData = computed(() =>
+    sourcePanelForHost(props.contract.sourceData?.panel, stageEventContext !== null),
+);
+if (sourceEventHub) {
+    if (!stageEventContext)
+        watch(
+            () => props.contract.id,
+            (vizId) =>
+                sourceEventHub.emit({
+                    type: "active-viz",
+                    scope: { grain: "viz", vizId },
+                    vizId,
+                    beat: { id: vizId, label: props.contract.title },
+                }),
+            { immediate: true },
+        );
+    watch(
+        [() => selection.primaryKey, () => [...selection.selectedKeys]],
+        ([primaryKey, selectedKeys]) => {
+            const vizId = stageEventContext?.scope.stageId ?? props.contract.id;
+            sourceEventHub.emit({
+                type: "selected-viz",
+                scope: stageEventContext?.scope ?? { grain: "viz", vizId },
+                vizId,
+                primaryKey,
+                selectedKeys,
+            });
+        },
+        { immediate: true },
+    );
+}
 const sourceDataOpen = computed(
     () => sourceData.value != null && view.param("browse") === props.contract.id,
 );
@@ -471,6 +516,7 @@ watchEffect(() => {
         activeFilterCount,
         showAppliedSummary,
         sourceData,
+        sourceEventHub,
         sourceDataOpen,
         openSourceData,
         closeSourceData,

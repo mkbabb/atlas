@@ -13,8 +13,8 @@
 
 import { computed, ref, type ComputedRef } from "vue";
 import { useGlobalDark } from "@mkbabb/glass-ui/dark";
-import { VIZ_DIVERGING_MID_FALLBACK } from "@/charts/scale/colorKind";
-import { clearVarMemo } from "@/charts/scale/ColorScale";
+import { VIZ_DIVERGING_MID_FALLBACK } from "../scale/colorKind.js";
+import { clearVarMemo } from "../scale/ColorScale.js";
 
 /** The diverging ramp (net-flow choropleth): low pole → break-even mid → high pole. */
 export interface DivergingPalette {

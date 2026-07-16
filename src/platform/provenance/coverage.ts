@@ -9,7 +9,7 @@
 // census reads the ACTUAL item roster and NAMES the offenders — never a "N routes declare provenance"
 // tally that proves nothing about any mark [CH-A H2; CH-D H1; provenance-surface §2].
 
-import type { ProvenanceFacet } from "./provenance-contract";
+import type { ProvenanceFacet } from "./provenance-contract.js";
 
 /** One MOUNTED item the coverage census examines — a data mark / figure / story item identified by its
     stable id, and the provenance FACET it declares (`null` when the item declares none — the un-sourced

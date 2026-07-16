@@ -17,24 +17,24 @@ import {
     computed, onBeforeUnmount, onMounted, provide, ref,
     type Component, type VNodeChild,
 } from "vue";
-import { useViewParams } from "@/platform/stores/useViewParams";
-import { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
-import type { YearScope } from "@/data/useYearScope";
-import { useReducedMotion } from "@/motion/useReducedMotion";
-import { useScrollTimeline } from "@/motion/useScrollTimeline";
-import { onNarrativeRestoreSettled } from "@/motion/narrative-restore";
-import { onActiveScrubHostChange } from "@/charts/composables/activeViz";
-import { useStageDeck } from "@/stage/useStageDeck";
-import VizPlate from "@/charts/frame/VizPlate.vue";
-import { isVizContract } from "@/charts/contract/viz-contract"; // the ONE promoted guard (S6)
-import type { VizContract } from "@/charts/contract/viz-contract";
+import { useViewParams } from "../../platform/stores/useViewParams.js";
+import { useActiveDashboard } from "../../platform/stores/useActiveDashboard.js";
+import type { YearScope } from "../../data/useYearScope.js";
+import { useReducedMotion } from "../../motion/useReducedMotion.js";
+import { useScrollTimeline } from "../../motion/useScrollTimeline.js";
+import { onNarrativeRestoreSettled } from "../../motion/narrative-restore.js";
+import { onActiveScrubHostChange } from "../composables/activeViz.js";
+import { useStageDeck } from "../../stage/useStageDeck.js";
+import VizPlate from "../frame/VizPlate.vue";
+import { isVizContract } from "../contract/viz-contract.js"; // the ONE promoted guard (S6)
+import type { VizContract } from "../contract/viz-contract.js";
 import {
     SCENE_KEY,
     type ChapterScene,
     type ChapterTitle,
     type SceneAnchor,
     type SceneRuntime,
-} from "@/charts/contract/scene-contract";
+} from "../contract/scene-contract.js";
 
 const props = defineProps<{
     /** The declared scene (the archetype). */

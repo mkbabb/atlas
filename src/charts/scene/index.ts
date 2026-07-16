@@ -2,9 +2,9 @@
 // The family barrel — re-exports the family's public surface (components as named default
 // re-exports, the .ts leaves whole). Split-internal helpers stay family-internal.
 
-export * from "./expand-settle";
-export * from "./stage-morph";
-export * from "./usePaperCallout";
+export * from "./expand-settle.js";
+export * from "./stage-morph.js";
+export * from "./usePaperCallout.js";
 export { default as PaperCallout } from "./PaperCallout.vue";
 export { default as ScrollLetteringHeading } from "./ScrollLetteringHeading.vue";
 export { default as ScrollTimeline } from "./ScrollTimeline.vue";

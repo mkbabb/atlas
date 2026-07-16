@@ -49,13 +49,13 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { Surface } from "@mkbabb/glass-ui/surface";
-import ReadoutFacts from "@/charts/readout/ReadoutFacts.vue";
-import { useHoverReadout, type HoverReadout } from "@/platform/stores/useHoverReadout";
-import { useAffordanceHint } from "@/interaction/useAffordanceHint";
-import { MQ } from "@/design/foundations/breakpoints";
-import { transientSeat } from "@/charts/composables/useCardPlacement";
-import { useDismissArbiter } from "@/platform/interaction/useDismissArbiter";
-import { createHoverBridge } from "@/interaction/hover-bridge";
+import ReadoutFacts from "../charts/readout/ReadoutFacts.vue";
+import { useHoverReadout, type HoverReadout } from "../platform/stores/useHoverReadout.js";
+import { useAffordanceHint } from "./useAffordanceHint.js";
+import { MQ } from "../design/foundations/breakpoints.js";
+import { transientSeat } from "../charts/composables/useCardPlacement.js";
+import { useDismissArbiter } from "../platform/interaction/useDismissArbiter.js";
+import { createHoverBridge } from "./hover-bridge.js";
 
 /** A single labelled fact in the grid (the universal fact-row). */
 export interface Fact {

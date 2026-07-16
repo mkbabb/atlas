@@ -9,23 +9,24 @@ import {
     type DataTableColumn,
     type DataTableRowAttrs,
 } from "@mkbabb/glass-ui/data-table";
-import type { ExportFormat } from "@/charts/lib/source-data";
-import type { ExportGrain } from "@/filter/engine/rows";
+import type { ExportFormat } from "../../charts/lib/source-data.js";
+import type { ExportGrain } from "../engine/rows.js";
 import {
     useVirtualWindow,
     type VirtualItem,
-} from "@/filter/composables/useVirtualWindow";
-import { useViewParams } from "@/platform/stores/useViewParams";
-import { useVizRegistry } from "@/charts/composables/useVizRegistry";
-import type { EventScope } from "@/events";
-import type { ExportPayload } from "@/charts/lib/source-data";
+} from "../composables/useVirtualWindow.js";
+import { useViewParams } from "../../platform/stores/useViewParams.js";
+import { useVizRegistry } from "../../charts/composables/useVizRegistry.js";
+import type { EventScope } from "../../events/index.js";
+import type { ExportPayload } from "../../charts/lib/source-data.js";
 import {
     reconcileMountedFocus,
     useSourceBrowserEvents,
     type SourceDataAvailableGrain,
     type SourceDataBrowserProps,
     type SourceDataGrainOption,
-} from "./source-data-browser";
+} from "./source-data-browser.js";
+import { emitSourceFilterState } from "./source-filter-state.js";
 
 const props = defineProps<SourceDataBrowserProps<Row, Scope, Key>>();
 const eventState = useSourceBrowserEvents(props.eventHub, props.vizId);
@@ -82,14 +83,7 @@ const activeGrain = computed<ExportGrain<Scope>>(() => {
     const option = props.availableGrains[activeIndex.value] ?? props.availableGrains[0];
     return option ? grainOf(option) : { kind: "dataset" };
 });
-const reader = computed(() =>
-    typeof props.rowsReader === "function"
-        ? props.rowsReader(eventState.activeVizId.value)
-        : props.rowsReader,
-);
-const resolvedVizId = computed(
-    () => eventState.activeVizId.value || props.vizId || "source-data",
-);
+const resolvedVizId = computed(() => eventState.activeVizId.value);
 const imageExport = computed(
     () => vizRegistry.registry.value.get(resolvedVizId.value)?.imageExport,
 );
@@ -99,15 +93,17 @@ const exportFormats = computed<readonly ExportFormat[]>(() => [
     ...(imageExport.value ? [imageExport.value.format] : []),
     "print",
 ]);
-const resolvedScope = computed<EventScope>(() => {
-    const authored = props.eventScope;
-    if (!authored) return { grain: "viz", vizId: resolvedVizId.value };
-    if (authored.grain === "viz") return { grain: "viz", vizId: resolvedVizId.value };
-    return authored;
-});
-const rows = computed<readonly Row[]>(() => reader.value.rowsAt(activeGrain.value));
+const resolvedScope = computed<EventScope>(() =>
+    props.eventScope.grain === "viz"
+        ? { grain: "viz", vizId: resolvedVizId.value }
+        : props.eventScope,
+);
+const projection = computed(() =>
+    props.rowsReader.project(activeGrain.value, eventState.selectedKeys.value),
+);
+const rows = computed<readonly Row[]>(() => projection.value.rows);
 const payload = computed<ExportPayload<Row, Scope>>(() =>
-    props.exportPayload(rows.value, activeGrain.value, resolvedVizId.value),
+    props.exportPayload(projection.value, resolvedVizId.value),
 );
 const provenanceFields = computed(() =>
     eventState.fields.value.length > 0
@@ -210,7 +206,6 @@ watch(
     [activeGrain, resolvedVizId],
     ([grain, vizId]) => {
         if (view.param("grain") !== grain.kind) view.setParam("grain", grain.kind);
-        if (!props.eventHub) return;
         props.eventHub.emit({
             type: "granularity",
             scope: resolvedScope.value,
@@ -224,7 +219,6 @@ watch(
 watch(
     payload,
     (currentPayload) => {
-        if (!props.eventHub) return;
         const vizId = resolvedVizId.value;
         props.eventHub.emit({
             type: "provenance",
@@ -234,6 +228,13 @@ watch(
             filterExplain: currentPayload.meta.filterExplain,
         });
     },
+    { immediate: true },
+);
+
+watch(
+    [() => projection.value.filterPredicate, resolvedScope],
+    ([predicate, scope]) =>
+        emitSourceFilterState(props.eventHub, scope, predicate),
     { immediate: true },
 );
 
@@ -253,7 +254,7 @@ function markGrainExplicit(index: number): void {
 
 function selectContextualDefault(): void {
     const index = indexForKind(
-        eventState.selectedKeys.value.length > 0 ? "selection" : "dataset",
+        projection.value.selectedKeys.length > 0 ? "selection" : "dataset",
     );
     if (index >= 0) selectGrain(index, false);
 }
@@ -433,8 +434,8 @@ function titleCase(value: string): string {
         </div>
         <p class="source-browser__count" aria-live="polite">
             {{ rows.length.toLocaleString() }} {{ rows.length === 1 ? "row" : "rows" }}
-            <template v-if="eventState.selectedKeys.value.length">
-                · {{ eventState.selectedKeys.value.length.toLocaleString() }} selected
+            <template v-if="projection.selectedKeys.length">
+                · {{ projection.selectedKeys.length.toLocaleString() }} selected
             </template>
         </p>
     </section>

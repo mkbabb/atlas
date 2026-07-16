@@ -3,10 +3,10 @@ import {
     useFilterDimensions,
     type DimDeclaration,
     type RouteUniverse,
-} from "./useFilterDimensions";
-import { useFilterPanel } from "./useFilterPanel";
-import { useSelection } from "@/platform/stores/useSelection";
-import type { FilterResponse } from "@/charts/contract/viz-contract";
+} from "./useFilterDimensions.js";
+import { useFilterPanel } from "./useFilterPanel.js";
+import { useSelection } from "../../platform/stores/useSelection.js";
+import type { FilterResponse } from "../../charts/contract/viz-contract.js";
 
 export interface FilterLedgerChip {
     key: string;

@@ -26,18 +26,18 @@
 // overlay + lockups + chip + the `data-reveal-fan` keyframe the two plates carried inline.
 import { computed, ref, watch } from "vue";
 import type { EChartsOption } from "echarts";
-import VizPlate from "@/charts/frame/VizPlate.vue";
-import AxisNameLockup from "@/charts/legend/AxisNameLockup.vue";
-import VizTextOverlay from "@/charts/legend/VizTextOverlay.vue";
-import { useEChart } from "@/charts/composables/useEChart";
-import { armMorphPush, withMorphIdentity } from "@/charts/morph";
-import EChartOrnament from "@/charts/glyph/EChartOrnament.vue";
-import { useHoverReadout, type HoverReadout } from "@/platform/stores/useHoverReadout";
+import VizPlate from "../frame/VizPlate.vue";
+import AxisNameLockup from "../legend/AxisNameLockup.vue";
+import VizTextOverlay from "../legend/VizTextOverlay.vue";
+import { useEChart } from "../composables/useEChart.js";
+import { armMorphPush, withMorphIdentity } from "../morph.js";
+import EChartOrnament from "../glyph/EChartOrnament.vue";
+import { useHoverReadout, type HoverReadout } from "../../platform/stores/useHoverReadout.js";
 import type {
     AxisLockup,
     VizAnnotationPlacement,
     VizContract,
-} from "@/charts/contract/viz-contract";
+} from "../contract/viz-contract.js";
 
 const props = withDefaults(
     defineProps<{

@@ -12,7 +12,7 @@
 import { computed } from "vue";
 import { Button } from "@mkbabb/glass-ui/button";
 import { StatusDot } from "@mkbabb/glass-ui/status-dot";
-import type { YearMode } from "@/data/useYearScope";
+import type { YearMode } from "../../../data/useYearScope.js";
 import FilterRow from "./FilterRow.vue";
 
 const props = withDefaults(

@@ -17,16 +17,16 @@
 // waves that land their upstream closure. See the O-B4 PACK deferral ledger + the RED-LEDGER row.
 // ── O-B4R (the SCC closure) — the full family surface ────────────────────────────────────────
 // O-B4 landed scale/contract(clean)/lib; O-B4R closes the SCC and wires every family barrel.
-export * from "./scale";
-export * from "./contract";
-export * from "./lib";
-export * from "./frame";
-export * from "./geo";
-export * from "./glyph";
-export * from "./legend";
-export * from "./marks";
-export * from "./readout";
-export * from "./scene";
-export * from "./composables";
-export * from "./viz-set";
-export * from "./morph";
+export * from "./scale/index.js";
+export * from "./contract/index.js";
+export * from "./lib/index.js";
+export * from "./frame/index.js";
+export * from "./geo/index.js";
+export * from "./glyph/index.js";
+export * from "./legend/index.js";
+export * from "./marks/index.js";
+export * from "./readout/index.js";
+export * from "./scene/index.js";
+export * from "./composables/index.js";
+export * from "./viz-set.js";
+export * from "./morph.js";

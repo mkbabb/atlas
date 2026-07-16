@@ -28,18 +28,18 @@ import {
     type InjectionKey,
     type MaybeRefOrGetter,
 } from "vue";
-import type { DashboardContext } from "@/contract";
-import type { ColorKind } from "@/charts/scale/colorKind";
-import type { VizPalette } from "@/charts/composables/useVizPalette";
-import type { SelectionKind } from "@/charts/contract/selection-contract";
-import type { SelectionTreatment } from "@/interaction/useSelectionTreatment";
-import type { HoverReadout } from "@/platform/stores/useHoverReadout";
-import type { RouteUniverse } from "@/charts/contract/viz-contract";
-import type { useSelection } from "@/platform/stores/useSelection";
-import type { useHoverReadout } from "@/platform/stores/useHoverReadout";
-import type { useActiveBeat } from "@/platform/stores/useActiveBeat";
-import type { useActiveDashboard } from "@/platform/stores/useActiveDashboard";
-import { foldReadiness, type Readiness, type SourcePhase } from "@/platform/context/readiness";
+import type { DashboardContext } from "../../contract/index.js";
+import type { ColorKind } from "../../charts/scale/colorKind.js";
+import type { VizPalette } from "../../charts/composables/useVizPalette.js";
+import type { SelectionKind } from "../../charts/contract/selection-contract.js";
+import type { SelectionTreatment } from "../../interaction/useSelectionTreatment.js";
+import type { HoverReadout } from "../stores/useHoverReadout.js";
+import type { RouteUniverse } from "../../charts/contract/viz-contract.js";
+import type { useSelection } from "../stores/useSelection.js";
+import type { useHoverReadout } from "../stores/useHoverReadout.js";
+import type { useActiveBeat } from "../stores/useActiveBeat.js";
+import type { useActiveDashboard } from "../stores/useActiveDashboard.js";
+import { foldReadiness, type Readiness, type SourcePhase } from "./readiness.js";
 
 /** A late-resolved computed value (the `C<T>` shorthand from the NP4 API sketch). */
 export type C<T> = ComputedRef<T>;

@@ -9,12 +9,12 @@
 // `compile` / `explain` / `isIdentity` / `encodeFilter` / `parseFilter` /
 // `deriveRegistry` + the `Coordinator` / `Client` / `Params` / `Selection` / `Predicate` types) is
 // re-instated by O-B5R.
-export type { Signal } from "./signals";
+export type { Signal } from "./signals.js";
 
 // — O-B5R/B4R (the SCC closure): the coordinator engine graph —
-export * from "./predicate";
-export * from "./selection";
-export * from "./coordinator";
-export * from "./filter-codec";
-export * from "./route-fold";
-export * from "./rows";
+export * from "./predicate.js";
+export * from "./selection.js";
+export * from "./coordinator.js";
+export * from "./filter-codec.js";
+export * from "./route-fold.js";
+export * from "./rows.js";

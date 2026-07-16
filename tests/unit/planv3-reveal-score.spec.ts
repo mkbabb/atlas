@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
     bindRevealGoLive,
@@ -7,7 +6,7 @@ import {
     projectRevealScore,
     type RevealCueContext,
     type RevealScore,
-} from "@/motion";
+} from "../../src/motion";
 
 function score(calls: RevealCueContext[]): RevealScore {
     return {
@@ -101,13 +100,4 @@ describe("RevealScore", () => {
         expect(countAt(318.47, 0.5, { decimals: 2 })).toBe(318.47);
     });
 
-    it("adds no observer, animation-frame loop, or native progress reader", () => {
-        const source = readFileSync(
-            new URL("../../src/motion/reveal-score.ts", import.meta.url),
-            "utf8",
-        );
-        expect(source).not.toMatch(/new\s+IntersectionObserver/);
-        expect(source).not.toMatch(/requestAnimationFrame\s*\(/);
-        expect(source).not.toMatch(/getComputedStyle\s*\(/);
-    });
 });

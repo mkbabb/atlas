@@ -29,7 +29,7 @@
 // it never duplicates per plate, and it co-locates with the other discoverability surfaces.
 
 import { onBeforeUnmount, onMounted } from "vue";
-import { useReducedMotion } from "@/motion/useReducedMotion";
+import { useReducedMotion } from "../motion/useReducedMotion.js";
 
 /** The session-once latch key — the hint fires once per browser session (across routes + a
     same-session reload), never a per-route nag. */

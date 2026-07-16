@@ -55,7 +55,7 @@ import {
     springTimingFunction,
     type StaggerOrigin,
 } from "@mkbabb/keyframes.js";
-import { useReducedMotion } from "./useReducedMotion";
+import { useReducedMotion } from "./useReducedMotion.js";
 
 /** The per-character reveal style — an inline `style` object to bind on each glyph span. */
 export type LetteringStyle = Record<string, string>;

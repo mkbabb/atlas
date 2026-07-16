@@ -29,12 +29,12 @@ import {
     RED_INK,
     type DarkLiftPair,
     type MarkClock,
-} from "@/motion/useHandMarkClock";
+} from "../../motion/useHandMarkClock.js";
 import {
     useMarkMorphology,
     type MarkVariant,
-} from "@/motion/useMarkMorphology";
-import { HIGHLIGHT_WEIGHT_VB } from "@/charts/marks/mark-tokens";
+} from "../../motion/useMarkMorphology.js";
+import { HIGHLIGHT_WEIGHT_VB } from "../marks/mark-tokens.js";
 
 const props = withDefaults(
     defineProps<{

@@ -25,7 +25,7 @@
 // mechanism, no second fork (the J-FILTER re-point is a single ref swap when its singleton lands).
 
 import { ref, type Ref } from "vue";
-import { useMobileRegister } from "@/platform/composables/useMobileRegister";
+import { useMobileRegister } from "../../../composables/useMobileRegister.js";
 
 /** The gear posture's reactive surface — the dock composes these into its template. */
 export interface UseDockGear {

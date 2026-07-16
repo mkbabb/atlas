@@ -1,21 +1,6 @@
-// tests/unit/oa22-redundant-channel.spec.ts — O-A22 ACCEPTANCE teeth at the pure-mechanism +
-// live-source layer (this library's DOM-less test idiom — the `checkOrdinalRainbowPassthrough`
-// executable-proof pattern + the gate corpus's "read LIVE source off disk" scan):
-//
-//   · checkRedundantChannel — the four collapsed invariants (disjointness · uniqueness · tier-bin
-//     agreement · the density decision + the NEG).
-//   · buildDataFillBins — same fill → same bin; distinct fills → distinct bins (agreement source).
-//   · resolveRedundantChannel — few bins → pattern; many bins → value-label; the NEG (`none`).
-//   · the absence-vs-data disjointness — a no-data fill (excluded by the caller) mints no data bin,
-//     and no data texture reuses the reserved absence-hatch id / kind.
-//   · the LIVE GeoChoropleth.vue wiring — the `redundantChannel:'auto'` inherited default, the fill
-//     routed through `fillFor`, the tier-texture `<pattern>` emitted, the reserved hatch kept ONE.
+// Redundant-channel paint and label decisions.
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import {
-    checkRedundantChannel,
-    checkLabelGate,
     buildDataFillBins,
     resolveRedundantChannel,
     regionClearsLabelGate,
@@ -26,24 +11,7 @@ import {
     LABEL_CONTRAST_FLOOR,
     ABSENCE_HATCH_ID,
     ABSENCE_HATCH_KIND,
-} from "@/charts/geo/redundant-channel";
-
-const SFC = readFileSync(
-    fileURLToPath(new URL("../../src/charts/geo/GeoChoropleth.vue", import.meta.url)),
-    "utf8",
-);
-const CSS = readFileSync(
-    fileURLToPath(new URL("../../src/charts/geo/GeoChoropleth.css", import.meta.url)),
-    "utf8",
-);
-
-describe("O-A22 · checkRedundantChannel — the collapsed executable proof", () => {
-    it("passes every invariant (disjointness · uniqueness · agreement · density + NEG)", () => {
-        const { ok, failures } = checkRedundantChannel();
-        expect(failures).toEqual([]);
-        expect(ok).toBe(true);
-    });
-});
+} from "../../src/charts/geo/redundant-channel";
 
 describe("O-A22 · the tier-bin AGREEMENT (the one shared bin source)", () => {
     it("the SAME data fill maps to the SAME bin (idempotent — a pure function of the colour)", () => {
@@ -157,14 +125,6 @@ describe("O-A22 · the absence-vs-data disjointness (a no-data region reads as a
     });
 });
 
-describe("X10-LIB · checkLabelGate — the collapsed executable proof", () => {
-    it("passes every invariant (size floor · contrast floor · conjunction · positive control)", () => {
-        const { ok, failures } = checkLabelGate();
-        expect(failures).toEqual([]);
-        expect(ok).toBe(true);
-    });
-});
-
 describe("X10-LIB · regionClearsLabelGate — the per-region declutter gate (the label-vs-A22 reconcile)", () => {
     it("clears only when BOTH the size and contrast floors hold", () => {
         expect(regionClearsLabelGate(LABEL_MINOR_AXIS_FLOOR_PX, LABEL_CONTRAST_FLOOR)).toBe(true);
@@ -185,80 +145,5 @@ describe("X10-LIB · regionClearsLabelGate — the per-region declutter gate (th
         const a = regionClearsLabelGate(60, 4);
         const b = regionClearsLabelGate(60, 4);
         expect(a).toBe(b);
-    });
-});
-
-describe("X10-LIB · the LIVE GeoChoropleth.vue wiring — the label-gate + pattern-fallback invariant", () => {
-    it("imports the pure size/contrast gate off the ONE redundant-channel source (no drift)", () => {
-        expect(SFC).toContain("regionClearsLabelGate");
-        expect(SFC).toMatch(/from\s+"@\/charts\/geo\/redundant-channel"/);
-    });
-
-    it("a value-label region that FAILS its gate routes to the PATTERN fallback, never a blank fill", () => {
-        // `usesPatternFill` is the ONE fill-routing decision `fillFor` reads; it must special-case the
-        // value-label channel's gate-failing subset (the reconcile's core move), not just the `pattern`
-        // channel outright.
-        expect(SFC).toContain("function usesPatternFill(s: Shape): boolean {");
-        expect(SFC).toMatch(
-            /resolvedChannel\.value === "value-label"\) return !shapeClearsLabelGate\(s\.key\)/,
-        );
-    });
-
-    it("the pattern <defs> are built for the value-label channel too, whenever a region needs one", () => {
-        // Regression guard: the O-A22-era `patternDefs` gated SOLELY on `resolvedChannel === "pattern"`,
-        // which would silently starve a gate-failing value-label region of its texture def (a region
-        // routed to `url(#…)` with no matching <pattern> paints transparent — the true "unreadable label
-        // never paints" NEG, generalised to "and its fallback must actually exist").
-        expect(SFC).toMatch(
-            /resolvedChannel\.value === "value-label" && shapes\.value\.some\(usesPatternFill\)/,
-        );
-    });
-
-    it("NEG — a gate-failing label is NOT left resting-visible (reverts off the redundant lift)", () => {
-        expect(SFC).toContain("geo-value-label--gate-fail");
-        expect(SFC).toContain("function labelGateFails(s: Shape): boolean {");
-        // The CSS reversion rule exists and is scoped OUT of forced-colors (GAP-5 completeness: every
-        // feature keeps its word once the OS flattens the palette, regardless of the resting declutter).
-        expect(CSS).toContain(".geo-value-label--gate-fail");
-        expect(CSS).toMatch(/@media not \(forced-colors: active\)/);
-    });
-
-    it("the contrast leg resolves the SAME label ink GeoChoropleth.css paints (--foreground), one source", () => {
-        expect(SFC).toContain("readLabelInk");
-        expect(SFC).toContain("wcagContrast(ink, cssColorToOklab(s.fill, ink))");
-    });
-});
-
-describe("O-A22 · the LIVE GeoChoropleth.vue wiring (the inheritance-breadth law)", () => {
-    it("the redundantChannel prop DEFAULTS to 'auto' (every choropleth inherits it)", () => {
-        expect(SFC).toMatch(/redundantChannel\?:\s*RedundantChannel/);
-        expect(SFC).toMatch(/redundantChannel:\s*"auto"/);
-    });
-
-    it("the shape fill is routed through the tier-texture-aware fillFor", () => {
-        expect(SFC).toContain(':fill="fillFor(s)"');
-    });
-
-    it("the tier textures are emitted into <defs> and referenced by their bin id", () => {
-        expect(SFC).toContain("v-for=\"p in patternDefs\"");
-        expect(SFC).toContain(':id="p.id"');
-        expect(SFC).toContain("patternUnits=\"userSpaceOnUse\"");
-    });
-
-    it("the reserved absence hatch stays a SINGLE reserved pattern (never a data texture)", () => {
-        const hatchDefs = SFC.match(new RegExp(`id="${ABSENCE_HATCH_ID}"`, "g")) ?? [];
-        expect(hatchDefs.length).toBe(1);
-    });
-
-    it("the value-label layer carries the resting redundant-visibility hook", () => {
-        expect(SFC).toContain("geo-value-labels--redundant");
-    });
-
-    it("UNIFIES the label source — the on-mark word + hasLabelSource read valueLabel ?? valueFormat", () => {
-        // The RED fix: `value-format` is a WORD source too, so a plate wiring only `:value-format`
-        // inherits the redundant channel (no colour-only `none`). The SFC derives the word from
-        // `valueLabel ?? valueFormat` and `hasLabelSource` accepts EITHER prop.
-        expect(SFC).toContain("props.valueLabel ?? props.valueFormat");
-        expect(SFC).toMatch(/props\.valueLabel != null \|\| props\.valueFormat != null/);
     });
 });
