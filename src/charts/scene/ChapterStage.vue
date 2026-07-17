@@ -8,6 +8,7 @@ import {
     createStageMorphDriver,
     STAGE_MORPH_KEY,
 } from "./stage-morph.js";
+import { createStageScrollRestore } from "./stage-scroll-restore.js";
 import {
     resolveSceneAnchor,
     useViewParams,
@@ -179,18 +180,24 @@ const { materialized, placeholderStyle } = useVirtualSectionWindow(stageRoot, {
 // panel. That collapse shrinks the document, so the state transition is deliberate on BOTH edges:
 //   · on OPEN we snapshot the reader's scroll offset, then frame the (now viewport-tall) stage — else
 //     the content that shifts up would slide into the reader's offset and the panel would be off-screen;
-//   · on CLOSE the steps re-expand to their full height (the layout above the stage never changed), so
-//     restoring the snapshotted offset lands the reader back on the exact step they left.
-let savedScrollY = 0;
+//   · on CLOSE we restore the snapshotted offset — but ONLY when an OPEN edge actually captured one.
+// CHALLENGE-2 P2 — an INITIALLY-open panel (deep link / reload with `?browse=`) never crosses an open
+// edge (this `watch` is non-immediate), so it holds NO snapshot; closing it must NOT teleport the page
+// to `scrollTo(0)` (the reader never opened it from anywhere — there is nothing to return to). The
+// scroll-restore latch's null sentinel enforces exactly that: `release()` is null on the un-captured
+// path, so the initially-open close leaves the page where the reader stands.
+const scrollRestore = createStageScrollRestore();
 watch(sourceDataOpen, (open) => {
     if (typeof window === "undefined") return;
     if (open) {
-        savedScrollY = window.scrollY;
+        scrollRestore.capture(window.scrollY);
         void nextTick(() =>
             stageRoot.value?.scrollIntoView({ behavior: "auto", block: "start" }),
         );
     } else {
-        void nextTick(() => window.scrollTo({ top: savedScrollY, behavior: "auto" }));
+        const target = scrollRestore.release();
+        if (target !== null)
+            void nextTick(() => window.scrollTo({ top: target, behavior: "auto" }));
     }
 });
 </script>
