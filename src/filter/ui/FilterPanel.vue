@@ -460,6 +460,14 @@ function cancelSave(): void {
     backdrop-filter: none;
     pointer-events: none;
 }
+/* Glass's `.glass-overlay::before` specular pseudo carries a rest-hairline floor
+   (`--glass-specular-rest-hairline`) + an inset edge box-shadow, so even with the material zeroed
+   above it still paints a faint full-height edge glint down the invisible side lens. Neutralize the
+   pseudo in the SAME rest-state override (the pip register only — the ledger/drawer registers keep
+   Glass's full material + its specular). */
+.cp-drawer[data-register="pip"]::before {
+    display: none;
+}
 .cp-drawer[data-register="pip"] .cp-continuum__door {
     pointer-events: auto;
     border-start-start-radius: var(--radius-pill);
