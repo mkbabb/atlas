@@ -114,12 +114,22 @@ const ariaLabel = computed(() => props.label ?? `Chapter ${roman.value}`);
 <style scoped>
 /* The dropped-capital breaks the grid: it overlaps the plate corner via a negative
    margin (the manuscript gesture, FD3 §0). Sized by the --type-display-mega rung so it
-   reads at the figure-number scale; the SVG host is square-ish to give the glyph room. */
+   reads at the figure-number scale; the SVG host is square-ish to give the glyph room.
+
+   OF-22 — THE NUMERAL YIELDS TO ATMOSPHERE (exactly ONE register carries the numeral at reading
+   size — the eyebrow is that honest seat). At full ink the ~287px illuminated cap is a SECOND
+   numeral at reading prominence, competing with the eyebrow. The overlay permits at most ONE quiet
+   echo that earns its seat, and the platform's one unforgettable signature (FD3 §0) is exactly it:
+   so the cap keeps its glyph + live-legend gradient + its announced chapter label (role="img",
+   SR-unchanged) but its INK recedes to `--attn-atmosphere` (the §HIERARCHY perceptual floor). It
+   reads as a sub-threshold watermark echo of the eyebrow's numeral, never a co-equal reading register
+   — the diverging gradient stays as a ghosted brand presence, the eyebrow does the reading. */
 .figure-initial {
     width: var(--type-display-mega);
     aspect-ratio: 100 / 120;
     margin-inline-start: -0.25em;
     margin-block-start: -0.5em;
+    opacity: var(--attn-atmosphere);
     pointer-events: none;
     user-select: none;
 }
