@@ -77,6 +77,7 @@ consumer knows what is now available.
 | `resolveAsOf(meta)` | `./chrome` (`e2fdb52`, `freshness.ts`) | resolves a feed's as-of vintage stamp (`FY####` for frozen feeds, the live extract date otherwise) — the freshness stamp the export preamble and chrome read. |
 | `--shell-head-reserve` | `./styles` (`0fa6e2e`, PlatformShell) | CSS custom property naming the phone head reserve (default `5rem`); a consumer may override the scroll-margin/padding reservation. |
 | `--source-lead-col` | `./styles` (`ea1c821`, source browser) | CSS custom property on the source-data browser lead column (default `16rem`); a consumer sets it to widen/narrow its own lead column. |
+| `--radius-button` | `./styles` (`radius.css`, OF-24) | CSS custom property Glass's `.rounded-button` utility reads but Glass ships NO default for — so it resolved square. Atlas now defines it on the control-radius canon (`var(--radius-control)` = 6px), so every `.rounded-button` consumer (the ExpandableContainer fullscreen restore control, notifications, toasts) renders ROUNDED. Corrective, not a break: a consumer that already set `--radius-button` is unaffected (its own value wins). |
 
 ---
 

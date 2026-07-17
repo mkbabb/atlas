@@ -11,4 +11,10 @@
     --radius-plate: var(--radius-md); /* the engraved data plate — Glass's 6px md (the atlas tell) */
     --radius-control: var(--radius-md); /* the toggle/chip/segment corner — folds the 6.4px twin onto 6px */
     --radius-mark: var(--radius-sm); /* the crisp micro-mark — Glass's 4px floor (tick/swatch/playhead) */
+    /* OF-24 — Glass's `.rounded-button` utility reads `var(--radius-button)`, but Glass ships NO
+       default for that token and Atlas never minted one, so it resolved to the invalid-guaranteed
+       value → `border-radius: 0` → SQUARE corners on every `.rounded-button` consumer (the
+       ExpandableContainer's fullscreen restore control, notifications, toasts). Define the role token
+       on the control canon so the restore control wears the same rounded register as its siblings. */
+    --radius-button: var(--radius-control); /* the button corner — Glass's rounded-button role token */
 }
