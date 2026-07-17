@@ -7,14 +7,21 @@
 // at the poles the overlay releases and the stages own their marks (the constancy hand-off).
 //
 // THE RENDERER is picked CHART-TYPE-BLIND by mark count (P2-A numbers): DOM clones for ≤~800 marks
-// (19ms/frame at n=800 is the fallback ceiling), canvas clones above (2.0ms/frame at n=3243, 0 janky
-// frames — the full 3243). This module is PURE geometry (rect↔circle rx/w/h lerp + OKLab fill lerp +
-// the renderer pick + the no-zero/NaN flight-start guard); the SVG/DOM overlay component + the canvas
-// draw loop consume it. The canvas morph itself is N.WP-sci's (GO ruling, §4.B2); WB1 ships the pure
-// geometry + the SVG/DOM path.
+// (19ms/frame at n=800 is the fallback ceiling), the single canvas clone above (the dense sci-equity
+// morph — the full 3243). This module is PURE geometry (rect↔circle rx/w/h lerp + the CACHED-OKLab
+// fill lerp + the renderer pick + the no-zero/NaN flight-start guard); the SVG/DOM overlay component
+// + the canvas draw loop consume it. The canvas morph itself is N.WP-sci's (GO ruling, §4.B2); WB1
+// ships the pure geometry + the SVG/DOM path.
+//
+// THE FILL-LERP BUDGET (P2, benchmarked): each canvas endpoint's fill is pre-converted to its OKLab
+// channels ONCE at cache build (`rgbToOklab`), so the per-frame draw lerps three floats + projects to
+// sRGB8 ONCE (`oklabLerpToRgb8`) — ~1.5ms/frame at n=3243. The prior path re-parsed BOTH endpoints and
+// ran `mixColors` (two rgb→OKLab conversions) EVERY frame — ~5.4ms/frame for the fill alone, the
+// post-value-4-migration regression this cures. Output is byte-identical (OKLab is rectangular, so the
+// mix is a channel lerp either way; the cache just hoists the two per-frame conversions to build time).
 
 import { clamp, lerp } from "@mkbabb/value.js/math";
-import { rgb, mixColors, toRgba8 } from "@mkbabb/value.js/color";
+import { rgb, convertColor, toRgba8 } from "@mkbabb/value.js/color";
 
 // ── The renderer pick (chart-type-blind, by mark count — the D5 no-overfit law) ───────────────────
 
@@ -22,7 +29,8 @@ import { rgb, mixColors, toRgba8 } from "@mkbabb/value.js/color";
 export type MarkCapacity = "dom" | "canvas";
 
 /** The DOM-clone ceiling (P2-A): at n≈800 DOM clones cost 19ms/frame (2 janky) — the fallback ceiling.
-    Above it the single canvas clone is the renderer (2.0ms/frame at 3243, 0 janky). */
+    Above it the single canvas clone is the renderer (its fill lerp ~1.5ms/frame at 3243 — the cached-
+    OKLab path below). */
 export const DOM_CLONE_CEILING = 800;
 
 /** Pick the overlay renderer CHART-TYPE-BLIND — purely by the participating mark COUNT (D5). ≤ the
@@ -79,25 +87,49 @@ export function lerpRx(rxA: number, rxB: number, t: number): number {
     return lerp(rxA, rxB, t);
 }
 
-// ── The OKLab fill lerp (the perceptual morph fill) ───────────────────────────────────────────────
+// ── The OKLab fill lerp — the CACHED-ENDPOINT path (the P2 canvas-tier budget cure) ───────────────
 
 /** An sRGB triple in 0..255 (the fill the clone paints). */
 export type Rgb255 = [number, number, number];
 
-/** Interpolate two fills PERCEPTUALLY in OKLab — convert both to OKLab, lerp the three channels, map
-    back to sRGB 0..255. The canvas-tier fill lerp (the DOM tier emits `cssOklabMix`, browser-native).
-    Pure + unit-testable (endpoints round-trip; `t=0`/`t=1` return the input fills within rounding). */
-export function oklabFillLerp(a: Rgb255, b: Rgb255, t: number): Rgb255 {
-    // value.js 4 mixes PERCEPTUALLY in OKLab (a rectangular space, so the mix is a channel lerp) and
-    // projects to 8-bit sRGB. Inputs are settled 0..255 marks and `t` is clamped to the legal mix
-    // range, so the seam cannot fail; a failure would be a programming error — thrown, never masked.
-    const from = rgb(...a);
-    const to = rgb(...b);
-    if (!from.ok || !to.ok) throw new Error(`oklabFillLerp: invalid rgb ${a} → ${b}`);
-    const mixed = mixColors(from.value, to.value, clamp(t, 0, 1), { space: "oklab" });
-    if (!mixed.ok) throw new Error("oklabFillLerp: oklab mix failed");
-    const px = toRgba8(mixed.value, { gamut: "clip" });
-    if (!px.ok) throw new Error("oklabFillLerp: rgba8 projection failed");
+/** A mark's fill pre-converted to its OKLab channels [L, a, b] — resolved ONCE per endpoint at cache
+    build (the §3.4 cache discipline), so the per-frame draw lerps three floats + projects to sRGB8
+    once, never a per-frame rgb→OKLab round-trip. */
+export type OklabTriple = [number, number, number];
+
+/** Convert a settled sRGB fill (0..255) to its OKLab channels — CACHE-TIME work (once per endpoint),
+    never per frame. Inputs are settled 0..255 marks, so the conversion cannot fail; a failure is a
+    programming error — thrown, never masked. */
+export function rgbToOklab(c: Rgb255): OklabTriple {
+    const src = rgb(...c);
+    if (!src.ok) throw new Error(`rgbToOklab: invalid rgb ${c}`);
+    const lab = convertColor(src.value, "oklab");
+    if (!lab.ok) throw new Error(`rgbToOklab: oklab conversion failed for ${c}`);
+    const [l, a, b] = lab.value.channels;
+    return [l as number, a as number, b as number];
+}
+
+/** Interpolate two CACHED OKLab endpoints and project to sRGB8 — the PER-FRAME canvas fill lerp. OKLab
+    is a rectangular space, so the perceptual mix IS a channel lerp; the projection to 8-bit sRGB
+    (gamut-clipped) happens ONCE per mark per frame. Byte-identical to re-parsing + `mixColors` every
+    frame (the pre-cure path), at ~1.5ms/frame vs ~5.4ms at n=3243 — the endpoints already carry the
+    two rgb→OKLab conversions that path repeated every frame. The DOM tier emits `cssOklabMix`
+    (browser-native); this is the canvas tier's. */
+export function oklabLerpToRgb8(from: OklabTriple, to: OklabTriple, t: number): Rgb255 {
+    const c = clamp(t, 0, 1);
+    const px = toRgba8(
+        {
+            space: "oklab" as const,
+            channels: [
+                lerp(from[0], to[0], c),
+                lerp(from[1], to[1], c),
+                lerp(from[2], to[2], c),
+            ],
+            alpha: 1,
+        },
+        { gamut: "clip" },
+    );
+    if (!px.ok) throw new Error("oklabLerpToRgb8: rgba8 projection failed");
     return [px.value[0], px.value[1], px.value[2]];
 }
 

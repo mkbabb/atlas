@@ -32,10 +32,12 @@ import {
     validateFlightEndpoints,
     lerpRect,
     lerpRx,
-    oklabFillLerp,
+    oklabLerpToRgb8,
+    rgbToOklab,
     type FlightRect,
     type FlightEndpoint,
     type Rgb255,
+    type OklabTriple,
 } from "./clone-overlay.js";
 import type { StoryDirectorContext } from "./useStoryDirector.js";
 import type {
@@ -54,14 +56,14 @@ const root = ref<HTMLElement | null>(null);
 
 /** The DENSE-tier draw surface (N.WP-sci · the sci-equity canvas morph). A single canvas carries the
     full mark set when `pickMarkCapacity` picks `"canvas"` (> the DOM-clone ceiling — the 3243-mark
-    all-year overlay); the per-frame work is `lerp(cached endpoints) + one canvas draw` ONLY (P2-A:
-    2.0ms/frame, 0 janky at 6×). Idle (cleared) at the DOM tier / off a shared-element edge. */
+    all-year overlay); the per-frame work is `lerp(cached endpoints) + one canvas draw` ONLY (the fill
+    lerp ~1.5ms/frame at n=3243 — the cached-OKLab path). Idle (cleared) at the DOM tier / off an edge. */
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 
 /** A throwaway 2D probe that NORMALISES any CSS fill (hex, rgb(), oklch, named) to concrete rgb255
     ONCE per beat — the canvas 2D `fillStyle` cannot read a CSS var and the mark fills arrive as
-    resolved strings, so the endpoint colours are pre-parsed at cache time and the per-frame draw only
-    OKLab-lerps the two rgb triples (`oklabFillLerp`), never re-parses. */
+    resolved strings, so the endpoint colours are pre-parsed at cache time (then converted to OKLab
+    once, `rgbToOklab`) and the per-frame draw only lerps the cached OKLab channels, never re-parses. */
 const colorProbe: CanvasRenderingContext2D | null =
     typeof document !== "undefined"
         ? document.createElement("canvas").getContext("2d")
@@ -98,18 +100,20 @@ const activeEdge = computed(
     () => edgeStates.find((e) => e.state.active.value) ?? null,
 );
 
-/** A canvas-tier endpoint — the pre-parsed geometry + rgb255 inks the per-frame draw lerps (no
-    re-parse, no re-measure: the cache discipline at the dense tier). The optional rim/opacity pairs
-    carry the mark's RENDERED ink (the N5 flight-ink fidelity — the pole hand-off stays invisible). */
+/** A canvas-tier endpoint — the pre-parsed geometry + OKLab-converted inks the per-frame draw lerps
+    (no re-parse, no re-convert, no re-measure: the cache discipline at the dense tier). The fills are
+    converted to OKLab channels ONCE here (`rgbToOklab`), so the per-frame draw is a three-float lerp +
+    ONE sRGB8 projection (P2 fill-lerp budget cure). The optional rim/opacity pairs carry the mark's
+    RENDERED ink (the N5 flight-ink fidelity — the pole hand-off stays invisible). */
 interface CanvasEndpoint {
     from: FlightRect;
     to: FlightRect;
     fromRx: number;
     toRx: number;
-    fromRgb: Rgb255;
-    toRgb: Rgb255;
-    /** The rim rgb pair, present iff either endpoint declares a stroke (rimless side ⇒ its fill). */
-    strokeRgb?: [Rgb255, Rgb255];
+    fromLab: OklabTriple;
+    toLab: OklabTriple;
+    /** The rim OKLab pair, present iff either endpoint declares a stroke (rimless side ⇒ its fill). */
+    strokeLab?: [OklabTriple, OklabTriple];
     fromStrokeW: number;
     toStrokeW: number;
     fromOpacity: number;
@@ -220,16 +224,16 @@ function buildCache(edgeId: string): void {
                 to: ep.to.rect,
                 fromRx: ep.from.rx,
                 toRx: ep.to.rx,
-                fromRgb: toRgb255(ep.from.fill),
-                toRgb: toRgb255(ep.to.fill),
+                fromLab: rgbToOklab(toRgb255(ep.from.fill)),
+                toLab: rgbToOklab(toRgb255(ep.to.fill)),
                 // The rim pair mirrors resolveCloneFrame: a rimless side contributes its FILL, so
                 // the rim fades toward the body ink instead of popping at the pole.
                 ...(hasStroke
                     ? {
-                          strokeRgb: [
-                              toRgb255(ep.from.stroke ?? ep.from.fill),
-                              toRgb255(ep.to.stroke ?? ep.to.fill),
-                          ] as [Rgb255, Rgb255],
+                          strokeLab: [
+                              rgbToOklab(toRgb255(ep.from.stroke ?? ep.from.fill)),
+                              rgbToOklab(toRgb255(ep.to.stroke ?? ep.to.fill)),
+                          ] as [OklabTriple, OklabTriple],
                       }
                     : {}),
                 fromStrokeW: ep.from.strokeWidth ?? 0,
@@ -277,7 +281,7 @@ function drawCanvas(): void {
         const r = lerpRect(ep.from, ep.to, t);
         if (r.w <= 0 || r.h <= 0) continue;
         const rx = Math.min(lerpRx(ep.fromRx, ep.toRx, t), r.w / 2, r.h / 2);
-        const [rr, gg, bb] = oklabFillLerp(ep.fromRgb, ep.toRgb, t);
+        const [rr, gg, bb] = oklabLerpToRgb8(ep.fromLab, ep.toLab, t);
         // THE FLIGHT-INK FIDELITY (N5) — the clone paints the mark's RENDERED opacity + rim, lerped
         // like every other channel, so the pole hand-off never steps the cloud's ink-weight.
         ctx.globalAlpha = clampAlpha(lerp(ep.fromOpacity, ep.toOpacity, t));
@@ -286,10 +290,10 @@ function drawCanvas(): void {
         if (canRound) ctx.roundRect(r.x, r.y, r.w, r.h, rx);
         else ctx.rect(r.x, r.y, r.w, r.h);
         ctx.fill();
-        if (ep.strokeRgb) {
+        if (ep.strokeLab) {
             const w = lerp(ep.fromStrokeW, ep.toStrokeW, t);
             if (w > 0) {
-                const [sr, sg, sb] = oklabFillLerp(ep.strokeRgb[0], ep.strokeRgb[1], t);
+                const [sr, sg, sb] = oklabLerpToRgb8(ep.strokeLab[0], ep.strokeLab[1], t);
                 ctx.strokeStyle = `rgb(${sr}, ${sg}, ${sb})`;
                 ctx.lineWidth = w;
                 ctx.stroke();
@@ -399,8 +403,9 @@ const clones = computed<{ key: string; style: CSSProperties }[]>(() => {
             :style="clone.style"
         />
         <!-- THE DENSE (CANVAS) TIER (N.WP-sci · > the ceiling — the 3243-mark all-year overlay) — a
-             single canvas carries the full flight (2.0ms/frame at 3243, P2-A). Always present + inert
-             (cleared) at the DOM tier / off an edge; the draw loop fills it only on a canvas edge. -->
+             single canvas carries the full flight (fill lerp ~1.5ms/frame at 3243, cached-OKLab).
+             Always present + inert (cleared) at the DOM tier / off an edge; the draw loop fills it
+             only on a canvas edge. -->
         <canvas ref="canvasEl" class="story-corridor__canvas" />
     </div>
 </template>
