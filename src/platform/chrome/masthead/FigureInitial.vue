@@ -134,8 +134,16 @@ const ariaLabel = computed(() => props.label ?? `Chapter ${roman.value}`);
     user-select: none;
 }
 .figure-initial__svg {
+    /* THE FIRST-PAINT HEIGHT RESERVE (R7 CLS · the drop-cap seat). `height: 100%` deferred the SVG's
+       block-size to the container, so it contributed 0 height until layout resolved — the cap mounted
+       0→86px and shoved the lead beat down. A `display:block` replaced SVG with `height: auto` derives
+       its block-size from its OWN viewBox ratio (100/120) against the definite inline-size, so the box
+       reserves its full extent at first paint (no growth). The container's `aspect-ratio` agrees; the
+       SVG now sizes the box it fills. The consumer's reserve on this seat was out-specified by this
+       scoped rule, so the cure lives here (the platform seat). */
+    display: block;
     width: 100%;
-    height: 100%;
+    height: auto;
     overflow: visible;
 }
 /* Fraunces display optics + the editorial WONK/SOFT axes (FD1 §2.0). The font-size is
