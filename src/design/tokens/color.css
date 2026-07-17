@@ -23,19 +23,6 @@
    --type-display-mega is the dropped-capital / figure-number rung (the <FigureInitial>
    signature) — likewise re-authored container-relative. The recipes in recipes.css §1
    bind these as @utility text-audacious/text-mega/figure-slug. */
-:root {
-    /* THE GHOST CHAPTER NUMERAL ink (D3.a / augment 14 — `ds2-medium` M9b). The Roman
-       chapter figure set at --type-display-hero scale as a recessive WATERMARK in the
-       asymmetric beat's margin (the <FigureInitial>'s illuminated dropped-cap is the
-       FILLED, distribution-weighted key; this is its quiet large-scale TWIN — the
-       grid-breaker's counterweight, D3.d composes the position). It is a decorative,
-       aria-hidden manuscript watermark, NOT body text — so it sits BELOW the AA text
-       floor by design (a 4.5:1 ghost is no ghost). The ink is a low-alpha FOREGROUND
-       tint (not a fixed colour) so it warms with the §D ground in lockstep on both arms:
-       espresso-on-paper (light) ↔ ivory-on-espresso (dark), each ~8% so the glyph reads
-       as engraved-into-the-paper, never as a competing figure. */
-    --ghost-numeral-ink: oklch(0.255 0.028 55 / 0.07); /* light — espresso watermark */
-}
 
 /* §B — the THREE named data scales as Tailwind color namespaces (FD1 §3, G1:3.4).
    DIVERGING + SEQUENTIAL read the existing raw viz props (styles/index.css:15-34) so
@@ -394,11 +381,6 @@
     --silver-specular: oklch(
         0.92 0.01 70 / 0.16
     ); /* dark-arm specular — the ivory lit rim (matches --cp-glass-rim.dark) */
-    /* The ghost chapter numeral on dark stock — the ivory-ink watermark (shares the §D
-       80° ivory the --foreground carries). Alpha lifted to 0.09 vs the light arm's 0.07:
-       a low-alpha light glyph on the espresso ground needs a touch more presence to read
-       as the SAME engraved watermark (the dark-stock parity the §D inks all carry). */
-    --ghost-numeral-ink: oklch(0.92 0.014 80 / 0.09); /* dark — ivory watermark */
     /* The dimmed-basemap county wash on dark stock — a WARM-GRAPHITE tier at L 0.30, ABOVE
        the L 0.205 ground, so the dimmed counties read as a distinct (recessive) tier, never
        dark-on-dark. Hue 85 shares the warm ground + the ivory stroke (map-animation-dark §6.2). */

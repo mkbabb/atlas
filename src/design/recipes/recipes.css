@@ -533,34 +533,6 @@
    ecf-desktop CLS is the cover-settle the §4c reserves address; the residual rides the i0-perf.gate.ts
    CARRIED_RED_PERF desktop-CLS floor + the live i0-perf observable arm. */
 
-/* §5 — THE GHOST CHAPTER NUMERAL (D3.a / augment 14 — `ds2-medium` M9b). The Roman
-   chapter figure as recessive TYPE, set at the --type-display-hero rung (the platform's
-   largest editorial register, peak ~287px) in Fraunces with the WONK/SOFT editorial wink
-   — the same display voice the <FigureInitial> illuminated dropped-cap wears, so the two
-   read as one family (the filled, distribution-weighted KEY ↔ this quiet large-scale
-   WATERMARK twin). It is a manuscript watermark, the asymmetric beat's TYPOGRAPHIC
-   counterweight: D3.a owns the TYPE only (face · scale · ghost ink · the tight cap-box),
-   D3.d composes the POSITION (the alternating margin, the z-stacking behind the plate,
-   the wide-viewport-only gate) — so this recipe imposes NO margin / position / z-index,
-   keeping the numeral self-contained for D3.d to seat. The ghost ink is the --ghost-numeral-ink
-   token (a low-alpha foreground watermark that warms with the §D ground on both arms);
-   line-height:1 + the tabular Roman figures keep the glyph tight to its box. Decorative +
-   aria-hidden at the call site (it duplicates the FigureInitial's announced chapter label). */
-@utility text-ghost-numeral {
-    font-family: var(--font-display); /* Fraunces — one family with the dropped-cap */
-    font-variation-settings: var(--font-display-vs); /* the WONK/SOFT editorial wink */
-    font-feature-settings:
-        "tnum" 1,
-        "lnum" 1; /* tabular lining figures — the Roman glyph sits even */
-    font-size: var(--type-display-hero); /* the platform's largest rung (~287px peak) */
-    font-weight: 340; /* the display weight the FigureInitial glyph carries */
-    line-height: 1; /* the colossal glyph sits tight to its box */
-    letter-spacing: -0.02em;
-    color: var(--ghost-numeral-ink); /* the recessive watermark ink (warms per arm) */
-    user-select: none;
-    pointer-events: none; /* a watermark never intercepts the pointer */
-}
-
 /* §6 — THE AUDACIOUS MASTHEAD LOCKUP (J-PAPER ARM c · C47 · the §approach-3 two-register display
    lockup + the grain-on-HEADLINE consume). The Visual Capitalist masthead move: a WHISPERED
    script/italic eyebrow seated OVER a SHOUTED towering Fraunces serif — the audacity is the SCALE

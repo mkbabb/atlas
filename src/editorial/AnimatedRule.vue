@@ -11,8 +11,6 @@
 //   · rule    — the static drawn HandMark (today's default; boil FORBIDDEN — the frame-guard).
 //   · draw    — the HandMark draws-on on scroll-entry, un-draws on scroll-up (the bidirectional
 //               view() draw the underlines already use; clock="scroll" semantics).
-//   · numeral — the `text-ghost-numeral` chapter watermark wipes in behind the next beat as the
-//               junction passes (the existing recipe, now scroll-scrubbed).
 //
 // (The actual file MOVE — SectionDivider → editorial/, the call-site re-points — is a phase-2
 // integration edit OUTSIDE this lane's write-bound; SPEC'd in the lane's blockers. AnimatedRule
@@ -20,19 +18,18 @@
 // component, escalating variants, the `<HandMark clock>` precedent — two divider components
 // would be a seam that drifts.)
 //
-// THE RUNG — ④ chrome (rule/draw) → ⑤ atmosphere (numeral, the recessive ghost). The ink is the
+// THE RUNG — ④ chrome (rule/draw). The ink is the
 // PAGE ink (`--foreground` for full, `--engrave` for short) — L1 frame chrome, NEVER a data color
 // (the existing SectionDivider law). It binds --attn-chrome via the SUFFUSION contract.
 //
 // THE BOIL STAYS FORBIDDEN: a permanent structural mark costs ZERO rAF (the pencil-boil
-// frame-guard, the E1/E4 root law); the `draw`/`numeral` reveals are ONE-SHOT scroll-scrubs, not
-// continuous boil. PRM: ALL three render STATIC (the rule drawn, the numeral set, no wipe — the
+// frame-guard, the E1/E4 root law); the `draw` reveal is a ONE-SHOT scroll-scrub, not
+// continuous boil. PRM: BOTH render STATIC (the rule drawn, no wipe — the
 // library snaps it; token-register eases only, never a bespoke transition). a11y: role="separator"
-// (today's SectionDivider semantics); `aria-hidden` on the ink (the numeral is decorative — the
+// (today's SectionDivider semantics); `aria-hidden` on the ink (the mark is decorative — the
 // chapter SEMANTICS live in the `<h2>` headings, not the rule).
 import { computed } from "vue";
 import { HandMark } from "@mkbabb/glass-ui/handmark";
-import { toRoman } from "../platform/composables/useRomanNumeral.js";
 import type { RuleVariant } from "./rule-register.js";
 
 const props = withDefaults(
@@ -43,12 +40,10 @@ const props = withDefaults(
         /** The demarcation tier — `full` (chapter rule) · `short` (figure rule) · `hero`
             (the page-cover rule below the DashboardHero). */
         weight?: "full" | "short" | "hero" | "seam";
-        /** The ghost chapter figure (variant="numeral") → the Roman watermark. */
-        numeral?: number;
         /** The HandMark grain determinism (the SectionDivider seed law — pixel-identical reloads). */
         seed?: number;
     }>(),
-    { variant: "rule", weight: "full", numeral: undefined, seed: 1 },
+    { variant: "rule", weight: "full", seed: 1 },
 );
 
 const isShort = computed(() => props.weight === "short");
@@ -73,25 +68,20 @@ const ink = computed<string>(() =>
 
 // THE DRAW CLOCK — `rule` is static (drawn-but-still, `animation="none"`, `appear="mount"`); `draw`
 // fires the bidirectional scroll draw (the underlines' Clock B — `animation="draw-on"` on the
-// library's view-timeline arm via the `data-rule-clock="scroll"` binding below); `numeral` is the
-// scroll-scrubbed ghost watermark (no HandMark — the recipe text, scrubbed). PRM collapses every
-// arm to static (the library snaps the draw; the numeral is simply set).
+// library's view-timeline arm via the `data-rule-clock="scroll"` binding below). PRM collapses the
+// draw arm to static (the library snaps the draw).
 const animation = computed<"none" | "draw-on">(() =>
     props.variant === "draw" ? "draw-on" : "none",
 );
 const appear = computed<"mount" | "visible">(() =>
     props.variant === "draw" ? "visible" : "mount",
 );
-
-/** The Roman ghost numeral (variant="numeral") off the ONE platform converter (V-W2). */
-const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : ""));
 </script>
 
 <template>
     <!-- The host keeps the `<hr>`-EQUIVALENT a11y semantics — role="separator" IS the ARIA role an
-         `<hr>` maps to, on a `<div>` so it can hold the HandMark / ghost-numeral child. It binds
-         --attn-chrome (the SUFFUSION rung; the numeral arm recesses to atmosphere via its own
-         ghost ink). The `data-weight` is the tier probe (full/short/hero). -->
+         `<hr>` maps to, on a `<div>` so it can hold the HandMark child. It binds --attn-chrome (the
+         SUFFUSION rung). The `data-weight` is the tier probe (full/short/hero). -->
     <div
         class="animated-rule"
         :class="`animated-rule--${weight}`"
@@ -104,16 +94,6 @@ const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : "
     >
         <!-- A StoryCard seam is literal chrome, irrespective of the authored chapter variant. -->
         <span v-if="isSeam" class="animated-rule__seam" />
-
-        <!-- variant="numeral" — the ghost chapter watermark (text-ghost-numeral, the recessive ⑤
-             atmosphere ink). Decorative + aria-hidden (the chapter label lives in the <h2>). -->
-        <span
-            v-else-if="variant === 'numeral'"
-            class="animated-rule__numeral text-ghost-numeral"
-            :data-rule-clock="'scroll'"
-        >
-            {{ roman }}
-        </span>
 
         <!-- variant="rule" | "draw" — the drawn HandMark rule. STATIC for `rule` (drawn-but-still,
              no boil — the frame-guard); the bidirectional scroll draw for `draw` (Clock B, the
@@ -149,7 +129,7 @@ const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : "
     /* The shared chrome rung keeps the one-pixel mark recessive in both themes. */
     opacity: var(--attn-chrome);
 }
-.animated-rule:not(.animated-rule--seam):not([data-variant="numeral"]) {
+.animated-rule:not(.animated-rule--seam) {
     block-size: 1px;
 }
 /* The HandMark `.hm` root is inline-block (the library's scoped default); the rule host needs it
@@ -190,16 +170,6 @@ const roman = computed(() => (props.numeral != null ? toRoman(props.numeral) : "
     inline-size: 100%;
     block-size: 1px;
     background: var(--silver-rule, var(--border));
-}
-
-/* THE GHOST NUMERAL — the recessive ⑤ atmosphere watermark (text-ghost-numeral owns the
-   face/ink/size). It wipes in behind the next beat as the junction passes (scroll-scrubbed, the
-   existing recipe). Centered in the rule's measure; decorative (aria-hidden). The opacity is the
-   ghost ink's own (the recipe's `--ghost-numeral-ink`) — the ⑤ atmosphere floor. */
-.animated-rule__numeral {
-    display: block;
-    text-align: center;
-    line-height: 0.8;
 }
 
 /* THE SCRUBBED DRAW-ON (variant="draw") — the rule draws/un-draws BIDIRECTIONALLY under real

@@ -87,7 +87,6 @@ import { useActiveBeat } from "../platform/stores/useActiveBeat.js";
 import { useMobileRegister } from "../platform/composables/useMobileRegister.js";
 import { resolveHeroSystem } from "./hero-system.js";
 import { useComponentPointLoading } from "./useComponentPointLoading.js";
-import type { RuleVariant } from "./rule-register.js";
 
 const props = defineProps<{
     /** The canonical route story and sole source of essay order. */
@@ -315,12 +314,6 @@ function heroPropsOf(hero: HeroFacet): ReturnType<typeof resolveHeroSystem>["her
     return resolveHeroSystem({ hero }).heroProps;
 }
 
-/** The numeral rule-variant yields to a plain rule — the eyebrow is the sole numeral seat now
-    (OF-22 · the ghost watermark retired), so no junction paints a chapter numeral. Others survive. */
-function junctionRule(variant: RuleVariant | undefined): Exclude<RuleVariant, "numeral"> {
-    return variant == null || variant === "numeral" ? "rule" : variant;
-}
-
 /** The chapter's title rendered as the <h2> child (the render-function bridge for the template). */
 function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
     return renderTitle(props_.title);
@@ -509,7 +502,7 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
         <!-- The divider treatment projects directly from the authored story point. -->
         <AnimatedRule
             v-if="i < chapters.length - 1 && chapter.card?.seamRule !== false"
-            :variant="junctionRule(storyChapters[i]?.rule)"
+            :variant="storyChapters[i]?.rule"
             :weight="chapter.card ? 'seam' : isCoverChapter(chapter, i) ? 'hero' : 'full'"
             :seed="(props.story.seed ?? 0) + i + 1"
         />
