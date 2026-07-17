@@ -204,8 +204,11 @@ useDismissArbiter(dismissArbiter).claim(() =>
         /* THE PHONE BLOCK RESERVE (D1 · N.WG1 Arm B — the crest→sheet pair). The phone trades the
            desktop's INLINE gutter for a TOP reserve: the collapsed crest pill (inset 1.25rem +
            the hugged dome ≈ 3.75rem) floats over the page's head margin, so the content stage
-           starts BELOW it — no eyebrow/title ink under the pill (the F9 family, phone arm). */
-        padding-block-start: 5rem;
+           starts BELOW it — no eyebrow/title ink under the pill (the F9 family, phone arm). The
+           reserve is a NAMED token so snap-target descendants (DashboardEssay's `.essay-beat`
+           scroll-margin) lift their snap stop by the SAME measure — one owner, no drifting twin. */
+        --shell-head-reserve: 5rem;
+        padding-block-start: var(--shell-head-reserve);
         padding-block-end: max(7rem, calc(7rem + env(safe-area-inset-bottom)));
     }
 }

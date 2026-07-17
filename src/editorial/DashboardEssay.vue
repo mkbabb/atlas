@@ -696,11 +696,11 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
     .essay-beat {
         scroll-snap-align: start;
         /* PA-5 · SNAP SAFE-INSET — the collapsed dock crest pill floats over the phone's head margin
-           (PlatformShell reserves 5rem of block-start for it). A beat snapping to `start` would seat
-           its eyebrow / chapter numeral UNDER that pill; the scroll-margin lifts each snap stop clear
-           of the crest (matched to the shell's 5rem head reserve), so no snapped page seats beneath
-           the sticky masthead. */
-        scroll-margin-block-start: 5rem;
+           (PlatformShell reserves `--shell-head-reserve` of block-start for it). A beat snapping to
+           `start` would seat its eyebrow UNDER that pill; the scroll-margin lifts each snap stop clear
+           of the crest by the SHELL-OWNED reserve (inherited from `.platform-shell__main`), so no
+           snapped page seats beneath the sticky masthead. */
+        scroll-margin-block-start: var(--shell-head-reserve);
     }
 }
 </style>
