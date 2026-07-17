@@ -63,7 +63,7 @@ body {
 ):focus-visible {
     outline: 2px solid var(--focus-ring-color, oklch(0.6 0.15 250));
     outline-offset: 2px;
-    border-radius: var(--radius-mark, 2px);
+    border-radius: var(--radius-mark);
 }
 /* The choropleth polygons get a crisp focus ring (SVG outline is unreliable). */
 .choropleth-state:focus-visible {

@@ -144,7 +144,7 @@
     --afd-focus-ring: var(--focus-ring-color, oklch(0.6 0.15 250));
     --afd-focus-width: 2px;
     --afd-focus-offset: 2px;
-    --afd-focus-radius: var(--radius-mark, 2px);
+    --afd-focus-radius: var(--radius-mark);
     /* the FILTERABLE dial signifier — the active-control route tint. */
     --afd-dial: var(--attn-chrome); /* the dial rail/thumb at the chrome recession rung */
 }
