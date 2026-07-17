@@ -577,10 +577,12 @@ function titleCase(value: string): string {
 }
 
 /* The name column earns the widest seat — District / Aggregate names run long, so 9rem clipped
-   them mid-word. The remaining columns share the rest under the fixed layout. */
+   them mid-word. The remaining columns share the rest under the fixed layout. OVERRIDE SEAM: a
+   consumer sets `--source-lead-col` on the browser to widen/narrow the lead column for its own
+   label length (defaults to the 16rem name-column seat). */
 .source-browser__viewport :deep(.source-browser__table th:first-child),
 .source-browser__viewport :deep(.source-browser__table td:first-child) {
-    inline-size: 16rem;
+    inline-size: var(--source-lead-col, 16rem);
 }
 
 .source-browser__viewport :deep(.source-browser__table thead) {
