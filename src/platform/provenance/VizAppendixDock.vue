@@ -2,12 +2,10 @@
 import { computed, ref, useId, watch } from "vue";
 import {
     Drawer,
-    DrawerClose,
     DrawerContent,
     DrawerDescription,
     DrawerHeader,
     DrawerTitle,
-    DrawerTrigger,
 } from "@mkbabb/glass-ui/drawer";
 import { Button } from "@mkbabb/glass-ui/button";
 import { useMobileRegister } from "../composables/useMobileRegister.js";
@@ -67,8 +65,12 @@ const drawerOpen = computed({
     },
 });
 
-function toggleInline(): void {
-    if (!isPhone.value) apply("toggle");
+function onControl(): void {
+    // Glass 7 removed DrawerTrigger; the drawer's open state is the v-model
+    // `drawerOpen` (bound to `state === "full"`). On phone the control opens the
+    // drawer through that model; inline it toggles the in-flow detent.
+    if (isPhone.value) drawerOpen.value = true;
+    else apply("toggle");
 }
 
 defineExpose({
@@ -81,22 +83,20 @@ defineExpose({
 <template>
     <section class="appendix-dock" :data-detent="state" data-appendix-dock>
         <Drawer v-model:open="drawerOpen" direction="bottom" mode="modal">
-            <component :is="isPhone ? DrawerTrigger : 'span'" :as-child="isPhone || undefined">
-                <Button
-                    class="appendix-dock__control"
-                    type="button"
-                    variant="glass"
-                    :aria-expanded="state === 'full'"
-                    :aria-controls="paneId"
-                    @click="toggleInline"
-                >
-                    <span class="appendix-dock__crest" aria-hidden="true">Σ</span>
-                    <span>{{ label }}</span>
-                    <span class="appendix-dock__state" aria-hidden="true">
-                        {{ state === "full" ? "Close" : "Open" }}
-                    </span>
-                </Button>
-            </component>
+            <Button
+                class="appendix-dock__control"
+                type="button"
+                variant="glass"
+                :aria-expanded="state === 'full'"
+                :aria-controls="paneId"
+                @click="onControl"
+            >
+                <span class="appendix-dock__crest" aria-hidden="true">Σ</span>
+                <span>{{ label }}</span>
+                <span class="appendix-dock__state" aria-hidden="true">
+                    {{ state === "full" ? "Close" : "Open" }}
+                </span>
+            </Button>
 
             <div
                 v-if="state === 'peek'"
@@ -127,10 +127,7 @@ defineExpose({
                     <DrawerDescription v-if="isPhone" class="sr-only">
                         Source, method, and provenance detail for this figure.
                     </DrawerDescription>
-                    <DrawerClose v-if="isPhone" as-child>
-                        <Button type="button" variant="ghost" size="sm">Close</Button>
-                    </DrawerClose>
-                    <Button v-else type="button" variant="ghost" size="sm" @click="apply('close')">
+                    <Button type="button" variant="ghost" size="sm" @click="apply('close')">
                         Close
                     </Button>
                 </component>
