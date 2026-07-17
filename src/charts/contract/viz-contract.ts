@@ -105,8 +105,11 @@ export type LegendMode = "inline" | "stepped" | "rail";
 export interface LegendSpec {
     /** The legend's default display mode. */
     mode: LegendMode;
-    /** The legend's dock (maps onto `ChartFrame`'s `legendDock`). `rail` is hero-only. */
-    dock?: "inline" | "rail";
+    /** The legend's dock (maps onto `ChartFrame`'s `legendDock`). `rail` is hero-only; `foot` seats
+        the legend BENEATH the plate body (between the figure and the provenance foot) — the home for a
+        tall identity-glyph lockup that would otherwise cram the header KEY column (the two USF maps),
+        available at any register. */
+    dock?: "inline" | "rail" | "foot";
     /** The ramp's colour kind (paints the bar from the `colorKind.ts` stops — never a hex). */
     colorKind?: ColorKind;
     /** The low/high pole words flanking a continuous/stepped bar. */

@@ -98,8 +98,14 @@ const props = withDefaults(
             · `rail`   — the legend docks to a hero-register SIDE RAIL beside the data (the
               7+-chip tower's home: the SCI tier ledger reads down the side of its cake), so a
               tall key never crams the masthead. Hero plates only; folds to inline at ≤640;
+            · `foot`   — the legend seats BENEATH THE BODY (the R3 beneath-the-map seat): the
+              frame renders NO header KEY column and NO side rail, freeing the masthead, and the
+              HOST (VizPlate) lays the `#legend` content in the plate-body foot flow — between the
+              figure and the provenance foot — so a tall identity-glyph lockup never crams the
+              header. Any register (not hero-only). The seat is placed by the host inside the body
+              region the frame renders (the frame's job here is to VACATE the header/rail);
             · `none`   — no KEY zone (a plate whose key lives in the viz itself). */
-        legendDock?: "inline" | "rail" | "none";
+        legendDock?: "inline" | "rail" | "foot" | "none";
         /** The headline posture (the F6.1 STRADDLE — wave F2 §1):
             · `straddle` — the `#headline` cluster RIDES the plate's top bezel (its midline on
               the rim, half on page paper above, half re-entering below the engraved figure-
@@ -414,7 +420,10 @@ watch(open, (value) => {
              the viz": a tall tier ledger reads DOWN the rail beside its cake instead of cramming
              the masthead. The rail is opaque resting-tier, top-aligned, one engraved hairline
              off the data; it folds UNDER the body at ≤640 (the mobile stack). Inline/none docks
-             render the body alone (byte-identical to before). -->
+             render the body alone (byte-identical to before). The FOOT dock renders no rail here
+             and no header KEY column either — the beneath-body seat lives in the DEFAULT SLOT flow
+             the host lays (VizPlate seats `#legend` between the figure and the provenance foot), so
+             the frame only VACATES the header/rail for it (a tall lockup never crams the masthead). -->
         <div class="plate-body" :class="{ 'plate-body--railed': legendRailed }">
             <!-- The chart body sits directly on flat paper — no glass material. The glass-ui
                  <ExpandableContainer> wraps it (CONSUMED, never hand-rolled): the quiet corner

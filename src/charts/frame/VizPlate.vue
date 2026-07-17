@@ -130,8 +130,14 @@ defineExpose({ archetype });
         </template>
 
         <!-- THE LEGEND (E5) — a consumer `#legend` slot wins; else the contract's LegendSpec drives
-             a ChartLegend at the §E5 default mode (stepped for N≥7, else continuous/inline). -->
-        <template v-if="!suppressFoot && (legend || slots.legend)" #legend>
+             a ChartLegend at the §E5 default mode (stepped for N≥7, else continuous/inline). This is
+             the HEADER seat (inline KEY column / hero side rail); the `foot` dock renders its legend
+             in the body foot below (ChartFrame vacates the header/rail for it), so the template is
+             gated to the inline/rail docks to keep the beneath-body seat the sole render. -->
+        <template
+            v-if="!suppressFoot && (legendDock === 'inline' || legendDock === 'rail') && (legend || slots.legend)"
+            #legend
+        >
             <slot name="legend">
                 <ChartLegend
                     v-if="legend"
@@ -432,6 +438,29 @@ defineExpose({ archetype });
                 placement="bottom"
                 :contract-id="contract.id"
             />
+
+            <!-- E5 · THE BENEATH-BODY LEGEND SEAT (legendDock: "foot" — the R3 beneath-the-map seat).
+                 When the contract docks the legend `foot`, the host lays the `#legend` content HERE,
+                 between the figure and the provenance foot below — ChartFrame has vacated the header
+                 KEY column + the side rail, so a tall identity-glyph lockup (the two USF maps) reads
+                 beneath the map instead of cramming the masthead. A consumer `#legend` slot wins (the
+                 bespoke lockup); else the contract's LegendSpec drives a ChartLegend. -->
+            <div
+                v-if="!suppressFoot && legendDock === 'foot' && (legend || slots.legend)"
+                class="viz-plate__foot-legend"
+            >
+                <slot name="legend">
+                    <ChartLegend
+                        v-if="legend"
+                        :mode="legendIsStepped ? 'stepped' : 'continuous'"
+                        :color-kind="legend.colorKind"
+                        :low-label="legend.lowLabel"
+                        :high-label="legend.highLabel"
+                        :testid="`viz-legend-${contract.id}`"
+                        :aria-label="`${contract.title} legend`"
+                    />
+                </slot>
+            </div>
 
             <!-- The fixed foot keeps the factual crown and the appendix as separate seats. The
                  existing provenance and #foot fills move intact inside the collapsed dock, so the

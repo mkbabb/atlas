@@ -28,6 +28,19 @@
     padding-block-start: 0.6rem;
     border-block-start: 1px solid color-mix(in oklab, var(--foreground), transparent 90%);
 }
+/* E5 — THE BENEATH-BODY LEGEND SEAT (legendDock: "foot"). The `#legend` lockup lays in the body foot
+   flow, beneath the figure and above the provenance foot — the R3 beneath-the-map seat the header KEY
+   column could not hold a tall identity-glyph lockup in. A modest top gutter off the figure; a centered
+   wrapping row so an identity glyph + its key read together under the map (the consumer's lockup styles
+   its own internals). */
+.viz-plate__foot-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem 1.5rem;
+    margin-block-start: 0.75rem;
+}
 
 /* N.WD1 §4.D1.5 — THE KEYBOARD FOCUS RIM (the platform overlay ring at the focused mark's anchor).
    var(--focus-ring-color) at 2.5px, ≥2px perimeter, seated in VIEWPORT space (position:fixed — the nav anchor is

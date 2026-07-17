@@ -74,10 +74,15 @@ const showOwnTitle = computed(() => !beatTitle?.owned);
 
 // ── E5 — THE LEGEND DOCK (the contract's default policy mapped onto ChartFrame) ──────────────
 const legend = computed(() => props.contract.legend);
-/** ChartFrame's `legendDock` reads the contract: a `rail` dock on a hero, else inline. A consumer
-    `#legend` slot wins (a bespoke legend); else the contract's `LegendSpec` drives a ChartLegend. */
-const legendDock = computed<"inline" | "rail" | "none">(() => {
+/** ChartFrame's `legendDock` reads the contract (EXPLICIT opt-in — no magic). A `foot` dock seats
+    the legend BENEATH the body (any register, the beneath-map seat the R3 wave asked for); a `rail`
+    dock rides the hero SIDE rail; else inline the header KEY column. A consumer `#legend` slot wins
+    (a bespoke legend); else the contract's `LegendSpec` drives a ChartLegend. The dock is driven by
+    the declared `LegendSpec.dock`, so a bespoke-`#legend` map opts into the foot by declaring
+    `legend: { …, dock: "foot" }` (the slot still renders the bespoke content; the facet drives the seat). */
+const legendDock = computed<"inline" | "rail" | "foot" | "none">(() => {
     if (!legend.value && !slots.legend) return "none";
+    if (legend.value?.dock === "foot") return "foot";
     return legend.value?.dock === "rail" && props.contract.size === "hero" ? "rail" : "inline";
 });
 /** The ChartLegend mode from the contract's `LegendMode` (the §E5 default: stepped for N≥7,
