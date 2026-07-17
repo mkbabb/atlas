@@ -6,9 +6,9 @@ draft is deleted. It exists so the consumer edits are authored and reviewed befo
 not scrambled after it.*
 
 Every row below is drawn from the real `v6.0.1..HEAD` diff (the export map, the type/barrel
-changes, and the peer bumps in `package.json`), not from intent. Three classes: dropped
-package subpaths, dropped exports, peer majors — plus the additive new seams a consumer may
-now opt into.
+changes, the peer bumps in `package.json`, and the published `dist/style.css`), not from
+intent. Four classes: dropped package subpaths, dropped exports, peer majors, published CSS
+token de-collisions — plus the additive new seams a consumer may now opt into.
 
 ---
 
@@ -48,7 +48,7 @@ pinned type or a stray import will break at the tag.
 | `VizContract.crossHighlight` | `./charts` / `./contract` (`2d78d53`) | remove `crossHighlight` from any `VizContract` literal — cross-highlight is now unconditional (the old `?? true` default is the only behavior). |
 | `StoryCardFacet.numeral` | `./editorial` (`b8db2f6`) | drop the `numeral?: number` field from any `StoryCardFacet` literal — it was inert. |
 | `GhostNumeral` (component) + `GhostNumeralScale`, `GhostNumeralSource` | `./editorial` (`d07b3e1`) | none — the ghost-numeral watermark apparatus is retired (OF-22); the eyebrow is the sole reading numeral. Drop the mount and the type imports. |
-| `RuleVariant` member `"numeral"` | `./editorial` (`d596879`/`d07b3e1`, `RULE_VARIANTS` = `["rule","draw"]`) | any `rule: "numeral"` authoring → `"rule"` (render-identical) or drop the rule. **This is the fleet chase: 8 authorings across 6 dashboards** — see the tag-day runbook §c-numeral. |
+| `RuleVariant` member `"numeral"` | `./editorial` (`d596879`/`d07b3e1`, `RULE_VARIANTS` = `["rule","draw"]`) | any `rule: "numeral"` authoring → `"rule"` (render-identical) or drop the rule. **The fleet chase (8 authorings across 6 dashboards) is DISCHARGED** — cured at `32241139`; the tag-day runbook §b.5 carries the one tag-day re-verify grep. |
 
 ---
 
@@ -58,7 +58,7 @@ pinned type or a stray import will break at the tag.
 |---|---|---|---|
 | `@mkbabb/keyframes.js` | `^5.3.5` | `^6.0.0` (landed at HEAD, `b066b2b`) | install keyframes 6. Easing/timing types re-home by capability owner — a consumer importing `TimingFunction` takes it from keyframes' engine surface. |
 | `@mkbabb/value.js` | `^3.1.0` | `^4.0.0` (landed at HEAD, `b066b2b`) | install value 4. Root helpers moved to capability subpaths: `clamp` → `@mkbabb/value.js/math`, `smoothStep3` → `@mkbabb/value.js/easing`. A consumer importing value.js root helpers chases them to the subpaths (atlas already did, `c7ac089`/`092df4f`). |
-| `@mkbabb/glass-ui` | `^6.0.0` | `^7.0.0` (**at the cut — not yet committed at HEAD**) | the glass peer bump is the first #226 step; install glass 7 **without `--legacy-peer-deps`**. Until the glass 7 tag, the tree assembles only with `--legacy-peer-deps` and the boundary suite `tests/component/story-card-stats.spec.ts` fails to *load* (glass 6's dist imports the removed value-3 root) — this is the known-boundary RED, honest, and clears at the glass 7 tag. |
+| `@mkbabb/glass-ui` | `^6.0.0` | `^7.0.0` (**at the cut — not yet committed at HEAD**) | the glass peer bump is the first #226 step; install glass 7 **without `--legacy-peer-deps`**. Until the glass 7 tag, the tree assembles CLEAN via the declared `package.json` overrides (`b0a1961`, forcing glass 6's kf/value peer edges onto the staged 6.0.0/4.0.0; the override dies at the adopt) and the boundary suite `tests/component/story-card-stats.spec.ts` fails to *load* (glass 6's dist imports the removed value-3 root) — this is the known-boundary RED, honest, and clears at the glass 7 tag. |
 
 `@mkbabb/pencil-boil` holds at `^0.9.2`; `pinia`/`vite`/`vue`/`vue-router` ranges are unchanged.
 Node ≥24 / npm ≥11 boundary is unchanged.
