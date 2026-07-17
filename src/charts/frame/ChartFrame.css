@@ -347,41 +347,9 @@
     max-inline-size: 100%;
 }
 
-/* THE EXPAND TRIGGER — QUIET BY DEFAULT, ENGRAVED INTO THE PLATE CORNER (A7).
-   The glass-ui <ExpandableContainer> ships its corner trigger always-visible; the atlas register
-   wants it QUIET — invisible at rest so a plate reads as pure data, revealing only when the plate
-   is hovered or holds focus (the engraved corner affordance that "appears under the hand").
-   THE RE-SKIN REACH (arm b · the published 4.1.0 cut): the trigger no longer carries the legacy
-   `.expandable-container__trigger` class — the published cut exposes the stable `data-part='trigger'`
-   attribute on BOTH the inline trigger and the fullscreen collapse button. We pierce with `:deep()`
-   onto `[data-part='trigger']` and scope to the INLINE trigger (a descendant of `.plate`); the
-   FULLSCREEN collapse button is teleported to <body>, OUTSIDE `.plate`, so it is unaffected and stays
-   visible. Reduced-motion drops the opacity transition (the reveal is instant, never animated). */
-.frame-expand :deep([data-part="trigger"]) {
-    opacity: 0;
-    transition: opacity 0.18s ease;
-    /* O-D3 G14 — the 44px WCAG 2.5.5 floor (mobile.md "Expand — 30×30", usfi 39 / sci 37 sub-44
-       counts). The primitive's own classes carry no content-box clip (unlike the dock-control
-       family below), so there is no invisible-padding trick here — the box itself grows to 44px
-       and the 16px glyph (h-4/w-4) re-centers inside it via flex; the frosted corner chip reads
-       modestly larger, honestly, rather than a hidden hit-area mismatch. */
-    min-width: 44px;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.plate:hover .frame-expand :deep([data-part="trigger"]),
-.plate:focus-within .frame-expand :deep([data-part="trigger"]) {
-    opacity: 1;
-}
-/* Keyboard reach: when the quiet trigger itself takes focus it MUST become visible (so a
-   keyboard user can see what they are about to activate), independent of plate hover. */
-.frame-expand :deep([data-part="trigger"]:focus-visible) {
-    opacity: 1;
-}
-@media (prefers-reduced-motion: reduce) {
-    .frame-expand :deep([data-part="trigger"]) {
-        transition: none;
-    }
-}
+/* THE EXPAND TRIGGER — SUPPRESSED (OF-25). The `<ExpandableContainer>` corner expand trigger is
+   suppressed at its slot seat (ChartFrame.vue's inert `#expand-trigger`), so no inline
+   `[data-part="trigger"]` ever renders inside `.frame-expand` — the dock cluster's enlarge (VizPlate
+   #actions) is the ONE expand affordance. The former quiet-on-hover reveal choreography for that
+   in-viz corner trigger is retired with it (nothing to reveal); the FULLSCREEN collapse button is a
+   separate slot, teleported to <body> outside `.plate`, and was never governed by these rules. */

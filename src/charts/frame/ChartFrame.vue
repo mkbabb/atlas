@@ -455,7 +455,17 @@ watch(open, (value) => {
                     :expand-label="`Expand ${ariaLabel}`"
                     :collapse-label="`Collapse ${ariaLabel}`"
                 >
-                    <template #expand-trigger />
+                    <!-- OF-25 — SUPPRESS the primitive's corner expand trigger so the dock
+                         cluster's enlarge (VizPlate #actions) is the ONE expand affordance. A BARE
+                         `<template #expand-trigger />` does NOT suppress it: Vue's renderSlot renders
+                         the primitive's DEFAULT corner button whenever the provided slot yields no
+                         valid vnode, and an empty template yields none — so the square in-viz
+                         duplicate kept painting over the legend text. One inert hidden node is a
+                         present-but-unpainted vnode that overrides the fallback without rendering a
+                         control. (The fullscreen collapse button — a separate slot — is untouched.) -->
+                    <template #expand-trigger>
+                        <span hidden data-frame-expand-trigger-off />
+                    </template>
                     <template #default="{ fullscreen }">
                         <!-- The body wrapper. The published 4.1.0 cut exposes stable `data-part`
                          hooks (`panel`/`overlay`/`trigger`) on the primitive's own surfaces, but the
