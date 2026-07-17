@@ -38,7 +38,7 @@ import { useFilterPane } from "../../filter/composables/useFilterPane.js";
 import { useFilterPanel } from "../../filter/composables/useFilterPanel.js";
 import { useVizRegistry, type VizToken } from "../composables/useVizRegistry.js";
 import { exportCsv, exportImage, type DataUrlSource } from "../lib/vizExport.js";
-import type { VizContract } from "../contract/viz-contract.js";
+import type { VizContract, LegendSpec } from "../contract/viz-contract.js";
 import { useSelection } from "../../platform/stores/useSelection.js";
 import { useSelectionStat } from "../../platform/stores/useSelectionStat.js";
 import { useActiveBeat } from "../../platform/stores/useActiveBeat.js";
@@ -62,6 +62,21 @@ export function sourcePanelForHost(
     return stageOwned ? null : (panel ?? null);
 }
 
+/** E5 — the legend-dock resolution (EXPLICIT opt-in — no magic), pure so the seat is unit-assertable
+    off a bare contract. A `foot` dock seats the legend BENEATH the body (any register); a `rail` dock
+    rides the hero SIDE rail (hero register only); else the inline header KEY column; `none` when
+    neither a `LegendSpec` nor a `#legend` slot is present. The declared `LegendSpec.dock` drives the
+    seat — a bespoke-`#legend` plate opts into the foot by declaring `legend: { …, dock: "foot" }`. */
+export function resolveLegendDock(
+    legend: LegendSpec | undefined,
+    size: VizContract["size"],
+    hasLegendSlot: boolean,
+): "inline" | "rail" | "foot" | "none" {
+    if (!legend && !hasLegendSlot) return "none";
+    if (legend?.dock === "foot") return "foot";
+    return legend?.dock === "rail" && size === "hero" ? "rail" : "inline";
+}
+
 export function useVizPlate(props: VizPlateProps) {
     const slots = useSlots();
 // ── K-F — THE TITLE-DEDUP INJECT (the BEAT_TITLE_KEY seam) ────────────────────────────────────
@@ -74,17 +89,13 @@ const showOwnTitle = computed(() => !beatTitle?.owned);
 
 // ── E5 — THE LEGEND DOCK (the contract's default policy mapped onto ChartFrame) ──────────────
 const legend = computed(() => props.contract.legend);
-/** ChartFrame's `legendDock` reads the contract (EXPLICIT opt-in — no magic). A `foot` dock seats
-    the legend BENEATH the body (any register, the beneath-map seat the R3 wave asked for); a `rail`
-    dock rides the hero SIDE rail; else inline the header KEY column. A consumer `#legend` slot wins
-    (a bespoke legend); else the contract's `LegendSpec` drives a ChartLegend. The dock is driven by
-    the declared `LegendSpec.dock`, so a bespoke-`#legend` map opts into the foot by declaring
-    `legend: { …, dock: "foot" }` (the slot still renders the bespoke content; the facet drives the seat). */
-const legendDock = computed<"inline" | "rail" | "foot" | "none">(() => {
-    if (!legend.value && !slots.legend) return "none";
-    if (legend.value?.dock === "foot") return "foot";
-    return legend.value?.dock === "rail" && props.contract.size === "hero" ? "rail" : "inline";
-});
+/** ChartFrame's `legendDock` — the `resolveLegendDock` policy over the declared `LegendSpec` + the
+    live `#legend` slot. A consumer `#legend` slot wins (a bespoke legend); else the contract's
+    `LegendSpec` drives a ChartLegend at the resolved seat (the slot still renders the bespoke content
+    when present; the facet drives the seat). */
+const legendDock = computed<"inline" | "rail" | "foot" | "none">(() =>
+    resolveLegendDock(legend.value, props.contract.size, !!slots.legend),
+);
 /** The ChartLegend mode from the contract's `LegendMode` (the §E5 default: stepped for N≥7,
     rail/inline otherwise). `rail`/`inline` map onto ChartFrame's dock; the BAR mode is continuous
     (a ramp) for stepped/inline-with-a-colorKind, else discrete chips. */
