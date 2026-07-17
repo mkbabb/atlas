@@ -154,5 +154,11 @@
         "vue": "^3.5.35",
         "vue-router": "^4.6.4",
         "vue-tsc": "^2.2.12"
+    },
+    "overrides": {
+        "@mkbabb/glass-ui": {
+            "@mkbabb/keyframes.js": "$@mkbabb/keyframes.js",
+            "@mkbabb/value.js": "$@mkbabb/value.js"
+        }
     }
 }
