@@ -7,7 +7,9 @@
 // ── THE ORCHESTRATOR SHELL (K-H-ARCH · the TEMPLATE-axis split) ──────────────────────────
 // K-H-ARCH split the 300-L template into FOUR colocated sub-components under `./components/`,
 // each owning the composable it consumes (the composable moves WITH its sub-component):
-//   • band 1 — `DockCrest`           (the #persistent TIL crest + progress rim)
+//   • band 1 — `DockCrest`           (the #persistent TIL crest — a PURE crest; the progress rim
+//                                     re-seated UP to this orchestrator at the dock-box level, so
+//                                     its ring resolves to the DOCK PILL, not a crest square — OF-21.1)
 //   • band 2 — `DockStepperRender`   (the FadingScroll Roman stepper; owns `useDockStepper` — the
 //                                     dock's ONE IntersectionObserver relocates here, never a second)
 //   •          `DockNavItem`         (the repeating beat/view rung the stepper v-fors)
@@ -41,6 +43,7 @@
 // J-PATH §8 Decision 2). The `:always-expanded` true-literal opt-OUT is DELETED.
 import { computed, inject, ref, watch } from "vue";
 import { GlassDock } from "@mkbabb/glass-ui/dock";
+import { ScrollProgressRim } from "@mkbabb/glass-ui/scroll-progress-rim";
 import DockCrest from "./components/DockCrest.vue";
 import DockStepperRender from "./components/DockStepperRender.vue";
 import DockFoot from "./components/DockFoot.vue";
@@ -237,19 +240,29 @@ useDismissArbiter().claim(() =>
         aria-label="Section navigation"
         data-testid="dock"
     >
-        <!-- band 1 — THE PERSISTENT CREST (#persistent slot, H9 §B.1). The library renders this slot
-             OUTSIDE the collapsed↔expanded crossfade, so the crest affordance is always reachable:
-             the HOME link at the desktop rail, the section-menu BUTTON at the phone register (D2 —
-             home then rides the sheet's labeled first row). -->
+        <!-- band 1 — THE PERSISTENT CREST + THE DOCK-BOX PROGRESS RIM (#persistent slot, H9 §B.1).
+             The library renders this slot OUTSIDE the collapsed↔expanded crossfade, so the crest
+             affordance is always reachable: the HOME link at the desktop rail, the section-menu
+             BUTTON at the phone register (D2 — home then rides the sheet's labeled first row).
+             The `ScrollProgressRim` seats HERE (a sibling of the crest, NOT nested inside it) so its
+             `position:absolute` box resolves to the GlassDock ROOT — `.dock-persistent` is static,
+             `.glass-dock` is the position:relative + `contain:layout` containing block — letting the
+             conic ring trace the DOCK PILL's own rounded-rect border at rest, never an inner square
+             around the crest raster (OF-21.1). The pill radius + the expand-yield fade live in
+             Dock.css; the value/stops are the same whole-document scalar + identity ramp the crest
+             once forwarded. -->
         <template #persistent>
+            <ScrollProgressRim
+                class="usf-dock__progress-rim"
+                :value="scrollProgress"
+                :stops="identityRamp"
+            />
             <DockCrest
                 ref="crestRef"
                 :as-button="isPhone"
                 :expanded="sheetOpen"
                 :crest="ctx?.crest"
                 :morph-stage="collapsed ? 'seed' : 'full'"
-                :progress="scrollProgress"
-                :stops="identityRamp"
                 @toggle="onCrestToggle"
             />
         </template>

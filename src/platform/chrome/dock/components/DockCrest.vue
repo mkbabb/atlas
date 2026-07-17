@@ -3,7 +3,10 @@
 // Extracted VERBATIM from Dock.vue's `#persistent` slot: the TIL crest is the HOME affordance
 // to `/` AND the deck's title-card, rendered OUTSIDE the collapsed↔expanded crossfade (the
 // library anchors #persistent above the deck). A self-contained leaf — the orchestrator mounts
-// it in the `<template #persistent>` slot. It holds the gold budget (D7.b): the gilt dome
+// it in the `<template #persistent>` slot. The progress rim NO LONGER lives here: it re-seated UP
+// to the orchestrator at the dock-box level so its ring resolves to the DOCK PILL's own border,
+// not a crest-boxed square (OF-21.1) — this is a PURE crest again. It holds the gold budget (D7.b):
+// the gilt dome
 // geometry + the ONE gold focus-ring (the four-voice law — gold is the transient state, so
 // BrandMark's inherited red focus outline is nulled on the gilt crest).
 //
@@ -14,7 +17,6 @@
 // The desktop crest stays the home LINK (home rides the sheet's labeled first ROW on the phone).
 // `focusCrest` is exposed so the sheet's Esc/scrim close can return focus without scrolling.
 import { ref, type Component } from "vue";
-import { ScrollProgressRim } from "@mkbabb/glass-ui/scroll-progress-rim";
 import BrandMark from "../../masthead/BrandMark.vue";
 
 const props = withDefaults(
@@ -25,8 +27,6 @@ const props = withDefaults(
         expanded?: boolean;
         crest?: Component;
         morphStage?: "seed" | "full";
-        progress: number;
-        stops: readonly string[];
     }>(),
     { asButton: false, expanded: false, crest: undefined, morphStage: "full" },
 );
@@ -54,7 +54,6 @@ defineExpose({ focusCrest });
          (aria-expanded/aria-controls) firing the collapse machine — reachable without expanding
          in both registers (touch/keyboard always-on). -->
     <div class="usf-dock__crest-register">
-        <ScrollProgressRim :value="props.progress" :stops="props.stops" />
         <BrandMark
             ref="markRef"
             variant="crest"
@@ -74,8 +73,10 @@ defineExpose({ focusCrest });
 </template>
 
 <style scoped>
+/* The crest raster's centering cell — a PURE 2.75rem box now the progress rim re-seated UP to the
+   dock box (OF-21.1). The former `position: relative` (the rim's old positioned host, the cause of
+   the crest-square ring) is retired with it: nothing here is a positioned ancestor any longer. */
 .usf-dock__crest-register {
-    position: relative;
     display: grid;
     inline-size: 2.75rem;
     block-size: 2.75rem;

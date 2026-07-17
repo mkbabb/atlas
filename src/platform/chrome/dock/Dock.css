@@ -95,6 +95,40 @@
     --dock-rim-strength: calc(0.5 + 0.5 * var(--dock-morph-t));
 }
 
+/* ── THE PROGRESS RIM — THE PILL IS THE RING AT REST (OF-21.1 · supersedes PA-3 cure #3) ────────
+   The `ScrollProgressRim` is DOCK-BOX chrome (orchestrator-owned), re-seated out of the crest.
+   Mounted in the #persistent slot as a sibling of the crest, its `position:absolute; inset:1px`
+   resolves to the GlassDock ROOT (`.dock-persistent` is static; `.glass-dock` is position:relative
+   + `contain:layout` — the containing block), so the conic ring fills the DOCK's own border box and
+   traces the pill's rounded-rect edge — never the inner 2.75rem square around the crest raster
+   (the OF-21.1 cure; PA-3 D2). We pin `--scroll-progress-rim-radius` to the pill radius because
+   glass's `inherit` default resolves to the static parent's 0 (the square's SECOND cause); at the
+   collapsed rest pole the dock's OWN border-radius is exactly `--radius-pill` (shape-card LERP at
+   `--dock-expand-t` 0), so the ring path IS the resting pill's outline.
+
+   DESIGN — the OF-21.1 adjudication (recorded): whole-document progress lives on the collapsed rim
+   and NOWHERE else (the "never a second rail" grain DockStepperRender already carries — its spine is
+   dashboard IDENTITY, not scroll). So the rim is the ring AT REST and YIELDS when the dock expands:
+   the expanded rail is the stepper's nav/identity instrument, and at rest-expanded (at-top, ~0
+   progress) or the phone sheet (active navigation) a border ring would only double-encode or compete
+   with the stepper's own "step N of M" wayfinding. The fade ties to glass's own `.collapsed` posture
+   class — the SAME machine `useDockCollapse` drives — so it needs no new atlas state. The phone
+   register uses this identical seat: `.usf-dock--phone.collapsed` also carries `.collapsed`, so the
+   ring traces the phone pill and yields to the ruled sheet by the same rule. */
+.usf-dock__progress-rim {
+    --scroll-progress-rim-radius: var(--radius-pill);
+    opacity: 0;
+    transition: opacity var(--duration-normal) var(--ease-standard);
+}
+.usf-dock.collapsed .usf-dock__progress-rim {
+    opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+    .usf-dock__progress-rim {
+        transition: none;
+    }
+}
+
 /* THE #default LAYER IS A 3-BAND COLUMN (J-DOCK §approach-3). glass-ui wraps the #default slot in
    `.dock-layer--full` and lays it out as a ROW by default — the atlas body is a vertical STACK of
    TWO bands: the `DockStepperRender` SCROLL-MIDDLE (flex-grow) and the `DockFoot` STICKY FOOT. We
