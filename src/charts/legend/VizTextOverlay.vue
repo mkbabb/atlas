@@ -51,13 +51,22 @@ const root = ref<HTMLElement | null>(null);
 /** The projected pixel positions, keyed by placement id — recomputed on every re-anchor tick. */
 const pixels = ref<Record<string, { left: number; top: number }>>({});
 
+/** The chart has completed ≥1 render pass, so a coordinate system exists — the readiness the
+    `convertToPixel` projection HOLDS for (ECharts' `finished` event; see the re-anchor clock). */
+const painted = ref(false);
+
 /** Project every placement's data coord into the host's local pixel box. The chart's
     `convertToPixel` returns canvas-local pixels; the canvas fills the host, so they ARE the
     host-local coords (no viewport offset needed — the overlay is absolutely positioned INSIDE
     the same `.relative` host the canvas fills). An axis-only placement pins to the grid gutter. */
 function reanchor(): void {
     const c = props.chart;
-    if (!c) {
+    // HOLD until the chart has painted once — a coordinate system does not exist before the first
+    // `finished` render (nor under lazyMount before scroll-in), and `convertToPixel` against an empty
+    // coord-system list WARNS ("[ECharts] No coordinate system … found by the given finder") and
+    // yields nothing. `painted` is the real readiness gate; without it the immediate chart-arrival
+    // re-anchor projected pre-layout and fired that console warn on the /usf strip's break-even chip.
+    if (!c || !painted.value) {
         pixels.value = {};
         return;
     }
@@ -86,14 +95,32 @@ function reanchor(): void {
                 top: (py ?? 0) + (p.dy ?? 0),
             };
         } catch {
-            // a pre-layout convertToPixel can throw; skip until the next settle tick.
+            // defensive: a genuinely degenerate point yields nothing — skip it. The init transient
+            // (pre-layout, no coord system) is fenced by the `painted` gate above, not masked here.
         }
     }
     pixels.value = next;
 }
 
-// The re-anchor clock — the chart arriving, the placements changing, the expand-settle tick.
-watch(() => props.chart, reanchor, { immediate: true });
+// The re-anchor clock. The chart's `finished` render is the canonical "convertToPixel is valid"
+// first-paint signal (the SAME clock useVizOverlay + RankedStrip's projector gate on); plus the
+// placements change and the expand-settle tick (below). On each chart INSTANCE change the finished
+// handler is re-bound and readiness reset, so a fresh (lazyMount) or re-created chart re-arms its
+// own paint gate and a torn-down instance never re-anchors.
+function onFinished(): void {
+    painted.value = true;
+    reanchor();
+}
+watch(
+    () => props.chart,
+    (c, prev) => {
+        prev?.off("finished", onFinished);
+        painted.value = false;
+        pixels.value = {};
+        c?.on("finished", onFinished);
+    },
+    { immediate: true },
+);
 watch(() => props.placements, reanchor, { deep: true });
 
 const settle = inject(EXPAND_SETTLE_KEY, undefined);
@@ -119,7 +146,10 @@ function wireResizeObserver(): void {
 }
 watch(root, wireResizeObserver);
 watch(() => props.chart, wireResizeObserver);
-onBeforeUnmount(() => ro?.disconnect());
+onBeforeUnmount(() => {
+    ro?.disconnect();
+    props.chart?.off("finished", onFinished);
+});
 
 /** The per-placement transform that seats the slot relative to its projected point (mirroring
     the ECharts `label.position` anchor — `end` reads rightward, `start` leftward, etc). */
