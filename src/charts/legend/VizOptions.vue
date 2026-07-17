@@ -53,9 +53,9 @@ const c = computed(() => props.controller);
 const isDefault = computed(() => c.value.isDefault.value);
 
 // THE OVERLAY-TIER RE-POINT (f-vizoptions §1). glass-ui's PopoverContent wears the `glass-floating`
-// utility, whose `backdrop-filter: var(--glass-blur-floating)` resolves to the floating tier
-// (blur 16). The per-viz options panel is a LENS OVER THE LIVE DATA, so it must wear the OVERLAY
-// tier (blur 24) — deeper-frosted than the floating dock/legend chrome below it. We re-point the
+// utility, whose `backdrop-filter: var(--glass-blur-floating)` resolves to the floating tier.
+// The per-viz options panel is a LENS OVER THE LIVE DATA, so it must wear the OVERLAY
+// tier — deeper-frosted than the floating dock/legend chrome below it. We re-point the
 // tier TOKEN the utility reads, via an INLINE style (not scoped CSS) so it survives the popover's
 // Teleport-to-body (a scoped `[data-v-*]` rule does not reliably reach the portalled root). The
 // `glass-floating` class then computes its backdrop at the overlay radius — one token re-point,
@@ -325,11 +325,13 @@ function reset(): void {
 }
 
 /* THE POPOVER PANEL — the OVERLAY-TIER lens (f-vizoptions §1 · d-glassui). glass-ui's
-   PopoverContent defaults to the FLOATING tier (blur 16); the per-viz options panel is a LENS
-   OVER the live plate, so it wears the OVERLAY tier (`--glass-blur-overlay` = blur(24px)) —
+   PopoverContent defaults to the FLOATING tier; the per-viz options panel is a LENS
+   OVER the live plate, so it wears the OVERLAY tier (`--glass-blur-overlay`) —
    DEEPER-frosted than the floating dock/legend chrome below it (the z-of-frost reads: the lens
-   over the data is the deepest blur on the fold). One token, the tier the proof asserts (blur
-   ≥ 20px). The content width caps at the C7 390px register so it never clips on a phone. */
+   over the data is the deepest blur on the fold). One token — the overlay tier the utility
+   reads; its absolute blur rides glass-ui's ladder (recalibrated subtler at 7.0.0), the
+   overlay > floating relationship is the invariant. The content width caps at the C7 390px
+   register so it never clips on a phone. */
 /* The overlay-tier re-point rides the INLINE `overlayTierVars` (the script) so it survives the
    Teleport-to-body; this scoped rule only sets the content width + inner layout. */
 .viz-options__panel {
