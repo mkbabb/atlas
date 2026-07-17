@@ -33,17 +33,20 @@ describe("dock posture", () => {
 });
 
 describe("filter continuum register", () => {
-    it("maps one active snap model to the desktop and phone ladders", () => {
-        expect(filterSnapPoints(false)).toEqual([0.12, 0.5, 1]);
-        expect(filterSnapPoints(true)).toEqual([0.12, 1]);
-        expect(filterRegisterFor(FILTER_SNAP.ledger, false)).toBe("ledger");
-        expect(filterRegisterFor(FILTER_SNAP.ledger, true)).toBe("pip");
+    it("maps the one active snap model to the TWO-state ladder — the tab and the full drawer", () => {
+        // OF-23/28 — the intermediary ledger detent is abrogated wholesale: ONE ladder at every
+        // viewport, EXACTLY two registers. No snap value resolves to a third, half-open state.
+        expect(filterSnapPoints()).toEqual([0.12, 1]);
+        expect(filterRegisterFor(FILTER_SNAP.pip)).toBe("pip");
+        expect(filterRegisterFor(FILTER_SNAP.drawer)).toBe("drawer");
+        // a mid-drag scalar resolves to the NEARER of the two registers — never a ledger.
+        expect(filterRegisterFor(0.3)).toBe("pip");
+        expect(filterRegisterFor(0.7)).toBe("drawer");
         expect(filterSnapFor("pip")).toBe(0.12);
-        expect(filterSnapFor("ledger")).toBe(0.5);
         expect(filterSnapFor("drawer")).toBe(1);
     });
 
-    it("keeps the resting pip near the 44px touch target at both registers", () => {
+    it("keeps the resting pip near the 44px touch target", () => {
         expect(FILTER_SNAP.pip * 24 * 16).toBeCloseTo(46.08);
         expect(FILTER_SNAP.pip * 390 * 0.92).toBeCloseTo(43.056);
     });

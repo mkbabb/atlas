@@ -22,7 +22,6 @@ import { useFilterPane } from "../composables/useFilterPane.js";
 import { useFilterPanel } from "../composables/useFilterPanel.js";
 import { useFilterLedger } from "../composables/useFilterLedger.js";
 import { useFreshness } from "../../platform/chrome/freshness.js";
-import { useMobileRegister } from "../../platform/composables/useMobileRegister.js";
 import { useSavedViews, currentUrl } from "../../platform/composables/useSavedViews.js";
 import { useSelection } from "../../platform/stores/useSelection.js";
 import { useViewParams } from "../../platform/stores/useViewParams.js";
@@ -35,6 +34,7 @@ import {
     filterRegisterFor,
     filterSnapFor,
     filterSnapPoints,
+    type FilterRegister,
 } from "./filter-continuum.js";
 
 // The consumer (DashboardView) mounts this shell in PlatformShell's `filter` slot and
@@ -47,7 +47,6 @@ const ctx = inject(DASHBOARD_KEY);
 // The instance-built registry, injected (L1-INVERSION) — core chrome never imports
 // `@/dashboards/registry`. Gates the cross-link "ready" state on a registered target slug.
 const { findDashboard } = useDashboardRegistry();
-const activeDashboard = computed(() => (ctx ? findDashboard(ctx.id) : undefined));
 
 const filterBody = computed<Component | undefined>(() => props.body);
 const hasFilter = computed(() => Boolean(filterBody.value));
@@ -60,62 +59,34 @@ const { label: freshnessLabel } = useFreshness();
 // physical Drawer at the non-occluding PIP detent.
 const { open } = useFilterPane();
 const { clearPin } = useFilterPanel();
-const { chips, appliedCount, selectionCount, filterResponse } = useFilterLedger();
-const { isPhone } = useMobileRegister();
+const { appliedCount } = useFilterLedger();
 
-// W-L4 — the Drawer is the continuum. Its one Glass snap scalar moves one physical
-// side lens through PIP → LEDGER → DRAWER; the shared `open` flag is only the public
-// request for the full register, never a second geometry or presence authority.
+// W-L4 — the Drawer is the continuum. Its one Glass snap scalar moves one physical side lens
+// between the PIP tab (at rest) and the full DRAWER (on pull); the shared `open` flag is only the
+// public request for the full register, never a second geometry or presence authority. There is NO
+// third detent (OF-23/28): the intermediary ledger is gone from the ladder, so no gesture or drag
+// can land the drawer on a mostly-empty half-open sheet.
 const activeSnapPoint = ref<number | string | null>(
     open.value ? FILTER_SNAP.drawer : FILTER_SNAP.pip,
 );
-const snapPoints = computed<number[]>(() => [...filterSnapPoints(isPhone.value)]);
-const register = computed(() => filterRegisterFor(activeSnapPoint.value, isPhone.value));
-const ledgerActive = computed(() => register.value === "ledger");
+const snapPoints = computed<number[]>(() => [...filterSnapPoints()]);
+const register = computed(() => filterRegisterFor(activeSnapPoint.value));
 const drawerActive = computed(() => register.value === "drawer");
 const doorLabel = computed(() =>
     drawerActive.value
         ? "Close filters"
-        : ledgerActive.value
-          ? "Open filters"
-          : `Review filters${appliedCount.value ? `, ${appliedCount.value} applied` : ""}`,
+        : `Open filters${appliedCount.value ? `, ${appliedCount.value} applied` : ""}`,
 );
-const scopeLabel = computed(() => {
-    if (filterResponse.value === "static") return "Static figure · filters do not alter it";
-    const grain = activeDashboard.value?.entityGrain ?? "entity";
-    return `${grain.charAt(0).toUpperCase()}${grain.slice(1)} view`;
-});
 
-let dwell: ReturnType<typeof setTimeout> | null = null;
 let writingOpenFromSnap = false;
 
-function cancelDwell(): void {
-    if (dwell) clearTimeout(dwell);
-    dwell = null;
-}
-
-function retarget(next: "pip" | "ledger" | "drawer"): void {
+function retarget(next: FilterRegister): void {
     activeSnapPoint.value = filterSnapFor(next);
 }
 
-function armLedgerDwell(): void {
-    cancelDwell();
-    dwell = setTimeout(() => retarget("pip"), 4_000);
-}
-
-function showLedger(): void {
-    if (isPhone.value || register.value === "drawer") return;
-    if (register.value === "ledger") armLedgerDwell();
-    else retarget("ledger");
-}
-
+/** The one gesture: the tab opens the full drawer; the open drawer's door closes it. */
 function activateContinuum(): void {
-    if (register.value === "drawer") {
-        open.value = false;
-        return;
-    }
-    if (isPhone.value || register.value === "ledger") open.value = true;
-    else retarget("ledger");
+    open.value = register.value !== "drawer";
 }
 
 watch(
@@ -129,29 +100,22 @@ watch(
     { flush: "sync" },
 );
 
-// Glass writes the active detent after drag/fling. Reflect that one target into the
-// public full-register flag without feeding a second target back into the spring.
+// Glass writes the active detent after drag/fling. Reflect that one target into the public
+// full-register flag without feeding a second target back into the spring.
 watch(
     activeSnapPoint,
     (snap) => {
-        cancelDwell();
-        const next = filterRegisterFor(snap, isPhone.value);
-        const expanded = next === "drawer";
+        const expanded = filterRegisterFor(snap) === "drawer";
         if (open.value !== expanded) {
             writingOpenFromSnap = true;
             open.value = expanded;
             writingOpenFromSnap = false;
         }
-        if (next === "ledger") armLedgerDwell();
     },
     { flush: "sync" },
 );
 
-watch(isPhone, (phone) => {
-    if (phone && filterRegisterFor(activeSnapPoint.value, false) === "ledger") retarget("pip");
-});
 function teardown(): void {
-    cancelDwell();
     open.value = false;
     clearPin();
     retarget("pip");
@@ -326,8 +290,6 @@ function cancelSave(): void {
                 :aria-label="doorLabel"
                 aria-controls="filter-drawer-body"
                 data-filter-door
-                @pointerenter="showLedger"
-                @focusin="showLedger"
                 @click="activateContinuum"
             >
                 <SlidersHorizontal v-if="drawerActive" aria-hidden="true" />
@@ -340,34 +302,6 @@ function cancelSave(): void {
                     {{ appliedCount }}
                 </span>
             </Button>
-
-            <section
-                v-if="!isPhone"
-                v-show="ledgerActive"
-                class="cp-continuum__ledger"
-                aria-label="Filter summary"
-            >
-                <span
-                    class="cp-continuum__scope"
-                    :class="{ static: filterResponse === 'static' }"
-                >
-                    {{ scopeLabel }}
-                </span>
-                <span
-                    v-for="chip in chips"
-                    :key="chip.key"
-                    class="cp-continuum__chip"
-                >
-                    {{ chip.label }}
-                </span>
-                <span
-                    v-if="selectionCount"
-                    class="cp-continuum__chip"
-                    data-selection-count
-                >
-                    {{ selectionCount }} selected
-                </span>
-            </section>
 
             <div
                 v-show="drawerActive"
@@ -448,11 +382,16 @@ function cancelSave(): void {
     inline-size: 1.15rem;
     block-size: 1.15rem;
 }
-/* OF-20 — at rest the surface is a PULL TAB, not a full-viewport rail. The DrawerContent's own
-   glass material collapses at the pip register, so only the door tab (funnel glyph, left-rounded
-   grab lip) paints and the invisible side lens is click-through — the figure reads live behind it,
-   nonmodal. The ledger/drawer registers keep Glass's full material. */
-.cp-drawer[data-register="pip"] {
+/* OF-23 — at REST the surface is a PULL TAB, nothing else: the DrawerContent's own glass material
+   collapses at the pip register so only the door tab (funnel glyph, left-rounded grab lip) paints;
+   the invisible side lens is click-through and the figure reads live behind it, nonmodal — zero
+   full-height chrome. Glass renders the DrawerContent through Reka's DialogPortal (teleported to
+   <body>), so this SFC's scope hash NEVER reaches its root — the R2 scoped override silently missed
+   and the full-height paper rail kept painting. We bind the rest-state override through the stable
+   `data-filter-continuum` marker with `:global` (the VizAppendixDock idiom for teleported glass), at
+   a `.cp-drawer[data-filter-continuum]` specificity that out-ranks Glass's own snap-points fill and
+   right-rail border. The drawer register keeps Glass's full material. */
+:global(.cp-drawer[data-filter-continuum][data-register="pip"]) {
     background: transparent;
     border-color: transparent;
     box-shadow: none;
@@ -460,12 +399,10 @@ function cancelSave(): void {
     backdrop-filter: none;
     pointer-events: none;
 }
-/* Glass's `.glass-overlay::before` specular pseudo carries a rest-hairline floor
-   (`--glass-specular-rest-hairline`) + an inset edge box-shadow, so even with the material zeroed
-   above it still paints a faint full-height edge glint down the invisible side lens. Neutralize the
-   pseudo in the SAME rest-state override (the pip register only — the ledger/drawer registers keep
-   Glass's full material + its specular). */
-.cp-drawer[data-register="pip"]::before {
+/* Glass's `.glass-overlay::before` specular pseudo carries a rest-hairline floor + an inset edge
+   box-shadow, so even with the material zeroed it still paints a faint full-height edge glint down
+   the invisible side lens. Neutralize the pseudo in the SAME teleport-reaching rest-state override. */
+:global(.cp-drawer[data-filter-continuum][data-register="pip"])::before {
     display: none;
 }
 .cp-drawer[data-register="pip"] .cp-continuum__door {
@@ -488,28 +425,6 @@ function cancelSave(): void {
     background: var(--foreground);
     color: var(--background);
     font: 700 0.625rem/1 var(--font-mono);
-}
-.cp-continuum__ledger {
-    position: absolute;
-    inset-block-start: 66.667%;
-    inset-inline-start: 44px;
-    display: flex;
-    inline-size: calc(50% - 44px);
-    padding: 0.6rem;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.35rem;
-    transform: translateY(-50%);
-}
-.cp-continuum__scope,
-.cp-continuum__chip {
-    padding: 0.25rem 0.45rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    font: 0.6875rem/1.2 var(--font-mono);
-}
-.cp-continuum__scope.static {
-    border-style: dashed;
 }
 .cp-continuum__drawer {
     position: absolute;

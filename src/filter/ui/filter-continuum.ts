@@ -1,36 +1,29 @@
-export type FilterRegister = "pip" | "ledger" | "drawer";
+export type FilterRegister = "pip" | "drawer";
 
+// OF-23/28 — the filter affordance has EXACTLY two states: at rest the PIP (the small pull tab,
+// the drawer retracted to a tab-only sliver) and, on pull, the FULL DRAWER. The intermediary
+// LEDGER detent — the half-open sheet that painted a mostly-empty full-height rail beside a lone
+// scope chip — is abrogated wholesale (removed from the ladder, not merely hidden), so no gesture
+// or drag can land the drawer on a third, in-between register.
 export const FILTER_SNAP = Object.freeze({
     pip: 0.12,
-    ledger: 0.5,
     drawer: 1,
 });
 
-const DESKTOP_SNAPS = Object.freeze([
-    FILTER_SNAP.pip,
-    FILTER_SNAP.ledger,
-    FILTER_SNAP.drawer,
-]);
-const PHONE_SNAPS = Object.freeze([FILTER_SNAP.pip, FILTER_SNAP.drawer]);
+const SNAPS = Object.freeze([FILTER_SNAP.pip, FILTER_SNAP.drawer]);
 
-/** The phone omits the summary detent; Glass still owns the same side-lens path. */
-export function filterSnapPoints(phone: boolean): readonly number[] {
-    return phone ? PHONE_SNAPS : DESKTOP_SNAPS;
+/** The two-state ladder — the tab at rest, the full drawer open. One ladder at every viewport. */
+export function filterSnapPoints(): readonly number[] {
+    return SNAPS;
 }
 
-/** Resolve drag writeback to the closest register in the active ladder. */
-export function filterRegisterFor(
-    snap: number | string | null,
-    phone: boolean,
-): FilterRegister {
+/** Resolve a drag/fling writeback to the nearer of the two registers. */
+export function filterRegisterFor(snap: number | string | null): FilterRegister {
     const value = typeof snap === "number" ? snap : Number.parseFloat(String(snap));
-    const points = filterSnapPoints(phone);
-    const nearest = points.reduce((best, point) =>
+    const nearest = SNAPS.reduce((best, point) =>
         Math.abs(point - value) < Math.abs(best - value) ? point : best,
     );
-    if (nearest === FILTER_SNAP.drawer) return "drawer";
-    if (nearest === FILTER_SNAP.ledger) return "ledger";
-    return "pip";
+    return nearest === FILTER_SNAP.drawer ? "drawer" : "pip";
 }
 
 export function filterSnapFor(register: FilterRegister): number {
