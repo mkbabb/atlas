@@ -20,7 +20,7 @@
 // destructured `ctx` is handed to `useDockDataState` exactly as the orchestrator's injected ctx was;
 // `ctx` read inside `hasFilter` compiles to a tracked `__props` read (reactive without a wrapper).
 import { DockSeparator } from "@mkbabb/glass-ui/dock";
-import { DarkModeToggle } from "@mkbabb/glass-ui/controls";
+import { DarkModeToggle } from "@mkbabb/glass-ui/dark-mode-toggle";
 import {
     Download,
     GitCompareArrows,

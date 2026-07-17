@@ -19,7 +19,7 @@ import {
     DropdownMenuContent,
 } from "@mkbabb/glass-ui/dropdown-menu";
 import { Button } from "@mkbabb/glass-ui/button";
-import { DarkModeToggle } from "@mkbabb/glass-ui/controls";
+import { DarkModeToggle } from "@mkbabb/glass-ui/dark-mode-toggle";
 import {
     Settings,
     GitCompareArrows,
