@@ -104,6 +104,15 @@ const supports = computed<AggregateStat[]>(() => props.stats.slice(1));
     gap: 0.75rem 2.5rem;
     margin: 0;
     padding: 0;
+    /* THE LEAD-SLUG CONTAINER (L2 · the figure-slug host law, recipes.css §1). The lead rides the
+       `slug` recipe, whose rung (`--type-display-audacious` = `39cqw`) AND track-fit ceiling
+       (`100cqi / (--slug-num-track · 0.62)`) BOTH resolve against the nearest inline-size container.
+       The band is that host — like `.dashboard-hero__figure` and `.pull-figure`, it MUST declare the
+       container so both terms bind to the BAND's own track. Without it (no container ancestor) `100cqi`
+       escapes to the viewport: the track-fit sizes the crown at viewport ÷ (track · 0.62) — at 1440
+       the lead ran 290px and sheared mid-glyph. The `card`-rung supports are rem-clamped (no cq), so
+       only the lead needs this. */
+    container-type: inline-size;
 }
 /* The TOP band leads the plate (a hair of breathing room beneath); the BOTTOM band settles after
    the marks (a hair above). The alternation rhythm — stat-band → viz → stat-band. */
