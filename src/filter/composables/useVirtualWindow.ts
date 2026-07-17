@@ -133,7 +133,16 @@ export function useVirtualWindow<Item, Key extends VirtualKey = VirtualKey>(
         };
         commit(element.getBoundingClientRect().height);
         if (typeof ResizeObserver === "undefined") return () => undefined;
-        const observer = new ResizeObserver(([entry]) => commit(entry.contentRect.height));
+        // Commit the BORDER box, matching the seed's `getBoundingClientRect().height` above (and
+        // the section-window observer's own `borderBoxSize` read). The row is stacked by its full
+        // visual height — its `border-block-end` rule included — so the border box is the correct
+        // measure. Reading `contentRect` (the CONTENT box, one border shorter) made the seed and
+        // the observer disagree by that border: each re-observe re-seeded the border box, each
+        // observer fire re-committed the content box, so `sizes` flip-flopped forever — the
+        // never-settling loop that floods "ResizeObserver loop … undelivered notifications".
+        const observer = new ResizeObserver(
+            ([entry]) => commit(entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height),
+        );
         measurements.add(observer);
         observer.observe(element);
         const stop = (): void => {
