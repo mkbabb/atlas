@@ -116,8 +116,10 @@
    under-reserved it and the second row grew the cover at data-attach (the +130px desktop / one-more-
    -stack phone shift the flat floor never caught). The `--banner` state reserves both rows; the flat
    register (ecf/sci — one row) is unchanged, so ecf's clean 0.05 holds. (Empty-first banner routes
-   that build `figures` from live data cross the flat→banner floor at attach — those reserve route-side,
-   the --beat-cis idiom.) */
+   that build `figures` from live data start with an EMPTY series — `isBanner` is false, so the flat
+   floor reserves and the two-row jump lands at attach. Those declare `reserveBanner` on the cover so
+   this `--banner` state — hence this two-row reserve — holds from first paint, before the feed
+   attaches; the R7 CLS-02 seat.) */
 .dashboard-hero__series--banner {
     min-block-size: 480px;
 }

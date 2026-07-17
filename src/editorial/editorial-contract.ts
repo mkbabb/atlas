@@ -39,6 +39,13 @@ export interface HeroFacet {
     standfirst?: string | null;
     /** The bounded page-title pole; omit/auto preserves the start-aligned cover. */
     align?: TitleAlign;
+    /** Reserve the two-row BANNER cover extent from first paint (R7 CLS). An empty-first ranked-4
+        banner cover (its `figures` build from a live feed) renders as the ONE-row flat floor until the
+        feed attaches, then jumps to the two-row banner floor — a first-paint growth that shoves the
+        lead beat down. `true` holds the banner reserve before the figures attach, so the live figures
+        fill a reserved box. Omit (the default) ⇒ the cardinality-derived reserve (every one-row
+        flat/ranked cover, byte-identical). */
+    reserveBanner?: boolean;
     /** Optional live provenance content seated in DashboardHero's named provenance slot. */
     provenance?: Component;
 }

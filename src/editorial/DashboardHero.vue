@@ -121,8 +121,16 @@ const props = withDefaults(
         standfirst?: string | null;
         /** The bounded page-title pole. `auto` preserves the default start alignment. */
         align?: TitleAlign;
+        /** THE BANNER RESERVE (R7 CLS · CLS-02 empty-first). Hold the two-row banner `min-block-size`
+            from first paint even while `figures` is still empty. A ranked-4 banner cover whose figures
+            build from a live feed starts EMPTY — so `isBanner` is false and the series reserves the
+            ONE-row flat floor, then jumps to the two-row floor when the feed attaches (the +130px
+            desktop shove the flat floor never caught). Declaring `true` keeps the `--banner` reserve
+            on from first paint (the empty series holds the two-row box the live figures fill). Default
+            false ⇒ the cardinality-derived reserve (every flat/ranked one-row cover, byte-identical). */
+        reserveBanner?: boolean;
     }>(),
-    { colorKind: "diverging", thesisIndex: 0, align: "auto" },
+    { colorKind: "diverging", thesisIndex: 0, align: "auto", reserveBanner: false },
 );
 
 const titleAlign = computed<TitlePole>(() => resolveTitleAlign(props.align, "left"));
@@ -316,7 +324,7 @@ function rankNumTrack(f: HeroFigure): Record<string, number> | undefined {
             class="dashboard-hero__series"
             :class="{
                 'dashboard-hero__series--ranked': isRanked,
-                'dashboard-hero__series--banner': isBanner,
+                'dashboard-hero__series--banner': isBanner || reserveBanner,
             }"
             data-attn="hero"
             :data-color-kind="colorKind"
