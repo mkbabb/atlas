@@ -27,24 +27,41 @@ import {
     type Shape,
 } from "./useChoroplethShapes.js";
 
-const props = withDefaults(defineProps<ChoroplethProps>(), {
-    object: "states",
-    features: undefined,
-    projection: undefined,
-    viewport: undefined,
-    category: undefined,
-    keyField: undefined,
-    nameField: undefined,
-    raisedKeys: undefined,
-    dimmedKeys: undefined,
-    selectedKeys: undefined,
-    rank: undefined,
-    kbdActiveKey: null,
-    valueFormat: undefined,
-    valueLabel: undefined,
-    redundantChannel: "auto",
-    ariaLabel: "Geographic choropleth",
-});
+const props = withDefaults(
+    defineProps<
+        ChoroplethProps & {
+            /**
+             * CD-09 (PA-9) — the DECLARED source-grid capability. When the hosting plate wires a
+             * reachable, windowed `role="grid"` data affordance (the SourceDataBrowser class), the
+             * caller passes that grid REGION id here. Its presence (a) SUPPRESSES the always-mounted
+             * passive off-screen table below — the grid is now the per-datum read, so the O(rows)
+             * `<table>` is redundant DOM — and (b) binds `aria-details` on the `role="img"` figure to
+             * the grid, programmatically associating the picture with its full data (SC 1.1.1).
+             * Omit (the default) and the passive table stays — the small/no-grid plate's a11y path.
+             */
+            sourceGridId?: string;
+        }
+    >(),
+    {
+        object: "states",
+        features: undefined,
+        projection: undefined,
+        viewport: undefined,
+        category: undefined,
+        keyField: undefined,
+        nameField: undefined,
+        raisedKeys: undefined,
+        dimmedKeys: undefined,
+        selectedKeys: undefined,
+        rank: undefined,
+        kbdActiveKey: null,
+        valueFormat: undefined,
+        valueLabel: undefined,
+        redundantChannel: "auto",
+        ariaLabel: "Geographic choropleth",
+        sourceGridId: undefined,
+    },
+);
 
 const emit = defineEmits<SelectionEmits>();
 
@@ -129,6 +146,7 @@ const tableRows = computed(() =>
             class="h-auto w-full"
             role="img"
             :aria-label="ariaLabel"
+            :aria-details="sourceGridId || undefined"
             data-testid="geo-choropleth-svg"
             @pointerup="onFieldPointerUp"
         >
@@ -263,9 +281,12 @@ const tableRows = computed(() =>
         </svg>
 
         <!-- Offscreen accessible data table (the chart fallback). The ONE table-aware primitive
-             block-wraps the `<table>` so the `.sr-only` clamp lands on a host that respects it. -->
+             block-wraps the `<table>` so the `.sr-only` clamp lands on a host that respects it.
+             CD-09 (PA-9): SUPPRESSED when the plate declares a `sourceGridId` — the reachable windowed
+             grid is the per-datum read then, and the `aria-details` above associates it, so the passive
+             O(rows) table is redundant DOM. The passive table stays for every small / no-grid plate. -->
         <ChartDataTable
-            v-if="hasTable"
+            v-if="hasTable && !sourceGridId"
             :rows="tableRows"
             :caption="ariaLabel"
             row-header="Area"

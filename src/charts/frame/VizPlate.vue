@@ -79,6 +79,7 @@ const {
     sourceData,
     sourceEventHub,
     sourceDataOpen,
+    sourceDataRegionId,
     openSourceData,
     closeSourceData,
     isFullscreen,
@@ -112,6 +113,7 @@ defineExpose({ archetype });
         ref="frameRef"
         :eyebrow="contract.eyebrow"
         :aria-label="ariaLabel"
+        :aria-details="sourceData ? sourceDataRegionId : undefined"
         :size="size"
         :fig-id="contract.id"
         :legend-dock="suppressFoot ? 'none' : legendDock"
@@ -398,9 +400,14 @@ defineExpose({ archetype });
             </dl>
 
             <!-- THE EXPORT / a11y PAYLOAD (E3, one source) — the off-screen ChartDataTable IS the
-                 CSV payload AND the screen-reader data table. Mounted here so the rows travel with
-                 the plate into expand + export. -->
+                 screen-reader per-datum read. Mounted here so the rows travel with the plate into
+                 expand. CD-09 (PA-9): SUPPRESSED when the plate declares a `sourceData` grid — the
+                 reachable windowed SourceDataBrowser is the per-datum read then (the figure's
+                 `aria-details` above points at it), so the passive O(rows) table is redundant DOM.
+                 The CSV export is UNAFFECTED — it reads `contract.export.rows()` directly (never this
+                 DOM), so the payload stays complete + byte-stable whether or not the table mounts. -->
             <ChartDataTable
+                v-if="!sourceData"
                 :rows="contract.export.rows()"
                 :caption="contract.title"
                 :row-header="contract.export.rowHeader"
@@ -409,6 +416,7 @@ defineExpose({ archetype });
 
             <aside
                 v-if="!suppressFoot && sourceDataOpen"
+                :id="sourceDataRegionId"
                 class="viz-plate__source-data"
                 :aria-label="`${contract.title} source data browser`"
             >

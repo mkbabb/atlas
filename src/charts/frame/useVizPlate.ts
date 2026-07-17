@@ -456,6 +456,11 @@ function closeSourceData(): void {
     if (view.param("browse") === props.contract.id) view.setParam("browse", undefined);
     view.setParam("grain", undefined);
 }
+/** CD-09 (PA-9) — the STABLE region id of this plate's source-data grid (the SourceDataBrowser
+    aside). When the plate declares `sourceData`, the figure binds `aria-details` to this id so the
+    picture is programmatically associated with its full, reachable data (SC 1.1.1); the aside carries
+    the id. A per-contract slug so two plates on a page never collide their grid regions. */
+const sourceDataRegionId = computed(() => `viz-source-data-${props.contract.id}`);
 function toggleEnlarge(): void {
     if (isFullscreen.value) view.closeFig(props.contract.id);
     else view.openFig(props.contract.id);
@@ -523,6 +528,7 @@ watchEffect(() => {
         sourceData,
         sourceEventHub,
         sourceDataOpen,
+        sourceDataRegionId,
         openSourceData,
         closeSourceData,
         isFullscreen,
