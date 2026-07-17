@@ -129,6 +129,21 @@
     }
 }
 
+/* ── THE COLLAPSED PILL HUGS ITS CREST (OF-27 · every register) ─────────────────────────────────
+   Collapsed, the dock is JUST the persistent crest medal. The #default deck (the stepper + the foot)
+   yields its layout ENTIRELY (`display:none`, not a visibility-hidden ghost that still reserves its
+   expanded height) so the pill's block-size is crest + the padding canon — no tall empty void below
+   the dome (the OF-27 capture). The R4 progress rim then traces the HUGGED pill's true collapsed
+   extent (the resting `--radius-pill` disc). The phone crest→sheet already hugged this way; the
+   desktop rail now shares the SAME rule, so the collapsed medal reads identically at every register. */
+.usf-dock.collapsed {
+    padding-block: 0.5rem;
+    gap: 0;
+}
+.usf-dock.collapsed :deep(.dock-layers) {
+    display: none;
+}
+
 /* THE #default LAYER IS A 3-BAND COLUMN (J-DOCK §approach-3). glass-ui wraps the #default slot in
    `.dock-layer--full` and lays it out as a ROW by default — the atlas body is a vertical STACK of
    TWO bands: the `DockStepperRender` SCROLL-MIDDLE (flex-grow) and the `DockFoot` STICKY FOOT. We
@@ -168,17 +183,8 @@
      row first, the foot band beneath. Geometry per D2: min(20rem, 100vw − 2·inset) wide,
      viewport-capped by the rail's own `--dock-max-block-size` token, radius --cp-radius. */
 @media (--phone) {
-    /* the collapsed pill HUGS the crest dome (collapse-into-the-TIL-logo). */
-    .usf-dock--phone.collapsed {
-        padding-block: 0.5rem;
-        gap: 0;
-    }
-    /* the collapsed deck is hidden so the phone pill HUGS the persistent crest dome (the a11y menu
-       toggle IS the collapsed pill — collapse-into-the-TIL-logo). The persistent crest is the
-       collapsed endpoint on every register; the body layers rest hidden on phone. */
-    .usf-dock--phone.collapsed :deep(.dock-layers) {
-        display: none;
-    }
+    /* The collapsed pill's crest-hug (padding + deck `display:none`) is now register-agnostic
+       (`.usf-dock.collapsed`, above · OF-27) — the phone shares the desktop rule, no phone twin. */
 
     /* THE MORPH — O-D1 STOPS WRITING the `inline-size` WIDTH TRANSITION on the glass box (the
        vertical-dock corner desync, dock-chrome §3.4): animating WIDTH on a dock whose glass engine
