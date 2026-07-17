@@ -38,20 +38,47 @@ export function useEChartOrnament(
     key: MaybeRefOrGetter<string | null>,
 ) {
     const anchor = shallowRef<OrnamentAnchor | null>(null);
+
+    // THE PAINTED GATE (the R11 painted-gate family; mirrors VizTextOverlay's `painted`). The
+    // ornament seat may resolve ONLY once the chart has drawn ≥1 pass: `useEChart` paints with
+    // `lazyUpdate: true`, so the series PIPELINE that `resolveOrnamentAnchor`'s `getData()` reads
+    // is built on the DEFERRED flush — it does NOT exist at this composable's synchronous
+    // (`immediate`) watch tick. Resolving before that flush is the cold-mount throw
+    // (`SeriesModel.getData → Scheduler.getPipeline`, reproduced by a reloaded deep link such as
+    // `/sci?at=scatter&sel=district:*`). ECharts' own `rendered` event is the truth-bearing "the
+    // chart can answer" signal — the gate never probes the throwing API, opens no rAF loop, and
+    // masks no throw.
+    let painted = false;
+
+    const resolve = (): void => {
+        const instance = toValue(chart);
+        const itemKey = toValue(key);
+        anchor.value =
+            painted && instance && itemKey
+                ? resolveOrnamentAnchor(instance, itemKey)
+                : null;
+    };
+    const onRendered = (): void => {
+        painted = true;
+        resolve();
+    };
+
+    // Re-arm the gate on each chart INSTANCE change: reset readiness, drop the stale anchor, and
+    // (re)bind `rendered`. `cleanup` runs before the next instance binds AND on scope teardown,
+    // so the handler never leaks and a disposed instance never re-anchors.
     watch(
-        [() => toValue(chart), () => toValue(key)] as const,
-        ([instance, itemKey], _previous, cleanup) => {
-            const update = (): void => {
-                anchor.value = instance && itemKey
-                    ? resolveOrnamentAnchor(instance, itemKey)
-                    : null;
-            };
-            update();
-            if (!instance || !itemKey) return;
-            instance.on("rendered", update);
-            cleanup(() => instance.off("rendered", update));
+        () => toValue(chart),
+        (instance, _previous, cleanup) => {
+            painted = false;
+            anchor.value = null;
+            instance?.on("rendered", onRendered);
+            cleanup(() => instance?.off("rendered", onRendered));
         },
         { immediate: true },
     );
+    // A key change re-resolves against the already-painted instance (its pipeline exists — no
+    // throw); the gate keeps a pre-render key from ever touching `getData()`.
+    watch(() => toValue(key), resolve);
+
     return { anchor };
 }
