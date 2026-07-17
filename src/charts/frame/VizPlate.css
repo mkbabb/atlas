@@ -82,7 +82,7 @@
     padding: 0.5rem 0.75rem;
     border: 1px solid
         var(--sel-primary-ring, color-mix(in oklab, var(--foreground), transparent 70%));
-    border-radius: var(--radius-control);
+    border-radius: var(--radius-plate-control);
     background: color-mix(in oklab, var(--sel-primary-ring, #b8860b) 7%, transparent);
 }
 .viz-plate__focus-label {

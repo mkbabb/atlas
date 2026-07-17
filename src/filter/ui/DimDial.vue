@@ -191,7 +191,7 @@ const canClear = computed<boolean>(() => isActive.value && props.dim.arity !== "
     color: var(--muted-foreground);
     background: transparent;
     border: 0;
-    border-radius: var(--radius-control);
+    border-radius: var(--radius-plate-control);
     cursor: pointer;
 }
 .dim-dial__clear:hover,

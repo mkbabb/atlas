@@ -3,18 +3,21 @@
    Atlas no longer mints its own radius ladder or overrides Glass's canon (PA-4). Glass owns the
    semantic scale (`--radius-sm 4 · --radius-md 6 · --radius-xl 12 · --radius-2xl 16 · --radius-3xl
    24 · --radius-pill`), loaded ahead of this file via `@mkbabb/glass-ui/styles`. `--radius-pill`
-   is Glass's — Atlas's duplicate is gone, and the stray 6.4px `--radius-control` twin folds onto
-   the 6px canon. The three remaining Atlas ROLE tokens COMPOSE Glass semantic tokens (no raw
-   literals), so the whole platform reads from one Glass-sourced ladder. */
+   is Glass's — Atlas's duplicate is gone. Atlas also no longer SHADOWS Glass's semantic
+   `--radius-control` (Glass's control canon = the stadium pill); the atlas flat-control register
+   lives on the atlas-PRIVATE `--radius-plate-control` (CHALLENGE-2), so Glass's own controls keep
+   their pill and only atlas's plate-register controls read the 6px flat corner. The three Atlas
+   ROLE tokens COMPOSE Glass semantic tokens (no raw literals), so the whole platform reads from one
+   Glass-sourced ladder. */
 
 :root {
     --radius-plate: var(--radius-md); /* the engraved data plate — Glass's 6px md (the atlas tell) */
-    --radius-control: var(--radius-md); /* the toggle/chip/segment corner — folds the 6.4px twin onto 6px */
+    --radius-plate-control: var(--radius-md); /* the atlas control corner (toggle/chip/segment/panel/dial) — the flat plate register, NOT Glass's `--radius-control` pill (atlas no longer shadows that Glass token) */
     --radius-mark: var(--radius-sm); /* the crisp micro-mark — Glass's 4px floor (tick/swatch/playhead) */
     /* OF-24 — Glass's `.rounded-button` utility reads `var(--radius-button)`, but Glass ships NO
        default for that token and Atlas never minted one, so it resolved to the invalid-guaranteed
        value → `border-radius: 0` → SQUARE corners on every `.rounded-button` consumer (the
        ExpandableContainer's fullscreen restore control, notifications, toasts). Define the role token
        on the control canon so the restore control wears the same rounded register as its siblings. */
-    --radius-button: var(--radius-control); /* the button corner — Glass's rounded-button role token */
+    --radius-button: var(--radius-plate-control); /* the button corner — Glass's rounded-button role token, on the atlas control register */
 }

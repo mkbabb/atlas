@@ -156,7 +156,7 @@ const emit = defineEmits<{
     min-width: 0;
     padding: 0.25rem 0.5rem;
     border: 1px solid var(--border);
-    border-radius: var(--radius-control);
+    border-radius: var(--radius-plate-control);
     background: var(--background);
     font-size: 0.72rem;
     color: var(--foreground);

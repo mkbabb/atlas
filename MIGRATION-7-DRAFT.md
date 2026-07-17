@@ -65,7 +65,20 @@ Node ≥24 / npm ≥11 boundary is unchanged.
 
 ---
 
-## 4 · New seams (additive — opt-in, not breaks)
+## 4 · Published CSS token de-collisions (breaks)
+
+Semantic tokens Atlas stopped SHADOWING. Atlas had overridden a Glass-OWNED `--radius-*` name in
+`dist/style.css`; the override is withdrawn so Glass's own canon wins. Atlas's own surfaces are
+byte-identical (they read a new atlas-private role token); the visible change is to GLASS's own
+controls rendered inside an Atlas app.
+
+| Published token | v6.0.1 behavior | 7.0.0 behavior | Consumer action |
+|---|---|---|---|
+| `--radius-control` | Atlas OVERRODE Glass's semantic `--radius-control` (Glass's control canon = the stadium `--radius-pill`) to `var(--radius-md)` = 6px, re-skinning EVERY Glass control (Checkbox, TagsInput, disclosure, base Tabs) to the flat 6px corner across an Atlas app (CHALLENGE-2 — a canon violation) | Atlas no longer shadows it: Glass's `--radius-control` resolves to its canonical pill again. Atlas's OWN plate-register controls keep 6px via the new atlas-PRIVATE `--radius-plate-control` | none for Atlas's own surfaces (byte-identical via `--radius-plate-control`). A consumer that DEPENDED on the 6px re-skin of Glass controls sets `--radius-control` itself (its own value wins); a consumer that read `--radius-control` expecting a 6px corner reads `--radius-plate-control` |
+
+---
+
+## 5 · New seams (additive — opt-in, not breaks)
 
 Not migration obligations, but the consumer-visible surface that 7.0.0 adds. Listed so a
 consumer knows what is now available.
@@ -77,13 +90,13 @@ consumer knows what is now available.
 | `resolveAsOf(meta)` | `./chrome` (`e2fdb52`, `freshness.ts`) | resolves a feed's as-of vintage stamp (`FY####` for frozen feeds, the live extract date otherwise) — the freshness stamp the export preamble and chrome read. |
 | `--shell-head-reserve` | `./styles` (`0fa6e2e`, PlatformShell) | CSS custom property naming the phone head reserve (default `5rem`); a consumer may override the scroll-margin/padding reservation. |
 | `--source-lead-col` | `./styles` (`ea1c821`, source browser) | CSS custom property on the source-data browser lead column (default `16rem`); a consumer sets it to widen/narrow its own lead column. |
-| `--radius-button` | `./styles` (`radius.css`, OF-24) | CSS custom property Glass's `.rounded-button` utility reads but Glass ships NO default for — so it resolved square. Atlas now defines it on the control-radius canon (`var(--radius-control)` = 6px), so every `.rounded-button` consumer (the ExpandableContainer fullscreen restore control, notifications, toasts) renders ROUNDED. Corrective, not a break: a consumer that already set `--radius-button` is unaffected (its own value wins). |
+| `--radius-button` | `./styles` (`radius.css`, OF-24) | CSS custom property Glass's `.rounded-button` utility reads. Atlas defines it on the flat control-radius register (`var(--radius-plate-control)` = 6px), so every `.rounded-button` consumer (the ExpandableContainer fullscreen restore control, notifications, toasts) renders ROUNDED. Corrective, not a break: a consumer that already set `--radius-button` is unaffected (its own value wins). |
 
 ---
 
-## 5 · Fold checklist (at #226, before deleting this draft)
+## 6 · Fold checklist (at #226, before deleting this draft)
 
-- [ ] Prepend a `# Migrating to Atlas 7.0.0` section to `MIGRATION.md` from §§1–4 above.
+- [ ] Prepend a `# Migrating to Atlas 7.0.0` section to `MIGRATION.md` from §§1–5 above.
 - [ ] Update the 2.0.0 note's peer line (`MIGRATION.md` §"Update peers") if it still cites the
       pre-7 peer ranges in a way that reads as current.
 - [ ] The 2.0.0 entry-point sentence (`MIGRATION.md`, "Classify visualization alternates") is

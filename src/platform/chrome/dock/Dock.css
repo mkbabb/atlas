@@ -274,7 +274,7 @@
         background: var(--cp-accent, var(--foreground));
         color: var(--cp-accent-ink, var(--background));
         border-block-end-color: transparent;
-        border-radius: var(--radius-control);
+        border-radius: var(--radius-plate-control);
         box-shadow: none;
     }
     .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step--active .usf-dock__step-num) {
