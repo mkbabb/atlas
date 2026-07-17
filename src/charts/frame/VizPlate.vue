@@ -113,7 +113,7 @@ defineExpose({ archetype });
         ref="frameRef"
         :eyebrow="contract.eyebrow"
         :aria-label="ariaLabel"
-        :aria-details="sourceData ? sourceDataRegionId : undefined"
+        :aria-details="!suppressFoot && sourceDataOpen ? sourceDataRegionId : undefined"
         :size="size"
         :fig-id="contract.id"
         :legend-dock="suppressFoot ? 'none' : legendDock"

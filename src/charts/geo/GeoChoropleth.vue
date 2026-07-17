@@ -33,13 +33,20 @@ const props = withDefaults(
             /**
              * CD-09 (PA-9) — the DECLARED source-grid capability. When the hosting plate wires a
              * reachable, windowed `role="grid"` data affordance (the SourceDataBrowser class), the
-             * caller passes that grid REGION id here. Its presence (a) SUPPRESSES the always-mounted
+             * caller passes that grid REGION id here. Its presence SUPPRESSES the always-mounted
              * passive off-screen table below — the grid is now the per-datum read, so the O(rows)
-             * `<table>` is redundant DOM — and (b) binds `aria-details` on the `role="img"` figure to
-             * the grid, programmatically associating the picture with its full data (SC 1.1.1).
-             * Omit (the default) and the passive table stays — the small/no-grid plate's a11y path.
+             * `<table>` is redundant DOM. Omit (the default) and the passive table stays — the
+             * small/no-grid plate's a11y path.
              */
             sourceGridId?: string;
+            /**
+             * CD-09 (PA-9 · CHALLENGE-3 A1) — whether that grid region is OPEN in the DOM right now.
+             * The host raises it true ONLY while the `sourceGridId` region is mounted; the figure then
+             * binds `aria-details` to `sourceGridId`, associating the picture with its full data
+             * (SC 1.1.1). Gated so the IDREF never points at an unmounted region at rest (the passive
+             * table stays suppressed by the capability above regardless — no resurrection).
+             */
+            sourceGridOpen?: boolean;
         }
     >(),
     {
@@ -60,6 +67,7 @@ const props = withDefaults(
         redundantChannel: "auto",
         ariaLabel: "Geographic choropleth",
         sourceGridId: undefined,
+        sourceGridOpen: false,
     },
 );
 
@@ -146,7 +154,7 @@ const tableRows = computed(() =>
             class="h-auto w-full"
             role="img"
             :aria-label="ariaLabel"
-            :aria-details="sourceGridId || undefined"
+            :aria-details="sourceGridOpen ? sourceGridId || undefined : undefined"
             data-testid="geo-choropleth-svg"
             @pointerup="onFieldPointerUp"
         >

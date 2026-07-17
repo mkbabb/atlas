@@ -468,9 +468,11 @@ function closeSourceData(): void {
     view.setParam("grain", undefined);
 }
 /** CD-09 (PA-9) — the STABLE region id of this plate's source-data grid (the SourceDataBrowser
-    aside). When the plate declares `sourceData`, the figure binds `aria-details` to this id so the
-    picture is programmatically associated with its full, reachable data (SC 1.1.1); the aside carries
-    the id. A per-contract slug so two plates on a page never collide their grid regions. */
+    aside). The figure binds `aria-details` to this id ONLY while the grid is OPEN (`sourceDataOpen`) —
+    the aside that carries the id renders only then, so binding at rest would dangle the IDREF at a
+    non-existent element (CHALLENGE-3 A1). Open, the picture is programmatically associated with its
+    full, reachable data (SC 1.1.1); at rest the reachable "Browse source data" control is the path.
+    A per-contract slug so two plates on a page never collide their grid regions. */
 const sourceDataRegionId = computed(() => `viz-source-data-${props.contract.id}`);
 function toggleEnlarge(): void {
     if (isFullscreen.value) view.closeFig(props.contract.id);
