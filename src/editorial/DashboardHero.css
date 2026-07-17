@@ -121,9 +121,28 @@
 .dashboard-hero__series--banner {
     min-block-size: 480px;
 }
-@media (min-width: 640px) {
-    /* the desktop one-row band — a flat/ranked route settles at ~129px (the audacious row);
-       reserve it so the cover stays its settled ~270–303px from first paint (no 173→303 jump). */
+/* THE STACK→ROW RESERVATION BOUNDARY (P2 · CLS-03). The series column-stack persists to 767.98px
+   (`--phone`, below), so the DESKTOP one-row floors must flip at the SAME 768px boundary — the prior
+   `min-width:640px` split dropped a ranked-FOUR banner to the desktop TWO-ROW 258px floor while the
+   640–767.98 band still renders it as a TALL 4-figure STACK (the confirmed P2 shift: 258px reserving a
+   ~625px stack). The band takes its OWN stacked floor; the desktop floors move to ≥768px. */
+@media (min-width: 640px) and (max-width: 767.98px) {
+    /* THE 640–767.98 STACKED BAND (measured, not guessed). The 4-figure banner still stacks here, and
+       the stack GROWS with width: the audacious rung is `--q1-rung`-clamped (7vw-tracked via `q1-h1`)
+       and the inter-figure gap is `clamp(1.25rem, 5vw, 3rem)`, so both climb toward 768. An isolated
+       render of the compiled `figure-slug` cascade (dist/style.css) measured the stacked banner at
+       490px @390 (≈ the shipped 480px phone floor, a ~10px relation-line over-read) → 566px @639 →
+       625px @767 — so the phone 480px floor UNDER-reserves the band's tall end (~615px net of the
+       over-read). Reserve 620px to hold the 767px stack with negligible slack (a MIN over-reserving is
+       CLS-safe; under-reserving is the bug). */
+    .dashboard-hero__series--banner {
+        min-block-size: 620px;
+    }
+}
+@media (min-width: 768px) {
+    /* the desktop one-row band (the series is a ROW here, not a stack) — a flat/ranked route settles
+       at ~129px (the audacious row); reserve it so the cover stays its settled ~270–303px from first
+       paint (no 173→303 jump). */
     .dashboard-hero__series {
         min-block-size: 128px;
     }
@@ -141,8 +160,9 @@
    the lifted audacious rung paint (the §12 ×1.5 lift was PAIRED with exactly this track release)
    — and the flanks share ONE recessed row beneath it (`flex:1 1 0` — equal thirds, each flank's
    own ch-count self-clamp + `--rank-scale-ancillary` sizing the visible recession). Desktop-row
-   register only (≥640px matches the series' one-row band); the phone column stack governs below. */
-@media (min-width: 640px) {
+   register only (≥768px matches the series' one-row band — the SAME stack→row boundary the CLS
+   reservation flips at; the phone column stack governs below, through the 640–767.98 band). */
+@media (min-width: 768px) {
     .dashboard-hero__series--banner .dashboard-hero__figure--lede {
         flex-basis: 100%;
         flex-grow: 1;
