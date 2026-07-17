@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide, ref, watch } from "vue";
+import { computed, nextTick, provide, ref, watch } from "vue";
 import StickyScene from "./StickyScene.vue";
 import FootAnatomy from "../frame/FootAnatomy.vue";
 import VizGearDock from "../frame/VizGearDock.vue";
@@ -172,6 +172,27 @@ const { materialized, placeholderStyle } = useVirtualSectionWindow(stageRoot, {
     keepAlive: () =>
         sourceDataOpen.value || view.narrativeAt?.beatId === props.beatId,
 });
+
+// ── OF-19.1 — THE TRUTHFUL STAGE YIELD (the void collapse + its scroll restoration) ────────────────
+// When the source panel owns the stage, the steps' track COLLAPSES (`display:none` in the scoped CSS
+// below) — it stops reserving its N-viewport scroll height, so there is no invisible void beneath the
+// panel. That collapse shrinks the document, so the state transition is deliberate on BOTH edges:
+//   · on OPEN we snapshot the reader's scroll offset, then frame the (now viewport-tall) stage — else
+//     the content that shifts up would slide into the reader's offset and the panel would be off-screen;
+//   · on CLOSE the steps re-expand to their full height (the layout above the stage never changed), so
+//     restoring the snapshotted offset lands the reader back on the exact step they left.
+let savedScrollY = 0;
+watch(sourceDataOpen, (open) => {
+    if (typeof window === "undefined") return;
+    if (open) {
+        savedScrollY = window.scrollY;
+        void nextTick(() =>
+            stageRoot.value?.scrollIntoView({ behavior: "auto", block: "start" }),
+        );
+    } else {
+        void nextTick(() => window.scrollTo({ top: savedScrollY, behavior: "auto" }));
+    }
+});
 </script>
 
 <template>
@@ -272,15 +293,19 @@ const { materialized, placeholderStyle } = useVirtualSectionWindow(stageRoot, {
 }
 
 /* When the source panel owns the stage, the prose story card yields: the pinned graphic (which
-   hosts the source panel) spans the whole stage and the narrated steps hide, so there is no
+   hosts the source panel) spans the whole stage and the narrated steps yield, so there is no
    viewport-tall empty gold frame beside four lines of text, and the live-behind figure is fully
    covered (no floating readout can occlude the data table). */
 .chapter-stage[data-source-open] :deep(.sticky-scene__graphic) {
     grid-column: 1 / -1;
 }
 
+/* OF-19.1 — the steps' track COLLAPSES (not merely `visibility:hidden`): `display:none` stops it
+   reserving its N-viewport scroll height, so the stage shrinks to the panel's own viewport height
+   and the invisible void beneath the panel is gone. The script above snapshots + restores the
+   reader's scroll offset across the collapse, so re-opening a closed panel returns them to their step. */
 .chapter-stage[data-source-open] :deep(.sticky-scene__steps) {
-    visibility: hidden;
+    display: none;
 }
 
 .chapter-stage__source-data {
