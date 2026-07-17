@@ -94,6 +94,16 @@ consumer knows what is now available.
 | `HeroFacet` / `DashboardHero` prop `reserveBanner` | `./editorial` (R7 CLS-02, `DashboardHero.vue`/`editorial-contract.ts`) | optional `reserveBanner?: boolean`. A ranked-4 banner cover whose `figures` build from a live feed starts EMPTY, so the series reserves the ONE-row flat floor and JUMPS to the two-row banner floor when the feed attaches (+130px desktop, the lead-beat shove). Declaring `reserveBanner: true` on the hero facet holds the two-row reserve from first paint. **The empty-first banner cover is `demand`** — set `reserveBanner: true` on its hero facet (`DEMAND_HERO_COPY` / the `createDemandStory` hero). Omit (the default) ⇒ the cardinality-derived reserve — every one-row flat/ranked cover (`sci`, `ecf`) is byte-identical and needs no change. |
 | `GeoChoropleth` props `sourceGridId` + `sourceGridOpen` | `./charts` (CD-09/PA-9, `GeoChoropleth.vue`) | optional `sourceGridId?: string` + `sourceGridOpen?: boolean`. When the hosting plate wires a reachable, windowed `role="grid"` data affordance (the SourceDataBrowser class), passing its region id as `sourceGridId` SUPPRESSES GeoChoropleth's passive off-screen table (the grid is the per-datum read then). The figure's `aria-details` binds to the grid (SC 1.1.1) ONLY while `sourceGridOpen` is true — the host raises it only while the grid region is mounted, so the IDREF never dangles at an unmounted region at rest (CHALLENGE-3 A1); the table stays suppressed by the capability regardless (no resurrection). Omit both (the default) ⇒ the passive table stays (the small / no-grid a11y path). VizPlate mirrors this on its own `sourceData` — the suppression is capability-keyed and the figure `aria-details` is open-gated automatically there, no new prop. |
 
+**`--radius-button` disposition (CHALLENGE-3 A2, lead-adjudicated KEEP-as-temporary).** The atlas
+`:root` definition of `--radius-button` (above, OF-24) is the DELIBERATE consumer theming surface,
+NOT a canon violation of the `--radius-control` class: Glass delivers this token only inside a
+Tailwind `@theme` block that does not land at consumer runtime here, so absent the atlas definition
+`.rounded-button` resolves to a square corner (the empirical OF-24 control). It is however
+TEMPORARY — the queued Glass `@theme`-delivery question governs its fate: at #226 the definition
+either STAYS (recorded theming, Glass still not emitting `:root` tokens) or is REMOVED (if Glass
+begins emitting the token at `:root`). Recorded here so the tension is of record — treated neither
+as a canon violation nor silently forgotten.
+
 ---
 
 ## 6 · Fold checklist (at #226, before deleting this draft)
