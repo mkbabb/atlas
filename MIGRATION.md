@@ -76,7 +76,7 @@ const skin = defineSkin({
 
 Every custom `VizAlternate` now requires `morph: "same-instance" | "cross-instance"`. Use `same-instance` only when the alternate is a `VizView` in the base chart's `VizSetContract`; use `cross-instance` for an explicit component swap.
 
-The new public entry points are available at `@mkbabb/atlas/viz-set`, `/events`, `/skin`, and `/stage`. Existing chart and story barrels continue to re-export their corresponding facilities.
+The dedicated public entry points introduced here are `@mkbabb/atlas/events` and `/skin`. The `/viz-set` and `/stage` subpaths introduced in this release were later withdrawn (in 7.0.0); their facilities re-home to the `@mkbabb/atlas/charts` and `/story` barrels, which re-export them. Existing chart and story barrels continue to re-export their corresponding facilities.
 
 ## Update peers
 
