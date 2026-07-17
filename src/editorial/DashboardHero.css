@@ -132,11 +132,11 @@
        and the inter-figure gap is `clamp(1.25rem, 5vw, 3rem)`, so both climb toward 768. An isolated
        render of the compiled `figure-slug` cascade (dist/style.css) measured the stacked banner at
        490px @390 (≈ the shipped 480px phone floor, a ~10px relation-line over-read) → 566px @639 →
-       625px @767 — so the phone 480px floor UNDER-reserves the band's tall end (~615px net of the
-       over-read). Reserve 620px to hold the 767px stack with negligible slack (a MIN over-reserving is
-       CLS-safe; under-reserving is the bug). */
+       625px @767 — so the phone 480px floor UNDER-reserves the band's tall end. Reserve the full
+       measured 625px to cover the 767px stack outright (a MIN over-reserving is CLS-safe;
+       under-reserving is the bug — the 620px cut still left ~5px of the tall end unreserved). */
     .dashboard-hero__series--banner {
-        min-block-size: 620px;
+        min-block-size: 625px;
     }
 }
 @media (min-width: 768px) {
