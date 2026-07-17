@@ -311,7 +311,7 @@ const archetype = computed(() => props.contract.archetype);
     merger + the D1 `useVizRegistry` resting-dim consumer read it through this seam, NEVER a renderer. */
 
 // ── J-VIZDOCK — THE STANDARDIZED PER-VIZ CONTROLS CLUSTER (C38 · §approach-1,2,3) ───────────────
-// The #actions rung carries ONE small <DockIconButton compact> cluster (consume the dock-control
+// The #actions rung carries ONE small <DockControl compact> cluster (consume the dock-control
 // register, never hand-roll): a filter-TOGGLE + ONE folded download + an enlarge, with a COLLAPSED
 // applied-filters summary Badge. The three loose loose nodes (the dual export <button>s + the
 // VizOptions popover) are GONE — the export handlers re-homed onto the download fold's menu, the
@@ -403,7 +403,7 @@ const showAppliedSummary = computed(
 );
 
 // ── (3) THE ENLARGE — the `?fig=` expand seam ChartFrame owns, driven from the cluster ───────────
-// The enlarge DockIconButton toggles the URL-backed `?fig=` state ChartFrame reads (it CONSUMES the
+// The enlarge DockControl toggles the URL-backed `?fig=` state ChartFrame reads (it CONSUMES the
 // expand state — it does NOT re-own the `?fig=`/`open` codec). A plate is fullscreen iff `?fig=`
 // names its id, so the button reflects + flips that one document state. It reads/writes off the ONE
 // shared `useViewParams` bag (the `?fig` one-bag fold, K-ANIM A1·§3.C) — never a private

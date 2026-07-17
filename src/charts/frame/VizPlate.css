@@ -111,7 +111,7 @@
     color: var(--foreground);
 }
 
-/* J-VIZDOCK — THE STANDARDIZED PER-VIZ CONTROLS CLUSTER. ONE small row of <DockIconButton compact>
+/* J-VIZDOCK — THE STANDARDIZED PER-VIZ CONTROLS CLUSTER. ONE small row of <DockControl compact>
    controls (filter-toggle · download · enlarge) from the dock-control register, sourced from
    @mkbabb/glass-ui/dock — rounded, ≥44px hitbox (the register paints the chrome; the cluster only
    lays the row). Recessive at rest, full ink on plate hover/focus (the expand-trigger doctrine);
