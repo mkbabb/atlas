@@ -189,6 +189,18 @@ useDismissArbiter(dismissArbiter).claim(() =>
     position: relative;
     z-index: var(--z-content);
     padding-inline-start: max(2rem, var(--cp-dock-reserve));
+    /* THE REVEAL-TRANSLATE CLIP (R7 · scroll-reveal off-screen overflow). The scroll-reveal engine
+       slides an off-screen beat in from ±`--reveal-shift` (6vw) — a DECORATIVE, opacity-0 translate the
+       motion director re-applies every frame, so at the phone register a beat's `from` frame extends the
+       body's scroll width past the viewport (body.scrollWidth 397 > 390 @390). Clip the stage's inline
+       axis so that off-screen translation cannot grow the document width. `clip` (NEVER `hidden`): it
+       clips WITHOUT establishing a scroll container (overflow-y stays visible), so every
+       `[data-reveal-beat]` ViewTimeline still resolves its source up to the root scroller (the
+       scroll-driven.css engine contract — the SAME reason html/body use `clip`). The clipped ink is the
+       reveal's opacity-0 pre-settle frame (invisible), never at-rest content: a settled beat sits within
+       the stage box, and the drop-cap's left-gutter grid-break stays inside the padding box. The floating
+       dock (position:fixed) and the portalled filter drawer are not descendants, so neither is clipped. */
+    overflow-x: clip;
 }
 
 /* C7.c (FIX 5) · the MOBILE foot safe-area inset — the last plate + colophon clear the home
