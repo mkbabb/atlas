@@ -20,7 +20,7 @@ facility.
 
 | Subpath that died | Where the facilities live now | Consumer edit |
 |---|---|---|
-| `@mkbabb/atlas/viz-set` | `@mkbabb/atlas/charts` — the charts barrel re-exports `./viz-set.js` (`resolveVizSurface`, `VizSetContract`, `viewsToOptionSpec`, `resolveFromViews`, `SceneSequenceContract`) | `from "@mkbabb/atlas/viz-set"` → `from "@mkbabb/atlas/charts"` |
+| `@mkbabb/atlas/viz-set` | `@mkbabb/atlas/charts` — the charts barrel re-exports `./viz-set.js` (`resolveVizSurface`, `VizSetContract`, `viewsToOptionSpec`, `SceneSequenceContract`) | `from "@mkbabb/atlas/viz-set"` → `from "@mkbabb/atlas/charts"` |
 | `@mkbabb/atlas/stage` | `@mkbabb/atlas/story` — re-exports `ChapterStage`, `SceneOption`, `StageAnatomy`, `StageEvents`, `StageExport`, `SceneSequenceContract`, `stageEventsFromHub`, `ChapterStageView`; `stage-morph` rides `@mkbabb/atlas/charts` | `from "@mkbabb/atlas/stage"` → `from "@mkbabb/atlas/story"` |
 | `@mkbabb/atlas/styles/tokens` | `@mkbabb/atlas/styles` — the token layer is already inside `dist/style.css`; the orphan `tokens.css` emit is retired | delete the `import "@mkbabb/atlas/styles/tokens"` line; `@mkbabb/atlas/styles` carries the tokens |
 
