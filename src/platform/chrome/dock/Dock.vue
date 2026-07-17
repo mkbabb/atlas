@@ -197,7 +197,18 @@ useDismissArbiter().claim(() =>
          `:always-expanded` opt-OUT is DELETED; the dock binds its `<GlassDock ref>` so
          `useDockCollapse` reaches the exposed `expand()` / `collapse()` / `expanded`. The rail rests
          COLLAPSED at @media(--phone) (`:start-collapsed="isPhone"`) and is gear-toggle-collapsible
-         everywhere (the desktop register may still rest expanded — J-PATH §8 Decision 2). -->
+         everywhere (the desktop register may still rest expanded — J-PATH §8 Decision 2).
+
+         `interaction="manual"` (the glass-7 dock-interaction axis — PA-3 / OF-5, and the owner
+         no-consumer-fallback ruling) makes `useDockCollapse` the SOLE posture owner: it quiets
+         glass's six internal environmental writers (hover / focus / idle / outside-click /
+         collapsed-tap / touch) at BOTH poles, leaving only the imperative `expand()` / `collapse()`
+         this dock drives — retiring the two-machine fight (PA-3 D1) with NO consumer-side watcher,
+         mask, pointer-suppression, or forced pole (the bind IS the whole posture story).
+         `start-collapsed` stays the mount pole; the structural `alwaysExpanded` contract is a
+         DISTINCT axis, KEPT unchanged. The attr is INERT on the pinned glass 6 bytes — an additive,
+         not-yet-read prop until the glass 7.0.0 tag lands and atlas consumes it at #226; atlas
+         tsconfig runs no `strictTemplates`, so the not-yet-typed attr passes vue-tsc today. -->
     <!-- THE SHEET SCRIM (D2) — phone-sheet-open only: the paper-wash veil the ruled menu floats
          over; a tap closes the sheet with the same focus return as Esc. Sits ONE rung under the
          raised sheet (`--z-overlay`; the sheet rides `--z-overlay + 1` below). -->
@@ -220,6 +231,7 @@ useDismissArbiter().claim(() =>
         density="comfortable"
         overflow="grow"
         :start-collapsed="isPhone"
+        interaction="manual"
         class="usf-dock"
         :class="{ 'usf-dock--phone': isPhone }"
         aria-label="Section navigation"
