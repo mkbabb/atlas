@@ -122,6 +122,7 @@ export const BOUNDARY_AXIS = {
 // The plate is flat: TimeSeries renders the chart body; the caller seats it inside a
 // ChartFrame for the engraved frame + the kicker→title triad (the StackedBar posture).
 import { computed, ref } from "vue";
+import { useElementSize } from "@vueuse/core";
 import { use } from "echarts/core";
 import { LineChart } from "echarts/charts";
 import {
@@ -135,7 +136,10 @@ import { LabelLayout } from "echarts/features";
 import type { EChartsOption } from "echarts";
 import { useEChart } from "../composables/useEChart.js";
 import { useVizPalette } from "../composables/useVizPalette.js";
-import { buildTimeSeriesOption } from "../composables/useTimeSeriesOption.js";
+import {
+    buildTimeSeriesOption,
+    endLabelGutterCollapsed,
+} from "../composables/useTimeSeriesOption.js";
 import ChartLegend, { type LegendChip } from "../legend/ChartLegend.vue";
 
 // Line + grid; the TooltipComponent is registered but every option keeps it OFF. The canvas
@@ -197,11 +201,18 @@ const props = withDefaults(
         /**
          * THE OVER-SUBSCRIPTION MARKER (E15b · the band-sign honest story). The x at which a
          * headroom band's sign crosses — the year aggregate peak first met/exceeded the contracted
-         * ceiling. Draws a DECLARED annotated rule ("over ceiling →") at that boundary so the
-         * regime change is SEEN, named, never a silent downward wedge. Omit ⇒ no marker (the
-         * fleet never crossed, or the consumer carries no headroom band).
+         * ceiling. Draws a DECLARED annotated rule at that boundary so the regime change is SEEN,
+         * named, never a silent downward wedge. Omit ⇒ no marker (the fleet never crossed, or the
+         * consumer carries no headroom band).
          */
         overSubscriptionX?: number;
+        /**
+         * THE CROSSING'S OWN WORDS (A-03). The crossing rule's eyebrow run was HARDWIRED to
+         * "over ceiling" — SCI's contracted-capacity semantics narrating every route's crossing,
+         * so a demand-composition story announced a ceiling it has no notion of. The run is the
+         * declarer's now. Omit ⇒ "over ceiling" (SCI's own default — its render is unmoved).
+         */
+        overSubscriptionLabel?: string;
         /**
          * THE CROWN PEAK-RIVET (H.W2.a M1 — the multi-year crown's identity mark). A ready
          * ECharts `markPoint` option fragment (built by `trajectory-marks.markPointRivet`): the
@@ -277,6 +288,7 @@ const props = withDefaults(
         directLabels: false,
         partialYearX: undefined,
         overSubscriptionX: undefined,
+        overSubscriptionLabel: undefined,
         markPoint: undefined,
         markArea: undefined,
         forecastBoundaryX: undefined,
@@ -299,6 +311,12 @@ const host = ref<HTMLElement | null>(null);
 // re-resolved on a theme flip, never a raw `var(--…)` the canvas would mis-paint.
 const palette = useVizPalette();
 
+// A-04 · THE MARK'S OWN MEASURE — the host box the end-label gutter floor reads (the ResizeObserver
+// `useEChart` already runs for the canvas resize; this is the same box, read as a number). The floor
+// keys on the MARK, never the viewport: a line seated in a narrow column collapses its gutter
+// exactly as one seated on a phone. 0 before the first measure (SSR/jsdom) ⇒ the declared gutter.
+const { width: hostWidth } = useElementSize(host);
+
 // THE OPTION (I-ARCH.AR-8) — the pure (series, dials, palette) → EChartsOption derivation, lifted
 // to platform/charts/composables/useTimeSeriesOption (the SHARED-primitive arm of the §Y law). The
 // host hands the series + the boundary/crown dials + the resolved palette; the composable owns the
@@ -313,6 +331,7 @@ const option = computed<EChartsOption>(() =>
             yFormat: props.yFormat,
             partialYearX: props.partialYearX,
             overSubscriptionX: props.overSubscriptionX,
+            overSubscriptionLabel: props.overSubscriptionLabel,
             markPoint: props.markPoint,
             markArea: props.markArea,
             forecastBoundaryX: props.forecastBoundaryX,
@@ -323,6 +342,7 @@ const option = computed<EChartsOption>(() =>
             axisFontFamily: props.axisFontFamily,
             markLine: props.markLine,
             directLabels: props.directLabels,
+            hostWidth: hostWidth.value,
         },
         palette.value,
     ),
@@ -352,11 +372,16 @@ function keyOf(params: unknown): string | null {
 // without touching the data leaves the digest still, so no `notMerge` full re-raster fires). The
 // theme flip is owned separately by the E9b retint guard (not in this digest). Wiring it greens
 // the no-dead-fastpath gate AND spares the legacy deep option-walk on every reactive tick.
+// A-04 — the gutter FLOOR crossing is a real re-paint (the grid + the terminal-label seat both
+// change), so the collapse state rides the digest; a resize that never crosses the floor leaves it
+// still (no notMerge storm per pixel while a window drags).
 const seriesFingerprint = computed<string>(
     () =>
         props.series
             .map((s) => `${s.key}:${s.points.map((p) => p.y ?? "·").join(",")}`)
-            .join("|") + `#${props.partialYearX ?? ""}`,
+            .join("|") +
+        `#${props.partialYearX ?? ""}` +
+        `#${endLabelGutterCollapsed(hostWidth.value, props.gridRight) ? "floor" : ""}`,
 );
 
 useEChart({

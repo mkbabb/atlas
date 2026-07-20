@@ -33,6 +33,9 @@ export * from "./triggers.js";
 // — the lean catalog: the mechanism set + presets + per-preset triggers (the post-purge register) —
 export * from "./lean-catalog.js";
 
+// — the compile boundary: which runtime a declared segment resolves to (a pure total resolver) —
+export * from "./compileSegment.js";
+
 // — the reveal register: host-style + count-at-progress + the KEPT reveal bindings —
 export * from "./reveal-register.js";
 export * from "./reveal-score.js";
@@ -51,6 +54,7 @@ export * from "./useLoadSequence.js";
 // motion-director re-exports ./buildMarkAnimation; useScrollTimeline re-exports ./useSectionReveal.
 export * from "./motion-director.js";
 export * from "./useCoverProgress.js";
+export * from "./usePinProgress.js";
 export * from "./useScrollTimeline.js";
 export * from "./useMarkMorphology.js";
 // useHandMarkClock's `MarkAnimation` string-union clashes by NAME with buildMarkAnimation's handle

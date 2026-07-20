@@ -53,3 +53,10 @@ export * from "./editorial-contract.js";
 // ── O-A26 (DIR-5 ARM D) — the ONCE-classified typewriter title (demand/usf-integrity/vft-
 // germination's ScrollLetteringHeading-equivalent; the 4 lettering routes never mount it) ────────
 export { default as TypewriterTitle } from "./TypewriterTitle.vue";
+
+// ── W-LIFT (A-01/A-02) — the two P-03 lift primitives: the thesis crown + the edge-of-record seam.
+// Both are the ONE form of an idiom that stood hand-rolled six / three times across five dashboards;
+// each adopting touch deletes its twin (the ledger's L3 + L1 rows).
+export { default as CrownFigure } from "./CrownFigure.vue";
+export type { CrownPill } from "./CrownFigure.vue";
+export { default as RecordSeam } from "./RecordSeam.vue";

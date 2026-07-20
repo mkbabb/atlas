@@ -8,18 +8,25 @@
 // `subsumes[]` (total + disjoint — `K_CATALOG_NAMES` freezes the census; the gate proves the cover), so
 // NO design vocabulary is silently dropped.
 //
-// THE `oscillate` MECHANISM IS CUT (N.md §8 · RC3-RM-4): no preset rode it, so the roster stands at the
-// evidence set's 14 and the `LeanMechanism` union drops `oscillate` (9 → 8). The ambient breath/pulse
-// vocabulary (MarkBreath/AmbientPulse) is RETIRED-TO-PARKED under `ActiveRim.subsumes` — the names are
-// preserved for the cover proof, NEVER folded into a LIVE preset (F8 is parked design-gated settle-once,
-// not revived). `path` stays in the union as the reserved DrawSVG fold-slot (no preset binds it live —
-// the path-family folds into `draw`, cf. `DrawIn.subsumes`).
+// THE `oscillate` MECHANISM IS CUT (N.md §8 · RC3-RM-4): no preset rode it, and the `LeanMechanism`
+// union drops it. The ambient breath/pulse vocabulary (MarkBreath/AmbientPulse) is RETIRED-TO-PARKED
+// under `ActiveRim.subsumes` — the names are preserved for the cover proof, NEVER folded into a LIVE
+// preset (F8 is parked design-gated settle-once, not revived). `path` stays in the union as the
+// reserved DrawSVG fold-slot (no preset binds it live — the path-family folds into `draw`, cf.
+// `DrawIn.subsumes`).
+//
+// W-MOTION-CORE (spec-motion §a.2) COMPLETES the catalog with the two spec-C additions and NOTHING
+// else: mechanism `breath` (compositor-idle, net-new — never the cut `oscillate` JS loop), preset
+// `CurvePersist` (W-64) and preset `Breath` (W-71). 14 → 16 presets, 8 → 9 mechanism names (8 live +
+// `path` reserved). The grammar is completed here, never expanded.
 
 import type { MotionTrigger } from "./triggers.js"; // the KEPT closed taxonomy — reused
+import { ATMOSPHERE_PRESETS } from "../platform/chrome/background/composables/atmosphere.js";
 
-/** The 8 render MECHANISMS — each ONE binding to a keyframes.js 5.1.0 primitive OR the KEPT reveal
-    register. This is the real cardinality of the product's animation vocabulary (the 57 catalog NAMES
-    are (mechanism × VariantSpec), not 57 engines). `oscillate` is CUT (parked). */
+/** The render MECHANISMS — each ONE binding to a keyframes.js 5.1.0 primitive, the KEPT reveal
+    register, or (breath) a pure `@keyframes` register. This is the real cardinality of the product's
+    animation vocabulary (the 57 catalog NAMES are (mechanism × VariantSpec), not 57 engines).
+    `oscillate` is CUT (parked). */
 export type LeanMechanism =
     | "reveal" // css-view fade/lift/blur/scale/clip → the KEPT reveal register (revealHostStyle)
     | "draw" // stroke draw-in → keyframes.js DrawSVG (the single stroke engine; path folds here)
@@ -28,9 +35,10 @@ export type LeanMechanism =
     | "count" // number dial → keyframes.js NumericAnimation / the KEPT useCountUp (countAt)
     | "morph" // data/shape re-shape → keyframes.js MorphSVG | ECharts setOption
     | "emphasis" // select/hover/active tint → CSS-var treatment + SpringProgress pulse
-    | "flip"; // layout / shared-element → keyframes.js flip / flipShared
+    | "flip" // layout / shared-element → keyframes.js flip / flipShared
+    | "breath"; // idle drift → `breath.css` @keyframes ONLY (compositor-idle; zero JS, zero rAF)
 
-/** The 8-member mechanism union as a runtime roster (the gate asserts length 8 + `oscillate` absent). */
+/** The mechanism union as a runtime roster (9 names — 8 live + the reserved `path`; `oscillate` absent). */
 export const LEAN_MECHANISMS = [
     "reveal",
     "draw",
@@ -40,11 +48,37 @@ export const LEAN_MECHANISMS = [
     "morph",
     "emphasis",
     "flip",
+    "breath",
 ] as const satisfies readonly LeanMechanism[];
 
-/** A lean-catalog PRESET name — the 14 tasteful defaults the 7 dashboards genuinely use (the census).
-    A preset resolves to `{ mechanism, on, defaults, subsumes }`; the design vocabulary lives here, the
-    engine count stays 8. The CORE roster is closed (`satisfies Record<LeanPresetName, LeanPreset>`). */
+/** THE ONE BREATH LAW (A-21 · β-gate F5 · OPTIONS §4.3). The ornament breath does NOT author its own
+    magnitude: it RATIONS against the SAME clamp constants the aurora ground breathes inside. One clamp
+    set, two consumers, never a second envelope — a re-tune of the ground moves the ornament with it.
+
+    WHICH RUNG. The ground's envelope became INTENSITY-KEYED (A-36 `ATMOSPHERE_PRESETS`), so the single
+    envelope the ration was written against no longer exists; the rung is a choice this preset must
+    make. It takes the QUIETEST rung, because an ornament is route-agnostic: a `quiet` route rationed
+    against the `data` cap would carry a mark breathing LOUDER than its own ground. Read off the floor,
+    the ration holds on every route the table can express.
+
+    THE FOREGROUND RATION. An ornament is a small high-contrast mark on paper; the ground is a
+    full-viewport wash, so at equal depth the mark reads far louder. One stated rule closes the gap —
+    HALF the quiet rung's amplitude cap, TWICE its period floor — which lands the ornament in the
+    sub-perceptual-drift class the ration demands (an idle mark must never outcompete an earned data
+    mark). `breath.css` carries the pair as its `var()` fallbacks; a unit test holds the two in
+    agreement, and the census there proves no second clamp set exists to drift from. */
+const QUIET_GROUND = ATMOSPHERE_PRESETS.quiet.envelope;
+
+export const BREATH_ENVELOPE = {
+    /** The scale excursion, 0.015 — half the quiet ground's `breathDepthMax`. */
+    depth: QUIET_GROUND.breathDepthMax / 2,
+    /** The full breath period in SECONDS, 80 — twice the quiet ground's `breathPeriodMin`. */
+    periodS: QUIET_GROUND.breathPeriodMin * 2,
+} as const;
+
+/** A lean-catalog PRESET name — the 16 tasteful defaults the 7 dashboards genuinely use (the census's
+    14 + the two spec-C completions). A preset resolves to `{ mechanism, on, defaults, subsumes }`; the
+    design vocabulary lives here, the engine count stays 8 live. Closed (`satisfies Record<…>`). */
 export type LeanPresetName =
     | "RevealUp"
     | "RevealBlur"
@@ -52,6 +86,7 @@ export type LeanPresetName =
     | "BarRise"
     | "ClipWipe" // reveal family (5)
     | "DrawIn" // draw (1) — lines/geo/axes/rules
+    | "CurvePersist" // draw (1) — the traced curve that LATCHES on click (W-64)
     | "Typewriter"
     | "Scramble" // type (2)
     | "CountDial" // count (1)
@@ -59,7 +94,8 @@ export type LeanPresetName =
     | "SelectRing"
     | "HoverRaise"
     | "ActiveRim" // emphasis (3)
-    | "Reorder"; // flip (1)
+    | "Reorder" // flip (1)
+    | "Breath"; // breath (1) — the rationed idle drift (W-71)
 
 /** ONE lean preset: mechanism · valid trigger SET · the quiet defaults · the K-name subsumption. No
     `builder` union (the mechanism IS the dispatch key) — the engine binding lives in `buildMarkAnimation`
@@ -79,6 +115,11 @@ export interface LeanPreset {
         readonly liftEm?: number;
         readonly blurPx?: number;
         readonly fromScale?: number;
+        /** `breath` only — the scale excursion + the full breath period (s). Both DERIVE from
+            `BREATH_ENVELOPE`; a preset never authors a breath magnitude of its own (the ONE
+            breath law). */
+        readonly breathDepth?: number;
+        readonly breathPeriodS?: number;
     };
     /** Which of the 57 K-catalog names this preset SUBSUMES — the migration map. The gate asserts the
         union of these is TOTAL over `K_CATALOG_NAMES` and DISJOINT (each K-name in exactly one). */
@@ -88,7 +129,7 @@ export interface LeanPreset {
 const EXPO = "--ease-expo";
 const OVERSHOOT = "--ease-overshoot";
 
-/** THE LEAN CATALOG — 14 presets over 8 mechanisms. `satisfies Record<LeanPresetName, LeanPreset>`
+/** THE LEAN CATALOG — 16 presets over 8 live mechanisms. `satisfies Record<LeanPresetName, LeanPreset>`
     keeps it closed (omit a name → tsc RED, the born-RED discipline at 1/4 the surface). */
 export const LEAN_CATALOG = {
     // ── REVEAL (the KEPT reveal register — revealHostStyle; scroll/load scrubbed) ────────────────────
@@ -144,6 +185,17 @@ export const LEAN_CATALOG = {
             "RibbonFlow", // path-family folded into draw (MotionPath is a draw variant)
         ],
     },
+    CurvePersist: {
+        mechanism: "draw",
+        // The W-64 affordance in ONE preset (spec-motion §g): the curve TRACES on scroll
+        // (`compileTarget(draw, scroll)` = compositor, bi-directional for free) and LATCHES on
+        // click (`compileTarget(draw, select)` = director-spring — the persistent annotated read).
+        // Two triggers over one mechanism is why the row's compile target reads "compositor +
+        // director-spring"; the declaring segment picks the `compose` policy.
+        on: ["scroll", "select"],
+        defaults: { ease: EXPO },
+        subsumes: [],
+    },
 
     // ── TYPE (useScrollLettering + font-variation — the title/heading tier) ──────────────────────────
     Typewriter: {
@@ -170,7 +222,10 @@ export const LEAN_CATALOG = {
     // ── MORPH (keyframes.js MorphSVG / ECharts setOption — data/shape re-shape on filter/select) ─────
     SeriesMorph: {
         mechanism: "morph",
-        on: ["filter", "select", "load"],
+        // `pin` rides here (spec-motion §e): the chapter STAGE's scene-to-scene re-encode scrubs off
+        // the composed step clock. It is the one preset the earned jack drives — and by the W-50 type
+        // key only a `ChapterStage` may declare it.
+        on: ["filter", "select", "load", "pin"],
         defaults: {},
         subsumes: ["SeriesMorph", "ProjectionMorph"],
     },
@@ -195,7 +250,8 @@ export const LEAN_CATALOG = {
         // ActiveRim's mechanism is `emphasis` (a settle-once spring on the `active` edge — NOT a loop).
         // MarkBreath/AmbientPulse are RETIRED-TO-PARKED here (the cut `oscillate` mechanism · N.md §8):
         // their names ride the subsumption ONLY so the 57-cover stays total; they are NEVER folded into a
-        // LIVE preset (F8 is parked design-gated settle-once, never revived).
+        // LIVE preset (F8 is parked design-gated settle-once, never revived). The new `Breath` preset does
+        // NOT claim them: it is net-new compositor idle, not the cut JS loop these two names denote.
         subsumes: ["ActiveRim", "MarkBreath", "AmbientPulse", "AffordanceHint", "DisabledVeil"],
     },
 
@@ -205,6 +261,19 @@ export const LEAN_CATALOG = {
         on: ["filter"],
         defaults: {},
         subsumes: ["FlipReorder"],
+    },
+
+    // ── BREATH (`breath.css` @keyframes — the rationed idle; NO engine, NO rAF, NO director scalar) ──
+    Breath: {
+        mechanism: "breath",
+        // `load` names the MOUNT edge only — the ornament breathes from the moment its beat mounts.
+        // `compileSegment` resolves the mechanism to `compositor-idle` whatever the trigger, so the
+        // segment binds no director scalar and never enters the impulse set (the zero-idle-rAF law).
+        on: ["load"],
+        defaults: { breathDepth: BREATH_ENVELOPE.depth, breathPeriodS: BREATH_ENVELOPE.periodS },
+        // The PARKED MarkBreath/AmbientPulse names stay under `ActiveRim` — they are the CUT
+        // `oscillate` JS-loop vocabulary, and this mechanism is net-new compositor (spec-motion §j).
+        subsumes: [],
     },
 } as const satisfies Record<LeanPresetName, LeanPreset>;
 
@@ -235,10 +304,10 @@ export const K_CATALOG_NAMES = Object.freeze([
     "RaiseOnly", "ActiveRim", "DragGrip", "DisabledVeil", "FocusHalo", "AffordanceHint",
 ] as const);
 
-/** The count that matters. 14 presets / 8 mechanisms — down from 57 names / 11 declared mechanisms. */
+/** The count that matters. 16 presets / 9 mechanism names — down from 57 names / 11 declared mechanisms. */
 export const LEAN_METRICS = {
-    presetCount: Object.keys(LEAN_CATALOG).length, // 14
-    mechanismCount: LEAN_MECHANISMS.length, // 8 (the union; the catalog binds 7 live, `path` reserved)
+    presetCount: Object.keys(LEAN_CATALOG).length, // 16
+    mechanismCount: LEAN_MECHANISMS.length, // 9 (the union; the catalog binds 8 live, `path` reserved)
     kNamesSubsumed: new Set(Object.values(LEAN_CATALOG).flatMap((p) => p.subsumes)).size, // 57
 } as const;
 

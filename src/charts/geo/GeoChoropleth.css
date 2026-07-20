@@ -12,6 +12,16 @@
 .geo-shape[data-raised="true"] {
     stroke: var(--foreground);
 }
+/* A-04 · THE AGGREGATED-CELL TAP FLOOR. A binned cell field rendered below the tappable floor
+   CLAMPS THE MARK: `transform-box: fill-box` makes each cell scale about its OWN box, so the cell
+   grows to the floor exactly where it already sits (the seat is the datum; only the mark's size is
+   clamped). The multiplier is published once on the field host (`--cell-floor`, set only when the
+   floor arms) and inherits down. A static geometry, not motion — nothing to fence. */
+.geo-shape--cell-floor {
+    transform-box: fill-box;
+    transform-origin: center;
+    transform: scale(var(--cell-floor, 1));
+}
 /* The pinned-mark FRAME (the select treatment) — a foreground stroke distinct from the
    hover RAISE and the filter DIM, the three registers the store separates. */
 .geo-shape[data-selected="true"] {

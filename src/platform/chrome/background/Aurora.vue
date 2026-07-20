@@ -13,7 +13,7 @@
 //
 // POLE-DERIVED, PER DASHBOARD (FD6 §5.2; N.WD2 §4.D2 the ruled departure). The config comes from
 // useAuroraConfig, which derives the 5-stop palette + the 2+2+1 nuclei ENTIRELY from the route's
-// DECLARED atmosphere poles (or its chromeIdentity legs — the D6 default) through the canonical OKLab
+// DECLARED atmosphere poles (or its theme chrome legs — the D6 default) through the canonical OKLab
 // matrix (oklab.ts — the B3.1 root-fix; NEVER value.js mixColorsN), so page-glow IS data-glow. The
 // hardcoded three-slug switch is DELETED: the poles are declared on the instance context, resolved
 // late through the EXISTING resolveColorsBatch bridge. Absent a context (the gallery never mounts this
@@ -92,7 +92,7 @@ const ctx = inject(DASHBOARD_KEY, undefined);
 const selection = ctx ? useSelection() : undefined;
 
 // The pole-derived reactive config + the live Tide scalar (the f(p) seam) + the theme-aware
-// compositing ceiling. useAuroraConfig resolves the route's declared → chromeIdentity → NEUTRAL
+// compositing ceiling. useAuroraConfig resolves the route's declared → chrome-leg → NEUTRAL
 // atmosphere ladder (the DOM pole resolution rides the EXISTING resolveColorsBatch bridge). The config
 // is a reactive AuroraConfig glass-ui deep-watches; we hand it straight to <Aurora :config>. The
 // ceiling is OWNED by useAuroraConfig (J-CLOSE re-gate arm b): the aurora's light-stock envelope is the

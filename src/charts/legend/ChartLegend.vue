@@ -49,6 +49,21 @@ export interface LegendChip {
     count?: number;
 }
 
+/** THE CLAMPED-RAMP STATEMENT (A-29 · the legend-coverage law: the legend keys every rendered
+    encoding). A ramp capped at a percentile paints its top stop for EVERY value above the cap — so
+    the key must say so, or the map silently claims the field's peak is the cap. The legend owns the
+    GRAMMAR ("capped at $445 (P95) · max $722, Hyde"); the consumer hands only the facts. */
+export interface LegendClamp {
+    /** The ramp's top stop — the value every larger datum is painted at (e.g. "$445"). */
+    cap: string;
+    /** How the cap was chosen, in the caller's own words (e.g. "P95"). Omit ⇒ unstated. */
+    percentile?: string;
+    /** The field's TRUE maximum — the value the clamp hides (e.g. "$722"). */
+    max: string;
+    /** Who holds that maximum (e.g. "Hyde") — the named extremum. Omit ⇒ the bare figure. */
+    holder?: string;
+}
+
 const props = withDefaults(
     defineProps<{
         /** The legend mode: a `continuous` ramp bar, `discrete` chips, or a `stepped` hard-stop
@@ -83,6 +98,10 @@ const props = withDefaults(
         /** (continuous) The value anchors set in Fira tnum beneath the ramp (low · median ·
             peak — the ECF editorial-key idiom). Spaced edge → centre → edge under the bar. */
         anchors?: (string | null)[];
+        /** (any ramp mode) THE CLAMPED-RAMP STATEMENT (A-29) — when the ramp's top stop is a CAP
+            (a percentile clamp), the key states the cap AND the true maximum it hides, in the
+            legend's own grammar. Omit ⇒ no clamp line (an unclamped ramp says nothing). */
+        clamp?: LegendClamp;
         /** (discrete/stepped) The chips, base → apex / first → last. */
         chips?: LegendChip[];
         /** (stepped) An optional mid anchor word + its 0..1 position along the bar (e.g. the
@@ -107,6 +126,7 @@ const props = withDefaults(
         noDataColor: "var(--viz-no-data)",
         noDataLabel: "no data",
         anchors: undefined,
+        clamp: undefined,
         chips: undefined,
         midLabel: undefined,
         midPosition: undefined,
@@ -253,6 +273,21 @@ const isDead = (count?: number): boolean => count == null || count === 0;
                 </dd>
             </div>
         </template>
+
+        <!-- THE CLAMP LINE (A-29) — the ramp's cap, stated. Seated OUTSIDE the mode branches: a
+             continuous ramp and a stepped scale bar can both be clamped, and the statement reads
+             the same either way. The term is what the top stop MEANS (the cap + how it was cut);
+             the detail is the maximum the cap hides (+ who holds it), so a screen reader hears
+             "capped at $445 (P95) ⇒ max $722, Hyde" — the encoding's whole truth. -->
+        <template v-if="clamp">
+            <dt class="chart-legend__clamp-dt">
+                capped at {{ clamp.cap
+                }}<span v-if="clamp.percentile"> ({{ clamp.percentile }})</span>
+            </dt>
+            <dd class="chart-legend__clamp">
+                max {{ clamp.max }}<span v-if="clamp.holder">, {{ clamp.holder }}</span>
+            </dd>
+        </template>
     </dl>
 </template>
 
@@ -338,6 +373,22 @@ const isDead = (count?: number): boolean => count == null || count === 0;
     font-variant-numeric: tabular-nums;
     color: var(--muted-foreground);
     opacity: 0.9;
+}
+
+/* THE CLAMP LINE (A-29) — the ramp-cap statement, seated on its own row beneath the bar in the
+   recessive tnum register the anchors already speak. The term (the cap) and the detail (the true
+   max) read as ONE sentence, joined by the atlas mid-dot; a narrow measure wraps it, never clips. */
+.chart-legend__clamp-dt,
+.chart-legend__clamp {
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+    opacity: 0.9;
+}
+.chart-legend__clamp-dt {
+    white-space: nowrap;
+}
+.chart-legend__clamp::before {
+    content: " · ";
 }
 
 /* STEPPED — the low pole (a direct <dt>) + the bar DETAIL cell (a direct <dd>): the quantized

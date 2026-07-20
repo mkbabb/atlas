@@ -62,6 +62,7 @@ import {
 } from "../../../../charts/composables/useVizPalette.js";
 import { useDocumentScrollProgress } from "../../../../motion/useScrollProgress.js";
 import { blendOklch, type Oklab } from "../../../../charts/scale/oklab.js";
+import { AMERICA } from "../../../../contract/index.js";
 import type { DashboardContext, DepositionProfile } from "../../../../contract/index.js";
 import { selectAtmosphere } from "./atmosphere.js";
 import {
@@ -72,8 +73,8 @@ import {
 
 // ── THE ATMOSPHERE RESOLUTION (N.WD2 §4.D2 — the ruled departure) ─────────────────────────────
 // The per-surface `surfacePoles`/`surfaceProfile` slug-switch is DELETED (D2.5). The poles + the
-// deposition character are now DECLARED on the instance context (`DashboardContext.atmosphere`);
-// `selectAtmosphere` (the pure ladder) turns that declaration — or the `chromeIdentity` legs (the D6
+// deposition character are now DECLARED on the instance context (`Theme.atmosphere`);
+// `selectAtmosphere` (the pure ladder) turns that declaration — or the theme's chrome legs (the D6
 // default), or NEUTRAL for an unknown route — into unresolved pole EXPRS + a bias-cap + a clamped
 // deposition. This composable resolves the EXPRS through the palette bridge's `resolveAtmosphereColors`
 // (the EXISTING `resolveColorsBatch`), so page-glow stays data-glow with zero new colour machinery.
@@ -87,7 +88,7 @@ interface ResolvedAtmosphere {
     deposition: DepositionProfile;
 }
 
-/** Resolve a route's declared atmosphere (or its chromeIdentity/NEUTRAL fallback) to concrete poles
+/** Resolve a route's declared atmosphere (or its chrome-leg/NEUTRAL fallback) to concrete poles
     off the live palette. The DOM probe (`resolveAtmosphereColors`) runs ONLY here — this is called
     from the theme/route-keyed `resolved` computed, never per scroll tick (the Tide reads the cached
     poles). SSR/happy-dom falls each pole to its palette fallback (no cascade to read). */
@@ -95,7 +96,10 @@ function resolveAtmosphere(
     ctx: DashboardContext | undefined,
     pal: VizPalette,
 ): ResolvedAtmosphere {
-    const sel = selectAtmosphere(ctx?.atmosphere, ctx?.chromeIdentity);
+    // The route theme — the named default inside a route, nothing outside one (an unknown surface
+    // never wears USF's tide; it falls to the ladder's neutral floor).
+    const theme = ctx ? (ctx.theme ?? AMERICA) : undefined;
+    const sel = selectAtmosphere(theme?.atmosphere, theme?.chrome);
     // The SSR/happy-dom fallbacks: the neutral floor falls to the warm recessive no-data; a
     // declared/derived route falls to the diverging poles (a sensible, aria-hidden-only default).
     const fallback =
@@ -207,7 +211,7 @@ export interface UseAuroraConfig {
  * Build the reactive, pole-derived `AuroraConfig` for a route, with the f(p) Tide wired
  * LIVE off C5's `useDocumentScrollProgress()`. The palette (5 stops: bg → warm → hinge →
  * cool → bg) and the nuclei are all DERIVED from the route's DECLARED atmosphere poles (or its
- * chromeIdentity legs / NEUTRAL — N.WD2 §4.D2) + the page ground through the canonical OKLab
+ * chrome legs / NEUTRAL — N.WD2 §4.D2) + the page ground through the canonical OKLab
  * matrix (oklab.ts) — never invented, never a hardcoded slug-switch. The returned `config` is a
  * `reactive` object: every field is recomputed from the live palette + the live `p` via a
  * `watchEffect`-free getter chain (Vue tracks the deps through `reactive`).
@@ -279,7 +283,7 @@ export function useAuroraConfig(
     });
 
     // THE RESOLVED ATMOSPHERE (N.WD2 §4.D2) — the route's two poles (concrete rgb), bias-cap, and
-    // clamped deposition, resolved through the declared → chromeIdentity → NEUTRAL ladder. Keyed ONLY
+    // clamped deposition, resolved through the declared → chrome-leg → NEUTRAL ladder. Keyed ONLY
     // on the palette (theme) + the route: the DOM pole probe runs here, NOT per scroll tick (the Tide
     // reads the cached poles below), so the scroll path never touches getComputedStyle.
     const resolved = computed<ResolvedAtmosphere>(() =>

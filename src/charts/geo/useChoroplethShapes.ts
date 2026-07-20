@@ -164,6 +164,39 @@ export interface PatternDefEmit {
 const LABEL_ADVANCE_PX = 5.4;
 const LABEL_LINE_PX = 9;
 
+// ── A-04 · THE AGGREGATED-CELL TAP FLOOR (the L4 law at the geo mark) ───────────────────────────
+// A BINNED field (the speedtest H3 hex layer) draws its cells at the bin's own size: at a phone
+// measure that landed 2.2×2.0 px marks — a 20× sub-tap target and an invisible encoding. Below the
+// floor the layer CLAMPS THE MARK: each cell scales about its own box to the tappable floor, its
+// seat untouched (a proportional-symbol read of the same aggregate).
+// The floor is an OWNED constant, near the `--size-tap` rung — NOT a prop (α-M-6): the one live
+// geography is cured by the default, and a second geography that genuinely differs mints its option
+// WITH its declarer, born-live.
+/** The tappable/legible floor for an aggregated cell (px, rendered). */
+export const CELL_TAP_FLOOR_PX = 12;
+/** The congruence band a BINNED field sits inside — every cell within 12% of the largest. A
+    tessellation of equal bins passes; an administrative partition (counties, states, districts —
+    whose whole nature is unequal shapes) never does, so its contiguous geometry is never scaled. */
+const CELL_CONGRUENCE_BAND = 0.12;
+
+/** THE FLOOR SCALE — the multiplier a field's cells must wear to clear `CELL_TAP_FLOOR_PX`, or 1
+    (the identity — no clamp) for any field that is not an under-floor congruent cell set. Pure:
+    `(shapes, px-per-viewport-unit) → number`, so the mark reads it off its measured box. */
+export function cellFloorScale(shapes: Shape[], pxPerUnit: number): number {
+    if (!(pxPerUnit > 0) || shapes.length < 3) return 1;
+    let min = Infinity;
+    let max = 0;
+    for (const s of shapes) {
+        if (!(s.minorAxis > 0)) return 1; // a degenerate/unmeasured field is never clamped
+        if (s.minorAxis < min) min = s.minorAxis;
+        if (s.minorAxis > max) max = s.minorAxis;
+    }
+    if (max - min > max * CELL_CONGRUENCE_BAND) return 1; // not a binned cell field
+    const renderedPx = min * pxPerUnit;
+    if (renderedPx >= CELL_TAP_FLOOR_PX) return 1; // already above the floor
+    return CELL_TAP_FLOOR_PX / renderedPx;
+}
+
 const defaultKeyField = (f: Feature<Geometry, Record<string, unknown>>): string =>
     String(f.id ?? "").padStart(2, "0");
 const defaultNameField = (f: Feature<Geometry, Record<string, unknown>>): string =>
@@ -261,13 +294,11 @@ export function useChoroplethShapes(props: ChoroplethProps) {
             // the fill draws through (one projection, one coordinate frame), whenever a WORD source
             // exists (`valueLabel` OR `valueFormat`).
             const [cx, cy] = wordOf ? draw.centroid(f) : [0, 0];
-            // X10-LIB — the region's bounding-box minor axis, measured off the SAME path generator
-            // whenever a word source exists (the ONLY time the size gate is consulted).
-            let minorAxis = 0;
-            if (wordOf) {
-                const [[x0, y0], [x1, y1]] = draw.bounds(f);
-                minorAxis = Math.min(x1 - x0, y1 - y0);
-            }
+            // X10-LIB — the region's bounding-box minor axis, measured off the SAME path generator.
+            // Measured for EVERY feature (A-04): the label size-gate reads it, and so does the
+            // aggregated-cell tap floor below — which must judge a field carrying no word source.
+            const [[x0, y0], [x1, y1]] = draw.bounds(f);
+            const minorAxis = Math.min(x1 - x0, y1 - y0);
             // O-A22 — the per-cell word, computed ONCE (the redundant channel + the fill read one truth).
             const word = wordOf ? wordOf(key) : "";
             return {

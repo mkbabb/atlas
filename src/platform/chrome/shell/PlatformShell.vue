@@ -30,7 +30,7 @@
 //   `filter`   — the right live-behind filter Drawer (C3.3 fills; a peer at --z-panel).
 import { computed, inject } from "vue";
 import Dock from "../dock/Dock.vue";
-import { DASHBOARD_KEY } from "../../../contract/index.js";
+import { AMERICA, DASHBOARD_KEY, themeCssVars } from "../../../contract/index.js";
 import { useSelection } from "../../stores/useSelection.js";
 import { useFilterPane } from "../../../filter/composables/useFilterPane.js";
 import { provideDismissArbiter, useDismissArbiter } from "../../interaction/useDismissArbiter.js";
@@ -40,25 +40,20 @@ import { provideDismissArbiter, useDismissArbiter } from "../../interaction/useD
 // the route view.
 const ctx = inject(DASHBOARD_KEY);
 
-// ── THE --route-* CHROME-IDENTITY CASCADE (design-palette-identity §2.4 MOVE 4 — the keystone) ──
-// The shell IS the EXACT element wrapping the dock + the content stage, so it binds the active
-// route's `chromeIdentity` profile as the `--route-*` custom-property GROUP here, via inline
-// `:style` — the data-DRIVEN cascade, NEVER a `[data-dashboard]` stylesheet fork (the
-// C1-retired anti-pattern). The tokens cascade to every
-// chrome descendant (the dock rivets via `rivetHue()`, the eyebrow icon, the legend chip). Each
-// leg falls through to the tokens.css `:root` neutral default when the profile omits it (warm/cool
-// ⇒ the accent; ECF declares no legs). A route with no `chromeIdentity` (the gallery/about, which
-// mounts no PlatformShell anyway) leaves the `:root` defaults untouched. Theme-aware for free —
-// the values are `var(--viz-*)`/`var(--rainbow-*)` references, so a theme flip retunes them.
-const routeIdentityStyle = computed<Record<string, string>>(() => {
-    const id = ctx?.chromeIdentity;
-    if (!id) return {};
-    const style: Record<string, string> = { "--route-accent": id.accent };
-    if (id.accentWarm) style["--route-accent-warm"] = id.accentWarm;
-    if (id.accentCool) style["--route-accent-cool"] = id.accentCool;
-    if (id.eyebrowHue) style["--route-eyebrow-hue"] = id.eyebrowHue;
-    return style;
-});
+// ── THE --route-* THEME CASCADE (design-palette-identity §2.4 MOVE 4 — the keystone) ──────────
+// The shell IS the EXACT element wrapping the dock + the content stage, so THIS is the ONE binder:
+// the active route's theme chrome legs, bound as the `--route-*` custom-property GROUP via inline
+// `:style` — the data-DRIVEN cascade, NEVER a `[data-dashboard]` stylesheet fork (the C1-retired
+// anti-pattern), and never a second writer (the essay's category-skin bind is gone: one token, one
+// author). The tokens cascade to every chrome descendant (the dock rivets via `rivetHue()`, the
+// eyebrow icon, the legend chip). Each leg falls through to the tokens.css `:root` neutral default
+// when the theme omits it (warm/cool ⇒ the accent; ECF declares no legs). A route that declares no
+// theme IS america — the resolution happens HERE, route-scoped, so the gallery/about (which mounts
+// no PlatformShell) keeps the `:root` rest. Theme-aware for free — the values are
+// `var(--viz-*)`/`var(--rainbow-*)` references, so a light/dark flip retunes them.
+const routeThemeStyle = computed<Record<string, string>>(() =>
+    ctx ? themeCssVars(ctx.theme ?? AMERICA) : {},
+);
 
 // ── THE DOCUMENT-LEVEL Esc CONTRACT (D2.4 / D6) ──────────────────────────────────────────
 // ONE chrome-level keydown seam — the platform's single Escape arbiter (the user's ask:
@@ -102,7 +97,7 @@ useDismissArbiter(dismissArbiter).claim(() =>
 </script>
 
 <template>
-    <div class="platform-shell text-foreground" :style="routeIdentityStyle">
+    <div class="platform-shell text-foreground" :style="routeThemeStyle">
         <!-- The app-level pole-wash mount (fills behind content; inert here). -->
         <slot name="aurora" />
 

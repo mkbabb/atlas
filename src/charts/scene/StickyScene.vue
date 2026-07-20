@@ -432,11 +432,11 @@ function Prose(p: { prose: SceneProse }): VNodeChild {
         opacity 320ms var(--ease-out-expo, ease-out),
         box-shadow 320ms var(--ease-out-expo, ease-out);
 }
-/* ── THE D3 ACTIVE-STEP RIM (the deft golden affordance — D3 at step grain), CONSUMING K-ACTIVE's ONE
-   gilt home (A3). The rim alpha has ONE home — `--active-gilt`/`--active-glow`/`--active-rim-width`
+/* ── THE D3 ACTIVE-STEP RIM (the deft emphasis affordance — D3 at step grain), CONSUMING K-ACTIVE's ONE
+   emphasis home (A3). The rim alpha has ONE home — `--active-gilt`/`--active-glow`/`--active-rim-width`
    (tokens.css) — so a :5173/:4319 retune re-tunes BOTH the K-ACTIVE plate rim AND this step rim at
-   once; `--sel-primary-ring` (= the shipped `--gold-ink`) is the gilt, no new hue. The IO singleton
-   guarantees ONE rim on screen (the gold-scarcity / one-gilt-at-a-time law, BY CONSTRUCTION). KEPT
+   once; `--sel-primary-ring` (= the shipped `--emphasis-record`) is the rim, no new hue. The IO singleton
+   guarantees ONE rim on screen (the scarcity / one-at-a-time law, BY CONSTRUCTION). KEPT
    under PRM (it is wayfinding INFORMATION) but DE-ANIMATED (the transition drops below). ── */
 .sticky-scene__step[data-active-step] {
     opacity: 1;

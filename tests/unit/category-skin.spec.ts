@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-    SKINS,
-    defineSkin,
-    resolveSkin,
-    skinCssVars,
-} from "../../src/skin/category";
+import { SKINS, defineSkin, resolveSkin } from "../../src/skin/category";
 import type { StoryManifest } from "../../src/story";
 import { resolveCompletionSeal } from "../../src/design/recipes/completion";
 
@@ -35,32 +30,30 @@ describe("category skins", () => {
         });
     });
 
-    it("resolves a manifest skin once and binds the established inherited CSS contract", () => {
+    it("resolves a manifest skin once, and carries PRESENTATION only (never route theming)", () => {
         const story = { id: "example", skin: "funds", points: [] } satisfies StoryManifest;
         expect(resolveSkin(story.skin)).toBe(SKINS.funds);
 
         const skin = defineSkin({
             id: "proof",
             category: "connectivity",
-            surfaceKind: "data",
             backgroundFamily: "aurora",
-            atmosphere: {},
-            chrome: {
-                accent: "teal",
-                accentWarm: "warm",
-                accentCool: "cool",
-                eyebrowHue: "eyebrow",
-            },
-            type: { audacious: "10rem", masthead: "6rem" },
+            label: "Proof",
+            accent: "teal",
+            background: "watercolor-dot",
+            shape: "check",
         });
-        expect(skinCssVars(skin)).toEqual({
-            "--route-accent": "teal",
-            "--route-accent-warm": "warm",
-            "--route-accent-cool": "cool",
-            "--route-eyebrow-hue": "eyebrow",
-            "--q1-rung": "10rem",
-            "--type-masthead-headline": "6rem",
-        });
+        // The skin is frozen presentation: no chrome legs, no atmosphere, no ramp, no `--route-*`
+        // writer — the route's colour identity is its Theme, bound once by the platform shell.
+        expect(Object.keys(skin).sort()).toEqual([
+            "accent",
+            "background",
+            "backgroundFamily",
+            "category",
+            "id",
+            "label",
+            "shape",
+        ]);
     });
 });
 

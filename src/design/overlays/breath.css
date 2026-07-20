@@ -1,0 +1,49 @@
+/* platform/design/breath.css — THE COMPOSITOR-IDLE BREATH REGISTER (W-MOTION-CORE · A-21 ·
+   spec-motion §a.2/§d/§e). The `breath` mechanism's WHOLE runtime: one `@keyframes`, one attribute
+   binding, zero JS. `compileSegment` resolves every `breath` segment to `compositor-idle` and stamps
+   `data-motion="Breath"` — this file is what that attribute means. Nothing here reads a clock, an
+   edge, or a scroll position, so the mechanism adds no rAF, no observer, and no scalar.
+
+   THE ONE BREATH LAW (β-gate F5). The amplitude and rate are NOT authored here: they derive from the
+   atmosphere's intensity table (`platform/chrome/background/composables/atmosphere.ts` —
+   `ATMOSPHERE_PRESETS.quiet.envelope`), the SAME clamp constants the aurora ground breathes inside.
+   One constant set, two consumers, never a second envelope. The `var()` fallbacks below carry the
+   derived pair (`BREATH_ENVELOPE`, `lean-catalog.ts`); a unit test holds the two in agreement.
+
+   THE FOREGROUND RATION. An ornament is a small high-contrast mark on paper; the ground is a
+   full-viewport wash, so at equal depth the mark reads far louder. The preset therefore reads the
+   table's QUIETEST rung (an ornament is route-agnostic — rationed against a louder rung it would
+   outbreathe a `quiet` route's own ground) and halves it again: HALF that rung's amplitude cap
+   (0.015) and TWICE its period floor (80s). The result is sub-perceptual drift — an idle mark must
+   never outcompete an earned data mark (the D-family attention economy).
+
+   THE PRM FENCE (the structural one — scroll-driven.css's own law). The whole register sits inside
+   `@media (prefers-reduced-motion: no-preference)`, so under `reduce` the animation NEVER ATTACHES:
+   the ornament simply rests at its natural size, which IS the `from` keyframe, so information parity
+   is exact and there is no JS check to get wrong. `getAnimations()` is empty and `rafTicks` is 0 (the
+   c2-retired idle-burn scar; spec-motion §e's breath terminal row).
+
+   WHAT THIS FILE DOES NOT DO. The off-screen play-state pause (W-71's shared IntersectionObserver)
+   rides the /vft fleuron CONSUME under W-VFT, not this platform register: there is no shared in-view
+   observer at HEAD (`data-inview` has zero JS writers) and this wave mints no second one. */
+
+@media (prefers-reduced-motion: no-preference) {
+    /* `scale` as an INDIVIDUAL property, never the `transform` shorthand — the same
+       one-property-per-channel law `composedStyleFor` emits by, so an ornament that also carries a
+       reveal lift never fights one transform slot. Compositor-legal by construction (AG7). */
+    @keyframes ornament-breath {
+        from {
+            scale: 1;
+        }
+        to {
+            scale: calc(1 + var(--breath-depth, 0.015));
+        }
+    }
+
+    /* `alternate` makes the swell-and-return ONE breath, so the declared period is the FULL cycle and
+       the animation's own duration is half of it. `infinite` costs nothing off the main thread: the
+       compositor owns a single scale-only animation with no scroll input and no JS driver. */
+    [data-motion="Breath"] {
+        animation: ornament-breath calc(var(--breath-period, 80s) / 2) ease-in-out infinite alternate;
+    }
+}

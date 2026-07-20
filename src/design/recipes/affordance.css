@@ -27,9 +27,9 @@
     outline-offset: var(--afd-focus-offset);
     border-radius: var(--afd-focus-radius);
 }
-/* the gilt focus VARIANT (Dock crest, BrandMark) — a NAMED variant, not a divergent recipe. */
-[data-afd-focus="gilt"]:focus-visible {
-    outline-color: var(--gold-ink, #d4a017);
+/* the emphasis focus VARIANT (Dock crest, BrandMark) — a NAMED variant, not a divergent recipe. */
+[data-afd-focus="emphasis"]:focus-visible {
+    outline-color: var(--emphasis-record);
 }
 
 /* ── the press feedback (Kowalski scale 0.97 on :active — never scale(0)) ─────────────────────────

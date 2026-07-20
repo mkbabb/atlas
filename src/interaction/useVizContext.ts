@@ -98,6 +98,8 @@ export interface UseVizContextReturn extends MotionDrivers {
 export interface VizContextSources {
     /** The cover scalar [0,1] — `useCoverProgress(host).t`. */
     readonly scroll: () => number;
+    /** The pinned stage's composed step clock [0,1] — `usePinProgress(deck).pinT`; 1 off a stage. */
+    readonly pin: () => number;
     /** The transiently-hovered key (or null). */
     readonly hoveredKey: () => string | null;
     /** The sticky pin SET. */
@@ -124,6 +126,7 @@ export function createVizContext(
     src: VizContextSources,
 ): UseVizContextReturn {
     const scroll = (): number => src.scroll();
+    const pin = (): number => src.pin();
     const selected = (): boolean => src.selectedKeys().size > 0;
     const hovered = (): boolean => src.hoveredKey() !== null;
     const active = (): boolean => src.activeVizId() === vizId;
@@ -145,7 +148,7 @@ export function createVizContext(
         hasSelection: src.selectedKeys().size > 0,
     }));
 
-    return { scroll, selected, hovered, active, filterEpoch, reducedMotion, selectionScope, provenance };
+    return { scroll, pin, selected, hovered, active, filterEpoch, reducedMotion, selectionScope, provenance };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -178,7 +181,7 @@ function useSharedFilterEpoch(): () => number {
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 /**
- * `useVizContext(vizId, host)` — the coordination hub. Wires all six director edges from the shared
+ * `useVizContext(vizId, host)` — the coordination hub. Wires all seven director edges from the shared
  * single-writer stores + the cover clock ONCE, so `useMotionDirector(host, decl, ctx)` receives a full
  * `MotionDrivers` with NO per-plate driver wiring. Returns the two read-only facets (`selectionScope`,
  * `provenance`) the provenance/drill-down families consume too.
@@ -202,6 +205,7 @@ export function useVizContext(
 
     const ctx = createVizContext(vizId, {
         scroll: sources.scroll ?? ((): number => cover.t.value),
+        pin: sources.pin ?? ((): number => 1),
         hoveredKey: (): string | null => sel.hoveredKey,
         selectedKeys: (): ReadonlySet<string> => sel.selectedKeys,
         primaryKey: (): string | null => sel.primaryKey,

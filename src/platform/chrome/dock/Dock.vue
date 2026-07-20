@@ -61,7 +61,7 @@ const props = withDefaults(
     defineProps<{
         /** An ordered multi-stop ramp (base → apex) for a SPECTRUM-thesis dashboard
             (SCI's rainbow, ECF's sequential) — shared by the stepper's identity spine and the
-            persistent crest rim. Undefined ⇒ `ctx.barometerRamp`, then the route tritone. */
+            persistent crest rim. Undefined ⇒ the route theme's ramp, then the route tritone. */
         ramp?: readonly string[];
         /** Wire glass-ui's no-transition fast-path on the dark toggle (C1, T-5) so the
             theme is an INSTANT re-print here too (and the correct hard-cut under PRM). */
@@ -83,7 +83,7 @@ const ROUTE_TRITONE = [
     "var(--route-accent-cool, var(--route-accent))",
 ] as const;
 const identityRamp = computed<readonly string[]>(
-    () => props.ramp ?? ctx?.barometerRamp ?? ROUTE_TRITONE,
+    () => props.ramp ?? ctx?.theme?.barometerRamp ?? ROUTE_TRITONE,
 );
 
 // ── ONE responsive Dock (the atlas-unified-register law) ──────────────────────

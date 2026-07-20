@@ -4,6 +4,7 @@
 
 export * from "./mark-tokens.js";
 export * from "./trajectory-marks.js";
+export { default as DiscreteColumns } from "./DiscreteColumns.vue";
 export { default as MultiYearFigure } from "./MultiYearFigure.vue";
 export { default as RankedBar } from "./RankedBar.vue";
 export { default as ScatterPlate } from "./ScatterPlate.vue";

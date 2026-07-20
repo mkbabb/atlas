@@ -39,6 +39,8 @@ const props = withDefaults(
         /** Draw the forecast drop-rule at the measured→projected seam (default true for a window). */
         showForecast?: boolean;
         overSubscriptionX?: number;
+        /** A-03 · the crossing's own words, threaded to the mark. Omit ⇒ "over ceiling". */
+        overSubscriptionLabel?: string;
         xFormat?: (x: number) => string;
         yFormat?: (y: number) => string;
         /** THE EXPLICIT X-TICKS (I15 · forwarded through M1). See `TrajectoryPlate`'s `xTicks`. */
@@ -54,6 +56,7 @@ const props = withDefaults(
         voidYear: undefined,
         showForecast: true,
         overSubscriptionX: undefined,
+        overSubscriptionLabel: undefined,
         xFormat: undefined,
         yFormat: undefined,
         xTicks: undefined,
@@ -126,6 +129,7 @@ const forecastX = computed<number | undefined>(() => {
         :window-band="windowBand"
         :forecast-boundary-x="forecastX"
         :over-subscription-x="overSubscriptionX"
+        :over-subscription-label="overSubscriptionLabel"
         :x-format="xFormat"
         :y-format="yFormat"
         :x-ticks="xTicks"

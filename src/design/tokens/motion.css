@@ -140,7 +140,7 @@
     /* the FOCUS halo — the ONE :focus-visible recipe (retires the 15 re-spellings). Defaults to the
        SHIPPED focus ring `--focus-ring-color`, NOT `--sel-selected-ring`: focus and select are DISTINCT signifiers
        (coupling them violates A5's one-signifier-per-affordance law). The gilt loci keep their gold ring
-       as a NAMED variant ([data-afd-focus="gilt"]), not a divergent recipe. */
+       as a NAMED variant ([data-afd-focus="emphasis"]), not a divergent recipe. */
     --afd-focus-ring: var(--focus-ring-color, oklch(0.6 0.15 250));
     --afd-focus-width: 2px;
     --afd-focus-offset: 2px;

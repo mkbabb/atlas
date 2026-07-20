@@ -15,6 +15,7 @@
 // attributes) — no inline `:class="{ 'opacity-30' }"` object. `dimmed` keys carry a hatch overlay so
 // the de-emphasis is never colour-only.
 import { computed, ref } from "vue";
+import { useElementSize } from "@vueuse/core";
 import {
     isMultiSelect,
     type SelectionEmits,
@@ -23,6 +24,7 @@ import { DATA_PATTERN_TILE } from "./redundant-channel.js";
 import ChartDataTable from "../legend/ChartDataTable.vue";
 import {
     useChoroplethShapes,
+    cellFloorScale,
     type ChoroplethProps,
     type Shape,
 } from "./useChoroplethShapes.js";
@@ -87,6 +89,16 @@ const {
     labelGateFails,
 } = useChoroplethShapes(props);
 
+// A-04 · THE AGGREGATED-CELL TAP FLOOR — the field's own rendered measure (the `viewBox` scales the
+// user-space geometry to this box, so `width / WIDTH` is the px-per-unit the floor is judged in).
+// The clamp arms ONLY for an under-floor congruent CELL field (`cellFloorScale`); every
+// administrative geography reads 1 and is never touched.
+const field = ref<SVGSVGElement | null>(null);
+const { width: fieldWidth } = useElementSize(field);
+const cellFloor = computed<number>(() =>
+    cellFloorScale(shapes.value, fieldWidth.value / WIDTH.value),
+);
+
 function isRaised(key: string): boolean {
     return props.raisedKeys?.has(key) ?? false;
 }
@@ -150,8 +162,10 @@ const tableRows = computed(() =>
 <template>
     <div class="relative w-full">
         <svg
+            ref="field"
             :viewBox="`0 0 ${WIDTH} ${HEIGHT}`"
             class="h-auto w-full"
+            :style="cellFloor > 1 ? { '--cell-floor': cellFloor } : undefined"
             role="img"
             :aria-label="ariaLabel"
             :aria-details="sourceGridOpen ? sourceGridId || undefined : undefined"
@@ -244,7 +258,10 @@ const tableRows = computed(() =>
                         :data-kbd-active="kbdActiveKey === s.key ? 'true' : undefined"
                         aria-hidden="true"
                         class="geo-shape stroke-background outline-none transition-opacity duration-200 dimmed:opacity-70 raised:opacity-100 selected:[stroke-width:2.5]"
-                        :class="{ 'geo-shape--draw': drawOn }"
+                        :class="{
+                            'geo-shape--draw': drawOn,
+                            'geo-shape--cell-floor': cellFloor > 1,
+                        }"
                         :style="drawOn ? { '--rank': s.rank ?? 0 } : undefined"
                         :stroke-width="isRaised(s.key) ? 2 : 0.5"
                         @mouseenter="onEnter(s)"
@@ -256,6 +273,7 @@ const tableRows = computed(() =>
                         :d="s.d"
                         fill="url(#geo-dim-hatch)"
                         class="pointer-events-none"
+                        :class="{ 'geo-shape--cell-floor': cellFloor > 1 }"
                         aria-hidden="true"
                     />
                 </template>

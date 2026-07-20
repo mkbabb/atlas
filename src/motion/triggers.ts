@@ -14,10 +14,21 @@
 //   active → a viewport-centre argmin edge (an impulse spring)     ← activeViz
 //   filter → the coordinator change epoch (a one-shot pulse)       ← the filter coordinator
 //   load   → a mount-once one-shot                                 ← NumericAnimation
+//   pin    → the pinned stage's composed step clock (scrubbed)     ← usePinProgress
 
-/** The six first-class interaction triggers — the closed taxonomy (no `(string & {})` escape: a trigger
-    MUST resolve to a known DriverEdge, so the union is sealed for exhaustiveness). */
-export type MotionTrigger = "scroll" | "select" | "hover" | "active" | "filter" | "load";
+/** The sealed six + `pin` — the closed taxonomy (no `(string & {})` escape: a trigger MUST resolve to
+    a known DriverEdge, so the union stays sealed for exhaustiveness). `pin` is the seventh and last:
+    a POSITION-derived scalar like `scroll` (it opens no spring, no rAF, no second poll), composed by
+    `usePinProgress` from the pinned stage's ALREADY-registered per-step scrub hosts. It is
+    AUTHORING-GATED to a `ChapterStage` — see `SurfaceTrigger` (the W-50 pin gate). */
+export type MotionTrigger =
+    | "scroll"
+    | "select"
+    | "hover"
+    | "active"
+    | "filter"
+    | "load"
+    | "pin";
 
 /** The ordered roster — the gate iterates this to prove every member resolves to a DriverEdge. */
 export const MOTION_TRIGGERS = [
@@ -27,4 +38,5 @@ export const MOTION_TRIGGERS = [
     "active",
     "filter",
     "load",
+    "pin",
 ] as const satisfies readonly MotionTrigger[];

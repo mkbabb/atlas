@@ -4,6 +4,7 @@ import type { VizContract } from "../charts/contract/viz-contract.js";
 import type { ChapterScene, ChapterStage } from "../charts/contract/scene-contract.js";
 import type { EntityGrain } from "../data/contract.js";
 import type { AggregationSources } from "../platform/provenance/aggregation.js";
+import type { AtmosphereIntensity, Theme } from "./theme.js";
 
 export type { EntityGrain } from "../data/contract.js";
 
@@ -137,17 +138,12 @@ export interface DashboardContext {
     flagshipRoute: string;
     /** The dock entries — section beats or sibling-view tabs (the same component). */
     nav: DockNavItem[];
-    /** The per-route chrome-identity profile (design-palette-identity §2.4) — the `--route-*`
-        custom-property group DashboardView binds on the route subtree. Undefined ⇒ the tokens.css
-        neutral defaults govern (the gallery/about fallthrough). */
-    chromeIdentity?: ChromeIdentity;
-    /** An ordered multi-stop ramp (base → apex) for a dashboard whose chrome register is a
-        SPECTRUM, not one hue — the Dock threads it into the Barometer's Layer A so the dock
-        thread carries the dashboard's signature ramp (SCI's rainbow, ECF's sequential). Each
-        entry is a CSS colour (a `var(--rainbow-signature-*)`/`var(--viz-sequential-*)` ref or
-        any colour). This is the seam that REPLACES the deleted `*-chrome.css` `!important`
-        barometer overrides (T-7). Undefined ⇒ the Barometer's single-`accent` fade (USF). */
-    barometerRamp?: readonly string[];
+    /** THE ROUTE'S THEME (P-05) — its colour identity as ONE declared noun: the chrome legs the
+        platform binds as the `--route-*` group, the atmosphere poles, the dock spectrum, the pole
+        grammar. OPTIONAL, and that is the point: an undeclared route IS `AMERICA` (resolved at the
+        one route-scoped binder), so the owner's default is literally the default. A ctx-less read
+        keeps the `:root` token fallthrough — the gallery/about rest is unchanged. */
+    theme?: Theme;
     /** The row key the selection/filter machinery joins on (e.g. "fips"). */
     selectionKey: string;
     /** Whether the dashboard spans multiple years (drives the year affordance). */
@@ -182,16 +178,6 @@ export interface DashboardContext {
         renders inside its chrome. The chrome owns the frame; the body owns its logic
         (its own reset/apply). Undefined ⇒ the dashboard has no floating filter. */
     filterBody?: Component;
-    /** THE DECLARED ATMOSPHERE FACET (N.WD2 §4.D2 — the ruled departure from the hardcoded
-        Aurora slug-switch). A route may DECLARE the two data poles + the deposition character its
-        page-glow paints, resolved late by the platform aurora. The resolution ladder is per-field:
-        a declared pole → the `chromeIdentity` accentWarm/accentCool leg (the D6 default) →
-        `NEUTRAL_ATMOSPHERE` (an unknown route never wears USF's tide). Omitting `warm`/`cool`
-        leaves the poles to the mechanical D6 derivation (the TODO-free default) while still
-        authoring the route's deposition; omitting the whole facet falls to the D6 derivation. The
-        recessive laws (the opacity ceiling, the PAPER_WASH floor, the deposition envelope clamp)
-        stay resolver-side and UNDECLARABLE — a route can lean its field, never make it loud. */
-    atmosphere?: AtmosphereFacet;
 }
 
 /** THE ATMOSPHERE HUE-PATH — the palette-interpolation arc for the aurora ramp (mirrors glass-ui's
@@ -200,24 +186,23 @@ export interface DashboardContext {
     clean OKLab-rectangular blend (diverging / single-hue magnitude). */
 export type AtmosphereHuePath = "shorter" | "longer" | "increasing" | "decreasing";
 
-/** THE PER-ROUTE DEPOSITION SIGNATURE (N.WD2 §4.D2.3 — f6-atmosphere §2.4, adopted canon). The
+/** THE RESOLVED DEPOSITION SIGNATURE (N.WD2 §4.D2.3 — f6-atmosphere §2.4, adopted canon). The
     deposition CHARACTER of a route's aurora ground: crayon-tooth density, breath, hue-arc, and the
-    warm-nucleus aspect. Every field CLAMPS to the D6 envelope resolver-side (granulation ∈
-    [0.28, 0.38] · breathDepth ≤ 0.05 · breathPeriod ≥ 40 · elongation ∈ [1.0, 1.5]) — the declared
-    value leans the field within the envelope but can never breach it. */
+    warm-nucleus aspect. It is RESOLVED, never declared — every field clamps into the envelope of
+    the theme's declared `intensity` (`ATMOSPHERE_PRESETS`), which is what a route turns instead. */
 export interface DepositionProfile {
-    /** The crayon-tooth density. Clamped to [0.28, 0.38] (the PAPER_WASH-anchored envelope). */
+    /** The crayon-tooth density. Clamped to the preset's granulation band. */
     granulation: number;
-    /** The per-route breath CEILING (the live depth the scroll-motion gate rides). Clamped ≤ 0.05
-        — always below the JND-loop floor, so the ground never reads as a loud pulse. */
+    /** The breath CEILING (the live depth the scroll-motion gate rides). Clamped to the preset's
+        max — always below glass-ui's 0.15 ceiling, so the ground never reads as a loud pulse. */
     breathDepth: number;
-    /** The breath period (s). Clamped ≥ 40 — a route may breathe slower (calmer), never faster. */
+    /** The breath period (s). Clamped ≥ the preset floor — a route breathes slower, never faster. */
     breathPeriod: number;
     /** The palette-interpolation arc (`increasing` = the SCI spectral sweep); omit for the clean
         OKLab-rectangular blend. */
     huePath?: AtmosphereHuePath;
     /** The warm-nucleus Gaussian aspect (1 = isotropic still water; 1.4 = USF horizontal currents).
-        Clamped to [1.0, 1.5]. */
+        Clamped to the preset's elongation band. */
     elongation: number;
     /** The warm-nucleus major-axis angle (deg, CSS-top-origin). 0 = horizontal currents. */
     angle: number;
@@ -228,30 +213,33 @@ export interface DepositionProfile {
     `resolveColorsBatch` — a colour LITERAL is a guard failure (no minted pigment outside
     tokens.css), and each declared pole must be a pole some DATA surface on the route paints
     (page-glow IS data-glow). Both poles are OPTIONAL: omit them to leave the poles to the
-    mechanical D6 (chromeIdentity) derivation while still authoring the deposition. */
+    mechanical D6 (`Theme.chrome`) derivation. Poles + cap + intensity is the WHOLE facet — the
+    deposition arm is the resolver's, off the intensity's preset. */
 export interface AtmosphereFacet {
-    /** The warm data pole — a CSS token EXPR. Omit ⇒ the D6 `chromeIdentity.accentWarm` derivation. */
+    /** The warm data pole — a CSS token EXPR. Omit ⇒ the D6 `chrome.accentWarm` derivation. */
     warm?: string;
-    /** The cool data pole — a CSS token EXPR. Omit ⇒ the D6 `chromeIdentity.accentCool` derivation. */
+    /** The cool data pole — a CSS token EXPR. Omit ⇒ the D6 `chrome.accentCool` derivation. */
     cool?: string;
     /** The directional pole-lean cap: 0.3 directional (the default) · 0 magnitude/neutral (no lean —
         a magnitude ramp encodes no direction). */
     biasCap?: number;
-    /** The route's declared deposition character (clamped to the D6 envelope resolver-side). A
-        `Partial` — declared fields override the deposition default; the rest fall to it. */
-    deposition?: Partial<DepositionProfile>;
+    /** The declared LOUDNESS rung (A-36) — the ONE atmosphere dial a route turns, resolved through
+        the shared `ATMOSPHERE_PRESETS` table. There is deliberately no `deposition` member: a raw
+        per-route deposition block was the second declaration channel clean-break forbids, and the
+        preset envelope is what the resolver clamps into. Omit ⇒ `data`. */
+    intensity?: AtmosphereIntensity;
 }
 
 /** The per-route CHROME-IDENTITY profile (design-palette-identity §2.4 MOVE 4 — the keystone).
-    The route declares its chrome palette ONCE here; DashboardView binds it as the `--route-*`
-    custom-property GROUP on the route subtree (the `DashboardView` `--route-*` inline-`:style`
-    bind), so every chrome surface (dock rivets via `rivetHue()`, the eyebrow icon, the legend
-    chip) reads ONE route-resolved token — never a `[data-dashboard]` stylesheet fork (the
-    C1-retired anti-pattern), never a per-component accent prop. All VALUES are token REFERENCES
+    The route declares its chrome palette ONCE, as its `Theme.chrome`; the platform shell binds it
+    as the `--route-*` custom-property GROUP on the route subtree (`themeCssVars`, the ONE binder),
+    so every chrome surface (dock rivets via `rivetHue()`, the eyebrow icon, the legend chip) reads
+    ONE route-resolved token — never a `[data-dashboard]` stylesheet fork (the C1-retired
+    anti-pattern), never a per-component accent prop. All VALUES are token REFERENCES
     (`var(--viz-diverging-high)` etc.), so a theme flip retunes them for free; the tokens.css
-    neutral defaults (`--route-accent: var(--viz-diverging-high)` …) are the fallthrough when a
-    route declares no profile (the gallery/about). A directional route declares a DISTINCT warm +
-    cool leg so the dock rail reads as a ≥3-hue colour INDEX at rest (G1/G2/SM-2). */
+    neutral defaults (`--route-accent: var(--viz-diverging-high)` …) are the fallthrough outside a
+    route (the gallery/about). A directional route declares a DISTINCT warm + cool leg so the dock
+    rail reads as a ≥3-hue colour INDEX at rest (G1/G2/SM-2). */
 export interface ChromeIdentity {
     /** The route's primary chrome accent (`--route-accent`) — the dock active-adjacent hue, the
         eyebrow/CTA fallback. A `var(--viz-*)`/`var(--rainbow-*)` token reference. */

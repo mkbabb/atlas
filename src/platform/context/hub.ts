@@ -28,6 +28,7 @@ import {
     type InjectionKey,
     type MaybeRefOrGetter,
 } from "vue";
+import { AMERICA } from "../../contract/index.js";
 import type { DashboardContext } from "../../contract/index.js";
 import type { ColorKind } from "../../charts/scale/colorKind.js";
 import type { VizPalette } from "../../charts/composables/useVizPalette.js";
@@ -44,14 +45,14 @@ import { foldReadiness, type Readiness, type SourcePhase } from "./readiness.js"
 /** A late-resolved computed value (the `C<T>` shorthand from the NP4 API sketch). */
 export type C<T> = ComputedRef<T>;
 
-/** A minimal atmosphere resolution (the chromeIdentity-derived D6 DEFAULT — NOT the WD2 declared
+/** A minimal atmosphere resolution (the chrome-leg-derived D6 DEFAULT — NOT the WD2 declared
     poles). WD2 inverts this to the declared-poles ladder + DELETES the Aurora slug-switch; here the
     hub only resolves the chrome legs so a plate reading `viz.atmosphere` never touches the Aurora
-    seam. FLAGGED: WD2 owns the full ladder (declared → chromeIdentity → NEUTRAL). */
+    seam. FLAGGED: WD2 owns the full ladder (declared → chrome leg → NEUTRAL). */
 export interface ResolvedAtmosphere {
-    /** The warm pole (chromeIdentity `accentWarm`, falling back to the accent). A CSS token expr. */
+    /** The warm pole (the theme chrome's `accentWarm`, falling back to the accent). A CSS token expr. */
     warm: string;
-    /** The cool pole (chromeIdentity `accentCool`, falling back to the accent). A CSS token expr. */
+    /** The cool pole (the theme chrome's `accentCool`, falling back to the accent). A CSS token expr. */
     cool: string;
 }
 
@@ -109,11 +110,11 @@ export interface VizContext {
     vizId: string;
     /** The instance-authored declared contract (DASHBOARD_KEY), or undefined outside a route. */
     route: DashboardContext | undefined;
-    /** The chrome accent (chromeIdentity → context accent → the token default). */
+    /** The chrome accent (the route theme's chrome → the token default). */
     accent: C<string>;
     /** The call-site-declared color kind (NOT chapter-derived — the deliberate pass-2 fence). */
     colorKind: C<ColorKind>;
-    /** The chromeIdentity-derived atmosphere poles (the D6 default; WD2 owns the full ladder). */
+    /** The chrome-leg-derived atmosphere poles (the D6 default; WD2 owns the full ladder). */
     atmosphere: ResolvedAtmosphere;
     /** The live (theme-aware) viz palette. */
     palette: C<VizPalette>;
@@ -261,16 +262,19 @@ export function createVizContextHub(
         else if (expandedVizId.value === vizId) expandedVizId.value = null;
     }
 
-    // The chrome accent (N.WG1 arm F — chromeIdentity is now the ONE JS accent authority; the
-    // retired `ctx.accent` dock-local pole is gone → chromeIdentity → the token default).
-    const accent = computed<string>(
-        () => ctx?.chromeIdentity?.accent ?? "var(--route-accent)",
-    );
+    // THE ROUTE THEME — the named default where a route context exists, and NOTHING where none
+    // does: a ctx-less read (the gallery/about, a story harness) never folds to AMERICA, so the
+    // `:root` token fallthrough below stays reachable and the outside-route rest is unchanged.
+    const theme = ctx ? (ctx.theme ?? AMERICA) : undefined;
 
-    // The chromeIdentity-derived atmosphere poles (the D6 default — WD2 owns the declared ladder).
+    // The chrome accent (N.WG1 arm F — the theme's chrome is the ONE JS accent authority; the
+    // retired `ctx.accent` dock-local pole is gone → the theme → the token default).
+    const accent = computed<string>(() => theme?.chrome.accent ?? "var(--route-accent)");
+
+    // The chrome-derived atmosphere poles (the D6 default — WD2 owns the declared ladder).
     const atmosphere: ResolvedAtmosphere = {
-        warm: ctx?.chromeIdentity?.accentWarm ?? ctx?.chromeIdentity?.accent ?? "var(--route-accent-warm)",
-        cool: ctx?.chromeIdentity?.accentCool ?? ctx?.chromeIdentity?.accent ?? "var(--route-accent-cool)",
+        warm: theme?.chrome.accentWarm ?? theme?.chrome.accent ?? "var(--route-accent-warm)",
+        cool: theme?.chrome.accentCool ?? theme?.chrome.accent ?? "var(--route-accent-cool)",
     };
 
     function context(

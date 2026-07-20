@@ -56,6 +56,10 @@ export interface TimeSeriesDials {
     yFormat?: (y: number) => string;
     partialYearX?: number;
     overSubscriptionX?: number;
+    /** THE CROSSING'S OWN WORDS (A-03) — the eyebrow run the crossing rule carries. The mark had it
+        hardwired to SCI's capacity semantics, so every other route's crossing narrated the wrong
+        story. Omit ⇒ `over ceiling` (SCI's default, byte-compatible). */
+    overSubscriptionLabel?: string;
     markPoint?: Record<string, unknown>;
     markArea?: Record<string, unknown>;
     forecastBoundaryX?: number;
@@ -80,8 +84,14 @@ export interface TimeSeriesDials {
     xTicks?: number[];
     /** THE END-LABEL GUTTER — the right-grid px reserving direct end-of-line labels (`endLabel`).
         `containLabel` reserves AXIS labels only, so a direct-labelling consumer hands the gutter
-        here. Omit ⇒ 24 (every existing consumer unchanged). */
+        here. Omit ⇒ 24 (every existing consumer unchanged). OVERRIDDEN BELOW THE FLOOR — see
+        `hostWidth`: a fixed reserve is a desktop declaration, and the mark owns the phone. */
     gridRight?: number;
+    /** THE MEASURED HOST WIDTH (px) — the mark's own box, not the viewport. The END-LABEL GUTTER
+        FLOOR reads it: when the reserved gutter would leave the plot below its legible track, the
+        gutter COLLAPSES and the terminal labels move ONTO the lines. 0/omitted (SSR, jsdom, the
+        pre-measure frame) ⇒ no floor, the declared gutter verbatim. */
+    hostWidth?: number;
     /** THE AXIS NUMERAL FACE — overrides the `BOUNDARY_AXIS` "Fira Code" tick face with the route's
         own tabular numeral family (the VFT journal's "IBM Plex Mono"). Omit ⇒ "Fira Code". */
     axisFontFamily?: string;

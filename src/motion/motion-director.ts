@@ -29,6 +29,7 @@ import {
 } from "./lean-catalog.js";
 import { useCoverProgress } from "./useCoverProgress.js";
 import { useReducedMotion } from "./useReducedMotion.js";
+import { compileSegment } from "./compileSegment.js";
 
 const clamp01 = (x: number): number => clamp(x, 0, 1);
 
@@ -41,13 +42,16 @@ const clamp01 = (x: number): number => clamp(x, 0, 1);
     triggers. Mechanism code never knows which trigger it rode — it reads a number. */
 export type DriverEdge = () => number;
 
-/** The six injected driver SOURCES. `filter` reads the coordinator's monotone change EPOCH (NOT a
+/** The seven injected driver SOURCES. `filter` reads the coordinator's monotone change EPOCH (NOT a
     drawer boolean); `active` reads the activeViz centre-argmin edge. Injected so the director stays pure
     + unit-testable (`createDirectorCore` takes these directly; `useMotionDrivers` wires them from the
     KEPT primitives until WD1's `useVizContext` lands — the §10 coordination seam). */
 export interface MotionDrivers {
     /** `useCoverProgress(host).t` — the ONE page-clock cover band [0,1] (0.50 ≡ viewport centre). */
     readonly scroll: () => number;
+    /** `usePinProgress(deck).pinT` — the pinned stage's composed step clock [0,1]. POSITION-derived
+        like `scroll` (no spring, no rAF); 1 off a stage (the un-pinned terminal). */
+    readonly pin: () => number;
     /** `useSelection`: is the host's key ∈ selectedKeys (or its child mark's key)? */
     readonly selected: () => boolean;
     /** the emphasis-policy pointer edge for the host / hovered mark. */
@@ -84,15 +88,46 @@ export type MotionChannel = "opacity" | "translate" | "scale" | "filter" | "tint
     `replace(filter)`, `max(tint)`. A segment's `compose` overrides its channel's default. */
 export type ComposePolicy = "add" | "multiply" | "max" | "replace";
 
+/** THE W-50 PIN GATE (spec-motion §c) — the earned jack, keyed on the AUTHORING TYPE. Encode-difference
+    detection is undecidable from an opaque `SceneStep.state`, so the gate keys instead on the surface the
+    author already declared: a `ChapterStage` is encode-bearing (its `SceneOption`s carry distinct
+    `encode` triples — discrete framings, each demanding a viewport) and IS pin-eligible; a
+    `ChapterScene` is a scalar walk via `apply` (no `encode`) and is NOT. Because the key reads the
+    `kind` discriminant rather than any channel, it is not evadable by perturbing one. */
+export type PinnableSurface = { readonly kind: "stage" };
+
+/** The triggers a segment declared on surface `S` may pick: the sealed six everywhere, plus `pin` on a
+    `ChapterStage` alone. `on: "pin"` on a `ChapterScene` (or a plain plate) is UNREPRESENTABLE — `tsc`
+    refuses it, so the /sci map's year-walk cannot take a jack and must use a direct control. */
+export type SurfaceTrigger<S> = S extends PinnableSurface
+    ? MotionTrigger
+    : Exclude<MotionTrigger, "pin">;
+
+/** THE A-21 BREATH RATION (OPTIONS §4.3 — "breath is earned, not ambient"). Idle animation binds to
+    at most (a) a route's declared `ornament` components (`StoryPoint.ornament` — the W-71 fleurons
+    class) and (b) the one `signature` beat's designated mark (`StoryPoint.signature`, one per route
+    by authoring convention). Never free-per-beat, never on prose, never on numerals: an idle mark
+    outcompetes every earned data mark, so the seat is a field the author already declared. */
+export type BreathableSurface = { readonly kind: "ornament" } | { readonly kind: "signature" };
+
+/** The presets a segment declared on surface `S` may name: the whole catalog on a breathable surface,
+    everything BUT `Breath` elsewhere. `use: "Breath"` on a prose/numeral/plate/stage surface is
+    UNREPRESENTABLE — `tsc` refuses it, so the ration cannot be evaded by declaration. */
+export type SurfacePreset<S> = S extends BreathableSurface
+    ? LeanPresetName
+    : Exclude<LeanPresetName, "Breath">;
+
 /** ONE declared animation — WHAT (preset) · WHERE (target) · ON WHICH trigger (the singular pick) · the
-    variant bag. `on` MUST be in `PRESET_TRIGGERS[use]` (gate-checked — G-N6). `channel`/`compose` name
-    the blend locus + policy when the segment stacks on a host with others (O-A1 SegmentBlend); both are
-    optional — omitted ⇒ the mechanism's natural channel(s) + the per-channel default policy. */
-export interface MotionSegment {
+    variant bag. `on` MUST be in `PRESET_TRIGGERS[use]` (gate-checked — G-N6) AND in `SurfaceTrigger<S>`
+    (the W-50 type gate); `use` MUST be in `SurfacePreset<S>` (the A-21 breath ration). `channel`/`compose`
+    name the blend locus + policy when the segment stacks on a host with others (O-A1 SegmentBlend); both
+    are optional — omitted ⇒ the mechanism's natural channel(s) + the per-channel default policy. `S` is
+    the AUTHORING surface; omitted ⇒ a plain plate, which neither takes the jack nor breathes. */
+export interface MotionSegment<S = unknown> {
     readonly id: string;
-    readonly use: LeanPresetName;
+    readonly use: SurfacePreset<S>;
     readonly target: MarkTarget;
-    readonly on: MotionTrigger;
+    readonly on: SurfaceTrigger<S>;
     readonly variant?: VariantSpec;
     readonly channel?: MotionChannel;
     readonly compose?: ComposePolicy;
@@ -100,9 +135,16 @@ export interface MotionSegment {
 
 /** A viz's whole declared motion — the single facet a plate carries. Empty ⇒ the plate animates nothing
     (byte-identical to a static plate). */
-export interface MotionDeclaration {
-    readonly segments: readonly MotionSegment[];
+export interface MotionDeclaration<S = unknown> {
+    readonly segments: readonly MotionSegment<S>[];
 }
+
+/** The WIDEST declaration shape — what a CONSUMER (the director, the resolver) accepts. The surface is
+    the UNION of the two gated ones, so each conditional distributes and widens back to the full trigger
+    and preset rosters; every `MotionDeclaration<S>` is then assignable into it by readonly covariance.
+    Both gates bind at the AUTHORING site and nowhere else — a consumer never re-litigates eligibility. */
+export type AnyMotionSegment = MotionSegment<PinnableSurface | BreathableSurface>;
+export type AnyMotionDeclaration = MotionDeclaration<PinnableSurface | BreathableSurface>;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 // 3 · THE DIRECTOR SURFACE (RC3-3 — scalarFor + styleFor + idle + dispose, NOTHING else)
@@ -182,7 +224,7 @@ const BLEND = { liftEm: 0.5, raiseEm: 0.3, ringPx: 2.5 } as const;
     writes ONE channel (its declared `channel`, defaulting by trigger: hover ⇒ translate raise, select/
     active ⇒ filter ring). Every other mechanism writes via `scalarFor` (canvas/SVG/count), not a host
     style, so it contributes nothing here. Pure. */
-function channelContribution(seg: MotionSegment, t: number): Partial<Record<MotionChannel, number>> {
+function channelContribution(seg: AnyMotionSegment, t: number): Partial<Record<MotionChannel, number>> {
     const s = clamp01(t);
     const preset: LeanPreset = LEAN_CATALOG[seg.use];
     switch (preset.mechanism) {
@@ -214,7 +256,7 @@ function channelContribution(seg: MotionSegment, t: number): Partial<Record<Moti
     transform properties (`translate:`/`scale:`) keep the channels from colliding; a segment's `compose`
     overrides its declared channel's default. Pure + unit-testable (`scalarOf` is injected). */
 export function composedStyleFor(
-    segments: readonly MotionSegment[],
+    segments: readonly AnyMotionSegment[],
     scalarOf: (on: MotionTrigger) => number,
 ): Record<string, string> {
     const buckets = new Map<MotionChannel, { values: number[]; compose: ComposePolicy }>();
@@ -332,12 +374,14 @@ export function createDirectorCore(
                 case "active":
                     return drivers.active() ? 1 : 0;
                 default:
-                    return 1; // scroll / filter / load — the reveal/progress terminal
+                    return 1; // scroll / pin / filter / load — the reveal/progress terminal
             }
         }
         switch (on) {
             case "scroll":
                 return clamp01(drivers.scroll()); // RAW position — the mechanism eases (no double-ease)
+            case "pin":
+                return clamp01(drivers.pin()); // the composed step clock — position, like scroll
             case "select":
                 return impulse.select.value;
             case "hover":
@@ -374,10 +418,12 @@ export * from "./buildMarkAnimation.js";
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 /** The plate-supplied driver overrides (each an OPTIONAL edge; `scroll`/`reducedMotion` default to the
-    KEPT primitives, the rest to an inert `false`/`0`). A plate wires only the edges its declaration
-    rides — e.g. a scroll-only plate passes nothing; a hover/select plate passes `hovered`/`selected`. */
+    KEPT primitives, `pin` to the un-pinned terminal 1, the rest to an inert `false`/`0`). A plate wires
+    only the edges its declaration rides — e.g. a scroll-only plate passes nothing; a hover/select plate
+    passes `hovered`/`selected`; a plate on a pinned stage passes `pin`. */
 export interface MotionDriverSources {
     readonly scroll?: () => number;
+    readonly pin?: () => number;
     readonly selected?: () => boolean;
     readonly hovered?: () => boolean;
     readonly active?: () => boolean;
@@ -396,6 +442,9 @@ export function useMotionDrivers(
     const reduced = useReducedMotion();
     return {
         scroll: sources.scroll ?? ((): number => cover.t.value),
+        // No deck ⇒ the un-pinned terminal 1 (the missing-stage-terminal law); a pinned host passes
+        // `usePinProgress(deck).pinT`.
+        pin: sources.pin ?? ((): number => 1),
         selected: sources.selected ?? ((): boolean => false),
         hovered: sources.hovered ?? ((): boolean => false),
         active: sources.active ?? ((): boolean => false),
@@ -413,13 +462,21 @@ export function useMotionDrivers(
  */
 export function useMotionDirector(
     host: Ref<HTMLElement | null>,
-    decl: MotionDeclaration,
+    decl: AnyMotionDeclaration,
     drivers: MotionDrivers,
 ): MotionDirector {
     void host; // reserved: a `marks` target resolves its selector within this anchor (the SVG-seam plate)
-    const activeTriggers = new Set<MotionTrigger>(decl.segments.map((s) => s.on));
+    // The ACTIVE set is what the compile boundary says binds a director scalar — never the raw `on`
+    // roster. A COMPOSITOR-IDLE segment (`breath`) reads no clock and no edge, so it must not enter
+    // the set: were it counted, an idle ornament would arm the impulse loop the mechanism exists to
+    // avoid (the c2-retired idle-burn scar).
+    const activeTriggers = new Set<MotionTrigger>(
+        decl.segments.flatMap((s) => compileSegment(s).directorBind ?? []),
+    );
     const core = createDirectorCore(drivers, activeTriggers);
-    const hasImpulse = [...activeTriggers].some((t) => t !== "scroll");
+    // `scroll` AND `pin` are POSITION-derived (reactive off their clocks) — neither opens a spring, so
+    // a declaration made only of them never arms the rAF loop (the F-20 no-new-scroll-rAF budget).
+    const hasImpulse = [...activeTriggers].some((t) => t !== "scroll" && t !== "pin");
     const canRaf = typeof requestAnimationFrame === "function";
 
     // The reactive tick — bumped each rAF frame so the impulse `scalarFor` computeds re-evaluate. The

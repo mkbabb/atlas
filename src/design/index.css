@@ -37,6 +37,7 @@
 @import "./recipes/affordance.css"; /* the ONE affordance recipe sheet (K-ANIM A5.c) — [data-afd] cursor/focus/press signifiers reading the §AFFORDANCE tokens */
 @import "./recipes/variants.css"; /* @custom-variant: raised · dimmed · aggregate */
 @import "./overlays/scroll-driven.css"; /* the native view() per-beat reveal (C.W5.1) — binds [data-reveal-beat] to --beat-tl */
+@import "./overlays/breath.css"; /* the compositor-idle BREATH register (A-21) — the `breath` mechanism's whole runtime: one @keyframes on [data-motion="Breath"], PRM-fenced, zero JS */
 @import "./overlays/spot-graphics.css"; /* the injected SPOT-GRAPHICS vocabulary (J-PAPER arm b §2) — static CSS marks within the --spot-graphic-max budget, warm ink only */
 @import "./overlays/measure.css"; /* the dock-aware ASYMMETRIC measure (J-STORY §8/§9/§13) — .dashboard-body outer figure track + the ~70ch prose clamp */
 @import "./overlays/chrome-overlays.css"; /* unscoped affordance and active-rim rules for foreign feature surfaces */

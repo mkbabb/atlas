@@ -47,7 +47,7 @@
 // PRM). The @supports fallback is thus the timeline's terminal `seek(1)`-equivalent: ONE reveal
 // engine on ONE clock. (Phase-A SHAPE: subscribes to each section's own scroll position; on the
 // Phase-C re-pin the source re-seats onto the BC `useScrollTrigger` page-reader — a one-line swap.)
-import { computed, h, provide, ref, watch, type Component, type VNodeChild } from "vue";
+import { computed, h, ref, watch, type Component, type VNodeChild } from "vue";
 import { useDeck } from "@mkbabb/glass-ui/deck";
 import { useSectionReveal } from "../motion/useScrollTimeline.js";
 import { supportsViewTimeline } from "../motion/useScrollProgress.js";
@@ -81,8 +81,8 @@ import {
     type ManifestChapter,
     type StoryManifest,
 } from "../story/manifest.js";
-import { resolveSkin, skinCssVars, SKIN_KEY } from "../skin/index.js";
 import StoryCorridor from "../story/StoryCorridor.vue";
+import { figureLadderScalar } from "../story/beat-template.js";
 import { useActiveDashboard } from "../platform/stores/useActiveDashboard.js";
 import { useActiveBeat } from "../platform/stores/useActiveBeat.js";
 import { useMobileRegister } from "../platform/composables/useMobileRegister.js";
@@ -93,9 +93,6 @@ const props = defineProps<{
     /** The canonical route story and sole source of essay order. */
     story: StoryManifest;
 }>();
-const storySkin = props.story.skin ? resolveSkin(props.story.skin) : null;
-const storySkinStyle = storySkin ? skinCssVars(storySkin) : undefined;
-if (storySkin) provide(SKIN_KEY, storySkin);
 const chapters = computed<readonly ManifestChapter[]>(() => chaptersOf(props.story));
 // The host's index-keyed composable pools require a static chapter shape for the lifetime of a route.
 // Chapter content remains live through `chapters`; only this setup-time shape snapshot is fixed.
@@ -299,6 +296,15 @@ function isCoverChapter(chapter: Chapter, index: number): boolean {
     return chapter.viz === "hero" || (index === 0 && chapter.isBeat === false);
 }
 
+/** A-08 · THE FIGURE-LADDER WIRE (dial 12 — WIRE). A chapter's DECLARED `figure` ladder resolved to
+    its 0..1 rung and published on the beat root as `--crown-rung`, which the `CrownFigure` inside
+    reads for its track. Declared-unwired since O-A15: five routes authored the field and the
+    resolver dead-ended. A chapter with no ladder publishes nothing (its crown rests at the full
+    audacious measure), so an un-declaring route is byte-unchanged. */
+const ladderStyles = chapterShape.map((c) =>
+    c.figure ? { "--crown-rung": String(figureLadderScalar(c.figure)) } : null,
+);
+
 /** Non-beat sentinels never consume or render a FigureInitial, regardless of viz backing. */
 function hasFigure(chapter: Chapter): boolean {
     return chapter.isBeat !== false && chapter.viz !== "hero" && chapter.viz !== "colophon";
@@ -343,12 +349,7 @@ function TitleSlot(props_: {
          un-staged route (byte-identical), promoted to a positioned block (`--staged`) ONLY when the
          route declares a `transition`, so the between-beat clone overlay has a scroll-invariant
          relative origin (the marks + the overlay scroll together in this flow). -->
-    <div
-        class="essay-flow"
-        :class="{ 'essay-flow--staged': director }"
-        :data-skin="storySkin?.id"
-        :style="storySkinStyle"
-    >
+    <div class="essay-flow" :class="{ 'essay-flow--staged': director }">
     <template v-for="(chapter, i) in editorialChapters" :key="chapter.id">
         <component
             :is="chapter.card ? StoryCard : Beat"
@@ -372,7 +373,7 @@ function TitleSlot(props_: {
             class="essay-beat"
             :class="{ 'essay-beat--aside': chapter.reveal?.aside }"
             :aria-current="isPhone && i === settledIndex ? 'true' : undefined"
-            :style="revealStyles[i]?.value"
+            :style="[revealStyles[i]?.value, ladderStyles[i]]"
             :data-scroll-tl="
                 chapter.reveal?.aside || chapter.reveal?.scrub ? '' : undefined
             "

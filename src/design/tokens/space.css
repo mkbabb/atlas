@@ -185,7 +185,7 @@
     --cp-accent-ink: oklch(0.99 0.01 60); /* ivory text on the red active chip */
     /* the spine FILL poles (the net-retention barometer Layer A) + the achromatic PLAYHEAD
        (Layer B, riding the scroll fraction). C3.2's ControlPlaneSpine re-consumes
-       ctx.barometerRamp for the live fill; these are the static pole anchors. */
+       the theme's barometerRamp for the live fill; these are the static pole anchors. */
     --cp-spine-receiver: var(
         --viz-diverging-low
     ); /* warm — pay-IN (barometer Layer A) */

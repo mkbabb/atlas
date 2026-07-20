@@ -23,10 +23,10 @@ import { useDockStepper } from "../composables/useDockStepper.js";
 import type { DashboardContext } from "../../../../contract/index.js";
 
 const { ctx, ramp, progress, sheet } = defineProps<{
-    /** The active dashboard chrome contract — the stepper reads `nav` / `accent` / `barometerRamp`. */
+    /** The active dashboard chrome contract — the stepper reads `nav` + the theme's ramp. */
     ctx: DashboardContext;
     /** The dock's `:ramp` prop (a SPECTRUM-thesis ramp) threaded into the spine fill; undefined ⇒
-        the injected `ctx.barometerRamp`, else the single-accent fade. */
+        the injected theme's ramp, else the single-accent fade. */
     ramp?: readonly string[];
     /** The dock's hoisted whole-document scalar. Read only for terminal-beat correction. */
     progress: number;
@@ -59,7 +59,7 @@ const {
 
 /** SM-2 (design-suffusion §2 #2 · d-pops M1) — the per-beat RIVET HUE: each resting nav rivet
     carries its beat's data-hue as a thin ring, so the rail reads as a ≥3-colour INDEX at rest. A
-    SPECTRUM dashboard reads its `barometerRamp` stop per beat; a single-hue register (USF) cycles
+    SPECTRUM dashboard reads its theme ramp's stop per beat; a single-hue register (USF) cycles
     the landed per-route TRITONE (`--route-accent` · `-warm` · `-cool`), each falling back to the
     primary `--route-accent` (the tokens.css neutral default guarantees it resolves — N.WG1 arm F
     retired the dead `--dock-accent` inner fallback). The ACTIVE rung keeps the lone red fill. */
@@ -69,15 +69,15 @@ const ROUTE_TRITONE = [
     "var(--route-accent-cool, var(--route-accent))",
 ];
 function rivetHue(index: number): string {
-    const ramps = ctx.barometerRamp;
+    const ramps = ctx.theme?.barometerRamp;
     if (ramps && ramps.length) return ramps[index % ramps.length];
     return ROUTE_TRITONE[index % ROUTE_TRITONE.length];
 }
 
 /** The net-retention ramp the spine fills with — the carried `:ramp` prop (C3-9), or the injected
-    `ctx.barometerRamp` (the C1-minted seam) when no prop is threaded. */
+    theme's `barometerRamp` when no prop is threaded. */
 const spineRamp = computed<readonly string[] | undefined>(
-    () => ramp ?? ctx.barometerRamp,
+    () => ramp ?? ctx.theme?.barometerRamp,
 );
 
 // ── THE SHEET INTERACTION (D2) — roving focus + select-closes, sheet register only ─────────────

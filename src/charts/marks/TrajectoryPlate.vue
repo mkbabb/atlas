@@ -19,6 +19,7 @@
 import { computed } from "vue";
 import VizPlate from "../frame/VizPlate.vue";
 import TimeSeries, { type LineSeries } from "./TimeSeries.vue";
+import DiscreteColumns, { type ColumnDatum } from "./DiscreteColumns.vue";
 import type { FilterResponse, VizContract } from "../contract/viz-contract.js";
 import { useVizPalette } from "../composables/useVizPalette.js";
 import { trajectory, type TrajectoryPoint } from "../../data/multiYear.js";
@@ -46,6 +47,8 @@ const props = withDefaults(
         forecastBoundaryX?: number;
         /** The over-subscription crossing x (forwarded through to TimeSeries). */
         overSubscriptionX?: number;
+        /** A-03 · the crossing's own words, threaded to the mark. Omit ⇒ "over ceiling". */
+        overSubscriptionLabel?: string;
         /** x tick formatter (a year → "2024"). */
         xFormat?: (x: number) => string;
         /** y tick formatter — ROUTE THROUGH THE FORMAT LAW (no raw floats, SYS-7). */
@@ -78,6 +81,7 @@ const props = withDefaults(
         windowBand: undefined,
         forecastBoundaryX: undefined,
         overSubscriptionX: undefined,
+        overSubscriptionLabel: undefined,
         xFormat: undefined,
         yFormat: undefined,
         xTicks: undefined,
@@ -161,6 +165,31 @@ const voidStamp = computed<number | null>(() => {
 /** The real (non-null lead) data points — for the `data-trajectory-point` DOM markers. */
 const realPoints = computed<number[]>(() =>
     points.value.filter((p) => p.values[lead.value] != null).map((p) => p.year),
+);
+
+// ── D-10 (the discrete-mark rider) · THE SPARSE-WINDOW DISCRIMINATOR ───────────────────────────
+// A span of at most three real readings is not a trajectory: there is no "between" two filing
+// windows, so an interpolated line draws values nobody measured (the ECF window arc's false slope).
+// Such a span renders as DISCRETE COLUMNS — the same crown, the honest mark. The family's own
+// convention (a fourth reading makes a shape and the line returns), never a per-route form dial.
+/** The most real readings a span can carry and still be discrete. */
+const DISCRETE_WINDOW_MAX = 3;
+
+const isDiscrete = computed<boolean>(
+    () =>
+        props.measures.length === 1 &&
+        realPoints.value.length > 0 &&
+        realPoints.value.length <= DISCRETE_WINDOW_MAX,
+);
+
+/** The lead measure's discrete magnitudes — one column per span x, `null` where the void is (the
+    slot is kept: an honest hole, the same law the line's `connectNulls:false` gap obeys). */
+const columns = computed<ColumnDatum[]>(() =>
+    points.value.map((p) => ({
+        key: String(p.year),
+        label: props.xFormat ? props.xFormat(p.year) : String(p.year),
+        value: p.values[lead.value],
+    })),
 );
 
 /** The full span years — the SAME x-axis domain the canvas renders, surfaced as DOM TEXT so the
@@ -252,7 +281,19 @@ const contract = computed<VizContract>(() => {
              per-point) are aria-hidden, zero-weight nodes mirroring the canvas marks so the
              crown-mark + data-point + void counts surface off the DOM whatever the renderer. -->
         <div class="trajectory-crown" data-testid="trajectory">
+            <!-- D-10 — the DISCRETE form for a sparse window set: one column per magnitude, the
+                 active window carrying the signal ink (the line's rivet has no meaning without a
+                 continuum). Every other span keeps the line. -->
+            <DiscreteColumns
+                v-if="isDiscrete"
+                :columns="columns"
+                :color="seriesMeta[lead]?.color ?? palette.signal"
+                :value-format="yFormat"
+                :active-key="String(rivet?.x ?? activeYear)"
+                :aria-label="ariaLabel"
+            />
             <TimeSeries
+                v-else
                 :series="series"
                 :x-format="xFormat"
                 :y-format="yFormat"
@@ -261,6 +302,7 @@ const contract = computed<VizContract>(() => {
                 :mark-area="markArea"
                 :forecast-boundary-x="forecastBoundaryX"
                 :over-subscription-x="overSubscriptionX"
+                :over-subscription-label="overSubscriptionLabel"
                 :aria-label="ariaLabel"
             />
             <!-- The belt-and-suspenders DOM markers (the gate's crown-mark / data-point / void

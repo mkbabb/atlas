@@ -87,8 +87,10 @@
    DIVERGING poles stay red↔teal (the emergent-tricolor data poles — warm receiver ↔ cool payer);
    their saturated low/high hues are the DATA semantic and are out of the warm-spine sweep. */
 :root {
-    /* DIVERGING — signed net direction (warm receiver ← break-even → cool payer). */
-    --viz-diverging-low: oklch(0.62 0.17 28); /* net receiver (disb >> contrib) */
+    /* DIVERGING — signed net direction (warm receiver ← break-even → cool payer). The pole
+       SUBJECTS are DECLARED, never re-asserted here: `AMERICA.poles` (contract/theme.ts) is their
+       one author, and dial 16 RULED it — receivers wear warm, payers go cool. */
+    --viz-diverging-low: oklch(0.62 0.17 28); /* AMERICA.poles.warm — "net receivers" */
     /* RR-C1 CLOSED (J-COLOR §3 — warm-neutral both arms). The break-even hinge cool-vs-warm
        adjudication, open since the C-arc, is ADJUDICATED to warm-neutral for BOTH theme arms (one
        coherent break-even on the §1.1.1 warm spine). The light mid was ALREADY warm — L 0.87 (the
@@ -100,7 +102,7 @@
     --viz-diverging-mid: oklch(
         0.87 0.02 95
     ); /* K2 — break-even, seen off the page cream (warm-neutral, RR-C1 closed) */
-    --viz-diverging-high: oklch(0.55 0.13 245); /* net payer (contrib >> disb) */
+    --viz-diverging-high: oklch(0.55 0.13 245); /* AMERICA.poles.cool — "net payers" */
     /* SEQUENTIAL — unbounded magnitude (single-hue teal-leaning ramp). */
     --viz-sequential-low: oklch(0.95 0.03 230);
     --viz-sequential-high: oklch(
@@ -517,7 +519,7 @@
     --route-eyebrow-hue: var(--route-accent);
     --route-flag-tint: var(--route-accent);
     /* THE MINTED ROUTE-CHROME ACCENTS (J-COLOR §1/§2 — the quintet completion). Two NAMED
-       chrome-only accents the per-route chromeIdentity binds, so the five routes read as five
+       chrome-only accents each route's theme chrome binds, so the five routes read as five
        JND-distinct hues, not a blue-teal smear. These are §ROUTE-IDENTITY tokens — they resolve
        ONLY through --route-accent/--route-eyebrow-hue chrome consumers (the dock rivet, eyebrow
        icon, legend chip-rim, CardFlag), NEVER a --viz-* data ramp stop (the namespace boundary
@@ -629,6 +631,20 @@
         oklch(from var(--rainbow-signature-1) min(l, 0.62) min(c, 0.17) h),
         oklch(from var(--rainbow-signature-1) max(l, 0.66) min(c, 0.15) h)
     );
+    /* §EMPHASIS-RECORD (F-10, the gold QUAD retired) — THE ONE SUPERLATIVE. The gilt idiom was a
+       PHANTOM: `--gold-ink`/`--gold-rim` were referenced 16 + 3 times and authored ZERO times in
+       either tree, so every site rendered a hardcoded `#b8860b`/`#d4a017` brass — a universal
+       fourth voice that belonged to no route. This token replaces it, and is NOT a brass: it is
+       the route's OWN warm pole (the `--viz-diverging-low` seed every theme sheet re-points under
+       Law C-2) taken at RAISED chroma — where the §INK family CAPS chroma to keep a data hue
+       readable, the record RAISES it, because the one all-time-high figure in a view is the one
+       datum allowed to be louder than its siblings. The clamp band is the ink family's own body
+       register (L≤0.47 light / L≥0.75 dark), so the token is safe as TEXT at any rung as well as
+       as a fill or a rim. The scarcity law is unchanged: ≤1 record per view. */
+    --emphasis-record: light-dark(
+        oklch(from var(--viz-diverging-low) min(l, 0.47) max(c, 0.19) h),
+        oklch(from var(--viz-diverging-low) max(l, 0.75) max(c, 0.17) h)
+    );
 }
 
 /* §SELECTION — THE CROSS-VIZ TREATMENT TOKENS (I-UX.a · UX-S1/UX-S2 · DESIGN §4.3). The ONE
@@ -666,9 +682,9 @@
 
    THE SELECTED / PRIMARY TREATMENT. The lit register: a `selected` mark gains a foreground frame
    ring (the same --foreground stroke GeoChoropleth's `[data-selected]` already draws, promoted to a
-   token); the PRIMARY (`isPrimary`) mark gains the GILT rim — the one-gilt-at-a-time tier (DESIGN
-   §4.3 / §N6, the gold-scarcity law) — so the focused subject reads ONE rung above its siblings in
-   the set. The ring colours reference existing inks (--foreground / the gold register), never a new
+   token); the PRIMARY (`isPrimary`) mark gains the EMPHASIS rim — the one-at-a-time tier (DESIGN
+   §4.3 / §N6, the scarcity law) — so the focused subject reads ONE rung above its siblings in
+   the set. The ring colours reference existing inks (--foreground / the record register), never a new
    hue (the no-new-hue law); the widths are the discrete-select stroke register GeoChoropleth proved. */
 :root {
     --sel-dim-saturate: 0.32; /* the desaturate factor — chroma stripped, the mark greys out */
@@ -680,14 +696,13 @@
     ); /* the lit-frame stroke (the framed-mark ring) */
     --sel-selected-stroke-width: 2.5px; /* the discrete-select frame width (GeoChoropleth's register) */
     --sel-primary-ring: var(
-        --gold-ink,
-        #b8860b
-    ); /* the GILT rim — the one-gilt focused tier (gold-scarcity) */
+        --emphasis-record
+    ); /* the EMPHASIS rim — the one-at-a-time focused tier (scarcity) */
     --sel-primary-stroke-width: 3px; /* the primary rim — one rung heavier than a plain selected frame */
 }
 
-/* THE ACTIVE-VIZ RIM register — the ONE gilt home (A3 single-gilt-home). The deft golden
-   `.plate-active-rim` (chrome-overlays.css) composes the SHIPPED --sel-primary-ring (= var(--gold-ink))
+/* THE ACTIVE-VIZ RIM register — the ONE emphasis home (A3 single-home). The deft
+   `.plate-active-rim` (chrome-overlays.css) composes the SHIPPED --sel-primary-ring (= var(--emphasis-record))
    at these alphas; D4 / K-SCENE consume these tokens, never a third hardcoded 38% / 22%. The rim recipe
    ships with var() FALLBACKS (38% / 22% / 1.5px) so it renders correctly even without this home — this
    register PROMOTES the constants to a single named source. */
@@ -703,8 +718,8 @@
        the graphite ground — the dark-stock dual of the cream-wash trap). The mix % lifts a touch
        (44%) so the ivory pull reads on the deeper ground; the opacity floor lifts to 0.66 for the
        same reason (a recede on dark stock needs marginally more presence to clear the 1.6:1 floor).
-       The gilt rim brightens to the dark-arm gold (matches the §key-stat record pill on dark). */
+       The emphasis rim needs NO dark re-declaration — `--emphasis-record` is a `light-dark()` off a
+       pole this same root re-declares, so it lifts to the dark-arm band in lockstep (§INK's rule). */
     --sel-dim-mix: 44%;
     --sel-dim-opacity: 0.66;
-    --sel-primary-ring: var(--gold-ink, #d4a017);
 }

@@ -48,9 +48,9 @@
    The child carries its OWN box-shadow (STATIC, never animated) + its OWN opacity, so the fade is a
    pure COMPOSITOR opacity transition — no shadow repaint, no `will-change` (a one-shot fade on ≤1
    plate needs no standing compositor layer — the I17 standing-cost lesson, applied to layers). The
-   gilt composes the SHIPPED `--sel-primary-ring` (= var(--gold-ink)) at the `--active-gilt`/
-   `--active-glow` alphas — ONE gilt home D4/K-SCENE consume (the A3 single-gilt-home); the argmin
-   singleton + the centre band keep it one-gilt-at-a-time BY CONSTRUCTION (the gold-scarcity law). */
+   rim composes the SHIPPED `--sel-primary-ring` (= var(--emphasis-record)) at the `--active-gilt`/
+   `--active-glow` alphas — ONE emphasis home D4/K-SCENE consume (the A3 single-home); the argmin
+   singleton + the centre band keep it one-at-a-time BY CONSTRUCTION (the scarcity law). */
 .plate-active-rim {
     position: absolute;
     inset: 0;

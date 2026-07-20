@@ -8,6 +8,7 @@
 // registry}.ts` stay as re-export SHIMS so the dashboard-side import paths resolve unchanged.
 
 export * from "./types.js";
+export * from "./theme.js";
 export * from "./registry.js";
 export * from "./registry-inject.js";
 export * from "./site.js";

@@ -7,8 +7,8 @@
 //
 // Each stat routes through the cap-box FigureSlug (DESIGN §3.1) so no number shears; the figure ink
 // is tinted to its data hue via a CSS custom-property NAME from the contract (never a hex —
-// i0-colorkind-law). The ONE superlative per view (`record: true`) is gilded with the gold pill (the
-// gold-scarcity law). The strip is the natural third figure-family member (hero=3 · cluster=lead+
+// i0-colorkind-law). The ONE superlative per view (`record: true`) wears the record pill (the
+// scarcity law). The strip is the natural third figure-family member (hero=3 · cluster=lead+
 // supports · pull=1) seated in the contract.
 //
 // It COMPOSES FigureSlug (the cap-boxed audacious register) — never re-rolling a number layout.
@@ -88,16 +88,19 @@ const stats = computed<KeyStat[]>(() => {
     text-transform: uppercase;
     color: var(--muted-foreground);
 }
-/* THE GILT RECORD PILL (DESIGN §2.2.5 — the gold-scarcity superlative, exactly one per view). A
-   1px tooled gold rim + a faint ≤8% gold wash, NEVER opaque; the amount inks gold. */
+/* THE RECORD PILL (DESIGN §2.2.5 — the scarcity superlative, exactly one per view). A 1px tooled
+   NEUTRAL rim + a faint ≤8% wash, NEVER opaque; the amount inks the record. The RC-7 three-way
+   split, read straight off the retired gold quad: the RIM was never gilt (`--gold-rim` was authored
+   nowhere, so its DESIGNED neutral fallback is what shipped — it is now simply AUTHORED, and the
+   pixels do not move); the WASH is alive and stays at 8%, now off the route's own record ink
+   instead of a phantom brass; the VALUE inks `--emphasis-record`. */
 .key-stat--record {
     padding: 0.35rem 0.6rem;
-    border: 1px solid
-        var(--gold-rim, color-mix(in oklab, var(--foreground), transparent 70%));
+    border: 1px solid color-mix(in oklab, var(--foreground), transparent 70%);
     border-radius: var(--radius-plate-control);
-    background: color-mix(in oklab, var(--gold-ink, #b8860b) 8%, transparent);
+    background: color-mix(in oklab, var(--emphasis-record) 8%, transparent);
 }
 .key-stat--record .key-stat__value {
-    color: var(--gold-ink, #b8860b);
+    color: var(--emphasis-record);
 }
 </style>

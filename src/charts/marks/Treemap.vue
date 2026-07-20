@@ -180,6 +180,13 @@ watch(
 // named field: it reads as "one more box, the residual," never a slab. The leaf-FLOOR (8) keeps
 // the named field rich; the CEILING (12) keeps every name legible at 358px. (The hidden mass is
 // honestly recovered by the tap-to-expand affordance — the full field, area-true.)
+//
+// D-13 (the residual-recession rider) — the RESIDUAL IS CORNER-SEATED. Every path below emits the
+// field value-DESCENDING with the "…and M more" tile LAST, and the series drops ECharts' own `sort`
+// (below) so the squarify honours that order verbatim: the residual packs into the field's terminal
+// corner regardless of the area its clamp leaves it, instead of landing mid-field among the named
+// boxes it is not one of. The order is otherwise IDENTICAL to what ECharts' own `sort:"desc"`
+// produced, so a field with no residual renders unchanged.
 const budgetedItems = computed<TreemapItem[]>(() => {
     // THE TOP-N DIAL (D4.a) — an explicit user budget wins over the register policy: show the
     // top-N boxes by value + one rolled "…and M more" cap tile (the SAME affordance the mobile
@@ -187,7 +194,7 @@ const budgetedItems = computed<TreemapItem[]>(() => {
     if (props.topN != null && !expanded.value) {
         const sorted = [...props.items].sort((a, b) => b.value - a.value);
         const n = Math.min(props.topN, sorted.length);
-        if (sorted.length <= n + 1) return props.items;
+        if (sorted.length <= n + 1) return sorted;
         const head = sorted.slice(0, n);
         const tail = sorted.slice(n);
         const headValues = head.map((it) => it.value).sort((a, b) => a - b);
@@ -201,15 +208,15 @@ const budgetedItems = computed<TreemapItem[]>(() => {
             { key: ROLLUP_KEY, name: `…and ${tail.length} more`, value: rollupArea },
         ];
     }
-    if (!isMobile.value || expanded.value) return props.items;
     const sorted = [...props.items].sort((a, b) => b.value - a.value);
+    if (!isMobile.value || expanded.value) return sorted;
     const headCount = Math.min(MOBILE_LEAF_FLOOR, sorted.length);
     // Rolling a single tail tile saves nothing (it would replace one named tile with the
     // rollup) — only budget when the tail is ≥2 tiles. Grow the head toward the ceiling if the
     // field is large enough to spare named leaves past the floor.
     const grownHead = Math.min(MOBILE_LEAF_CEILING, Math.max(headCount, Math.ceil(sorted.length * 0.12)));
     const n = Math.min(grownHead, sorted.length);
-    if (sorted.length <= n + 1) return props.items;
+    if (sorted.length <= n + 1) return sorted;
     const head = sorted.slice(0, n);
     const tail = sorted.slice(n);
     // The rollup's DISPLAY area is clamped to the head's MEDIAN tile value — the rollup is an
@@ -293,6 +300,9 @@ const option = computed<EChartsOption>(() => {
                 borderColor: palette.value.border,
                 borderWidth: 2,
                 gapWidth: 2,
+                // D-13 — the residual RECEDES: the affordance tile sits under a half-veil so the
+                // named field keeps the plate's full ink and the rollup reads as its quiet edge.
+                ...(isRollup ? { opacity: 0.45 } : {}),
             },
             // THE STROKE RAISE (E3 §1.4 / f-hover-flicker F6) — the part-of-whole hover affordance.
             // Dropping `focus:"self"` killed the BLUR-the-rest wash, but ECharts' default treemap
@@ -316,6 +326,18 @@ const option = computed<EChartsOption>(() => {
                 // carries the two-tier formatter + rich registry (the Newsreader name + Fira
                 // meta runs). Else the flat single-run label (the `color` above carries the ink).
                 ...(richLabelBlock ?? {}),
+                // D-13 — the residual's word recedes with its tile: the count seats in the tile's
+                // own corner at a quieter rung, never centred like a named datum.
+                ...(isRollup
+                    ? {
+                          position: "insideBottomRight" as const,
+                          fontSize: 10,
+                          opacity: 0.72,
+                          // The residual's count is a COUNT — it wraps rather than truncating a
+                          // word away (a corner tile is narrow by design; "…and 86 mo…" is noise).
+                          overflow: "break" as const,
+                      }
+                    : {}),
             },
         };
     });
@@ -339,6 +361,10 @@ const option = computed<EChartsOption>(() => {
                 type: "treemap",
                 roam: false, // an editorial field, not a pan/zoom toy
                 nodeClick: false,
+                // D-13 — the packing honours DATA ORDER (the boxes arrive value-descending from
+                // `budgetedItems`, the residual LAST), so the "…and M more" tile corner-seats
+                // instead of being re-ranked into the named field by its clamped area.
+                sort: false,
                 breadcrumb: { show: false },
                 width: "100%",
                 height: "100%",

@@ -1,4 +1,4 @@
-// platform/charts/colorKind.ts — the ONE `colorKind → stops` keystone (DV-1, FD1 §3).
+// charts/scale/colorKind.ts — the ONE `colorKind → stops` keystone (DV-1, FD1 §3).
 //
 // The four legal data-color KINDS each have a canonical ORDERED stop list — the gradient
 // the dropped-cap glyph paints up its letterform AND the ramp the shared `<ChartLegend>`

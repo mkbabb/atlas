@@ -20,10 +20,10 @@
 // CSS-tortured horizontal widget or a second progress display.
 //
 // ── THE NET-RETENTION FILL (the inheritor obligation, UNCHANGED) ─────────────────
-// The spine re-consumes `ctx.barometerRamp` (the field C1 mints into `DashboardContext`,
-// types.ts:101) for the Layer-A net-retention fill, or the deleted `*-chrome.css`
-// `!important` barometer overrides regress. TWO paths fuse: the RAMP path (multi-stop
-// `ctx.barometerRamp` painted base→apex — SCI's rainbow, ECF's ramp) and the SINGLE-ACCENT
+// The spine re-consumes the route theme's `barometerRamp` for the Layer-A net-retention
+// fill, or the deleted `*-chrome.css` `!important` barometer overrides regress. TWO paths
+// fuse: the RAMP path (the multi-stop theme ramp painted base→apex — SCI's rainbow, ECF's
+// ramp) and the SINGLE-ACCENT
 // path (the accent fading from a recessive foot to a saturated crown, OKLab-mixed).
 import { computed } from "vue";
 import { useReducedMotion } from "../../../motion/useReducedMotion.js";
@@ -33,8 +33,8 @@ const props = withDefaults(
         /** The active dashboard's chrome-register accent — the single-hue fill pole
             (USF's receiver-teal, ECF's fund pole) when no ramp is declared. */
         accent?: string;
-        /** The ordered multi-stop net-retention ramp (base → apex) — `ctx.barometerRamp`,
-            the C1-minted field (SCI's rainbow, ECF's sequential). Undefined ⇒ the
+        /** The ordered multi-stop net-retention ramp (base → apex) — the theme's
+            `barometerRamp` (SCI's rainbow, ECF's sequential). Undefined ⇒ the
             single-accent fade. This is the C3-8 inheritor obligation: the spine MUST read
             it or the deleted *-chrome.css overrides regress. */
         ramp?: readonly string[];
@@ -60,7 +60,7 @@ const reduced = useReducedMotion();
 /** Layer A — the net-retention fill, a vertical gradient bar foot→crown. TWO paths fuse
     (mirroring the deleted Barometer's `threadGradient`):
 
-      · the RAMP path — `ctx.barometerRamp` painted base→apex as an evenly-spaced
+      · the RAMP path — the theme's `barometerRamp` painted base→apex as an evenly-spaced
         linear-gradient (the spectrum-thesis dashboards: SCI's rainbow, ECF's ramp).
         Rendered `to top` so the base sits at the foot, the apex at the crown.
       · the SINGLE-ACCENT path — the accent fades from a recessive foot (low alpha)

@@ -47,6 +47,8 @@ const props = withDefaults(
         voidYear?: number;
         /** The over-subscription crossing x (forwarded to the crown). */
         overSubscriptionX?: number;
+        /** A-03 · the crossing's own words, threaded to the mark. Omit ⇒ "over ceiling". */
+        overSubscriptionLabel?: string;
         xFormat?: (x: number) => string;
         /** y formatter — ROUTE THROUGH THE FORMAT LAW (no raw floats, SYS-7). */
         yFormat?: (y: number) => string;
@@ -90,6 +92,7 @@ const props = withDefaults(
         leadMeasure: undefined,
         voidYear: undefined,
         overSubscriptionX: undefined,
+        overSubscriptionLabel: undefined,
         xFormat: undefined,
         yFormat: undefined,
         xTicks: undefined,
@@ -135,6 +138,7 @@ const showFootTerminal = computed<boolean>(
             :active-year="activeYear"
             :void-year="voidYear"
             :over-subscription-x="overSubscriptionX"
+            :over-subscription-label="overSubscriptionLabel"
             :x-format="xFormat"
             :y-format="yFormat"
             :x-ticks="xTicks"
@@ -163,6 +167,7 @@ const showFootTerminal = computed<boolean>(
             :active-year="activeYear"
             :void-year="voidYear"
             :over-subscription-x="overSubscriptionX"
+            :over-subscription-label="overSubscriptionLabel"
             :x-format="xFormat"
             :y-format="yFormat"
             :x-ticks="xTicks"

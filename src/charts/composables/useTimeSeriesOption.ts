@@ -19,7 +19,36 @@ import { boundedBlur } from "../scale/emphasis-policy.js";
 import { useTrendline } from "./useTrendline.js";
 import { dropRule } from "../marks/trajectory-marks.js";
 import { BOUNDARY_AXIS, type LineSeries, type SeriesPoint } from "../marks/TimeSeries.vue";
-import { dashedHairline, recessedBaseline, directEndLabel } from "../contract/chartRecipe.js";
+import {
+    dashedHairline,
+    recessedBaseline,
+    directEndLabel,
+    END_LABEL_ON_PLOT,
+} from "../contract/chartRecipe.js";
+
+/** THE PLOT-TRACK FLOOR (A-04 · the L4 law — a mark never renders below its legibility floor, and
+    below it the OWNING mark changes strategy, never the consumer). The px a line needs between the
+    DECLARED insets to read as a trajectory rather than a sliver (`containLabel` reserves the axis
+    labels ON TOP of these, so the drawn track is narrower still — the floor is the trigger, the
+    collapse is the cure). A fixed end-label gutter (a consumer's 96) is a DESKTOP declaration: at a
+    phone measure it eats the plot to a stub, so the gutter collapses to the crown's own inset and
+    the terminal labels move ONTO the lines (`END_LABEL_ON_PLOT`). An OWNED constant — the floor is
+    the mark's, never an option a dashboard sets. */
+const PLOT_TRACK_FLOOR_PX = 240;
+
+/** THE FLOOR PREDICATE — does the declared end-label gutter leave the plot below its track floor?
+    The option builder reads it for the grid + the terminal-label seat; the MARK reads it for its
+    re-paint fingerprint (the `useEChart` fast-path watches the digest, so a floor crossing must
+    move that string or the collapse would compute without painting). An unmeasured host (0) is
+    never below the floor — the declared gutter renders verbatim (SSR/jsdom byte-parity). */
+export function endLabelGutterCollapsed(
+    hostWidth: number | undefined,
+    gridRight: number | undefined,
+): boolean {
+    if (!hostWidth || hostWidth <= 0) return false;
+    const right = gridRight ?? (VIZ_GRID_CROWN.right as number);
+    return hostWidth - (VIZ_GRID_CROWN.left as number) - right < PLOT_TRACK_FLOOR_PX;
+}
 
 import {
     niceCeil,
@@ -114,41 +143,23 @@ export function buildTimeSeriesOption(
     }
     if (crossX != null) {
         // F6.9 (§2.2a · §5 R4) — the over-subscription crossing is the EDITORIAL voice: the YEAR
-        // figure + a `over ceiling` Fira-caps eyebrow + the `→` glyph, all in the warm diverging
-        // pole (the threshold's own meaning). The pole tint is a DISCRETE editorial role.
-        markLineData.push({
-            xAxis: crossX,
-            lineStyle: {
+        // figure + a Fira-caps eyebrow + the `→` glyph, all in the warm diverging pole (the
+        // threshold's own meaning). The pole tint is a DISCRETE editorial role.
+        // A-03 · THE CROSSING SPEAKS ITS OWN WORDS. The eyebrow run was hardwired to `over ceiling`
+        // — SCI's capacity semantics narrating every route's crossing — while `dropRule` one layer
+        // down already took the run as a parameter. The hand-rolled twin is DELETED for that
+        // extant recipe (the `oversub` voice is byte-identical to what stood here), and the label
+        // is the declarer's, defaulting to SCI's own words so its render is unmoved.
+        markLineData.push(
+            dropRule({
+                x: crossX,
+                label: dials.overSubscriptionLabel ?? "over ceiling",
                 color: palette.diverging.low,
-                type: "solid",
-                width: 1,
-                opacity: 0.7,
-            },
-            label: {
-                formatter: `{yr|${dials.xFormat ? dials.xFormat(crossX) : crossX}}{lab|  over ceiling}{arr|  →}`,
-                position: "insideStartTop",
-                rich: {
-                    yr: {
-                        fontFamily: palette.fontMono,
-                        fontWeight: 500,
-                        fontSize: 11,
-                        color: palette.diverging.low,
-                    },
-                    lab: {
-                        fontFamily: palette.fontMono,
-                        fontWeight: 600,
-                        fontSize: 9,
-                        color: palette.diverging.low,
-                    },
-                    arr: {
-                        fontFamily: palette.fontMono,
-                        fontWeight: 600,
-                        fontSize: 11,
-                        color: palette.diverging.low,
-                    },
-                },
-            },
-        });
+                fontMono: palette.fontMono,
+                kind: "oversub",
+                yearText: dials.xFormat ? dials.xFormat(crossX) : String(crossX),
+            }),
+        );
     }
     // THE FORECAST BOUNDARY (H.W2.a M2) — the dashed `forecast →` drop-rule joins the
     // partial/over-subscription rules on the SAME boundary markLine, built through the M4 recipe.
@@ -192,6 +203,13 @@ export function buildTimeSeriesOption(
     let markLinePlaced = false;
     // The crown's peak-rivet (markPoint) + cycle-bracket (markArea) ride the FIRST drawn series.
     let crownMarksPlaced = false;
+    // ── A-04 · THE END-LABEL GUTTER FLOOR ────────────────────────────────────────────────────────
+    // The declared gutter holds while the plot clears `PLOT_TRACK_FLOOR_PX`; below it the reserve
+    // COLLAPSES to the crown's own inset and the terminal labels seat ON the lines. Keyed to the
+    // MEASURED host box (a mark in a narrow column collapses exactly like a mark on a phone), never
+    // a viewport media query; an unmeasured host (SSR/jsdom/pre-measure) keeps the declared gutter.
+    const declaredRight = dials.gridRight ?? (VIZ_GRID_CROWN.right as number);
+    const gutterCollapsed = endLabelGutterCollapsed(dials.hostWidth, dials.gridRight);
     const built = series.flatMap((s) => {
         // A SHADED BAND series carries a fill + a stack baseline and is recessive; a plain line is
         // a 2px stroke with no fill. (FD4 §3.1 / B3.1.)
@@ -259,7 +277,7 @@ export function buildTimeSeriesOption(
             //   `s.endLabel` string opt-in holds VERBATIM. directLabels off ⇒ the else branch IS the
             //   prior expression, so the option is BYTE-IDENTICAL for every existing consumer.
             ...(dials.directLabels && !isBand && !s.hidden && !s.hideInLegend
-                ? directEndLabel(s, palette.fontMono)
+                ? directEndLabel(s, palette.fontMono, gutterCollapsed)
                 : s.endLabel && !isBand && !s.hidden
                   ? {
                         endLabel: {
@@ -269,7 +287,8 @@ export function buildTimeSeriesOption(
                             fontFamily: dials.axisFontFamily ?? palette.fontMono,
                             fontSize: 12,
                             fontWeight: 600,
-                            distance: 8,
+                            // A-04 — below the plot-track floor the label seats ON the line.
+                            ...(gutterCollapsed ? END_LABEL_ON_PLOT : { distance: 8 }),
                         },
                         labelLayout: {
                             moveOverlap: "shiftY" as const,
@@ -307,9 +326,11 @@ export function buildTimeSeriesOption(
     // source). A direct-labelling consumer widens the right gutter via `gridRight` (containLabel
     // reserves AXIS labels only, never series end labels — the default holds for every existing
     // consumer); `containLabel` reserves the wide y-value ticks (the CROWN geometry left:64).
+    // A-04 — below the plot-track floor the declared gutter COLLAPSES to the crown's own inset (the
+    // terminal labels have moved onto the lines above), so the plot keeps a legible track.
     const grid = {
         ...VIZ_GRID_CROWN,
-        right: dials.gridRight ?? VIZ_GRID_CROWN.right,
+        right: gutterCollapsed ? VIZ_GRID_CROWN.right : declaredRight,
         containLabel: true,
     };
 

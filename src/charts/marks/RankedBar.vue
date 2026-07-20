@@ -22,6 +22,7 @@
 // shimmed here — the raise rides a plain resolved-ink stroke (the design control), and the grow is
 // ECharts' own PRM-fenced tween. The published-4.1.0 rim-tint lands as a later pass over this clean base.
 import { computed, ref, watch } from "vue";
+import { useElementSize } from "@vueuse/core";
 import { use } from "echarts/core";
 import { BarChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
@@ -31,6 +32,12 @@ import { useVizPalette } from "../composables/useVizPalette.js";
 import { useReducedMotion } from "../../motion/useReducedMotion.js";
 import { RAISE_ONLY } from "../scale/emphasis-policy.js";
 import { VIZ_GRID_BAR } from "../lib/grid.js";
+import {
+    rankedBarRegister,
+    BAR_LABEL_LINE_PX,
+    NARROW_LABEL_MARGIN_PX,
+    VALUE_FACE_PX,
+} from "./ranked-bar-register.js";
 import {
     isMultiSelect,
     type SelectionEmits,
@@ -52,6 +59,17 @@ export interface RankedRow {
 }
 
 const ROLLUP_KEY = "__rankedbar_rollup__"; // the sentinel key the "…and M more" residual row carries
+
+// A-04 · THE MINIMUM BAR TRACK + THE BOUNDED NAME REGISTER (the L4 law: a mark never renders below
+// its legibility floor — below it the OWNING mark changes strategy, never the consumer). The floor
+// is arithmetic, so it lives beside the mark as a pure function (`./ranked-bar-register.js`, where
+// the ordering and its two traps are written out); the mark only spends what that returns.
+const BAR_GRID = {
+    left: VIZ_GRID_BAR.left as number,
+    right: VIZ_GRID_BAR.right as number,
+    top: VIZ_GRID_BAR.top as number,
+    bottom: VIZ_GRID_BAR.bottom as number,
+};
 
 const props = withDefaults(
     defineProps<{
@@ -94,6 +112,12 @@ const host = ref<HTMLElement | null>(null);
 // flip, never a raw `var(--…)` that would fall to black-on-graphite in dark.
 const palette = useVizPalette();
 
+// A-04 — the mark's OWN measure (the box the floors are reserved out of, never the viewport: a bar
+// seated in a narrow column budgets exactly as one seated on a phone). 0 before the first measure
+// (SSR/jsdom) ⇒ the full desktop shape, byte-unchanged.
+const { width: hostWidth, height: hostHeight } = useElementSize(host);
+
+
 // THE RE-RANK MORPH FENCE (D7.c M9) — under reduce the top-N re-rank is a HARD-CUT (animation
 // off, instant re-layout); with motion ECharts tweens the bars to their new lengths/positions.
 const reduced = useReducedMotion();
@@ -117,6 +141,27 @@ const budgetedRows = computed<RankedRow[]>(() => {
     ];
 });
 
+/** A-04 — THE REGISTER the mark's own measured box affords (the arithmetic lives in
+    `./ranked-bar-register.ts`). The value run is COUNTED off the longest face because it is set in
+    the mono voice; the rolled residual carries no face (see `data` below), so it never counts. */
+const register = computed(() =>
+    rankedBarRegister(
+        hostWidth.value,
+        hostHeight.value,
+        budgetedRows.value.length,
+        props.valueLabel
+            ? budgetedRows.value.reduce(
+                  (n, r) =>
+                      r.key === ROLLUP_KEY
+                          ? n
+                          : Math.max(n, props.valueLabel!(r).length),
+                  0,
+              )
+            : 0,
+        BAR_GRID,
+    ),
+);
+
 // J-COLOR §5.1 — THE COORDINATED CATEGORICAL QUAD (canvas half of the VC bar↔map pair). The quad
 // is FOUR stops (`--viz-category-1..4`, the RWB-emergent-plus-one); an index outside 1..4 is clamped
 // into the quad (>4 classes is the band-cake rainbow's role, §5.4 role-separation). The ECharts
@@ -139,6 +184,7 @@ const option = computed<EChartsOption>(() => {
     // The palette ref is read so this rebuild re-runs on a theme flip — which is ALSO when the
     // resolved `--viz-category-{k}` rgb below must be re-read (the canvas keeps no live `var`).
     void palette.value;
+    const reg = register.value;
     // ECharts category axes paint bottom→top, so to read #1 at the TOP the categories + values
     // are reversed (the largest sits at the visual top of the column).
     const ordered = [...budgetedRows.value].reverse();
@@ -189,7 +235,7 @@ const option = computed<EChartsOption>(() => {
                           position: "right" as const,
                           color: palette.value.muted,
                           fontFamily: palette.value.fontMono,
-                          fontSize: 11,
+                          fontSize: VALUE_FACE_PX,
                           formatter: () => props.valueLabel!(r),
                       }
                     : { show: false },
@@ -206,7 +252,22 @@ const option = computed<EChartsOption>(() => {
         tooltip: { show: false },
         // THE BAR MARGIN — the wide right-gutter register (lib/grid.ts) for the horizontal-bar
         // value-label run; `containLabel` reserves the category labels (the K-F grid-standard source).
-        grid: VIZ_GRID_BAR,
+        // A-04 — a squeezed box reserves the run it COUNTS instead of the desktop blanket, and
+        // hands the difference to the name column (the gutter is the value run's, nothing else's).
+        // It also stops delegating the name gutter to `containLabel`: ECharts rounds that reserve
+        // up by a pixel or two, which is exactly the margin the track floor is fighting for, so the
+        // squeezed register declares the inset itself and the drawn track is the arithmetic.
+        grid: reg.narrow
+            ? {
+                  ...VIZ_GRID_BAR,
+                  containLabel: false,
+                  left:
+                      (VIZ_GRID_BAR.left as number) +
+                      reg.labelWidth +
+                      NARROW_LABEL_MARGIN_PX,
+                  right: reg.valueGutter,
+              }
+            : VIZ_GRID_BAR,
         xAxis: {
             type: "value",
             min: 0,
@@ -229,8 +290,25 @@ const option = computed<EChartsOption>(() => {
                 fontSize: 12,
                 // Keep the gutter bounded so the longest firm name never eats the bars; ECharts
                 // truncates with an ellipsis past the width (the gutter is wide via containLabel).
-                width: 168,
-                overflow: "truncate",
+                // A-04 — the width is the TRACK-FIRST budget. At the desktop ceiling the name
+                // truncates on ONE line exactly as before. A squeezed column WRAPS instead (a name
+                // gives up its tail before the track gives up a pixel — the DOGFOOD ordering), but
+                // only as far as the ROW BAND: `height` + `lineOverflow` cut the block at the whole
+                // lines the band holds, so a name can never reach its neighbour's row and every
+                // name can therefore be drawn (`interval: 0` — ECharts' own collision thinning is
+                // what silently unnamed 7 of 12 ecf rows at 390).
+                width: reg.labelWidth,
+                ...(reg.narrow
+                    ? {
+                          margin: NARROW_LABEL_MARGIN_PX,
+                          overflow: "break" as const,
+                          lineHeight: BAR_LABEL_LINE_PX,
+                          height: reg.maxLines * BAR_LABEL_LINE_PX,
+                          lineOverflow: "truncate" as const,
+                          ellipsis: "…",
+                          ...(reg.nameEveryRow ? { interval: 0 } : {}),
+                      }
+                    : { overflow: "truncate" as const }),
             },
         },
         series: [
@@ -261,9 +339,16 @@ function keyOf(params: unknown): string | null {
 // D6 — the cheap re-paint fingerprint: the drawn rows + values. It moves on a data/filter
 // re-scope (or a top-N re-rank) and stays still on a hover-driven option re-eval, so the data
 // path repaints only when a real re-paint is owed (no notMerge storm on every reactive tick).
-const seriesFingerprint = computed<string>(() =>
-    budgetedRows.value.map((r) => `${r.key}:${r.value}`).join("|"),
-);
+// A-04 — the whole register rides the digest too: a resize that re-cuts the gutter, the name
+// column or the wrap's line budget IS a re-paint, while one that leaves them where they were
+// stays still.
+const seriesFingerprint = computed<string>(() => {
+    const reg = register.value;
+    return (
+        budgetedRows.value.map((r) => `${r.key}:${r.value}`).join("|") +
+        `#${reg.labelWidth}/${reg.valueGutter}/${reg.maxLines}/${reg.nameEveryRow}`
+    );
+});
 
 const { chart } = useEChart({
     host,

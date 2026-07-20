@@ -82,7 +82,7 @@ export function recessedBaseline(palette: VizPalette) {
     the full `s.label` stays the legend/tooltip/a11y name. A long label printed at the terminal
     clips against the end-label gutter (the /demand "Categ…" stubs) — the tag is the direct-labelling
     idiom's own vocabulary, not a second naming system. Absent ⇒ `s.label` verbatim (unchanged). */
-export function directEndLabel(s: LineSeries, fontMono: string) {
+export function directEndLabel(s: LineSeries, fontMono: string, onPlot = false) {
     return {
         endLabel: {
             show: true,
@@ -92,8 +92,20 @@ export function directEndLabel(s: LineSeries, fontMono: string) {
             fontFamily: fontMono,
             fontSize: 12,
             fontWeight: 600,
-            distance: 8,
+            ...(onPlot ? END_LABEL_ON_PLOT : { distance: 8 }),
         },
         labelLayout: { hideOverlap: true, moveOverlap: "shiftY" as const },
     };
 }
+
+/** THE ON-PLOT TERMINAL SEAT (A-04 · the end-label gutter floor). Below the plot-track floor the
+    right gutter COLLAPSES, so the terminal label cannot sit outside the plot — it seats ON the line
+    instead: right-ALIGNED at the terminal datum (the text runs back over its own line, never off
+    the bezel) and lifted just above the stroke. The label run keeps its meaning; the plot keeps its
+    track. Spread over the terminal label at BOTH its seats (the `directLabels` recipe above and the
+    per-series `endLabel` opt-in in `useTimeSeriesOption`). */
+export const END_LABEL_ON_PLOT = {
+    align: "right" as const,
+    verticalAlign: "bottom" as const,
+    distance: 4,
+} as const;
