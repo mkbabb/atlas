@@ -5,6 +5,12 @@
 // `DataScope` into them once: the reader from the query seams, the measures DERIVED from the
 // columns (no second list), the grain options from the declared groupings, and the export
 // generically over the same columns. A plate declares the scope; nothing hand-rolls a panel.
+//
+// TWO KEYS, TWO CONSUMERS. The reader keys by the ENTITY (`selectionKey`) so a grain projection can
+// intersect it with the route's selection; the table keys by the ROW (`browseKey`) so its virtual
+// window can identify what it recycles. Over any dataset with more than one row per entity — the
+// district-YEAR feed /sci declares — those are different functions, and handing the table the
+// entity key is a duplicate-identity throw. The scope declares both; this binding fans them out.
 
 import { createRowsReader, type ExportGrain, type RowsProjection } from "./rows.js";
 import { encodeFilter } from "./filter-codec.js";
@@ -48,7 +54,8 @@ export function createBrowserFromScope<Row, Scope>(
     const rowsReader = createRowsReader<Row, Scope>({
         dataset: scope.dataset,
         filterPredicate: scope.filterPredicate,
-        rowKey: scope.rowKey,
+        // The reader's key is the SELECTION key — the entity, repeated across the grain.
+        rowKey: scope.selectionKey,
         routeUniverse: scope.routeUniverse,
         groupings: scope.grains,
         // The measures DERIVE from the columns — a numeric column IS its own measure declaration.
@@ -73,7 +80,8 @@ export function createBrowserFromScope<Row, Scope>(
         rowsReader,
         availableGrains,
         columns: scope.columns.map(({ key, label, value }) => ({ key, label, value })),
-        rowKey: scope.rowKey,
+        // The table's key is the BROWSE identity — one per rendered row, never the entity key.
+        rowKey: scope.browseKey,
         exportPayload: (
             projection: RowsProjection<Row, Scope>,
             vizId: string,

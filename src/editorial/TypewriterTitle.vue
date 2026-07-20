@@ -4,8 +4,7 @@
 // variety today (demand/usf-integrity/vft-germination — RESEARCH §1.3/§4-ARM-D's "0-for-3"). It
 // wraps glass-ui's `<TypewriterText>` (installed 4.2.0, no fence) and is the `treatment:"typewriter"`
 // arm of the A-15 title register — the essay host's `EssayTitle` register mounts it for a
-// `TitleFacet` that declares typewriter (a still-un-remapped `() => h(TypewriterTitle)` site is
-// subsumed by the SAME register at runtime until it remaps to the facet).
+// `TitleFacet` that declares typewriter.
 //
 // ── A-12 · THE HONEST CURSOR (ANNEX-P P-01, owner: "for the titles that type-write in, we should
 // disable the cursor") ────────────────────────────────────────────────────────────────────────

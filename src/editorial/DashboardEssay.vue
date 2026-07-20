@@ -310,18 +310,13 @@ function heroPropsOf(hero: HeroFacet): ReturnType<typeof resolveHeroSystem>["her
 }
 
 /** THE TITLE REGISTER (A-15) — resolve a chapter's title onto the ONE register: the plain-string
-    arm, the `TitleFacet` 3-arm register (`EssayTitle`, position-derived clock/seed/boil), and the
-    SUBSUMPTION of a legacy render-slot factory (rd6 R-2) — a site still shaped `() => VNodeChild`
-    keeps PAINTING until it remaps to a `TitleFacet` at the touches. The `ChapterTitle` type dropped
-    the function arm (contract/types.ts), so a factory is a runtime form the type forbids; the ONE
-    register invokes it here, never a parallel path. */
+    arm and the `TitleFacet` 3-arm register (`EssayTitle`, position-derived clock/seed/boil). */
 function TitleSlot(props_: {
     title: ChapterTitle;
     lead: boolean;
     seed: number;
 }): VNodeChild {
     const t = props_.title;
-    if (typeof t === "function") return (t as () => VNodeChild)();
     if (typeof t === "string") return t;
     return h(EssayTitle, { facet: t, lead: props_.lead, seed: props_.seed });
 }
@@ -411,9 +406,8 @@ function TitleSlot(props_: {
                         {{ toRoman(figures[i]!) }} · {{ chapter.eyebrow }}
                     </p>
                     <h2 class="text-section-fluid">
-                        <!-- THE TITLE REGISTER (A-15) — a plain string, a `TitleFacet` (the 3-arm
-                             register: plain/typewriter/lettering + marginalia), or a legacy
-                             render-slot factory subsumed until its site remaps. `lead`/`seed` are
+                        <!-- THE TITLE REGISTER (A-15) — a plain string or a `TitleFacet` (the 3-arm
+                             register: plain/typewriter/lettering + marginalia). `lead`/`seed` are
                              position-derived (the first masthead beat inks on the load clock). -->
                         <TitleSlot
                             :title="chapter.title"

@@ -11,20 +11,25 @@ import type { DataScope } from "../../src/platform/provenance/data-scope";
 
 interface Row {
     lea: string;
+    year: number;
     cost: number;
 }
 
-/** One declared scope — the A-33 arm the browser now binds from. */
+/** One declared scope — the A-33 arm the browser now binds from. The dataset carries a district
+    TWICE (two years), the shape every real feed has: the entity key repeats, the row identity
+    does not, and the browser must key each consumer by the right one. */
 const scope: DataScope<Row, string> = {
     source: "sci-districts",
     encoding: { x: "lea", y: "cost" },
     grainNoun: "districts",
     dataset: () => [
-        { lea: "010", cost: 4 },
-        { lea: "020", cost: 6 },
+        { lea: "010", year: 2023, cost: 4 },
+        { lea: "010", year: 2024, cost: 5 },
+        { lea: "020", year: 2024, cost: 6 },
     ],
     filterPredicate: () => ({ op: "any" }),
-    rowKey: (row) => `district:${row.lea}`,
+    selectionKey: (row) => `district:${row.lea}`,
+    browseKey: (row) => `${row.lea}-${row.year}`,
     routeUniverse: () => "sci-lea",
     grains: [
         {
@@ -54,11 +59,20 @@ describe("SourceDataBrowser", () => {
             { kind: "selection" },
         ]);
 
+        // The two keys fan out to their two consumers: the entity key repeats across the years the
+        // reader intersects on; the table's identities are one per row, so nothing collides.
+        expect(scope.dataset().map(scope.selectionKey)).toEqual([
+            "district:010",
+            "district:010",
+            "district:020",
+        ]);
+        expect(new Set(scope.dataset().map(bound.rowKey)).size).toBe(3);
+
         const projection = bound.rowsReader.project({ kind: "dataset" }, []);
-        expect(projection.rows).toHaveLength(2);
+        expect(projection.rows).toHaveLength(3);
 
         const payload = bound.exportPayload(projection, "districts");
-        expect(payload.rows).toHaveLength(2);
+        expect(payload.rows).toHaveLength(3);
         expect(payload.meta.source.label).toBe("sci-districts");
         expect(payload.meta.filterExplain).toBe("All rows — no filter active");
     });

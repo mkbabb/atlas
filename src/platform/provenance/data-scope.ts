@@ -39,10 +39,20 @@ export interface DataScope<Row, Scope = unknown> {
     readonly grainNoun: string;
     readonly dataset: () => readonly Row[];
     readonly filterPredicate: () => Predicate<Row>;
-    readonly rowKey: (row: Row) => string;
+    /** The canonical `{kind}:{id}` SELECTION key this row represents — what the reader intersects
+        with the route's selected keys, and the only key `parseSelKey` ever sees. It names the
+        ENTITY, not the row: a district-year dataset repeats one district's key across its years,
+        so this is non-unique by construction and must never be made unique to satisfy a table. */
+    readonly selectionKey: (row: Row) => string;
     readonly routeUniverse: (row: Row) => RouteUniverse;
     /** The grain toggle AND the aggregation reader — one list, two readers. */
     readonly grains: readonly RowsGrouping<Row, Scope>[];
     /** ── browse ── the columns the table, the CSV, and `provenance.attributes` all read. */
     readonly columns: readonly DataScopeColumn<Row>[];
+    /** The browse table's ROW IDENTITY — unique across `dataset()` and across the aggregate shells
+        every grain creates, because the virtualized grid keys its rows by it and throws on a
+        collision. It names the ROW, not the entity: where `selectionKey` says "district 010", this
+        says "district 010, 2014". The two are separate declarations because they answer separate
+        questions — fusing them is the duplicate-identity defect waiting to fire. */
+    readonly browseKey: (row: Row) => string;
 }

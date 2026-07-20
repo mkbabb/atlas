@@ -125,10 +125,11 @@ function scopeStub(): VizContract["sourceData"] {
         grainNoun: "rows",
         dataset: () => [],
         filterPredicate: () => ({ op: "any" }),
-        rowKey: () => "row:1",
+        selectionKey: () => "row:1",
         routeUniverse: () => "sci-lea",
         grains: [],
         columns: [{ key: "value", label: "Value", value: () => 1 }],
+        browseKey: () => "row-1",
     };
 }
 

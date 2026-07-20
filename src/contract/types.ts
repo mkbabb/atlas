@@ -323,9 +323,7 @@ export type ProvenanceKind = (typeof PROVENANCE_KINDS)[number];
     The VNode `() => VNodeChild` arm is GONE (clean-break, no alias): a hand-rolled render factory —
     inline OR laundered through a named factory — has nowhere to type, so the whole title leak fails
     `tsc`. The host (`DashboardEssay`'s title register) resolves the three lossless-remap treatment
-    arms onto the extant title primitives (`TypewriterTitle`/`HandMark`/`ScrollLetteringHeading`),
-    and SUBSUMES a still-un-remapped factory at runtime so legacy sites keep painting until they
-    remap. */
+    arms onto the extant title primitives (`TypewriterTitle`/`HandMark`/`ScrollLetteringHeading`). */
 export interface TitleFacet {
     /** The accessible title — ALWAYS whole across every arm (the aria name never mid-types, never
         fragments). May embed ONE `[bracket]` span the `lettering` treatment picks out as the
