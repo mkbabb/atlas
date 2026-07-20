@@ -34,17 +34,32 @@ vi.mock("../../src/charts/legend/VizDescription.vue", async () => {
     return { default: defineComponent(() => () => null) };
 });
 
+// The ONE generic browser the host mounts from a declared scope (A-33) — stubbed to a marker div so
+// the assertion reads the SEATING, not the browser's own machinery.
+vi.mock("../../src/filter/ui/SourceDataBrowser.vue", async () => {
+    const { defineComponent, h } = await import("vue");
+    // `__esModule` so the host's `defineAsyncComponent` unwraps `.default`, exactly as a real
+    // dynamic-import namespace does.
+    return {
+        __esModule: true,
+        default: defineComponent({
+            name: "SourceDataBrowser",
+            setup: () => () => h("div", { "data-source-panel": "" }, "grid"),
+        }),
+    };
+});
+
 // The open-state knob the host would derive from the `?browse=` param — driven per-test so the closed
 // and open renders are both pinned off the ONE real template.
 const host = vi.hoisted(() => ({ sourceDataOpen: false }));
 
-// The host composable stub — sourceData is DRIVEN BY THE CONTRACT (`contract.sourceData?.panel`), so
+// The host composable stub — sourceData is DRIVEN BY THE CONTRACT (the declared `DataScope`), so
 // each test declares/omits the grid via the contract it passes, exactly as a real plate does. The
 // region id is the real per-contract slug so the aria-details assertion pins the true binding.
 vi.mock("../../src/charts/frame/useVizPlate", async () => {
     const { computed, ref, useSlots } = await import("vue");
     return {
-        useVizPlate: (props: { contract: VizContract & { sourceData?: { panel?: unknown } } }) => ({
+        useVizPlate: (props: { contract: VizContract }) => ({
             slots: useSlots(),
             showOwnTitle: false,
             legend: null,
@@ -70,8 +85,8 @@ vi.mock("../../src/charts/frame/useVizPlate", async () => {
             activeDimChips: [],
             activeFilterCount: 0,
             showAppliedSummary: false,
-            sourceData: props.contract.sourceData?.panel ?? null,
-            sourceEventHub: null,
+            sourceData: props.contract.sourceData ? { columns: [] } : null,
+            sourceEventHub: props.contract.sourceData ? {} : null,
             sourceDataOpen: host.sourceDataOpen,
             sourceDataRegionId: `viz-source-data-${props.contract.id}`,
             openSourceData: () => undefined,
@@ -101,6 +116,21 @@ vi.mock("@mkbabb/glass-ui/drawer", inert);
 vi.mock("@mkbabb/glass-ui/button", inert);
 
 import VizPlate from "../../src/charts/frame/VizPlate.vue";
+
+/** A minimal declared scope — the shape only; the fold itself is unit-proven beside the browser. */
+function scopeStub(): VizContract["sourceData"] {
+    return {
+        source: "grid-plate-rows",
+        encoding: { x: "area", y: "value" },
+        grainNoun: "rows",
+        dataset: () => [],
+        filterPredicate: () => ({ op: "any" }),
+        rowKey: () => "row:1",
+        routeUniverse: () => "sci-lea",
+        grains: [],
+        columns: [{ key: "value", label: "Value", value: () => 1 }],
+    };
+}
 
 function baseContract(overrides: Partial<VizContract> = {}): VizContract {
     return {
@@ -138,10 +168,7 @@ describe("VizPlate source-grid capability (CD-09)", () => {
     });
 
     it("suppresses the passive table but binds NO aria-details while the declared grid is CLOSED (no dangling IDREF)", async () => {
-        const contract = baseContract({
-            // the declared capability — a SourceDataSpec panel (the SourceDataBrowser class)
-            sourceData: { panel: {} },
-        } as Partial<VizContract>);
+        const contract = baseContract({ sourceData: scopeStub() });
         const html = await render(contract);
         // PA-9 stands: the capability suppresses the passive table even at rest (no resurrection)
         expect(html).not.toContain("Grid plate — data table");
@@ -153,13 +180,7 @@ describe("VizPlate source-grid capability (CD-09)", () => {
 
     it("binds aria-details to the grid region — which exists in the same render — while the grid is OPEN", async () => {
         host.sourceDataOpen = true;
-        const Panel = defineComponent({
-            name: "SourcePanel",
-            setup: () => () => h("div", { "data-source-panel": "" }, "grid"),
-        });
-        const contract = baseContract({
-            sourceData: { panel: Panel },
-        } as Partial<VizContract>);
+        const contract = baseContract({ sourceData: scopeStub() });
         const html = await render(contract);
         // the passive table stays suppressed (capability-keyed, unaffected by open state)
         expect(html).not.toContain("Grid plate — data table");

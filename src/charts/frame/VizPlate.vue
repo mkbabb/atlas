@@ -24,7 +24,7 @@
 //   • ChartDataTable  — the a11y rows that ARE the export payload (E3, off the contract).
 //   • VizDescription / VizKeyStats / PlateVoid — the new furniture rungs (E1 / B4 / E8).
 //   • vizExport       — the getDataURL / DOM-snapshot / CSV serializers (E3, ZERO heavy dep).
-import { inject, onBeforeUnmount, watch } from "vue";
+import { defineAsyncComponent, inject, onBeforeUnmount, watch } from "vue";
 import { Download, SlidersHorizontal, Maximize2, Minimize2 } from "@lucide/vue";
 import { DockControl, DockTrigger } from "@mkbabb/glass-ui/dock";
 import { Badge } from "@mkbabb/glass-ui/badge";
@@ -45,6 +45,12 @@ import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
 import { STORY_CARD_KEY } from "./story-card-context.js";
 import { useVizPlate, type VizPlateProps } from "./useVizPlate.js";
 import { STAGE_ANATOMY_KEY } from "../contract/scene-contract.js";
+
+/** A-33 — the ONE generic source browser every declared `DataScope` renders through. Loaded only
+    when a plate's `?browse=` aside opens, so the viewer never rides the plate's critical path. */
+const SourceDataBrowser = defineAsyncComponent(
+    () => import("../../filter/ui/SourceDataBrowser.vue"),
+);
 
 const props = withDefaults(defineProps<VizPlateProps>(), { chart: null, nav: null });
 const suppressFoot = inject(STAGE_ANATOMY_KEY, false);
@@ -415,7 +421,7 @@ defineExpose({ archetype });
             />
 
             <aside
-                v-if="!suppressFoot && sourceDataOpen"
+                v-if="!suppressFoot && sourceDataOpen && sourceData && sourceEventHub"
                 :id="sourceDataRegionId"
                 class="viz-plate__source-data"
                 :aria-label="`${contract.title} source data browser`"
@@ -427,8 +433,8 @@ defineExpose({ archetype });
                 >
                     Close source data
                 </button>
-                <component
-                    :is="sourceData"
+                <SourceDataBrowser
+                    v-bind="sourceData"
                     :event-hub="sourceEventHub"
                     :viz-id="contract.id"
                     :event-scope="{ grain: 'viz', vizId: contract.id }"

@@ -31,7 +31,7 @@ import type { VizContract } from "../contract/viz-contract.js";
 import {
     SCENE_KEY,
     type ChapterScene,
-    type ChapterTitle,
+    type SceneProse,
     type SceneAnchor,
     type SceneRuntime,
 } from "../contract/scene-contract.js";
@@ -301,9 +301,10 @@ const graphicComponent = computed<Component | null>(() =>
     isVizContract(props.scene.graphic) ? null : (props.scene.graphic as Component),
 );
 
-/** Render a step's prose — a plain string OR a render-slot factory (the `ChapterTitle` carrier). The
-    SAME function-as-functional-component pattern DashboardEssay's `TitleSlot` uses. */
-function Prose(p: { prose: ChapterTitle }): VNodeChild {
+/** Render a step's prose — a plain string OR a render-slot factory (`SceneProse`). The SAME
+    function-as-functional-component pattern DashboardEssay's title register uses for its runtime
+    subsumption. */
+function Prose(p: { prose: SceneProse }): VNodeChild {
     return typeof p.prose === "function" ? p.prose() : p.prose;
 }
 </script>

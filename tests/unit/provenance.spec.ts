@@ -13,6 +13,7 @@ import type { ProvenanceFacet, ResolvedProvenance } from "../../src/platform/pro
 import { resolveAggregationLevel, reduceOpFor, useAggregationLevel, type AxisGrain } from "../../src/platform/provenance/aggregation";
 import { appendixAnchorId, type AppendixEntry } from "../../src/platform/provenance/appendix";
 import { scopeParts } from "../../src/platform/provenance/provenance-lines";
+import type { DashboardContext } from "../../src/contract/types";
 
 const facet: ProvenanceFacet = {
     dataset: "USAC FRN Status",
@@ -209,6 +210,35 @@ describe("O-A9b (9) — resolveAggregationLevel: the live fold + the multi→sin
         expect(scopeParts({ aggregationLevel: level.value } as ResolvedProvenance).join(" · ")).toBe(
             "FY2025 · NC",
         );
+    });
+
+    it("A-19 (spec-contract §b·D-1) — a ROUTE DECLARES the resolver on its DashboardContext and the seam folds live", () => {
+        const narrowed = ref(false);
+        // The node-1 DECLARATION: the route names its grain axes on the context it already provides
+        // (getters, so the level re-resolves as the view narrows). The RENDER stays the membrane's.
+        const ctx: Pick<DashboardContext, "id" | "aggregation"> = {
+            id: "sci",
+            aggregation: {
+                year: () => axis("FY2016–2026", "FY2025", narrowed.value),
+                spatial: () => axis("all states", "NC", narrowed.value),
+                entity: () => axis("1,150 districts", "single district", narrowed.value),
+                reduceOp: () => "pooled" as const,
+            },
+        };
+        const level = useAggregationLevel(ctx.aggregation);
+        expect(level.value).toEqual({
+            yearGrain: "FY2016–2026",
+            spatialGrain: "all states",
+            entityGrain: "1,150 districts",
+            reduceOp: "pooled",
+        });
+        narrowed.value = true;
+        expect(level.value).toEqual({
+            yearGrain: "FY2025",
+            spatialGrain: "NC",
+            entityGrain: "single district",
+            reduceOp: null,
+        });
     });
 });
 

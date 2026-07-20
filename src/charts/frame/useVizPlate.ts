@@ -14,7 +14,6 @@ import {
     useSlots,
     watch,
     watchEffect,
-    type Component,
 } from "vue";
 import { BEAT_TITLE_KEY } from "../legend/beat-title.js";
 import { useOptionalStageEventHub } from "../contract/scene-contract.js";
@@ -34,6 +33,7 @@ import {
     type DimDeclaration,
     type RouteUniverse,
 } from "../../filter/composables/useFilterDimensions.js";
+import { createBrowserFromScope } from "../../filter/engine/browser-from-scope.js";
 import { useFilterPane } from "../../filter/composables/useFilterPane.js";
 import { useFilterPanel } from "../../filter/composables/useFilterPanel.js";
 import { useVizRegistry, type VizToken } from "../composables/useVizRegistry.js";
@@ -52,14 +52,6 @@ export interface VizPlateProps {
     contract: VizContract;
     chart?: DataUrlSource | null;
     nav?: KeyboardNavSpec<unknown> | null;
-}
-
-/** A persistent stage owns its source seat; a standalone plate owns its own. */
-export function sourcePanelForHost(
-    panel: Component | undefined,
-    stageOwned: boolean,
-): Component | null {
-    return stageOwned ? null : (panel ?? null);
 }
 
 /** E5 — the legend-dock resolution (EXPLICIT opt-in — no magic), pure so the seat is unit-assertable
@@ -425,9 +417,13 @@ const isFullscreen = computed(() => view.figId === props.contract.id);
 const stageEventContext = useOptionalStageEventHub();
 const sourceEventHub =
     stageEventContext?.hub ??
-    (props.contract.sourceData?.panel ? createAtlasEventHub() : null);
+    (props.contract.sourceData ? createAtlasEventHub() : null);
+/** A-33 — the declared scope folded into the ONE generic browser's props (null when the plate
+    declares no scope, or when a persistent stage owns the source seat). */
 const sourceData = computed(() =>
-    sourcePanelForHost(props.contract.sourceData?.panel, stageEventContext !== null),
+    stageEventContext || !props.contract.sourceData
+        ? null
+        : createBrowserFromScope(props.contract.sourceData),
 );
 if (sourceEventHub) {
     if (!stageEventContext)

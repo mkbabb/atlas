@@ -49,7 +49,7 @@ export function triggerDownload(
 
 /** Escape one CSV cell — quote if it carries a comma / quote / newline, doubling inner quotes
     (RFC-4180). KISS, zero-dep. */
-function csvCell(s: string): string {
+export function csvCell(s: string): string {
     if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
     return s;
 }

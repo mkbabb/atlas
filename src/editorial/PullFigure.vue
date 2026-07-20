@@ -91,7 +91,9 @@ const display = computed(() => String(props.value));
         :data-color-kind="colorKind"
     >
         <!-- THE RING-KILL (H.W1.b): the bare audacious slug — its SIZE is its emphasis (no ring). -->
-        <FigureSlug as="span" class="pull-figure__value">{{ display }}</FigureSlug>
+        <FigureSlug as="span" class="pull-figure__value" data-attn-mark="plate-figure">{{
+            display
+        }}</FigureSlug>
 
         <figcaption class="pull-figure__caption">
             <span class="pull-figure__unit eyebrow">{{ unit }}</span>

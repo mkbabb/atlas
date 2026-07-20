@@ -1,8 +1,9 @@
-import { inject, type Component, type InjectionKey, type VNodeChild } from "vue";
+import { inject, type Component, type InjectionKey } from "vue";
 import type { ColorKind } from "../charts/scale/colorKind.js";
 import type { VizContract } from "../charts/contract/viz-contract.js";
 import type { ChapterScene, ChapterStage } from "../charts/contract/scene-contract.js";
 import type { EntityGrain } from "../data/contract.js";
+import type { AggregationSources } from "../platform/provenance/aggregation.js";
 
 export type { EntityGrain } from "../data/contract.js";
 
@@ -168,6 +169,15 @@ export interface DashboardContext {
     dimYears?: () => ReadonlySet<number> | readonly number[];
     /** Optional filter-algebra readout rendered above the selection controls. */
     algebraBody?: Component;
+    /** A-19 (spec-contract §b·D-1) — THE PER-ROUTE AGGREGATION RESOLVER DECLARATION. The route
+        declares its live grain axes (year × spatial × entity) + the active reduce-op as GETTERS off
+        its own filter/selection state (the `dimYears` convention — never a stored `Ref`); the
+        platform folds them through `useAggregationLevel` into the `AggregationLevel` the provenance
+        shape and the filter-view SCOPE band read, so the level RE-RESOLVES as the view narrows
+        ("FY2016–2026 · all states · pooled" ⇒ "FY2025 · NC · single district"). This is the
+        DECLARATION only — the gate/relay/telemetry render is the membrane's. Undefined ⇒ the route
+        declares no aggregation and the scope band stays absent (no phantom rung). */
+    aggregation?: AggregationSources;
     /** The dashboard's floating-filter BODY — the controls the generic FilterShell
         renders inside its chrome. The chrome owns the frame; the body owns its logic
         (its own reset/apply). Undefined ⇒ the dashboard has no floating filter. */
@@ -309,13 +319,54 @@ export type ProvenanceKind = (typeof PROVENANCE_KINDS)[number];
 // `section-anchor beat` wrapper + the reveal binding ONCE per chapter — the single
 // scaffold the three bodies (usf/sci/ecf) collapse onto.
 
-/** A chapter's title CARRIER. A plain `string` renders as bare `<h2>` slot text; a
-    render-slot factory (`() => VNodeChild`) carries the live VNode the body composes —
-    a `<HandMark>` picked-out word, a `<ScrollLetteringHeading>` glyph-scrubbed
-    title — so the host renders BOTH without per-body branching (it just renders the
-    string, or invokes the factory in the `<h2>`). The factory form is how a body keeps
-    its scroll-lettering / hand-underline title under the declarative scaffold. */
-export type ChapterTitle = string | (() => VNodeChild);
+/** THE TITLE REGISTER (A-15 · spec-contract §a.1) — a chapter's title as a CLOSED, typed carrier.
+    The VNode `() => VNodeChild` arm is GONE (clean-break, no alias): a hand-rolled render factory —
+    inline OR laundered through a named factory — has nowhere to type, so the whole title leak fails
+    `tsc`. The host (`DashboardEssay`'s title register) resolves the three lossless-remap treatment
+    arms onto the extant title primitives (`TypewriterTitle`/`HandMark`/`ScrollLetteringHeading`),
+    and SUBSUMES a still-un-remapped factory at runtime so legacy sites keep painting until they
+    remap. */
+export interface TitleFacet {
+    /** The accessible title — ALWAYS whole across every arm (the aria name never mid-types, never
+        fragments). May embed ONE `[bracket]` span the `lettering` treatment picks out as the
+        HandMark run; the brackets are literal-stripped for the aria name and for every
+        non-lettering treatment. WHICH word is marked is DATA, not render. */
+    text: string;
+    /** The closed render register — THREE lossless-remap arms. Omit ⇒ "plain". The illuminated
+        numeral is NOT here — it is D's `Chapter.versal` flank watermark. NO depth field lives here:
+        sub-section depth is the point's POSITION in the manifest recursion (`StoryPoint.points`),
+        never a second declaration. */
+    treatment?: "plain" | "typewriter" | "lettering";
+    /** W-66/O-04 — the title shrinks-into-glass and PERSISTS through the viz. B renders the
+        persistence; A carries the flag (default false). */
+    sticky?: boolean;
+    /** W-59 — the title's OWN entrance/parallax transform, distinct from the beat body's reveal
+        axis. Omit ⇒ follows the beat reveal. C authors the curve. */
+    scrollIn?: ScrollDir;
+    /** THE ONE NARROW TYPED DOOR — the inline post-title device as a PROP-BAG (dial 10, owner-ruled:
+        the typed bag stands, un-folded to `ornament`). It carries per-title DATA a bare Component
+        cannot hold: the `label` (the discovery's aria name) + the `reveal` (its discovered detail, a
+        value at manifest creation — the runtime case types cleanly). The glyph stays the component's
+        own default. A component REFERENCE, never a render factory. */
+    marginalia?: { component: Component; label: string; reveal: string };
+}
+
+/** A-34 · THE ATTENTION-MARK ROSTER — the closed set of display-register marks that DECLARE
+    themselves in the DOM with a `data-attn-mark` attribute. The one-loud-move discipline (at most
+    one thesis-loud mark in a column, and that mark the clear apex) is only measurable on app DOM if
+    the marks are named there; a harness-only class measures the harness. Prose, deks, captions and
+    axis ticks are never marks. DISTINCT from the extant `data-attn` rung (`hero`/`data`/`legend`/
+    `chrome`/`pull`), which names the elevation ink a surface wears: the rung says how LOUD, the
+    roster says WHICH elements the apex is measured over. The `versal` member is stamped by the
+    atmosphere render that owns the flank watermark (`Chapter.versal`); the other two stamp at their
+    platform mounts. */
+export type AttnMark = "aggregate-hero" | "versal" | "plate-figure";
+
+/** A chapter's title CARRIER — a plain `string` (rendered as bare `<h2>` text) OR a `TitleFacet`
+    (the 3-arm register the host resolves). NO function arm survives, in any form (A-15 clean-break):
+    the VNode leak dies at the type, so a laundered named-factory reference fails `tsc` exactly as an
+    inline arrow does. */
+export type ChapterTitle = string | TitleFacet;
 
 /** The viz a chapter mounts in its beat body. A feature-plate `Component` (the plate owns
     its own `VizContract`/`VizPlate`, the way the bodies mount `<FundLedgerFlow />` today)
@@ -422,8 +473,8 @@ export interface Chapter {
     icon: Component;
     /** The eyebrow kicker prose (the text beside the icon + Roman, e.g. "Per-capita ↔ per-area"). */
     eyebrow: string;
-    /** The `<h2>` title — a plain string OR a render-slot factory carrying a live VNode
-        (`<HandMark>`/`<ScrollLetteringHeading>`), rendered identically by the host. */
+    /** The `<h2>` title — a plain string OR a `TitleFacet` (the 3-arm register:
+        plain/typewriter/lettering + marginalia), resolved by the host title register. */
     title: ChapterTitle;
     /** The dek prose under the title (the `text-prose-muted` paragraph). GOVERNED COPY —
         the copy-conformance gate's object-literal extractor reaches `dek:` here (I3 §7). */
@@ -444,6 +495,12 @@ export interface Chapter {
         passthrough to the dropped-cap. Omit ⇒ `diverging` / `0.5` (the neutral key). */
     colorKind?: ColorKind;
     hinge?: number;
+    /** A-20 (CO1) — the illuminated numeral's REGISTER. The versal is a flank watermark,
+        `aria-hidden` decoration beside the separately-labelled `<h2>`, never a title treatment:
+        `"off"` renders none; `"atmosphere"` the recessed watermark; `"legend"` the live-legend
+        prominence, the one beat where the numeral IS the plate's key. The field is authored HERE;
+        the render + the omission default belong to the atmosphere family. */
+    versal?: "off" | "atmosphere" | "legend";
 }
 
 /** A chapter SPINE entry — a `Chapter` minus its `viz` (the heavy figure component). The

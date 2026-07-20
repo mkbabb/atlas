@@ -2,10 +2,16 @@
 // editorial/TypewriterTitle.vue — THE TYPEWRITER TITLE (O-A26 · DIR-5 ARM D). A ONCE-classified
 // title treatment for the 3 routes that carry NEITHER `ScrollLetteringHeading` NOR any reveal
 // variety today (demand/usf-integrity/vft-germination — RESEARCH §1.3/§4-ARM-D's "0-for-3"). It
-// wraps glass-ui's `<TypewriterText>` (installed 4.2.0, no fence) and renders as a `ChapterTitle`
-// factory — the SAME `() => VNodeChild` shape `HandMark`/`ScrollLetteringHeading` already
-// return (`DashboardEssay.vue`'s `isTitleFactory`/`TitleSlot`, zero host changes: a 3rd factory in
-// an already-polymorphic slot).
+// wraps glass-ui's `<TypewriterText>` (installed 4.2.0, no fence) and is the `treatment:"typewriter"`
+// arm of the A-15 title register — the essay host's `EssayTitle` register mounts it for a
+// `TitleFacet` that declares typewriter (a still-un-remapped `() => h(TypewriterTitle)` site is
+// subsumed by the SAME register at runtime until it remaps to the facet).
+//
+// ── A-12 · THE HONEST CURSOR (ANNEX-P P-01, owner: "for the titles that type-write in, we should
+// disable the cursor") ────────────────────────────────────────────────────────────────────────
+// The ONE wrapper mount below passes `:cursor-visible="false"` — a title is a settled masthead, not
+// a live terminal, so the blinking caret is noise. This is the ONLY seat: glass-ui's own
+// `cursorVisible: true` default stays UNTOUCHED (root-repo law — the cursor is honest elsewhere).
 //
 // ── THE RECONCILIATION CALL (COMPOSE, never REPLACE) ─────────────────────────────────────────
 // usf/sci/ecf/speedtest keep their bidirectional, scrub-reversible `ScrollLetteringHeading`
@@ -74,6 +80,7 @@ const { stop } = useIntersectionObserver(
             v-if="armed"
             :text="props.text"
             :respect-reduced-motion="true"
+            :cursor-visible="false"
             aria-hidden="true"
         />
         <span v-else aria-hidden="true">{{ props.text }}</span>

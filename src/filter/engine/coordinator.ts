@@ -231,10 +231,26 @@ export function createCoordinator<Row>(
     const activeCache = new Map<string, Signal<boolean>>();
     const domainCache = new Map<string, Signal<[number, number] | readonly string[]>>();
     const facetsCache = new Map<string, Signal<Map<string, number>>>();
+    const presentedCache = new WeakMap<() => string, Signal<string | undefined>>();
+
+    // The per-(client[/field]) memo keys join on NUL — a client id or field carrying a space must not
+    // alias another pair ("a b"+"c" vs "a"+"b c" read the same node).
+    const memoKey = (clientId: string, field: string) => `${clientId}\u0000${field}`;
 
     function connect(client: Client<Row>): () => void {
         clients.set(client.id, client);
-        return () => clients.delete(client.id);
+        return () => {
+            // Only the CURRENT registrant disconnects: a re-mount under the same id must not be
+            // unregistered by the previous mount's stale closure. Its memo nodes go with it, so a
+            // route/viz churn never accretes dead computeds (the caches are per-client, unbounded).
+            if (clients.get(client.id) !== client) return;
+            clients.delete(client.id);
+            filteredCache.delete(client.id);
+            activeCache.delete(client.id);
+            for (const cache of [domainCache, facetsCache])
+                for (const key of cache.keys())
+                    if (key.startsWith(`${client.id}\u0000`)) cache.delete(key);
+        };
     }
 
     function filteredFor(clientId: string): Signal<readonly Row[]> {
@@ -267,7 +283,7 @@ export function createCoordinator<Row>(
         clientId: string,
         field: string,
     ): Signal<[number, number] | readonly string[]> {
-        const key = `${clientId} ${field}`;
+        const key = memoKey(clientId, field);
         const cached = domainCache.get(key);
         if (cached) return cached;
         const sig = computed<[number, number] | readonly string[]>(() => {
@@ -298,7 +314,7 @@ export function createCoordinator<Row>(
     }
 
     function facetsFor(clientId: string, field: string): Signal<Map<string, number>> {
-        const key = `${clientId} ${field}`;
+        const key = memoKey(clientId, field);
         const cached = facetsCache.get(key);
         if (cached) return cached;
         const sig = computed<Map<string, number>>(() => {
@@ -320,7 +336,13 @@ export function createCoordinator<Row>(
     }
 
     function presentedFieldFor(activeVizId: () => string): Signal<string | undefined> {
-        return computed(() => clients.get(activeVizId())?.presents);
+        // Memoized per GETTER, like every other accessor — a surface re-reading the presented dim on
+        // each render reuses one node instead of minting a computed per call.
+        const cached = presentedCache.get(activeVizId);
+        if (cached) return cached;
+        const sig = computed<string | undefined>(() => clients.get(activeVizId())?.presents);
+        presentedCache.set(activeVizId, sig);
+        return sig;
     }
 
     return {

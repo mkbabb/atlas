@@ -19,7 +19,7 @@
 // from `colorKind.ts` / `ColorScale.ts` (the keystone), so the description dek, the key stats, and
 // the body marks all wear ONE colour locus (i0-colorkind-law).
 
-import { isVNode, type Component } from "vue";
+import { isVNode } from "vue";
 import type { EChartsOption } from "echarts";
 import type { ColorKind } from "../scale/colorKind.js";
 import type { VizOptionSpec } from "../composables/useVizOptions.js";
@@ -29,6 +29,7 @@ import type { ExportFilterContext } from "../lib/vizExport.js";
 import type { SelectionKind } from "./selection-contract.js";
 import type { VariantSpec } from "../../motion/variant-spec.js";
 import type { ProvenanceFacet } from "../../platform/provenance/provenance-contract.js";
+import type { DataScope } from "../../platform/provenance/data-scope.js";
 import type { AtlasEventContract, EventScope } from "../../events/index.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -189,10 +190,11 @@ export interface SourcePanelProps {
     readonly vizId: string;
 }
 
-/** The viz-scoped source-browser panel. Query, grains, and serializers remain consumer-owned. */
-export interface SourceDataSpec {
-    readonly panel: Component<SourcePanelProps>;
-}
+/** A-33 — the contract seat for a plate's declared `DataScope`. The row type is erased HERE and
+    only here: a plate declares its scope over its OWN row, and the host builder that consumes it
+    re-infers that row generically. An existential the type system cannot spell (the
+    `CSSKeyframesAnimation<any>` precedent). */
+export type DeclaredDataScope = DataScope<any, any>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE RENDER KIND + THE CONTRACT.
@@ -406,8 +408,10 @@ export interface VizContract {
     keyStats?: () => KeyStat[];
     /** E3 — the CSV/PNG payload spec. REQUIRED. */
     export: ExportSpec;
-    /** RM-5 — the delegating download seat opens this panel at `?browse=<id>`. */
-    sourceData?: SourceDataSpec;
+    /** A-33 — the plate's declared DATA SCOPE (source ⊕ query ⊕ columns). The host builds the one
+        generic browser from it and opens it at `?browse=<id>`; a plate that declares none has no
+        viewer. Declarative — no Component. */
+    sourceData?: DeclaredDataScope;
     /** E2 — the options spec. Declare `[]` explicitly rather than omit (no silent omission). */
     options?: VizOptionSpec[];
     /** Alternate views over one mounted chart instance. */

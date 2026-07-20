@@ -174,6 +174,7 @@ describe("dismiss and hover interaction cores", () => {
         const bridge = createHoverBridge({
             anchor: () => ({ left: 0, right: 10, top: 0, bottom: 10 }),
             card: () => ({ left: 20, right: 40, top: 0, bottom: 20 }),
+            pointer: () => null,
             graceMs: 160,
             onRelease: released,
         });
@@ -183,5 +184,28 @@ describe("dismiss and hover interaction cores", () => {
         bridge.destroy();
         expect(bridge.held).toBe(false);
         expect(released).toHaveBeenCalledOnce();
+    });
+
+    it("A-18 (β-gate F6): the dwell outlives the grace and only leaving the hull releases", () => {
+        vi.useFakeTimers();
+        const released = vi.fn();
+        let pointer: readonly [number, number] | null = [15, 8]; // inside the anchor∪card transit
+        const bridge = createHoverBridge({
+            anchor: () => ({ left: 0, right: 10, top: 0, bottom: 10 }),
+            card: () => ({ left: 20, right: 40, top: 0, bottom: 20 }),
+            pointer: () => pointer,
+            graceMs: 160,
+            onRelease: released,
+        });
+        bridge.engage();
+        bridge.release();
+        vi.advanceTimersByTime(1600); // the grace expires ten times over — the card PERSISTS
+        expect(released).not.toHaveBeenCalled();
+        expect(bridge.held).toBe(true);
+        pointer = [500, 500]; // the pointer leaves the hull
+        vi.advanceTimersByTime(160);
+        expect(released).toHaveBeenCalledOnce();
+        expect(bridge.held).toBe(false);
+        bridge.destroy();
     });
 });

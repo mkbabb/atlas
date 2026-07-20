@@ -170,34 +170,13 @@ export function dimKeyOf(dim: Pick<DimDeclaration, "key">): string {
 }
 
 /**
- * THE NEGATIVE CONTROL — per-VIZ keying (the N×M panel explosion the gate CATCHES). Each viz
- * holds its OWN copy of a dimension (`"<vizId>::<dim>"`), so a `region` selected on plate A
- * does NOT reach plate B — the shared dim does NOT persist across like vizzes. Exported SO the
- * gate (arm d) can contrast it against `dimKeyOf` STRUCTURALLY: per-dimension keying yields ONE
- * key for a shared dim across two vizzes (persist), per-viz keying yields TWO distinct keys
- * (no persist === the explosion === RED). This is NOT used by the host — it exists to make the
- * keystone falsifiable.
+ * THE VIZ-SCOPED KEY — per-VIZ keying (`"<vizId>::<dim>"`), the N×M panel explosion this module's
+ * keystone REFUSES: each viz would hold its OWN copy of a dimension, so a `region` selected on
+ * plate A never reaches plate B. Kept as the named CONTRAST to `dimKeyOf` (and for a genuinely
+ * viz-private cell), never as the host's cell key.
  */
 export function vizScopedKeyOf(vizId: string, dim: Pick<DimDeclaration, "key">): string {
     return `${vizId}::${dim.key}`;
-}
-
-/**
- * The per-DIMENSION keying is INDEPENDENT of the viz: two distinct vizzes declaring the same
- * dimension `key` resolve to the SAME `dimKeyOf` (the shared-attrs-persist relation), while
- * `vizScopedKeyOf` would split them. This boolean IS the gate's structural assertion in one
- * call — true === per-dimension (shared persists), and `vizScopedKeyOf(a,d) !== vizScopedKeyOf(b,d)`
- * is its falsifying twin (per-viz === explosion).
- */
-export function sharesDimensionCell(
-    dim: Pick<DimDeclaration, "key">,
-    vizA: string,
-    vizB: string,
-): boolean {
-    void vizA;
-    void vizB;
-    // Per-DIMENSION keying ignores the viz — both like vizzes resolve to the one dim cell.
-    return dimKeyOf(dim) === dimKeyOf(dim);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -255,7 +234,21 @@ export function useFilterDimensions(
         return m;
     });
 
+    /** ONE memoized cell node per dim KEY — a plate resolving `cellFor(key)` every render reuses one
+        `computed` instead of re-reading the stores and re-allocating a cell per call (the
+        coordinator's memo law). The node reads `byKey` live, so a declaration change re-resolves. */
+    const cellCache = new Map<string, ComputedRef<DimCell | null>>();
+
     function cellFor(dimKey: string): DimCell | null {
+        let cell = cellCache.get(dimKey);
+        if (!cell) {
+            cell = computed<DimCell | null>(() => resolveCell(dimKey));
+            cellCache.set(dimKey, cell);
+        }
+        return cell.value;
+    }
+
+    function resolveCell(dimKey: string): DimCell | null {
         const d = byKey.value.get(dimKey);
         if (!d) return null; // not declared by the active viz-set — no cross-bleed.
 
@@ -264,14 +257,15 @@ export function useFilterDimensions(
             // membership is the native-grain back-projection of the declared kind, read off the
             // SHIPPED `selectedIdsOf` (NEVER a hand-rolled Set). A dim that declares `set` without
             // a `selectionKind` is a contract error (arm a's type makes `selectionKind` required
-            // for `set`); we fall back to an empty set rather than mis-grain.
-            const kind = d.selectionKind;
+            // for `set`): it resolves to NO CELL — never to a borrowed grain the universe guard
+            // would then read as truth.
+            if (!d.selectionKind) return null;
             return {
                 key: d.key,
                 arity: "set",
                 universe: d.universe,
-                kind: kind ?? "district",
-                value: kind ? sel.selectedIdsOf(kind) : new Set<string>(),
+                kind: d.selectionKind,
+                value: sel.selectedIdsOf(d.selectionKind),
             };
         }
 

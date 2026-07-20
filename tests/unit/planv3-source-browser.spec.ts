@@ -5,14 +5,62 @@ import {
     reconcileMountedFocus,
     useSourceBrowserEvents,
 } from "../../src/filter/ui/source-data-browser";
-import { sourcePanelForHost } from "../../src/charts/frame/useVizPlate";
+import { createBrowserFromScope } from "../../src/filter/engine/browser-from-scope";
 import { emitSourceFilterState } from "../../src/filter/ui/source-filter-state";
+import type { DataScope } from "../../src/platform/provenance/data-scope";
+
+interface Row {
+    lea: string;
+    cost: number;
+}
+
+/** One declared scope — the A-33 arm the browser now binds from. */
+const scope: DataScope<Row, string> = {
+    source: "sci-districts",
+    encoding: { x: "lea", y: "cost" },
+    grainNoun: "districts",
+    dataset: () => [
+        { lea: "010", cost: 4 },
+        { lea: "020", cost: 6 },
+    ],
+    filterPredicate: () => ({ op: "any" }),
+    rowKey: (row) => `district:${row.lea}`,
+    routeUniverse: () => "sci-lea",
+    grains: [
+        {
+            scope: "state",
+            by: () => "NC",
+            create: (_key, representative) => representative,
+        },
+    ],
+    columns: [
+        { key: "lea", label: "District", value: (row) => row.lea },
+        {
+            key: "cost",
+            label: "Cost",
+            value: (row) => row.cost,
+            measure: { kind: "extensive" },
+        },
+    ],
+};
 
 describe("SourceDataBrowser", () => {
-    it("gives the source panel to exactly one host", () => {
-        const panel = {} as never;
-        expect(sourcePanelForHost(panel, false)).toBe(panel);
-        expect(sourcePanelForHost(panel, true)).toBeNull();
+    it("folds a declared scope into the one generic browser's props", () => {
+        const bound = createBrowserFromScope(scope);
+        expect(bound.columns.map((c) => c.key)).toEqual(["lea", "cost"]);
+        expect(bound.availableGrains).toEqual([
+            { kind: "dataset" },
+            { kind: "aggregation", scope: "state" },
+            { kind: "selection" },
+        ]);
+
+        const projection = bound.rowsReader.project({ kind: "dataset" }, []);
+        expect(projection.rows).toHaveLength(2);
+
+        const payload = bound.exportPayload(projection, "districts");
+        expect(payload.rows).toHaveLength(2);
+        expect(payload.meta.source.label).toBe("sci-districts");
+        expect(payload.meta.filterExplain).toBe("All rows — no filter active");
     });
 
     it("restores one tab stop when pointer scrolling recycles the focused row", () => {

@@ -78,7 +78,7 @@ const secondSeam = computed(
                 class="story-card"
                 :class="{ 'story-card--keyline': facet.frame === 'keyline' }"
                 :data-card-mode="facet.mode ?? 'plate'"
-                :data-figure-scale="facet.figureScale ?? 'contained'"
+                :data-track="facet.track ?? 'wide'"
                 data-testid="story-card"
             >
                 <header
@@ -133,17 +133,29 @@ const secondSeam = computed(
     gap: var(--card-pad-title-gap);
 }
 .story-card__sector {
+    /* every sector fills its grid column; the measure-clamped sectors below cap + centre
+       within it. A sector with size-contained content (VizAggregateStats' `container-type`
+       band) has 0px max-content, so WITHOUT this definite inline-size it shrink-wraps to 0 →
+       `100cqi` 0 → the figure-slug `min()` floors every LEAD to 0px (the P1 invisible-lead). */
     min-inline-size: 0;
-}
-.story-card__figure {
     inline-size: 100%;
 }
-.story-card[data-figure-scale="contained"] .story-card__figure,
+.story-card[data-track="measure"] .story-card__figure,
 .story-card__stats,
 .story-card__prose,
 .story-card__appendix {
     max-inline-size: var(--measure-prose, 72ch);
     margin-inline: auto;
+}
+/* A-41 · THE TRACK (D-2) — the figure rides the BUILT breakout track by default. `wide` names
+   `--measure-figure` at the card, so the width authority is declared here rather than inherited by
+   accident from the route body; `full` bleeds past it (maps). `measure` is the clamp above. */
+.story-card[data-track="wide"] .story-card__figure {
+    max-inline-size: var(--measure-figure);
+    margin-inline: auto;
+}
+.story-card[data-track="full"] .story-card__figure {
+    max-inline-size: none;
 }
 .story-card > .story-card__appendix {
     margin-block-start: var(--card-pad-footer);

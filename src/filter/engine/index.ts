@@ -18,3 +18,4 @@ export * from "./coordinator.js";
 export * from "./filter-codec.js";
 export * from "./route-fold.js";
 export * from "./rows.js";
+export * from "./browser-from-scope.js";

@@ -47,13 +47,14 @@
 // PRM). The @supports fallback is thus the timeline's terminal `seek(1)`-equivalent: ONE reveal
 // engine on ONE clock. (Phase-A SHAPE: subscribes to each section's own scroll position; on the
 // Phase-C re-pin the source re-seats onto the BC `useScrollTrigger` page-reader — a one-line swap.)
-import { computed, provide, ref, watch, type Component, type VNodeChild } from "vue";
+import { computed, h, provide, ref, watch, type Component, type VNodeChild } from "vue";
 import { useDeck } from "@mkbabb/glass-ui/deck";
 import { useSectionReveal } from "../motion/useScrollTimeline.js";
 import { supportsViewTimeline } from "../motion/useScrollProgress.js";
 import { useReducedMotion } from "../motion/useReducedMotion.js";
 import { toRoman } from "../platform/composables/useRomanNumeral.js";
 import Beat from "./Beat.vue";
+import EssayTitle from "./EssayTitle.vue";
 import AnimatedRule from "./AnimatedRule.vue";
 import DashboardHero from "./DashboardHero.vue";
 import StoryCard from "./StoryCard.vue";
@@ -253,16 +254,10 @@ const revealStyles = reveals.map((r, i) =>
     }),
 );
 
-/** Is the title a render-slot factory (a live VNode carrier) vs a plain string? */
-function isTitleFactory(t: ChapterTitle): t is () => VNodeChild {
-    return typeof t === "function";
-}
-
-/** Render a chapter's title — invoke the factory (the live <HandMark>/<ScrollLettering>
-    VNode) or render the plain string. ONE call site, no per-body branching (the host renders
-    BOTH shapes the same way: a string is wrapped as text, a factory is invoked). */
-function renderTitle(t: ChapterTitle): VNodeChild {
-    return isTitleFactory(t) ? t() : t;
+/** The HandMark grain seed for a masthead beat's picked-word title — a host constant rotated by the
+    beat's masthead phase (the 3..6 pool; a seed is wobble determinism, not data — no `seed` field). */
+function titleSeed(i: number): number {
+    return 3 + (phases[i]! % 4);
 }
 
 /** P-CF06 · THE `data-reveal-shape` STAMP — present ONLY for the non-default settle shape
@@ -314,9 +309,21 @@ function heroPropsOf(hero: HeroFacet): ReturnType<typeof resolveHeroSystem>["her
     return resolveHeroSystem({ hero }).heroProps;
 }
 
-/** The chapter's title rendered as the <h2> child (the render-function bridge for the template). */
-function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
-    return renderTitle(props_.title);
+/** THE TITLE REGISTER (A-15) — resolve a chapter's title onto the ONE register: the plain-string
+    arm, the `TitleFacet` 3-arm register (`EssayTitle`, position-derived clock/seed/boil), and the
+    SUBSUMPTION of a legacy render-slot factory (rd6 R-2) — a site still shaped `() => VNodeChild`
+    keeps PAINTING until it remaps to a `TitleFacet` at the touches. The `ChapterTitle` type dropped
+    the function arm (contract/types.ts), so a factory is a runtime form the type forbids; the ONE
+    register invokes it here, never a parallel path. */
+function TitleSlot(props_: {
+    title: ChapterTitle;
+    lead: boolean;
+    seed: number;
+}): VNodeChild {
+    const t = props_.title;
+    if (typeof t === "function") return (t as () => VNodeChild)();
+    if (typeof t === "string") return t;
+    return h(EssayTitle, { facet: t, lead: props_.lead, seed: props_.seed });
 }
 </script>
 
@@ -404,10 +411,15 @@ function TitleSlot(props_: { title: ChapterTitle }): VNodeChild {
                         {{ toRoman(figures[i]!) }} · {{ chapter.eyebrow }}
                     </p>
                     <h2 class="text-section-fluid">
-                        <!-- The title — a plain string OR a live VNode (<HandMark> /
-                             <ScrollLetteringHeading>), rendered identically (the host renders the
-                             string, or invokes the render-slot factory). -->
-                        <TitleSlot :title="chapter.title" />
+                        <!-- THE TITLE REGISTER (A-15) — a plain string, a `TitleFacet` (the 3-arm
+                             register: plain/typewriter/lettering + marginalia), or a legacy
+                             render-slot factory subsumed until its site remaps. `lead`/`seed` are
+                             position-derived (the first masthead beat inks on the load clock). -->
+                        <TitleSlot
+                            :title="chapter.title"
+                            :lead="phases[i] === 0"
+                            :seed="titleSeed(i)"
+                        />
                     </h2>
                     <p class="text-prose-muted max-w-2xl">{{ chapter.dek }}</p>
                 </div>

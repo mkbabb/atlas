@@ -11,8 +11,13 @@
 // DISCRETE CSS re-tint at the boundary; the `SceneContext` is FORWARD-EXTENSIBLE, so the opt-in
 // `transitionT` lands HERE when a graphic consumer reads it — an optional field never breaks readers.
 
-import { inject, type Component, type ComputedRef, type InjectionKey } from "vue";
-import type { ChapterTitle } from "../../contract/index.js";
+import {
+    inject,
+    type Component,
+    type ComputedRef,
+    type InjectionKey,
+    type VNodeChild,
+} from "vue";
 import type { SourcePanelProps, VizContract } from "./viz-contract.js";
 import type { LegendSpec } from "./viz-contract.js";
 import type { SceneSequenceContract } from "../viz-set.js";
@@ -23,9 +28,11 @@ import type { AtlasEventContract } from "../../events/index.js";
 import type { FootAnatomyContract } from "../frame/foot-anatomy.js";
 import type { AppendixDetent } from "../../platform/provenance/appendix.js";
 
-/** Re-export the prose carrier so the host + consumers read it from ONE place (the host imports
-    `ChapterTitle` FROM here — scene-contract is the archetype's single barrel). */
-export type { ChapterTitle } from "../../contract/index.js";
+/** A scene step's NARRATION carrier — a plain string OR a render-slot factory carrying a live VNode
+    (a picked-out figure, a `<HandMark>`). DISTINCT from the title register (`ChapterTitle`, the
+    A-15 keystone that closes to `string | TitleFacet`): a step narrates over the pinned graphic, it
+    is not a titled beat, so it keeps its own render-slot carrier rather than riding the title type. */
+export type SceneProse = string | (() => VNodeChild);
 
 /** Which side the pinned graphic sits (D2 alternation). 'auto' ⇒ zebra by the chapter index. */
 export type SceneSide = "left" | "right" | "auto";
@@ -42,9 +49,9 @@ export type SceneState = Record<string, unknown>;
 export interface SceneStep {
     /** Stable id — the active-step `v-for :key` AND the `appliedIndex` boundary key (the §3.1 law). */
     id: string;
-    /** The step's narration — a plain string OR a render-slot factory (the `ChapterTitle` carrier,
-        REUSED), so a step can carry a live VNode (a picked-out figure, a `<HandMark>`). */
-    prose: ChapterTitle;
+    /** The step's narration — a plain string OR a render-slot factory (`SceneProse`), so a step can
+        carry a live VNode (a picked-out figure, a `<HandMark>`). */
+    prose: SceneProse;
     /** The named graphic STATE this step drives to. */
     state: SceneState;
 }

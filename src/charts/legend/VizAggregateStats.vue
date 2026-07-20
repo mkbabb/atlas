@@ -65,6 +65,7 @@ const supports = computed<AggregateStat[]>(() => props.stats.slice(1));
             <dd class="agg-stat__value">
                 <FigureSlug
                     size="slug"
+                    data-attn-mark="aggregate-hero"
                     :style="
                         lead.colorVar ? { color: `var(${lead.colorVar})` } : undefined
                     "

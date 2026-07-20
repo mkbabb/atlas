@@ -8,6 +8,9 @@ export interface HoverBridgeRect {
 export interface HoverBridgeOptions {
     anchor: () => HoverBridgeRect | null;
     card: () => HoverBridgeRect | null;
+    /** The LIVE pointer, re-read at the release edge (D-8 · β-gate F6): a pointer still inside the
+        anchor∪card hull when the grace expires HOLDS the card. `null` before the first move. */
+    pointer: () => Point | null;
     graceMs?: number;
     padPx?: number;
     onRelease?: () => void;
@@ -52,10 +55,21 @@ export function createHoverBridge(options: HoverBridgeOptions) {
         [rect.left - pad, rect.top - pad], [rect.right + pad, rect.top - pad],
         [rect.right + pad, rect.bottom + pad], [rect.left - pad, rect.bottom + pad],
     ];
+    const holdsAt = (point: Point | null): boolean => {
+        const anchor = options.anchor();
+        const card = options.card();
+        return held && Boolean(point && anchor && card && pointInConvexHull(point, convexHull([...paddedPoints(anchor), ...paddedPoints(card)])));
+    };
     const finish = () => {
         if (!held) return;
         held = false;
         options.onRelease?.();
+    };
+    // THE RELEASE EDGE (D-8 · β-gate F6) — the grace EXPIRING is not the release: a pointer still
+    // inside the hull re-arms it (the dwell holds), and only LEAVING the hull finishes.
+    const expire = () => {
+        if (holdsAt(options.pointer())) timer = setTimeout(expire, graceMs);
+        else finish();
     };
     return {
         engage() {
@@ -65,13 +79,11 @@ export function createHoverBridge(options: HoverBridgeOptions) {
         },
         get held() { return held; },
         holdsPoint(x: number, y: number): boolean {
-            const anchor = options.anchor();
-            const card = options.card();
-            return held && Boolean(anchor && card && pointInConvexHull([x, y], convexHull([...paddedPoints(anchor), ...paddedPoints(card)])));
+            return holdsAt([x, y]);
         },
         release() {
             if (timer) clearTimeout(timer);
-            timer = setTimeout(finish, graceMs);
+            timer = setTimeout(expire, graceMs);
         },
         destroy() {
             if (timer) clearTimeout(timer);

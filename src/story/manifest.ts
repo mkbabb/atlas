@@ -14,7 +14,9 @@ import type { FigureLadder } from "./beat-template.js";
 import type { Superlative } from "./superlative.js";
 import type { EdgeSpec, FocusEffect, StoryChapter } from "./story-contract.js";
 
-export type PointKind = "cover" | "beat" | "colophon";
+/** A point's kind. `"appendix"` (A-16) is the folded movement — a propaedeutic/reference point that
+    carries its own nested `points`, projecting through the SAME machinery as any other point. */
+export type PointKind = "cover" | "beat" | "colophon" | "appendix";
 export type SkinRef = SkinId;
 
 /** A point owns its figure binding. The closed union prevents parallel per-route viz maps. */
@@ -50,6 +52,11 @@ export interface StoryPoint<Stage extends ChapterStage = ChapterStage> {
     readonly card?: StoryCardFacet;
     /** Optional route-authored marginal device rendered at this point's maturity stage. */
     readonly ornament?: Component;
+    /** A-16 · the S5 recursion — ANY point may nest sub-points (arbitrary sub-sectioning). A
+        point's DEPTH is its path length in this tree: derived from POSITION, never declared, so a
+        depth field cannot disagree with the actual nesting. The projections below flatten the
+        tree in DOM order, annotating each chapter with its ancestor nav-label chain. */
+    readonly points?: readonly StoryPoint<Stage>[];
 }
 
 export interface StoryManifest<Stage extends ChapterStage = ChapterStage> {
@@ -91,6 +98,10 @@ export interface ManifestChapterFacets {
     readonly rank?: Rank;
     readonly signature?: boolean;
     readonly marquee?: boolean;
+    /** A-16 · the ancestor nav-label chain this chapter hangs under (outermost first) — empty for a
+        top-level point. Its LENGTH is the point's depth; the chain itself is the breadcrumb source
+        (never the editorial title). */
+    readonly path?: readonly string[];
 }
 
 /** The current essay-host chapter surface produced from one canonical story point. */
@@ -112,12 +123,31 @@ function asyncPointComponent(
     return component;
 }
 
+/** A point's fallback label from its title — a plain-string title verbatim, a `TitleFacet`'s whole
+    `text`, else the slug (a legacy render-slot factory, runtime-only until its site remaps to a
+    `TitleFacet` at the touches, exposes no readable text). */
+function titleLabel<Stage extends ChapterStage>(point: StoryPoint<Stage>): string {
+    const t = point.title;
+    if (typeof t === "string") return t;
+    if (typeof t === "object" && t !== null) return t.text;
+    return point.slug;
+}
+
 function pointLabel<Stage extends ChapterStage>(point: StoryPoint<Stage>): string {
-    return (
-        point.navLabel ??
-        point.eyebrow ??
-        (typeof point.title === "string" ? point.title : point.slug)
-    );
+    return point.navLabel ?? point.eyebrow ?? titleLabel(point);
+}
+
+/** A-16 · THE ONE RECURSION every projection rides — the manifest tree flattened to DOM order,
+    each point paired with the ancestor nav-label chain it hangs under. Depth is that chain's
+    length, so sub-sectioning scales arbitrarily with no second declaration. */
+function flatten<Stage extends ChapterStage>(
+    points: readonly StoryPoint<Stage>[],
+    path: readonly string[] = [],
+): readonly { point: StoryPoint<Stage>; path: readonly string[] }[] {
+    return points.flatMap((point) => [
+        { point, path },
+        ...flatten(point.points ?? [], [...path, pointLabel(point)]),
+    ]);
 }
 
 function revealOf<Stage extends ChapterStage>(
@@ -136,12 +166,13 @@ function revealOf<Stage extends ChapterStage>(
 
 /**
  * Project the canonical manifest directly into the chapter contract consumed by DashboardEssay.
- * Stage points project directly onto the persistent-stage renderer seam.
+ * Stage points project directly onto the persistent-stage renderer seam. Nested points (A-16)
+ * flatten into the same list, each carrying its ancestor `path`.
  */
 export function chaptersOf<Stage extends ChapterStage>(
     story: StoryManifest<Stage>,
 ): readonly ManifestChapter[] {
-    return story.points.map((point): ManifestChapter => {
+    return flatten(story.points).map(({ point, path }): ManifestChapter => {
         let figure: Pick<ManifestChapter, "viz"> &
             Partial<Pick<ManifestChapter, "hero" | "colophon">>;
         switch (point.viz.kind) {
@@ -186,6 +217,7 @@ export function chaptersOf<Stage extends ChapterStage>(
             focus: point.focus ? [...point.focus] : undefined,
             card: point.card ?? (point.kind === "beat" ? story.card : undefined),
             ornament: point.ornament,
+            path: path.length ? path : undefined,
         };
     });
 }
@@ -196,10 +228,14 @@ export function isBeat<Stage extends ChapterStage>(
     return point.kind === "beat";
 }
 
+/** Every beat in the manifest, nested beats included — the recursion flattened once (A-16), so the
+    nav, the figure rank, and the pole cadence all read one order. */
 export function beatsOf<Stage extends ChapterStage>(
     manifest: StoryManifest<Stage>,
 ): readonly BeatPoint<Stage>[] {
-    return manifest.points.filter(isBeat);
+    return flatten(manifest.points)
+        .map(({ point }) => point)
+        .filter(isBeat);
 }
 
 /** The 1-based Roman/figure rank, derived from beat order. */
@@ -217,10 +253,7 @@ export function navOf<Stage extends ChapterStage>(
     return beatsOf(manifest).map((point) => ({
         kind: "beat",
         id: point.slug,
-        label:
-            point.navLabel ??
-            point.eyebrow ??
-            (typeof point.title === "string" ? point.title : point.slug),
+        label: pointLabel(point),
         icon: point.icon ?? EmptyChapterIcon,
     }));
 }
@@ -256,12 +289,9 @@ export function toDeck<Stage extends ChapterStage>(
     manifest: StoryManifest<Stage>,
 ): StoryDeck {
     return {
-        slides: manifest.points.map((point) => ({
+        slides: flatten(manifest.points).map(({ point }) => ({
             component: point.slug,
-            label:
-                point.navLabel ??
-                point.eyebrow ??
-                (typeof point.title === "string" ? point.title : point.slug),
+            label: pointLabel(point),
         })),
     };
 }

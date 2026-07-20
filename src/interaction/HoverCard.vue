@@ -127,6 +127,9 @@ const hoverBridge = createHoverBridge({
             : null;
     },
     card: () => measureEl()?.getBoundingClientRect() ?? null,
+    // The release edge re-checks THIS pointer against the hull (β-gate F6): dwelling in the transit
+    // holds the card past the grace; leaving it releases. Pre-move (NaN) reads as no pointer.
+    pointer: () => (Number.isNaN(pointer.x) ? null : [pointer.x, pointer.y]),
     onRelease: () => (bridgedReadout.value = null),
 });
 watch(
