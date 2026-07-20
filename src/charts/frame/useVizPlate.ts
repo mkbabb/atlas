@@ -43,6 +43,7 @@ import { useSelection } from "../../platform/stores/useSelection.js";
 import { useSelectionStat } from "../../platform/stores/useSelectionStat.js";
 import { useActiveBeat } from "../../platform/stores/useActiveBeat.js";
 import { useViewParams } from "../../platform/stores/useViewParams.js";
+import { useFreshness } from "../../platform/chrome/freshness.js";
 import { createAtlasEventHub } from "../../events/index.js";
 
 /** VizPlate's props — the declared `VizContract` + the optional live chart + keyboard nav.
@@ -419,11 +420,14 @@ const sourceEventHub =
     stageEventContext?.hub ??
     (props.contract.sourceData ? createAtlasEventHub() : null);
 /** A-33 — the declared scope folded into the ONE generic browser's props (null when the plate
-    declares no scope, or when a persistent stage owns the source seat). */
+    declares no scope, or when a persistent stage owns the source seat). The as-of the export stamps
+    is the plate's RESOLVED vintage — read off the active feed, never hand-typed and never copied
+    into a registry, so a downloaded CSV names the bake it actually came from. */
+const freshness = useFreshness();
 const sourceData = computed(() =>
     stageEventContext || !props.contract.sourceData
         ? null
-        : createBrowserFromScope(props.contract.sourceData),
+        : createBrowserFromScope(props.contract.sourceData, () => freshness.label.value),
 );
 if (sourceEventHub) {
     if (!stageEventContext)
@@ -456,8 +460,15 @@ if (sourceEventHub) {
 const sourceDataOpen = computed(
     () => sourceData.value != null && view.param("browse") === props.contract.id,
 );
+/** CD-11 — THE SELECTION DRILL-DOWN, as one more DOOR rather than one more table. A latched
+    selection opens the SAME viewer at the `selection` grain, so the rows a reader gets are the rows
+    they picked; with nothing latched the door opens on the whole dataset. The narrowing itself is
+    the scope's own `filterPredicate` ∩ the route's selected keys, which `createRowsReader` already
+    performs — there is no second projection here, only the grain this opening asks for. */
 function openSourceData(): void {
-    if (sourceData.value) view.setParam("browse", props.contract.id);
+    if (!sourceData.value) return;
+    view.setParam("browse", props.contract.id);
+    view.setParam("grain", selection.selectedKeys.size > 0 ? "selection" : undefined);
 }
 function closeSourceData(): void {
     if (view.param("browse") === props.contract.id) view.setParam("browse", undefined);

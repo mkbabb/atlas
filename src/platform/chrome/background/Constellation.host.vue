@@ -80,14 +80,16 @@ const props = withDefaults(
         /** Node count — passed through to the shipped engine. Default 100 (NC's counties —
             the civic-scalar density the brand mount seeds; D2.d / M10). */
         count?: number;
-        /** The reproducible field seed — same lattice every load, capture-stable. */
-        seed?: number | string;
+        /** The reproducible field seed — same lattice every load, capture-stable. REQUIRED: the
+            artwork belongs to the surface that shows it, and the prior library default was named
+            for a route that no longer exists (dial 6 — the seed is PINNED at the mount, redrawn on
+            a theme flip only, never per load). */
+        seed: number | string;
         /** `live` while visible, static `bake`, or belt-gated `auto` (default). */
         register?: ConstellationRegister;
     }>(),
     {
         count: 100,
-        seed: "usf-atlas-cover",
         register: "auto",
     },
 );

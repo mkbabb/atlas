@@ -260,6 +260,13 @@
         1.5rem
     ); /* body/prose — 21px @1440 · 20px @768 · 20px @390 floor (+1 √φ over 18.6px; G6 ≥20@1440/≥18@390) */
     --type-prose-lh: 1.5; /* lh compensates DOWN as size rises: 1.5 @21px = 31.5px [§A2] */
+    /* the MUTED prose rung — deks, glosses, the quiet second voice under a heading. Token-owned at
+       W-ATMOS: `text-prose-muted` was the ONE reading recipe still bound to a hardcoded Tailwind
+       step (`@apply text-sm`), so a route that wanted a different reading register had nothing to
+       re-point and forked the RECIPE instead — the vft dual ladder. The two values reproduce
+       `text-sm` exactly (14px / 20px @ the 16px root), so every route is byte-identical. */
+    --type-prose-muted: 0.875rem;
+    --type-prose-muted-lh: calc(1.25 / 0.875);
     --type-kicker: clamp(
         0.8125rem,
         0.7rem + 0.5vw,

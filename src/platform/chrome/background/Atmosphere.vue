@@ -65,6 +65,7 @@ import { PaperBackdrop } from "@mkbabb/glass-ui/paper-backdrop";
 import Aurora from "./Aurora.vue";
 import { useThemeKey } from "../../composables/useThemeKey.js";
 import type { BackgroundFamily } from "../../../skin/index.js";
+import type { Theme } from "../../../contract/index.js";
 // The brand field IS C.W6.b's seeded Constellation.host (the reproducible seed + the ONE
 // NCSU-red anomaly node — the emergent-tricolor red leg), NOT a bare glass-ui <Constellation>.
 // The arbiter owns the SINGLE brand field so "one field per surface" holds (the gallery mounts
@@ -76,6 +77,12 @@ import ConstellationHost from "./Constellation.host.vue";
     density (a resonance, NOT a chart — aria-hidden, no live value); it also lifts the
     visible-particle floor off the arbitrary-64 sub-perceptual rest (D2.d / M10). */
 const NC_COUNTIES = 100;
+
+/** The platform's own brand lattice seed — what a brand surface that declares no artwork of its own
+    wears. The home cover PINS its own (dial 6, chosen at execution against the owner's eye); this is
+    the neutral default for every other brand mount, and it replaces a default that was named for a
+    retired route. */
+const BRAND_SEED = "atlas-brand";
 
 // THE GRAIN — REBALANCED (O-DIR-4 ARM 2). The library's own "felt floor" numbers (0.038 light /
 // 0.045 dark, D2.d/M5) were live-pixel-tested against the owner's exact complaint ("the paper
@@ -111,8 +118,16 @@ const props = withDefaults(
         kind?: SurfaceKind;
         /** Brand surfaces may opt into aurora. Data surfaces remain aurora-only. */
         backgroundFamily?: BackgroundFamily;
+        /** A BRAND surface's declared identity (A-25 · `skin/brand.ts`). A data surface injects
+            its `DashboardContext` and needs none; a brand surface injects nothing, which is how
+            every `/c/*` field resolved to the neutral wash. Ignored on `kind="data"`. */
+        theme?: Theme;
+        /** The brand lattice's reproducible seed (dial 6 — PINNED, redrawn on theme change only,
+            never per load). Declared at the MOUNT by the surface that owns the artwork, rather
+            than inherited from a library default named for a route that no longer exists. */
+        seed?: string;
     }>(),
-    { kind: "data", backgroundFamily: "constellation" },
+    { kind: "data", backgroundFamily: "constellation", seed: BRAND_SEED },
 );
 
 const field = computed<BackgroundFamily>(() =>
@@ -134,10 +149,10 @@ const field = computed<BackgroundFamily>(() =>
              (always present, no longer one-of-two); on brand it is the constellation
              (the gallery masthead, veiled by I6). Decision 2: the data branch mounts NO
              constellation. -->
-        <Aurora v-if="field === 'aurora'" class="atmosphere__field" />
+        <Aurora v-if="field === 'aurora'" :theme="theme" class="atmosphere__field" />
         <ConstellationHost
             v-else
-            seed="usf-atlas-cover"
+            :seed="seed"
             :count="NC_COUNTIES"
             class="atmosphere__field"
         />

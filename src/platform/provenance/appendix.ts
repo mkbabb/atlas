@@ -39,13 +39,6 @@ export function resolveAppendixDetent(
     }
 }
 
-/** One linkable source record. `id` is the roster key; `href` is the reader-facing destination. */
-export interface AppendixSource {
-    id: string;
-    label: string;
-    href: string;
-}
-
 /** One APPENDIX ENTRY — a route item's human TITLE + the RESOLVED provenance the appendix enumerates
     (source · measure · method · vintage · aggregation). The route authors the roster (its own items,
     in its own order); `ProvenanceAppendix` renders each row anchored at `appendixAnchorId(vizId)` so

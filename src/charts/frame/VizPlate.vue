@@ -280,24 +280,21 @@ defineExpose({ archetype });
                  the filter-toggle's TARGET changed (the two-filter fork collapses into the one panel). -->
         </template>
 
-        <!-- J-FRAME · FACET 1 + FACET 4 (TOP) — the per-viz host-read seam, OUTSIDE the chart body.
-             The host READS the declared facets and ROUTES each to its OWNING-WAVE renderer through a
-             scoped slot (J-FRAME renders NOTHING — a viz hand-rolling a facet inline is the
-             parallel-layer anti-pattern J-FEEDBACK-5 §2 forbids). `filterDimensions` → J-WORKBOOK/
-             J-VIZDOCK rails; `aggregateStats` (top) → J-STORY's outside-the-grid placement (the
-             viz-area-is-viz-only law). Each slot is guarded ABSENT when its facet is undeclared. -->
+        <!-- J-FRAME · FACET 1 — the per-viz host-read seam, OUTSIDE the chart body. The host READS
+             the declared facets and ROUTES each to its OWNING-WAVE renderer through a scoped slot
+             (J-FRAME renders NOTHING — a viz hand-rolling a facet inline is the parallel-layer
+             anti-pattern J-FEEDBACK-5 §2 forbids). `filterDimensions` → J-WORKBOOK/J-VIZDOCK rails,
+             guarded ABSENT when undeclared.
+
+             A-11 · THE TOP AGGREGATE SEAT IS STRUCK. A second aggregate-band template stood here,
+             addressed at a `ChartFrame` slot that was never declared — it filled nothing, on any
+             path. The numerals POLE is not a second seat: `StoryCardContext.numbers` carries the
+             resolved side and the card places the ONE band by grid row (StoryCard.vue), so the pole
+             alternates with no duplicate template and no DOM reorder. -->
         <template v-if="filterDimensions.length" #filter-dimensions>
             <slot
                 name="filter-dimensions"
                 :dimensions="filterDimensions"
-                :contract-id="contract.id"
-            />
-        </template>
-        <template v-if="!storyCard && aggregateStats.length" #aggregate-stats-top>
-            <slot
-                name="aggregate-stats"
-                :stats="aggregateStats"
-                placement="top"
                 :contract-id="contract.id"
             />
         </template>
@@ -489,17 +486,28 @@ defineExpose({ archetype });
                     class="viz-plate__keystats"
                     :stats="keyStats"
                 />
+                <!-- DIAL 11 — the dock's control IS this plate's whisper handle, so it carries the
+                     SOURCE's own name rather than the word "Appendix": a reader scanning the foot
+                     learns whose data the figure reads before deciding to open anything.
+                     W-56 · A-32 — and when the plate DECLARES a scope, `browse` puts the viewer one
+                     click from that name. This is the front-door reversal: the download seat in the
+                     header dock stays, as the secondary it always should have been. -->
                 <VizAppendixDock
                     v-if="provenance || slots.foot"
                     class="viz-plate__appendix"
                     peek-label="Source"
+                    :label="provenance?.dataset ?? 'Appendix'"
+                    :browse="sourceData ? openSourceData : null"
                 >
                     <template #peek>{{ provenance?.dataset ?? contract.title }}</template>
+                    <!-- `hosted` — this dock IS the disclosure, so the bar inside opens with it
+                         and grows no second handle in front of this one (W-23). -->
                     <slot
                         v-if="provenance"
                         name="provenance"
                         :provenance="provenance"
                         :contract-id="contract.id"
+                        :hosted="true"
                     />
                     <slot name="foot" :contract-id="contract.id" />
                 </VizAppendixDock>

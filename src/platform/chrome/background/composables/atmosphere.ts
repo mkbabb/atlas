@@ -48,9 +48,20 @@ export interface AtmospherePreset {
     opacityCeiling: { light: number; dark: number };
     /** The dock glass opacity that moves in lockstep with the ceiling (the matched pair). */
     dockOpacity: number;
+    /** The ground's chroma clamp. `quiet`/`data` hold PAPER_WASH's recessive 0.92 floor — the
+        ground spends no chroma budget, the pops live in the icons. `hero` is the ONE rung that
+        lifts it: the W-70 CHROMA hero is a saturation move, not a brightness one, which is why a
+        rung that never reaches the shader can still read as the loudest field on the platform. */
+    saturation: number;
     /** The paper-grain opacity this rung wears. */
     grain: number;
-    /** The versal watermark's attention token at this rung. */
+    /** The versal watermark's attention token at this rung — the ink a beat that OPENS its section
+        wears. TWO reachable rungs, not three: `quiet` recedes to the ⑤ floor, `data`/`hero` carry the
+        restored ④½ watermark. The ③ LEGEND rung is deliberately NOT a preset value — acceptance #1
+        pins a section lead to 0.16 on every route, and the INVERSION LAW forbids a decorative echo
+        (0.64) out-weighing the eyebrow numeral it echoes (④, 0.46). ③ stays reachable, but only by
+        DECLARATION (`Chapter.versal: "legend"`), on the one beat where the numeral IS the plate's key
+        and no eyebrow contests it. A route's loudness rung is not a licence over its own hierarchy. */
     versalInk: string;
     /** MAY this rung reach the shader at all — the `intensity === "hero"` leg of the AND. */
     shader: boolean;
@@ -60,9 +71,16 @@ export interface AtmospherePreset {
     single clamp into one subliminal wash; three shared rungs replace all seven, and the pass-2 knob
     values are the reinstated starting defaults — explicitly P2-tunable at the live fire. Bounds:
     breathDepth stays under glass-ui's 0.15 ceiling; saturation holds the 0.92 recessive floor
-    EXCEPT at a declared `hero` beat (ONE loud move, never a global lift). The RENDER half of this
-    table — the ceilings, the dock pair, the grain, the versal ink — binds at W-ATMOS; this wave
-    authors the config. */
+    EXCEPT at a declared `hero` beat (ONE loud move, never a global lift).
+
+    THE RENDER HALF IS BOUND (W-ATMOS): `opacityCeiling` + `dockOpacity` ride out through
+    `atmosphereCssVars`/`useAuroraConfig` as the MATCHED PAIR the d.3 dock law names, and
+    `versalInk` is the rung a section OPENER's flank watermark wears. `grain` is the ONE column
+    still inert — CD-17's grain-raise half is dial-gated (the ratification: "the aurora-down half
+    lands; the grain is NOT raised — re-judged by eye after the wash dims"), so the values sit
+    here awaiting that ruling and no surface reads them. Binding it today would move every route's
+    grain (the live mounts are 0.025 light / 0.03 dark), which is exactly the pre-emption the dial
+    forbids. */
 export const ATMOSPHERE_PRESETS: Readonly<
     Record<AtmosphereIntensity, AtmospherePreset>
 > = {
@@ -73,8 +91,9 @@ export const ATMOSPHERE_PRESETS: Readonly<
             breathPeriodMin: 40,
             elongation: [1.0, 1.5],
         },
-        opacityCeiling: { light: 0.24, dark: 0.3 },
+        opacityCeiling: { light: 0.16, dark: 0.2 },
         dockOpacity: 0.9,
+        saturation: 0.92,
         grain: 0.01,
         versalInk: "var(--attn-atmosphere)",
         shader: false,
@@ -86,8 +105,9 @@ export const ATMOSPHERE_PRESETS: Readonly<
             breathPeriodMin: 40,
             elongation: [1.0, 1.5],
         },
-        opacityCeiling: { light: 0.34, dark: 0.4 },
+        opacityCeiling: { light: 0.22, dark: 0.28 },
         dockOpacity: 0.9,
+        saturation: 0.92,
         grain: 0.02,
         versalInk: "var(--attn-versal)",
         shader: false,
@@ -99,16 +119,35 @@ export const ATMOSPHERE_PRESETS: Readonly<
             breathPeriodMin: 40,
             elongation: [1.0, 1.5],
         },
-        opacityCeiling: { light: 0.44, dark: 0.5 },
+        opacityCeiling: { light: 0.38, dark: 0.46 },
         dockOpacity: 0.94,
+        saturation: 1,
         grain: 0.03,
-        versalInk: "var(--attn-legend)",
+        versalInk: "var(--attn-versal)",
         shader: true,
     },
 };
 
 /** The register an undeclared route wears (`Theme.atmosphere.intensity` is optional). */
 export const DEFAULT_INTENSITY: AtmosphereIntensity = "data";
+
+/** THE PRESET'S CSS RENDER HALF (W-ATMOS) — the two custom properties a route's intensity publishes
+    on its own subtree, written ONCE by the platform shell beside `themeCssVars` (one binder, one
+    author). `--versal-ink` is the rung a section OPENER's flank watermark wears; `--glass-opacity-dock`
+    is the dock plate's MATCHED half of the ceiling pair (d.3: the ceiling and the dock move in
+    lockstep or the aurora's warm centre bleeds through the plate — the exact Bug-1 trade the prior
+    single clamp existed to dodge). The ceiling itself is NOT here: it is stock-dependent
+    (light/dark) and rides the JS `opacityCeiling` into glass-ui's own `--aurora-opacity-ceiling`.
+    `grain` is deliberately absent — CD-17's raise is dial-gated. */
+export function atmosphereCssVars(
+    intensity: AtmosphereIntensity = DEFAULT_INTENSITY,
+): Record<string, string> {
+    const preset = ATMOSPHERE_PRESETS[intensity];
+    return {
+        "--versal-ink": preset.versalInk,
+        "--glass-opacity-dock": String(preset.dockOpacity),
+    };
+}
 
 /** THE SHADER ARM — a THREE-way AND, never the bare preset (§d.2, D NEW-5):
 
@@ -294,8 +333,11 @@ export function selectAtmosphere(
 
     // DEPOSITION — the neutral floor uses the still-water base; else the D6 default. Always clamped
     // into the DECLARED intensity's envelope (there is no second, per-route deposition channel).
+    // The declared `huePath` rides through: it is the ARC between the two poles, not a loudness
+    // knob, so the envelope has nothing to say about it (`clampDeposition` passes it through).
     const intensity = atmosphere?.intensity ?? DEFAULT_INTENSITY;
-    const base = rung === "neutral" ? NEUTRAL_DEPOSITION : DEFAULT_DEPOSITION;
+    const floor = rung === "neutral" ? NEUTRAL_DEPOSITION : DEFAULT_DEPOSITION;
+    const base = { ...floor, huePath: atmosphere?.huePath };
     const deposition = clampDeposition(base, intensity);
 
     return { warmExpr, coolExpr, biasCap, deposition, intensity, rung };

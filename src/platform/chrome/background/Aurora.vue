@@ -16,9 +16,11 @@
 // DECLARED atmosphere poles (or its theme chrome legs — the D6 default) through the canonical OKLab
 // matrix (oklab.ts — the B3.1 root-fix; NEVER value.js mixColorsN), so page-glow IS data-glow. The
 // hardcoded three-slug switch is DELETED: the poles are declared on the instance context, resolved
-// late through the EXISTING resolveColorsBatch bridge. Absent a context (the gallery never mounts this
-// — it is a brand surface — but SSR/an unknown route can) it falls back to the NEUTRAL paper wash, NOT
-// USF's tide (the deliberate D2.5 delta — an unknown route never wears the fund's directional currents).
+// late through the EXISTING resolveColorsBatch bridge. A mount with no context — a BRAND surface (a
+// `/c/*` category home; the home cover when it wears the aurora family) or SSR/an unknown route —
+// takes its poles from the `theme` prop the A-25 brand ladder builds (`skin/brand.ts`), and only a
+// surface that offers NO pole source at all reaches the NEUTRAL paper wash. Never USF's tide (the
+// deliberate D2.5 delta — an unknown route never wears the fund's directional currents).
 //
 // THE f(p) TIDE rides LIVE (C6's Aurora-`p` BIND close obligation). useAuroraConfig reads
 // C5's useDocumentScrollProgress() and lerps the nuclei y / valueBias against it; the push
@@ -66,7 +68,7 @@
 import { inject, ref, watchPostEffect } from "vue";
 import { Aurora as GlassAurora } from "@mkbabb/glass-ui/aurora";
 import type { AuroraRenderMode } from "@mkbabb/glass-ui/aurora";
-import { DASHBOARD_KEY } from "../../../contract/index.js";
+import { AMERICA, DASHBOARD_KEY, type Theme } from "../../../contract/index.js";
 import { useAuroraConfig } from "./composables/useAuroraConfig.js";
 import { useAtmosphereActivity } from "./composables/useAtmosphereActivity.js";
 import { useAtmosphereTier } from "./composables/useAtmosphereTier.js";
@@ -76,7 +78,15 @@ import { useSelection } from "../../stores/useSelection.js";
 // CSS-baked field (0 WebGPU); `shader` is the ONLY door back to the WebGPU substrate — an explicit,
 // deliberate high-tier opt-in for a future hero/brand moment, resolved once at mount (glass-ui's
 // render-mode is a mount-time decision). No route opts in today, so every DATA route rides the CSS field.
-const { shader = false } = defineProps<{ shader?: boolean }>();
+// THE BRAND-SURFACE POLE SOURCE (A-25). `theme` is the surface's declared identity for a mount with
+// NO `DashboardContext` — a `/c/*` category home or the home cover, built by the `skin/brand.ts`
+// ladder. It is read ONLY when no context is injected: inside a dashboard the route's own theme is
+// the authority and a passed `theme` must never out-rank it. Absent both, the field falls to the
+// ladder's neutral floor — which is now the LAST rung, never the default a brand surface lands on.
+const { shader = false, theme = undefined } = defineProps<{
+    shader?: boolean;
+    theme?: Theme;
+}>();
 
 // The render substrate: CSS-baked pole-derived gradient by default (the O-F2 promotion), WebGPU ONLY
 // behind the explicit high-tier `shader` opt-in. NOT `"auto"` — glass-ui's `"auto"` arms WebGL on every
@@ -105,7 +115,7 @@ const selection = ctx ? useSelection() : undefined;
 // derivation — no per-component tier logic); `tier` is surfaced on the wrapper for the standing gate.
 const { tier, tide, flatWash } = useAtmosphereTier();
 
-const { config, opacityCeiling } = useAuroraConfig(() => ctx, {
+const { config, opacityCeiling, rung } = useAuroraConfig(() => (ctx ? (ctx.theme ?? AMERICA) : theme), {
     tide,
     flatWash,
     selectionActive: () => selection?.hasSelection ?? false,
@@ -146,6 +156,7 @@ watchPostEffect(() => {
         :data-dashboard="ctx?.id ?? undefined"
         :data-render-mode="renderMode"
         :data-atmosphere-tier="tier"
+        :data-pole-rung="rung"
     >
         <GlassAurora
             ref="auroraRef"

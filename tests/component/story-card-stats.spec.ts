@@ -112,3 +112,38 @@ describe("StoryCard aggregate-stat registration", () => {
         expect(html).not.toContain('data-testid="viz-plate-foot"');
     });
 });
+
+/** A-11 · THE NUMERALS POLE. The card's stamped pole and the band's rendered placement are the SAME
+    resolved value — a band whose `data-placement` disagrees with its card's `data-numbers` is the
+    defect this wire cures (the band was hard-coded `placement="bottom"` at every pole). */
+describe("A-11 numerals pole", () => {
+    const contract: VizContract = {
+        id: "poled",
+        title: "Poled figure",
+        description: { prose: "A figure.", axes: [] },
+        aggregateStats: () => [{ value: "42", caption: "districts" }],
+        export: { rows: () => [], rowHeader: "District", valueHeader: "Value" },
+    };
+    const cardAt = async (numbers?: "top" | "bottom") => {
+        const App = defineComponent({
+            setup: () => () =>
+                h(StoryCard, numbers ? { numbers } : {}, {
+                    header: () => h("h2", "Poled"),
+                    figure: () => h(VizPlate, { contract }, { default: () => h("div") }),
+                }),
+        });
+        return renderToString(createSSRApp(App));
+    };
+
+    it.each(["top", "bottom"] as const)("renders the band at the declared %s pole", async (pole) => {
+        const html = await cardAt(pole);
+        expect(html).toContain(`data-numbers="${pole}"`);
+        expect(html).toContain(`data-placement="${pole}"`);
+    });
+
+    it("settles at bottom when no pole is handed down", async () => {
+        const html = await cardAt();
+        expect(html).toContain('data-numbers="bottom"');
+        expect(html).toContain('data-placement="bottom"');
+    });
+});

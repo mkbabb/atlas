@@ -276,6 +276,85 @@
             --reveal-scale-from: 0.965;
         }
 
+        /* ════════════════════════════════════════════════════════════════════════════════════
+           A-13 · THE TITLE'S OWN ENTRANCE (`data-title-in`) — the masthead cluster articulates on
+           its OWN axis while the card lands on the beat's. The two windows LAYER: the beat holds
+           `entry 5% → 22%`, the header runs `entry 10% → 30%` at HALF the beat's amplitude — the
+           card arrives, then its title settles into it. DashboardEssay stamps the attribute ONLY
+           where the title declares an axis DIFFERENT from the beat's resolved one (a matching or
+           absent declaration IS the beat's entrance — no stamp, no binding, byte-identical).
+
+           NO FRESH `view()` MINT and no cloned keyframes: the cluster is a descendant of the
+           `[data-reveal-beat]` host, so it references that host's `--beat-tl` LITERALLY (a
+           `<dashed-ident>`, the corridor-recede precedent above) and re-scrubs the SHARED
+           `reveal-beat` frames. Keyed on CLASS + attribute, never the bare attribute (the I17
+           lesson: a bare-attribute view() binding is a standing document-wide recalc).
+
+           THE PINNED AXIS TRIPLE. `reveal-beat`'s FROM frame reads three custom properties, and
+           custom properties INHERIT — an arm that named only `--reveal-x` would let the cluster
+           inherit the BEAT's `--reveal-lift`/`--reveal-scale-from` and travel a compound of two
+           axes, which reads as the header shearing against its own card. So every arm re-declares
+           ALL THREE terms; each arm is a complete, self-contained axis. Half amplitude is the
+           beat's own shift/lift halved (`6vw`/`6vh` → `3vw`/`3vh`) so the title moves WITH the card
+           it sits on, never past it. PRM is the enclosing `@media` fence — under `reduce` nothing
+           binds and the cluster rests at its settled terminal. */
+        .essay-masthead-cluster[data-title-in="left"] {
+            --reveal-x: calc(-0.5 * var(--reveal-shift, 6vw));
+            --reveal-lift: 0px;
+            --reveal-scale-from: 1;
+        }
+        .essay-masthead-cluster[data-title-in="right"] {
+            --reveal-x: calc(0.5 * var(--reveal-shift, 6vw));
+            --reveal-lift: 0px;
+            --reveal-scale-from: 1;
+        }
+        .essay-masthead-cluster[data-title-in="up"] {
+            --reveal-x: 0px;
+            --reveal-lift: 3vh;
+            --reveal-scale-from: 1;
+        }
+        .essay-masthead-cluster[data-title-in] {
+            animation: reveal-beat auto linear both;
+            animation-timeline: --beat-tl;
+            animation-range: entry 10% entry 30%;
+        }
+
+        /* ════════════════════════════════════════════════════════════════════════════════════
+           A-14 · THE EXIT AXIS (`RevealSpec.out` → `data-scroll-out="fade"`) — the second half of
+           the owner's "fade in/out". A beat that opts in lets its card DEPART: opacity 1→0 back
+           along the very axis it arrived on, across the beat's `exit 0% → 45%` phase. Omitted (the
+           `hold` default) ⇒ no attribute, no rule, no binding — every route that declares nothing
+           is byte-identical to the settled `fill-mode: both` terminal it rests at today.
+
+           THE CURVE IS THE ENTRANCE, PLAYED BACKWARDS. No exit keyframes are authored: this is the
+           SHARED `reveal-beat` frames under `animation-direction: reverse`, so the departure is the
+           arrival's exact mirror — same three custom-property terms, same magnitudes, sign
+           preserved. A card that entered from the left leaves to the left; the eye's model of where
+           the card LIVES survives its exit, which a symmetric or centre-collapsing fade would break.
+           And because the card INHERITS the host's already-substituted `--reveal-x`/`--reveal-lift`/
+           `--reveal-scale-from` (the same computed-value inheritance the title entrance had to pin
+           AGAINST, working FOR this arm), the axis needs no second declaration anywhere: the exit
+           follows whatever `data-scroll-in`/`data-reveal-shape` resolved on the beat, for free.
+
+           WHY THE DESCENDANT. The arm binds `.story-card` — a true descendant of the
+           `[data-reveal-beat]` host (Beat.vue mounts the card in its `#figure` slot), NEVER a third
+           entry on the host's own `animation` list, which would drop the `scroll-tl-pos` arm a
+           scrub beat carries (the list-drop law above). It references the host's `--beat-tl`
+           LITERALLY (the corridor-recede precedent) — no fresh `view()` mint, no cloned keyframes,
+           and it is keyed on a CLASS with the attribute gating from the ancestor (the I17 lesson:
+           never a standing bare-attribute binding). A beat with no card declares `out` to no
+           effect — a card-less declarer would name its own figure wrapper in the wave that needs it.
+
+           Scrub-reversibility is free (the whole curve is position-derived — scrolling back up
+           re-composes the card byte-identically). PRM is the enclosing `@media` fence: under
+           `reduce` nothing binds and the card rests at opacity 1, fully legible past its beat —
+           information parity, exactly as the recede and the reveal resolve there. */
+        [data-reveal-beat][data-scroll-out="fade"] .story-card {
+            animation: reveal-beat auto linear both reverse;
+            animation-timeline: --beat-tl;
+            animation-range: exit 0% exit 45%;
+        }
+
         /* The INTERIOR narrative beat: scrubs its reveal off its own view-timeline, reverses
            exactly on scroll-up (position-derived). `auto` duration = timeline-owned; `linear`
            because the timeline IS the easing axis; `both` so the terminal frame is HELD past

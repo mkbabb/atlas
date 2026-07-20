@@ -9,13 +9,10 @@
 // all derive from this one declaration; a viz that declares no scope has no viewer by construction.
 
 import type { MeasureKind } from "./aggregate-contract.js";
+import type { ExactSource } from "./source-registry.js";
 import type { RouteUniverse } from "../../data/routeUniverse.js";
 import type { Predicate } from "../../filter/engine/predicate.js";
 import type { RowsGrouping } from "../../filter/engine/rows.js";
-
-/** An EXACT-tier source id — the registry key whose record carries the citation, the vintage, and
-    the href. A bare string until the two-tier EXACT⊕REFERENCE registry narrows it to its union. */
-export type ExactSourceId = string;
 
 /** One read attribute, authored ONCE: it is the table header, the CSV column, AND the provenance
     attribute. A numeric column names its physical law (`measure`) so the pooled aggregate cannot
@@ -29,8 +26,11 @@ export interface DataScopeColumn<Row> {
 
 /** THE PER-VIZ DATA SCOPE — source ⊕ query ⊕ columns, declared, never rendered. */
 export interface DataScope<Row, Scope = unknown> {
-    /** ── source ── the EXACT-tier registry id; the viewer IS its link (`?browse=<vizId>`). */
-    readonly source: ExactSourceId;
+    /** ── source ── the EXACT-tier registry RECORD this viz reads (W-21). The record itself, not an
+        id to look up: the declaration site is where the author knows which snapshot they are
+        reading, and a record cannot go stale or dangle the way a loose key can. It carries no
+        href — the viewer IS its link (`?browse=<vizId>`). */
+    readonly source: ExactSource;
     /** ── scope ── the MEASURE rung: what is read against what. */
     readonly encoding: { x: string; y: string };
     /** The METHOD rung — how source rows become the rendered measure. Omit for a direct read. */

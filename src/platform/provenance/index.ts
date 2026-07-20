@@ -9,6 +9,7 @@
 // `provenance-render` row — this barrel claims NO render [src-rearchitecture §A.4; CD-10].
 export * from "./provenance-contract.js";
 export * from "./aggregate-contract.js";
+export * from "./source-registry.js";
 export * from "./data-scope.js";
 
 // ── v1.0.4 (O-A9) — THE RENDER FAMILY lands: the seam is finally SERVED ─────────────────────────

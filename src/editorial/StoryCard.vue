@@ -25,6 +25,10 @@ const props = withDefaults(
         testid?: string;
         titleOwned?: boolean;
         sticky?: boolean;
+        /** A-11 · THE NUMERALS POLE — the resolved `BeatLayout.numbers` side the essay host hands
+            down (even=top / odd=bottom by masthead phase, an authored `layout.numbers` overriding).
+            A card mounted outside the essay rests at the settled `bottom`. */
+        numbers?: "top" | "bottom";
     }>(),
     {
         facet: () => ({}),
@@ -38,11 +42,12 @@ const props = withDefaults(
         testid: undefined,
         titleOwned: true,
         sticky: false,
+        numbers: "bottom",
     },
 );
 
 const slots = useSlots();
-const context = createStoryCardContext();
+const context = createStoryCardContext(props.numbers);
 provide(STORY_CARD_KEY, context);
 const surface = computed(() => storyCardSurface(props.facet));
 const titleAlign = computed(() => resolveTitleAlign(props.facet.pole, "left"));
@@ -79,6 +84,7 @@ const secondSeam = computed(
                 :class="{ 'story-card--keyline': facet.frame === 'keyline' }"
                 :data-card-mode="facet.mode ?? 'plate'"
                 :data-track="facet.track ?? 'wide'"
+                :data-numbers="numbers"
                 data-testid="story-card"
             >
                 <header
@@ -159,5 +165,16 @@ const secondSeam = computed(
 }
 .story-card > .story-card__appendix {
     margin-block-start: var(--card-pad-footer);
+}
+/* A-11 · THE NUMERALS POLE (K-EXPRESS D2) — the aggregate band leads the card on the `top` pole and
+   settles beneath the marks on `bottom` (the zebra rhythm down the beat ladder). The swap is GRID
+   PLACEMENT, never `order` and never a second DOM seat: the band is definitely placed in row 1, so
+   auto-placement walks the remaining sectors into rows 2..n in their unchanged SOURCE order (the
+   a11y no-reorder keystone, useBeatLayout.ts §5-8). The leading gap moves with it — the band owns a
+   trailing section gap at the top pole instead of the `> * + *` leading one it inherits at the
+   bottom. `bottom` is the auto-placed default and stays byte-identical. */
+.story-card[data-numbers="top"] .story-card__stats {
+    grid-row: 1;
+    margin-block: 0 var(--card-pad-section-gap);
 }
 </style>

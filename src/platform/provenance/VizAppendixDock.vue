@@ -20,10 +20,17 @@ const props = withDefaults(
         label?: string;
         peekLabel: string;
         detent?: AppendixDetent;
+        /** [W-56 · A-32] the plate's VIEWER door, supplied only when the plate declares a
+            `DataScope`. The dial-11 words ride THIS handle, because this is the control that keeps
+            them: it opens the browsable, exportable table. The dock's own control opens the written
+            record, and says so. A plate with no scope passes nothing and grows no browse handle —
+            the absence is the honest state, not a disabled control. */
+        browse?: (() => void) | null;
     }>(),
     {
         label: "Appendix",
         detent: "shut",
+        browse: null,
     },
 );
 
@@ -83,20 +90,39 @@ defineExpose({
 <template>
     <section class="appendix-dock" :data-detent="state" data-appendix-dock>
         <Drawer v-model:open="drawerOpen" direction="bottom" mode="modal">
-            <Button
-                class="appendix-dock__control"
-                type="button"
-                variant="glass"
-                :aria-expanded="state === 'full'"
-                :aria-controls="paneId"
-                @click="onControl"
-            >
-                <span class="appendix-dock__crest" aria-hidden="true">Σ</span>
-                <span>{{ label }}</span>
-                <span class="appendix-dock__state" aria-hidden="true">
-                    {{ state === "full" ? "Close" : "Open" }}
-                </span>
-            </Button>
+            <!-- THE FOOT WHISPER — the source names itself, then two doors of DIFFERENT shapes:
+                 a capsule that discloses the written record, and the one LINK that opens the table.
+                 The salience order is the point (spec-data §c.2): the eye must land on the door. -->
+            <div class="appendix-dock__head">
+                <Button
+                    class="appendix-dock__control"
+                    type="button"
+                    variant="glass"
+                    :aria-expanded="state === 'full'"
+                    :aria-controls="paneId"
+                    @click="onControl"
+                >
+                    <span class="appendix-dock__crest" aria-hidden="true">Σ</span>
+                    <span>{{ label }}</span>
+                    <!-- What this control actually opens: the written record — source, measure,
+                         method, vintage. It says that, and nothing it cannot keep. -->
+                    <span class="appendix-dock__state">
+                        {{ state === "full" ? "close" : "source & method ⌄" }}
+                    </span>
+                </Button>
+
+                <!-- DIAL 11 — the whisper-handle carries WORDS, on the control that keeps them.
+                     One click lands the reader in the rows with the CSV/JSON beside them. -->
+                <button
+                    v-if="browse"
+                    type="button"
+                    class="appendix-dock__browse"
+                    data-testid="appendix-dock-browse"
+                    @click="browse()"
+                >
+                    browse &amp; export <span aria-hidden="true">↗</span>
+                </button>
+            </div>
 
             <div
                 v-if="state === 'peek'"
@@ -147,6 +173,14 @@ defineExpose({
     color: var(--foreground);
 }
 
+.appendix-dock__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.75rem;
+    min-inline-size: 0;
+}
+
 .appendix-dock__control {
     display: inline-flex;
     align-items: center;
@@ -158,6 +192,32 @@ defineExpose({
     font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
+}
+
+/* THE ONE LINK IN THE FOOT. It wears the only underline here, so a reader scanning for the way in
+   finds it against a field of capsules and prose (the info-scent repair). */
+.appendix-dock__browse {
+    flex: none;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: var(--type-micro);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: light-dark(
+        color-mix(in oklab, var(--route-accent), var(--foreground) 40%),
+        color-mix(in oklab, var(--route-accent), var(--foreground) 12%)
+    );
+    background: none;
+    border: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: color-mix(in oklab, currentColor, transparent 45%);
+    cursor: pointer;
+}
+.appendix-dock__browse:hover {
+    color: var(--foreground);
+    text-decoration-color: currentColor;
 }
 
 .appendix-dock__crest {
@@ -232,6 +292,11 @@ defineExpose({
         min-block-size: 44px;
     }
 
+    .appendix-dock__head {
+        display: grid;
+        justify-items: start;
+    }
+
     .appendix-dock__control,
     .appendix-dock__peek {
         inline-size: 100%;
@@ -253,6 +318,7 @@ defineExpose({
 
 @media print {
     .appendix-dock__control,
+    .appendix-dock__browse,
     .appendix-dock__peek,
     .appendix-dock__pane-head button {
         display: none;

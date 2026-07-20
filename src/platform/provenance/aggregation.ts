@@ -11,10 +11,16 @@
 // THE PURE-CORE PATTERN (mirrors `resolveProvenance`): `resolveAggregationLevel` is pure, TOTAL,
 // framework-store-free (fixture-testable off plain values); `useAggregationLevel` is the thin Vue shell
 // that binds the route's LIVE getters so the computed re-resolves on every migration.
+//
+// The module also owns the OTHER provenance aggregation — `dedupeSources` (A-31), the fold over a
+// route's source CITES rather than over its grain axes. It is at the foot of this file, and it is
+// the ONE dedup home: no surface may re-implement it.
 
 import { computed, toValue, type ComputedRef, type MaybeRefOrGetter } from "vue";
 import type { AggregationLevel } from "./provenance-contract.js";
 import type { MeasureKind, ReduceOp } from "./aggregate-contract.js";
+import type { AppendixEntry } from "./appendix.js";
+import type { DataSource } from "./source-registry.js";
 
 /** One aggregation AXIS the view spans — its POOLED label (many members are folded) and its SINGLE
     label (the view has narrowed to one member), plus whether the current view HAS narrowed. The
@@ -109,4 +115,51 @@ export function useAggregationLevel(
             reduceOp: toValue(sources.reduceOp) ?? null,
         }),
     );
+}
+
+// ── A-31 · THE ONE DEDUP HOME (div-α F-4) ────────────────────────────────────────────────────────
+// The other aggregation this module owns: over SOURCES rather than over grains. A route's figures
+// mostly read one feed, so every appendix row cited the same records and the appendix rendered a
+// "Link" rung PER ROW — nine figures citing three sources printed twenty-seven links, of which
+// three were distinct. That is the duplicate-link disease, and it is why the phone colophon grew
+// to a third of the sheet.
+//
+// The collapse is a fold, not a render trick, so it lives ONCE here and every surface consumes it:
+// duplicate cites become ONE record carrying the UNION of the figures that cite it. Attribution is
+// gained, not lost — the reader learns which figures share a source, which the repeated links never
+// said. Any second implementation of this fold anywhere in the tree is the defect returning.
+
+/** One source, cited once, with every figure that cites it. */
+export interface SourceAttribution {
+    /** the registry record, appearing exactly once across the fold. */
+    readonly source: DataSource;
+    /** the entries that cite it, in first-cited order — the union attribution. */
+    readonly citedBy: readonly { readonly vizId: string; readonly title: string }[];
+}
+
+/**
+ * PURE — collapse a route's per-entry source cites into one record apiece with union attribution.
+ * Order is FIRST-CITE order (the reading order of the appendix, not the registry's own), a cite
+ * naming no registered record is dropped (the roster and the cites stay in lockstep by
+ * construction), and a record cited twice by one entry is credited to it once.
+ */
+export function dedupeSources(
+    entries: readonly AppendixEntry[],
+    sources: readonly DataSource[],
+): readonly SourceAttribution[] {
+    const byId = new Map(sources.map((source) => [source.id, source]));
+    const folded = new Map<string, { source: DataSource; citedBy: Map<string, string> }>();
+    for (const entry of entries) {
+        for (const id of entry.sourceIds ?? []) {
+            const source = byId.get(id);
+            if (!source) continue;
+            const seat = folded.get(id) ?? { source, citedBy: new Map<string, string>() };
+            seat.citedBy.set(entry.vizId, entry.title);
+            folded.set(id, seat);
+        }
+    }
+    return [...folded.values()].map(({ source, citedBy }) => ({
+        source,
+        citedBy: [...citedBy].map(([vizId, title]) => ({ vizId, title })),
+    }));
 }

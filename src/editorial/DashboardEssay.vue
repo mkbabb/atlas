@@ -78,6 +78,8 @@ import { recedeStyle } from "../story/corridor.js";
 import type { StoryChapter } from "../story/story-contract.js";
 import {
     chaptersOf,
+    isPlateBeat,
+    versalRegisters,
     type ManifestChapter,
     type StoryManifest,
 } from "../story/manifest.js";
@@ -119,7 +121,25 @@ const layouts = chapterShape.map((c, i) => resolveLayout(c, phases[i]!));
 // column beneath. Below-fold beats are reserved by `content-visibility`; only this one on-screen beat
 // needs an explicit floor. The stamp lets the CSS reserve its settled height (`--beat-cis`, the same
 // route-measured median the skip uses) from first paint, so the mount fills reserved space.
-const firstFigureIndex = chapterShape.findIndex((c) => hasFigure(c));
+const firstFigureIndex = chapterShape.findIndex((c) => isPlateBeat(c));
+
+// ── DIAL 1 · THE OCCASIONAL LAW (the versal recession ladder) ────────────────────────────
+// The versal used to mount on EVERY plate beat under a blanket gate, at one uniform ⑤ ink — six
+// identical ghosts a corridor, which is wallpaper, not a signature. It is now OCCASIONAL
+// (`versalRegisters`, the manifest-POSITION law): the beat that OPENS its section keeps the route's
+// `--versal-ink` rung, every other beat re-points the token down to the ⑤ floor, and `"off"` mounts
+// no glyph at all. The style is `null` on the `route` rung — no inline write there, so the shell's
+// one bind cascades through untouched.
+const VERSAL_OVERRIDE_INK: Record<"atmosphere" | "legend", string> = {
+    atmosphere: "var(--attn-atmosphere)",
+    legend: "var(--attn-legend)",
+};
+const versals = versalRegisters(chapterShape);
+const versalStyles = versals.map((v) =>
+    v === "atmosphere" || v === "legend"
+        ? { "--versal-ink": VERSAL_OVERRIDE_INK[v] }
+        : null,
+);
 
 // ── THE REVEAL FACET — one per chapter, mounted ONCE (the §7 `kind:"reveal"` fallback writer) ──
 // The per-beat `<section ref>` the bodies hand-rolled is hoisted here: ONE ref + ONE
@@ -251,6 +271,26 @@ const revealStyles = reveals.map((r, i) =>
     }),
 );
 
+/** A-13 · THE TITLE'S OWN ENTRANCE — the axis a masthead cluster articulates along, layered ON the
+    beat's own reveal rather than replacing it (`scroll-driven.css`'s `data-title-in` arms scrub the
+    SHARED `reveal-beat` keyframes at half amplitude over `entry 10% → 30%`).
+
+    STAMPED ONLY when the title DECLARES an axis (`TitleFacet.scrollIn`, A-15) that DIFFERS from the
+    beat's resolved axis: `auto`, a plain-string title, or a declaration that MATCHES the beat is the
+    beat's own entrance already rendered — a second binding there would merely double it. Absent ⇒ no
+    binding at all, byte-identical for every silent title.
+
+    The recede REFUSES it (single-writer law): a cluster inside a shared-element corridor edge is
+    already animated end-to-end by `corridor-recede` off the same `--beat-tl`, and a second
+    `animation` declaration on the one element replaces rather than layers. The corridor wins — it
+    carries the arriving-beat meaning; the title entrance yields. */
+const titleInAxes = chapterShape.map((c, i) => {
+    const declared = typeof c.title === "object" ? c.title.scrollIn : undefined;
+    return declared && declared !== "auto" && declared !== layouts[i]!.scrollIn
+        ? declared
+        : undefined;
+});
+
 /** The HandMark grain seed for a masthead beat's picked-word title — a host constant rotated by the
     beat's masthead phase (the 3..6 pool; a seed is wobble determinism, not data — no `seed` field). */
 function titleSeed(i: number): number {
@@ -265,6 +305,16 @@ function titleSeed(i: number): number {
 function revealShapeAttr(c: Chapter): string | undefined {
     const shape = c.reveal?.shape;
     return shape && shape !== "lift" ? shape : undefined;
+}
+
+/** A-14 · THE `data-scroll-out` STAMP — the exit posture, the counterpart of `data-scroll-in`'s
+    entrance axis, stamped by the SAME non-default-only convention as `data-reveal-shape` above: the
+    settled `hold` needs no attribute, so a route that declares nothing carries nothing and binds
+    nothing (byte-identical). The exit arm reads the axis it departs along off the beat's OWN
+    inherited `--reveal-x`, so this attribute names only WHETHER the card leaves, never where to. */
+function scrollOutAttr(c: Chapter): string | undefined {
+    const out = c.reveal?.out;
+    return out && out !== "hold" ? out : undefined;
 }
 
 /** Is a chapter `viz` a mountable Component (vs a contract or a sentinel)? Anything that is not
@@ -304,11 +354,6 @@ function isCoverChapter(chapter: Chapter, index: number): boolean {
 const ladderStyles = chapterShape.map((c) =>
     c.figure ? { "--crown-rung": String(figureLadderScalar(c.figure)) } : null,
 );
-
-/** Non-beat sentinels never consume or render a FigureInitial, regardless of viz backing. */
-function hasFigure(chapter: Chapter): boolean {
-    return chapter.isBeat !== false && chapter.viz !== "hero" && chapter.viz !== "colophon";
-}
 
 /** DashboardHero's prop payload excludes the component carried for its named provenance slot. */
 function heroPropsOf(hero: HeroFacet): ReturnType<typeof resolveHeroSystem>["heroProps"] {
@@ -356,7 +401,7 @@ function TitleSlot(props_: {
             :facet="chapter.card"
             :id="chapter.id"
             :ref="(el: any) => setBeatEl(el?.$el ?? el ?? null, i)"
-            :figure="hasFigure(chapter) ? figures[i] : undefined"
+            :figure="versals[i] !== 'off' ? figures[i] : undefined"
             :color-kind="chapter.colorKind ?? 'diverging'"
             :hinge="chapter.hinge ?? 0.5"
             :figure-label="figureLabelFor(chapter, figures[i]!)"
@@ -365,6 +410,7 @@ function TitleSlot(props_: {
             :testid="chapter.id"
             :data-point="chapter.id"
             :title-owned="hasMasthead(chapter)"
+            :numbers="chapter.card ? layouts[i]!.numbers : undefined"
             :sticky="
                 chapter.card?.mode === 'stage' ||
                 isChapterStage(chapter.viz) ||
@@ -373,11 +419,12 @@ function TitleSlot(props_: {
             class="essay-beat"
             :class="{ 'essay-beat--aside': chapter.reveal?.aside }"
             :aria-current="isPhone && i === settledIndex ? 'true' : undefined"
-            :style="[revealStyles[i]?.value, ladderStyles[i]]"
+            :style="[revealStyles[i]?.value, ladderStyles[i], versalStyles[i]]"
             :data-scroll-tl="
                 chapter.reveal?.aside || chapter.reveal?.scrub ? '' : undefined
             "
             :data-reveal-shape="revealShapeAttr(chapter)"
+            :data-scroll-out="scrollOutAttr(chapter)"
             :data-first-figure="i === firstFigureIndex ? '' : undefined"
             :data-title="hasMasthead(chapter) ? layouts[i]!.title : undefined"
             :data-dock="hasMasthead(chapter) ? layouts[i]!.dock : undefined"
@@ -394,6 +441,7 @@ function TitleSlot(props_: {
                     class="essay-masthead-cluster space-y-3"
                     :style="recedeStyles[i]?.value"
                     :data-corridor-recede="hasCorridorEdge[i] ? '' : undefined"
+                    :data-title-in="hasCorridorEdge[i] ? undefined : titleInAxes[i]"
                 >
                     <!-- SM-1 — the eyebrow carries the chapter's nav icon, tinted in the route data hue
                          (the "pops live in the icons" site). The TEXT stays muted ink (fill-vs-label). -->
@@ -634,17 +682,17 @@ function TitleSlot(props_: {
         text-align: center;
     }
 
-    /* THE DROP-CAP COUNTERWEIGHT — the tinted Roman rides the title side. title=left ⇒ cap left
-       (Beat.vue's default `translateX(-115%)` breaks into the reserved LEFT dock gutter — it has
-       112px of room). title=right has NO mirror gutter (the content stage pads only the START), so
-       the mirrored `translateX(115%)` pushed the cap PAST the right viewport edge at wide desktop
-       (the systemic masthead right-edge bleed). Seat the right cap AT the block's right edge instead
-       (`translateX(0)`) — the manuscript grid-break still overlaps the masthead's top-right corner,
-       contained within the viewport. */
+    /* THE DROP-CAP COUNTERWEIGHT — the tinted Roman rides the title side. This rule is now only the
+       SIDE: Beat.vue seats the cap at its beat's start edge, so the right pole re-anchors it to the
+       end edge and nothing else. It used to also cancel a `translateX(115%)` mirror that pushed the
+       cap PAST the right viewport edge at wide desktop (the systemic masthead right-edge bleed) —
+       the seat-at-the-edge cure this pole reached first. Beat.vue has since found the SAME defect on
+       the left (the "reserved dock gutter" the outward flank aimed into is 20px clear, not 112), so
+       the seat is the shared law and the cancellation here is dead: deleted, not kept as an
+       override of a rule that no longer exists. */
     .essay-beat[data-title="right"] :deep(.beat__initial:not(.beat__initial--inline)) {
         inset-inline-start: auto;
         inset-inline-end: 0;
-        transform: translateX(0);
     }
 
     /* THE ASIDE INSET — keyed on the class, independent of title placement. Aside retains only

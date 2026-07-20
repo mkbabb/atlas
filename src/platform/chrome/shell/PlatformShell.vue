@@ -31,6 +31,7 @@
 import { computed, inject } from "vue";
 import Dock from "../dock/Dock.vue";
 import { AMERICA, DASHBOARD_KEY, themeCssVars } from "../../../contract/index.js";
+import { atmosphereCssVars } from "../background/composables/atmosphere.js";
 import { useSelection } from "../../stores/useSelection.js";
 import { useFilterPane } from "../../../filter/composables/useFilterPane.js";
 import { provideDismissArbiter, useDismissArbiter } from "../../interaction/useDismissArbiter.js";
@@ -51,9 +52,19 @@ const ctx = inject(DASHBOARD_KEY);
 // theme IS america — the resolution happens HERE, route-scoped, so the gallery/about (which mounts
 // no PlatformShell) keeps the `:root` rest. Theme-aware for free — the values are
 // `var(--viz-*)`/`var(--rainbow-*)` references, so a light/dark flip retunes them.
-const routeThemeStyle = computed<Record<string, string>>(() =>
-    ctx ? themeCssVars(ctx.theme ?? AMERICA) : {},
-);
+// The SAME bind carries the theme's ATMOSPHERE render half (W-ATMOS): `--versal-ink` (the rung a
+// section opener's flank watermark wears) + `--glass-opacity-dock` (the dock plate's matched half of
+// the aurora ceiling pair). Both are pure functions of the declared `atmosphere.intensity`, and the
+// shell is the exact element wrapping BOTH the dock and the essay — so one element authors both, and
+// the ladder cannot drift between the field and the chrome that floats over it.
+const routeThemeStyle = computed<Record<string, string>>(() => {
+    if (!ctx) return {};
+    const theme = ctx.theme ?? AMERICA;
+    return {
+        ...themeCssVars(theme),
+        ...atmosphereCssVars(theme.atmosphere?.intensity),
+    };
+});
 
 // ── THE DOCUMENT-LEVEL Esc CONTRACT (D2.4 / D6) ──────────────────────────────────────────
 // ONE chrome-level keydown seam — the platform's single Escape arbiter (the user's ask:

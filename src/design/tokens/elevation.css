@@ -70,5 +70,23 @@
        IS the recession). Live-audited: the ④-on-muted-text stacks read 1.94:1 (/usf light) and
        2.41:1 (/sci dark) before the consumer fixes (DashboardHero relation · AxisNameLockup). */
     --attn-chrome: 0.46; /* ④ dock/filter/eyebrow/editorial mark — the margin (non-text) */
+    /* ④½ THE VERSAL — the flank watermark rung (dial 1, RULED: the versal is RESTORED at
+       section/chapter openers ONLY, the quiet fallback everywhere else). It sits BETWEEN ④ and
+       ⑤ on purpose: OF-22 was right that a ~287px illuminated cap at reading ink is a SECOND
+       numeral competing with the eyebrow (④), and wrong that the only cure is the ⑤ perceptual
+       floor — at 0.06 the platform's one unforgettable signature was a ghost on every beat. At
+       0.16 an opener's cap reads as a felt watermark the eyebrow still out-weighs (the INVERSION
+       LAW holds: 0.16 < 0.46), and it is DECORATION, never text, so the ④ non-text clause covers
+       it. A non-opener keeps the ⑤ floor — that recession is what makes the opener legible. */
+    --attn-versal: 0.16; /* ④½ the section-opener flank watermark — decoration, never text */
     --attn-atmosphere: 0.06; /* ⑤ aurora/grain — the perceptual floor (matches §GRAIN/§1) */
+
+    /* THE VERSAL INK — the ONE token `FigureInitial` binds its recession to, so the cap carries no
+       alpha of its own (the IC-5 escape-hatch close, applied to the signature glyph). The ROUTE
+       rung is written by the platform shell off its theme's `ATMOSPHERE_PRESETS[intensity].versalInk`
+       (quiet ⇒ ⑤ · data ⇒ ④½ · hero ⇒ ③); a BEAT that is not its section's opener re-points it to
+       the ⑤ floor. This `:root` value is the undeclared-route rung and MUST equal the table's
+       `data` row — `DEFAULT_INTENSITY` is `data`, and the versal-ladder spec asserts the two agree
+       against the shipped sheet. */
+    --versal-ink: var(--attn-versal);
 }

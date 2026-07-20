@@ -11,6 +11,9 @@ const storyCard = inject(STORY_CARD_KEY);
         v-if="storyCard?.aggregateStats.value.length"
         class="story-card__sector story-card__stats"
     >
-        <VizAggregateStats :stats="storyCard.aggregateStats.value" placement="bottom" />
+        <VizAggregateStats
+            :stats="storyCard.aggregateStats.value"
+            :placement="storyCard.numbers"
+        />
     </div>
 </template>

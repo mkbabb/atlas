@@ -120,7 +120,12 @@ import VizPlate from "../../src/charts/frame/VizPlate.vue";
 /** A minimal declared scope — the shape only; the fold itself is unit-proven beside the browser. */
 function scopeStub(): VizContract["sourceData"] {
     return {
-        source: "grid-plate-rows",
+        source: {
+            id: "grid-plate-rows",
+            kind: "exact",
+            label: "Grid plate rows",
+            snapshot: "data/grid.snapshot.json",
+        },
         encoding: { x: "area", y: "value" },
         grainNoun: "rows",
         dataset: () => [],

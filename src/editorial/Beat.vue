@@ -176,25 +176,58 @@ const revealOnce = computed<string | undefined>(() => (props.lift ? undefined : 
     content-visibility: auto;
     contain-intrinsic-size: auto var(--beat-cis, 720px);
 }
-.beat__initial {
+.beat__initial--inline {
     margin-bottom: 0.5rem;
+}
+/* THE NARROW-WIDTH WATERMARK LAW (dial 1's phone half). Below the flank's minimum inline room there
+   is no margin to set the cap in, so the un-inline cap used to fall into the FLOW — a
+   `--type-display-mega`-wide block stacked above the eyebrow, which is the OF-22 complaint made
+   worse (a second numeral, and one that pushes the reading column down as well). It becomes a true
+   BEHIND-TEXT watermark instead: out of flow entirely (it reserves nothing and shifts nothing — CLS
+   0 by construction), pinned to the beat's origin, and BENEATH the header's rung so it can never
+   occlude a glyph of the reading column. */
+@media (max-width: 1023.98px) {
+    .beat__initial:not(.beat__initial--inline) {
+        position: absolute;
+        inset-block-start: -0.15em;
+        inset-inline-start: 0;
+        z-index: 0;
+    }
 }
 .beat__header {
     /* flow-root so a route's floated illuminated initial (the #beat-initial lettrine) is contained
        within the header and never leaks onto the plate below. A no-op for routes with no header
-       float (the three atlas bodies): it only establishes float containment, changes no spacing. */
+       float (the three atlas bodies): it only establishes float containment, changes no spacing.
+       The rung is the other half of BOTH watermark laws (narrow and wide): wherever a beat carries a
+       reading header, that header paints OVER the cap, never under it — so no width, pole or ink
+       rung can put a decorative glyph on top of a read word. `2` clears the wide law's `1`. */
     display: flow-root;
     margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 2;
 }
+/* THE FLANK SEAT (dial 1's wide half) — the manuscript grid-break, FD3 §0.
+
+   This rule used to break the cap OUTWARD, `transform: translateX(-115%)`, into what it called "the
+   reserved LEFT dock gutter … it has 112px of room". THE ROOM IS NOT THERE. The gutter is the
+   shell's `padding-inline-start: 112px`, and the floating dock rail occupies x 20…92 of it, so 20px
+   is ever clear — while 115% of the `--type-display-mega` cap is 182px at 1440. The cap landed at
+   x = −75: the platform's one unforgettable signature rendered OFF-VIEWPORT on the flank of EVERY
+   route, and went unnoticed only because it was pinned at the ⑤ ghost rung. Restoring its ink
+   (dial 1) did not cause the exile — it made it visible. No width makes 182px fit in 20px, so the
+   outward break is DELETED rather than re-tuned.
+
+   The cap seats AT its beat's start edge instead, lapping the plate's upper-left corner — which is
+   what the grid-break always described, and what the `data-title="right"` pole (DashboardEssay.vue)
+   already concluded independently when the mirrored `translateX(115%)` bled past the RIGHT viewport
+   edge. That pole seated its cap at the block edge and shipped; this is the same cure on the side
+   that needed it just as badly, so the seat is now the shared law and the pole rule keeps only its
+   side. The rung stays ① — over the plate it decorates, under the ② reading header above. */
 @media (min-width: 1024px) {
-    /* The margin-set dropped-cap overlaps the plate's upper-left corner (the manuscript
-       grid-break, FD3 §0) — for the interior beats whose left gutter is clear. */
     .beat__initial:not(.beat__initial--inline) {
         position: absolute;
         inset-block-start: -0.35em;
         inset-inline-start: 0;
-        transform: translateX(-115%);
-        margin-bottom: 0;
         z-index: 1;
     }
 }

@@ -15,7 +15,7 @@
 import { createRowsReader, type ExportGrain, type RowsProjection } from "./rows.js";
 import { encodeFilter } from "./filter-codec.js";
 import { explain } from "./predicate.js";
-import { csvCell, triggerDownload } from "../../charts/lib/vizExport.js";
+import { csvCell, exportPrint, triggerDownload } from "../../charts/lib/vizExport.js";
 import type { ExportFormat, ExportPayload } from "../../charts/lib/source-data.js";
 import type { DataScope } from "../../platform/provenance/data-scope.js";
 import type { SourceDataBrowserProps } from "../ui/source-data-browser.js";
@@ -27,29 +27,56 @@ export type ScopeBrowserBinding<Row, Scope> = Omit<
     keyof SourcePanelProps
 >;
 
-/** The generic serializer: one header row off the declared columns, then the projected rows. */
-function serializeRows<Row>(
-    scope: DataScope<Row, unknown>,
+/** The exported grain, as one word a reader of the file can act on. */
+function grainText<Scope>(grain: ExportGrain<Scope>): string {
+    return grain.kind === "aggregation" ? `${grain.kind}:${String(grain.scope)}` : grain.kind;
+}
+
+/** The generic serializer: the PROVENANCE PREAMBLE, then one header row off the declared columns,
+    then the projected rows.
+
+    THE FILE CARRIES ITS OWN PROVENANCE. A downloaded slice that begins at the column header cannot
+    say where it came from, when, or under what filter — it is a table of numbers with no record,
+    which is the exact disease this family exists to cure, re-committed in the one artifact that
+    leaves the site. So the meta the payload already builds LEADS the file: the source record's own
+    name, the grain, the round-trippable query, its prose reading, and the resolved vintage; the
+    blank line then keeps the data header + rows byte-for-byte tabular for any reader. JSON says the
+    same thing structurally — `{ meta, rows }`, never a bare array. */
+function serializeRows<Row, Scope>(
+    scope: DataScope<Row, Scope>,
     rows: readonly Row[],
+    meta: ExportPayload<Row, Scope>["meta"],
     format: ExportFormat,
 ): string | null {
-    if (format === "json")
-        return JSON.stringify(
-            rows.map((row) =>
-                Object.fromEntries(scope.columns.map((c) => [c.key, c.value(row)])),
-            ),
+    const projected = () =>
+        rows.map((row) =>
+            Object.fromEntries(scope.columns.map((c) => [c.key, c.value(row)])),
         );
+    if (format === "json") return JSON.stringify({ meta, rows: projected() }, null, 2);
     if (format !== "csv") return null;
     const cell = (v: unknown): string => csvCell(v == null ? "" : String(v));
+    const rung = (label: string, value: string): string =>
+        [label, value].map(cell).join(",");
     return [
+        rung("Source", meta.source.label),
+        rung("Grain", grainText(meta.grain)),
+        rung("Filter query", meta.filter),
+        rung("Filter", meta.filterExplain),
+        rung("As of", meta.asOf),
+        "",
         scope.columns.map((c) => cell(c.label)).join(","),
         ...rows.map((row) => scope.columns.map((c) => cell(c.value(row))).join(",")),
     ].join("\r\n");
 }
 
-/** Fold a declared scope into the generic browser's props. */
+/** Fold a declared scope into the generic browser's props. `asOf` reads the host plate's RESOLVED
+    vintage — the stamp derived off the served feed. It is a getter because the feed can land after
+    the binding is built, and it is a PARAMETER because the registry is the wrong home for a date: a
+    date copied into a static module drifts from the bake it describes, which is the very disease
+    this family is curing. */
 export function createBrowserFromScope<Row, Scope>(
     scope: DataScope<Row, Scope>,
+    asOf: () => string,
 ): ScopeBrowserBinding<Row, Scope> {
     const rowsReader = createRowsReader<Row, Scope>({
         dataset: scope.dataset,
@@ -85,27 +112,34 @@ export function createBrowserFromScope<Row, Scope>(
         exportPayload: (
             projection: RowsProjection<Row, Scope>,
             vizId: string,
-        ): ExportPayload<Row, Scope> => ({
-            rows: projection.rows,
-            meta: {
+        ): ExportPayload<Row, Scope> => {
+            const meta = {
                 grain: projection.grain,
                 filter: encodeFilter(projection.filterPredicate),
                 filterExplain: explain(projection.filterPredicate),
-                // The vintage rides the source registry; "" is its pre-resolution face.
-                asOf: "",
-                source: { label: scope.source },
-            },
-            serialize(format) {
-                const text = serializeRows(scope, projection.rows, format);
-                if (text == null) return;
-                triggerDownload(
-                    text,
-                    `${vizId}.${format}`,
-                    format === "json"
-                        ? "application/json;charset=utf-8"
-                        : "text/csv;charset=utf-8",
-                );
-            },
-        }),
+                asOf: asOf(),
+                source: { label: scope.source.label },
+            };
+            return {
+                rows: projection.rows,
+                meta,
+                serialize(format) {
+                    // PRINT is a rendering of the open panel, not a serialization of it — the
+                    // browser's own dialog over the `@media print` layer, exactly as the
+                    // per-viz instance this builder replaces did it. A control the toolbar
+                    // offers must keep what it says.
+                    if (format === "print") return exportPrint();
+                    const text = serializeRows(scope, projection.rows, meta, format);
+                    if (text == null) return;
+                    triggerDownload(
+                        text,
+                        `${vizId}.${format}`,
+                        format === "json"
+                            ? "application/json;charset=utf-8"
+                            : "text/csv;charset=utf-8",
+                    );
+                },
+            };
+        },
     };
 }

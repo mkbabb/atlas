@@ -62,9 +62,16 @@ import {
 } from "../../../../charts/composables/useVizPalette.js";
 import { useDocumentScrollProgress } from "../../../../motion/useScrollProgress.js";
 import { blendOklch, type Oklab } from "../../../../charts/scale/oklab.js";
-import { AMERICA } from "../../../../contract/index.js";
-import type { DashboardContext, DepositionProfile } from "../../../../contract/index.js";
-import { selectAtmosphere } from "./atmosphere.js";
+import type {
+    AtmosphereIntensity,
+    DepositionProfile,
+    Theme,
+} from "../../../../contract/index.js";
+import {
+    ATMOSPHERE_PRESETS,
+    selectAtmosphere,
+    type AtmosphereSelection,
+} from "./atmosphere.js";
 import {
     nucleiSpecs,
     nucleusAt,
@@ -86,19 +93,21 @@ interface ResolvedAtmosphere {
     cool: string;
     biasCap: number;
     deposition: DepositionProfile;
+    /** The declared loudness rung — the key into `ATMOSPHERE_PRESETS` the ceiling reads. */
+    intensity: AtmosphereIntensity;
+    /** Which ladder rung produced the POLES — surfaced on the mount so an acceptance probe reads
+        `"neutral"` off the PAINTED field, not off a transcription of the table (A-25). */
+    rung: AtmosphereSelection["rung"];
 }
 
-/** Resolve a route's declared atmosphere (or its chrome-leg/NEUTRAL fallback) to concrete poles
+/** Resolve a surface's declared atmosphere (or its chrome-leg/NEUTRAL fallback) to concrete poles
     off the live palette. The DOM probe (`resolveAtmosphereColors`) runs ONLY here — this is called
     from the theme/route-keyed `resolved` computed, never per scroll tick (the Tide reads the cached
     poles). SSR/happy-dom falls each pole to its palette fallback (no cascade to read). */
 function resolveAtmosphere(
-    ctx: DashboardContext | undefined,
+    theme: Theme | undefined,
     pal: VizPalette,
 ): ResolvedAtmosphere {
-    // The route theme — the named default inside a route, nothing outside one (an unknown surface
-    // never wears USF's tide; it falls to the ladder's neutral floor).
-    const theme = ctx ? (ctx.theme ?? AMERICA) : undefined;
     const sel = selectAtmosphere(theme?.atmosphere, theme?.chrome);
     // The SSR/happy-dom fallbacks: the neutral floor falls to the warm recessive no-data; a
     // declared/derived route falls to the diverging poles (a sensible, aria-hidden-only default).
@@ -110,7 +119,14 @@ function resolveAtmosphere(
         { expr: sel.warmExpr, fallback: fallback[0] },
         { expr: sel.coolExpr, fallback: fallback[1] },
     ]);
-    return { warm, cool, biasCap: sel.biasCap, deposition: sel.deposition };
+    return {
+        warm,
+        cool,
+        biasCap: sel.biasCap,
+        deposition: sel.deposition,
+        intensity: sel.intensity,
+        rung: sel.rung,
+    };
 }
 
 // ── THE CONVERSION SEAM — rgb/hex/oklch token → OklchStop, via glass-ui's hexToOklchStop ──
@@ -133,10 +149,43 @@ function rgbToHex(token: string): string {
     return `#${byte(m[1])}${byte(m[2])}${byte(m[3])}`;
 }
 
-/** The named bridge: an `rgb()`/hex pole token → a valid `OklchStop{L,C,h}` triple, via
-    glass-ui's exported `hexToOklchStop` (the oklab.ts → AuroraConfig door). */
-function toOklchStop(token: string): OklchStop {
-    return hexToOklchStop(rgbToHex(token));
+/** Read a numeric term that may be a percentage (`68%` ⇒ 0.68 at the given scale). */
+function term(raw: string, scale = 1): number {
+    return raw.endsWith("%") ? (Number(raw.slice(0, -1)) / 100) * scale : Number(raw);
+}
+
+/**
+ * The named bridge: a resolved pole token → a valid `OklchStop{L,C,h}` triple.
+ *
+ * THE oklab ARM IS A LIVE-DEFECT CURE (W-ATMOS). The seam above promises every pole arrives as a
+ * concrete `rgb(…)`, and for a plain `var(--token)` it does. For a `color-mix(in oklab, …)` it does
+ * NOT: Chrome serialises the computed value in the MIXING space, so `getComputedStyle().color`
+ * returns `oklab(L a b)` — which `rgbToHex` cannot parse, so every such pole fell to its
+ * unparseable-token mid-grey. Measured live at :5173 before the cure: `AMERICA.chrome.accentWarm`
+ * (`color-mix(in oklab, var(--viz-diverging-low), var(--viz-diverging-high))`) resolved to
+ * `oklab(0.68 0.049882 -0.0211891)` on /usf, so the FLAGSHIP route's warm pole was painting
+ * `#808080` — a null wash inside the pole ladder itself, on the one route that declares nothing.
+ *
+ * The cure is not new colour machinery: an `oklch()` value IS an `OklchStop` already, and `oklab` is
+ * the same space in cartesian form, so the polar identity (`C = hypot(a,b)`, `h = atan2(b,a)`) is
+ * the whole conversion. Only sRGB values still need the hex door.
+ *
+ * EXPORTED so the bridge is testable against the SHIPPED function rather than a transcription of it
+ * (`tests/unit/oklch-stop-bridge.spec.ts`). It repaints the pole of every route, so it is pinned:
+ * the arm that fell through to `#808080` did so silently for as long as it existed, and a silent
+ * colour bridge is exactly the thing a live probe cannot be trusted to notice twice.
+ */
+export function toOklchStop(token: string): OklchStop {
+    const t = token.trim();
+    const lch = t.match(/^oklch\(\s*([\d.%]+)[\s,]+([\d.%]+)[\s,]+([-\d.]+)/i);
+    if (lch) return { L: term(lch[1]), C: term(lch[2], 0.4), h: Number(lch[3]) };
+    const lab = t.match(/^oklab\(\s*([\d.%]+)[\s,]+([-\d.%]+)[\s,]+([-\d.%]+)/i);
+    if (lab) {
+        const [a, b] = [term(lab[2], 0.4), term(lab[3], 0.4)];
+        const h = (Math.atan2(b, a) * 180) / Math.PI;
+        return { L: term(lab[1]), C: Math.hypot(a, b), h: h < 0 ? h + 360 : h };
+    }
+    return hexToOklchStop(rgbToHex(t));
 }
 
 /** THE SCROLL-MOTION BREATH GATE (P7 · J-GLASS §5 — the consume-side aurora-at-rest fix). The
@@ -153,28 +202,26 @@ const MOTION_DECAY = 0.86; // per-tick geometric decay of the at-rest motion sca
 const MOTION_PARK_FLOOR = 0.04; // below this the breath rounds to 0 (the loop parks)
 const MOTION_DECAY_MS = 80; // the decay tick cadence (≈12.5 Hz — a brief settle, then park)
 
-/** THE AURORA OPACITY CEILING — the felt-but-DEFT compositing envelope, owned HERE (J-GLASS re-gate
-    · J-CLOSE arm b · REBALANCED O-DIR-4 ARM 2). `opacityCeiling` is the OUTER envelope glass-ui
+/** THE AURORA OPACITY CEILING — the felt-but-DEFT compositing envelope (J-GLASS re-gate · J-CLOSE
+    arm b · O-DIR-4 ARM 2 · UN-STRANGLED at W-ATMOS). `opacityCeiling` is the OUTER envelope glass-ui
     applies uniformly to the canvas AND the CSS placeholder (via `--aurora-opacity-ceiling`): the
     maximum opacity the whole aurora surface ever composites at. It is theme-aware — the dark stock
     absorbs more, so a higher envelope reads as the same felt depth.
 
-    LIFTED OFF THE DEFT FLOOR (O-DIR-4 ARM 2). The owner's live read: "no visible aurora …, too" —
-    at the PRIOR 0.10/0.12 clamp the CSS-baked placeholder (an 8×8 gradient thumbnail stretched via
-    `background-size: cover`) composited so faintly it read as flat paper, not a felt field
-    (confirmed live-pixel: the placeholder's OWN opacity resolves straight from this ceiling with no
-    further attenuation). Lifted 3× to 0.30 light / 0.36 dark — live-pixel-tested as PERCEPTIBLE at
-    rest (a soft warm/cool wash reads across the fold) without dominating the page (the grain rebalance
-    above is what was actually reading as "loud"; the aurora itself was simply inert).
+    THE UN-STRANGLE (RC-7 W-46). The two constants that used to live here — 0.30 light / 0.36 dark,
+    themselves a 3× lift off the "no visible aurora" 0.10/0.12 floor — were the SAME number on every
+    route, which is how seven hand-tuned atmospheres flattened into one subliminal wash: a route
+    could tune its deposition and still composite at the identical ceiling as every other. The
+    ceiling is now the DECLARED intensity's (`ATMOSPHERE_PRESETS[…].opacityCeiling`), so `quiet`
+    recedes below `data` and a `hero` route's field is visibly richer. The old pair survives as the
+    `data` row's neighbourhood, so an undeclared route moves by design, not by accident.
 
-    THE DOCK-BLEED TRADE (render-matrix (b) · the Bug-1 radial-glow floor). The PRIOR 0.10/0.12 clamp
-    existed specifically because a brighter envelope BLEEDS the aurora's warm centre through the
-    translucent floating dock plate (a light-stock 0.14 test lit the plate's centre past its
-    luminance floor). Lifting to 0.30/0.36 reopens that exact bleed UNLESS the dock plate itself is
-    raised to compensate — which O-DIR-4 ARM 4 does in the SAME wave (Dock.css `--glass-opacity-dock`
-    0.74 → 0.90): the two levers are a matched pair, not independent dials. */
-const CEILING_LIGHT = 0.3; // was 0.1 — lifted 3×, paired with the ARM 4 dock-opacity raise
-const CEILING_DARK = 0.36; // was 0.12 — lifted 3×, paired with the ARM 4 dock-opacity raise
+    THE DOCK-BLEED TRADE (render-matrix (b) · the Bug-1 radial-glow floor). A brighter envelope
+    BLEEDS the aurora's warm centre through the translucent floating dock plate (a light-stock 0.14
+    test lit the plate's centre past its luminance floor), which is why the ceiling and the dock
+    plate are a MATCHED PAIR, never independent dials. The pairing now rides IN the preset row —
+    `dockOpacity` beside `opacityCeiling` — and lands on the route subtree through
+    `atmosphereCssVars`, so a rung cannot lift one lever without the other. */
 
 /** THE DEVICE-TIER GATES (O-F5 · motion-arch §2.3) — the atmosphere ladder's two levers on the
     field, injected by `Aurora.vue` off the shared `useAtmosphereTier` selector (NOT re-derived here).
@@ -202,9 +249,11 @@ export interface UseAuroraConfig {
     config: AuroraConfig;
     /** The live scroll scalar [0,1] the Tide rides (C5's useDocumentScrollProgress). */
     p: ComputedRef<number>;
-    /** The theme-aware outer compositing envelope (→ `<Aurora :opacity-ceiling>`), pinned at the
-        calm-but-perceptible 0.30 light / 0.36 dark register. Re-derives on every theme flip. */
+    /** The outer compositing envelope (→ `<Aurora :opacity-ceiling>`) — the DECLARED intensity's
+        row, per stock. Re-derives on every theme flip and on a route change. */
     opacityCeiling: ComputedRef<number>;
+    /** Which ladder rung produced the poles — stamped on the mount for the A-25 acceptance probe. */
+    rung: ComputedRef<AtmosphereSelection["rung"]>;
 }
 
 /**
@@ -216,11 +265,14 @@ export interface UseAuroraConfig {
  * `reactive` object: every field is recomputed from the live palette + the live `p` via a
  * `watchEffect`-free getter chain (Vue tracks the deps through `reactive`).
  *
- * `route` is a getter for the active `DashboardContext` (`undefined` under SSR / an unknown route →
- * the NEUTRAL floor) so a route change re-derives the atmosphere.
+ * `theme` is a getter for the SURFACE's declared theme — a dashboard's own, or the one the A-25
+ * brand ladder builds for a brand surface (`skin/brand.ts`). `undefined` (SSR, an unknown route, or
+ * a brand surface with no pole source) is the NEUTRAL floor, and the ONLY door to it: the parameter
+ * is the theme rather than the `DashboardContext` precisely so a non-dashboard surface can hand one
+ * over — a `/c/*` category home has no context to inject, which is how the null wash got in.
  */
 export function useAuroraConfig(
-    route: () => DashboardContext | undefined,
+    theme: () => Theme | undefined,
     options: UseAuroraConfigOptions = {},
 ): UseAuroraConfig {
     // The O-F5 device-tier gates (default tier-A: Tide live, no flat-wash) — an absent options object
@@ -229,19 +281,9 @@ export function useAuroraConfig(
     const palette = useVizPalette();
     // C6's close obligation: the Aurora-`p` BIND drives the Tide off C5's exposed scalar.
     const p = useDocumentScrollProgress();
-    // THE AURORA OPACITY CEILING (J-CLOSE re-gate arm b) — the theme-aware outer envelope, owned
-    // HERE so the aurora light-stock ceiling is the deft floor by composition (not a brighter wash
-    // the dock plate bleeds through). `useThemeKey` BUMPS on any `.dark` flip, so the ceiling switches
-    // light↔dark the instant the theme changes. Light pins to 0.30 and dark to 0.36: the
-    // perceptibility floor and calm ceiling coincide, paired with the dock's 0.90 opacity floor.
+    // `useThemeKey` BUMPS on any `.dark` flip, so the ceiling below switches light↔dark the instant
+    // the theme changes.
     const themeKey = useThemeKey();
-    const opacityCeiling = computed<number>(() => {
-        void themeKey.value; // establish the theme dependency — re-derive on a `.dark` flip
-        const isDark =
-            typeof document !== "undefined" &&
-            document.documentElement.classList.contains("dark");
-        return isDark ? CEILING_DARK : CEILING_LIGHT;
-    });
 
     // THE SCROLL-MOTION BREATH GATE (P7 — the consume-side aurora-at-rest fix). `scrollMotion` is 1
     // the frame `p` moves and DECAYS geometrically toward 0 at rest; `breathGate` rounds it to a
@@ -287,8 +329,19 @@ export function useAuroraConfig(
     // on the palette (theme) + the route: the DOM pole probe runs here, NOT per scroll tick (the Tide
     // reads the cached poles below), so the scroll path never touches getComputedStyle.
     const resolved = computed<ResolvedAtmosphere>(() =>
-        resolveAtmosphere(route(), palette.value),
+        resolveAtmosphere(theme(), palette.value),
     );
+
+    // THE OPACITY CEILING — the DECLARED intensity's row, per stock (the un-strangle: one ceiling
+    // per RUNG, not one ceiling for every route).
+    const opacityCeiling = computed<number>(() => {
+        void themeKey.value; // establish the theme dependency — re-derive on a `.dark` flip
+        const isDark =
+            typeof document !== "undefined" &&
+            document.documentElement.classList.contains("dark");
+        const ceiling = ATMOSPHERE_PRESETS[resolved.value.intensity].opacityCeiling;
+        return isDark ? ceiling.dark : ceiling.light;
+    });
 
     // The 5-stop derived palette: bg → warm pole → hinge (mid blended toward bg) → cool
     // pole → bg, every stop an OklchStop bridged from the oklab poles via hexToOklchStop.
@@ -364,8 +417,9 @@ export function useAuroraConfig(
         // MOVE 2 — the per-route deposition signature (granulation / breath / huePath), reactive off
         // the surface so a route change re-tunes the ground's flair. These OVERRIDE PAPER_WASH's
         // shared floor with the route's own character (USF currents that breathe, SCI the spectral
-        // sweep at the calmest tooth, ECF the still low-chroma wash). saturation stays the
-        // PAPER_WASH recessive 0.92 (the ground spends no chroma budget — the pops live in the icons).
+        // sweep at the calmest tooth, ECF the still low-chroma wash). saturation is the RUNG's now:
+        // 0.92 at quiet/data (PAPER_WASH's recessive floor, unchanged — the ground spends no chroma
+        // budget, the pops live in the icons), lifted only at a declared `hero`.
         get granulation(): number {
             return profile.value.granulation;
         },
@@ -381,6 +435,12 @@ export function useAuroraConfig(
         get huePath(): AuroraHuePath | undefined {
             return profile.value.huePath;
         },
+        get saturation(): number {
+            // The chroma clamp is the RUNG's, not a global floor: quiet/data hold PAPER_WASH's
+            // recessive 0.92 (byte-identical to the spread it overrides), and only a declared
+            // `hero` spends the budget — the W-70 chroma amplify, off the shader entirely.
+            return ATMOSPHERE_PRESETS[resolved.value.intensity].saturation;
+        },
         get palette(): OklchStop[] {
             return stops.value;
         },
@@ -389,5 +449,10 @@ export function useAuroraConfig(
         },
     }) as unknown as AuroraConfig;
 
-    return { config, p, opacityCeiling };
+    return {
+        config,
+        p,
+        opacityCeiling,
+        rung: computed(() => resolved.value.rung),
+    };
 }

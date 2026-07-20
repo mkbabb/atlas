@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { effectScope } from "vue";
 import { createAtlasEventHub } from "../../src/events";
 import {
@@ -8,6 +8,7 @@ import {
 import { createBrowserFromScope } from "../../src/filter/engine/browser-from-scope";
 import { emitSourceFilterState } from "../../src/filter/ui/source-filter-state";
 import type { DataScope } from "../../src/platform/provenance/data-scope";
+import type { ExportFormat, ExportPayload } from "../../src/charts/lib/source-data";
 
 interface Row {
     lea: string;
@@ -19,7 +20,12 @@ interface Row {
     TWICE (two years), the shape every real feed has: the entity key repeats, the row identity
     does not, and the browser must key each consumer by the right one. */
 const scope: DataScope<Row, string> = {
-    source: "sci-districts",
+    source: {
+        id: "sci-districts",
+        kind: "exact",
+        label: "SCI district feed",
+        snapshot: "data/sci.snapshot.json",
+    },
     encoding: { x: "lea", y: "cost" },
     grainNoun: "districts",
     dataset: () => [
@@ -49,9 +55,55 @@ const scope: DataScope<Row, string> = {
     ],
 };
 
+/** Drive ONE real export and read back what it actually wrote. `serialize` runs through the
+    SHIPPED `triggerDownload` (an anchor click on an object URL) and the SHIPPED `exportPrint`
+    (`window.print`), so this stubs only the two browser seams those reach and returns the bytes the
+    shipped serializer produced — nothing here re-implements a serializer or a preamble. */
+async function exportOnce(
+    payload: ExportPayload<Row, string>,
+    format: ExportFormat,
+): Promise<{ file: { name: string; mime: string; text: string } | null; printed: number }> {
+    const anchors: Array<{ download: string }> = [];
+    const blobs: Blob[] = [];
+    let printed = 0;
+    const created = vi
+        .spyOn(URL, "createObjectURL")
+        .mockImplementation((blob: Blob | MediaSource) => {
+            blobs.push(blob as Blob);
+            return "blob:atlas-test";
+        });
+    vi.stubGlobal("document", {
+        createElement: () => {
+            const anchor = { href: "", download: "", style: {}, click() {} };
+            anchors.push(anchor);
+            return anchor;
+        },
+        body: { appendChild() {}, removeChild() {} },
+    });
+    vi.stubGlobal("window", {
+        print() {
+            printed += 1;
+        },
+    });
+    try {
+        payload.serialize(format);
+    } finally {
+        vi.unstubAllGlobals();
+        created.mockRestore();
+    }
+    const blob = blobs[0];
+    return {
+        file: blob
+            ? { name: anchors[0]!.download, mime: blob.type, text: await blob.text() }
+            : null,
+        printed,
+    };
+}
+
 describe("SourceDataBrowser", () => {
     it("folds a declared scope into the one generic browser's props", () => {
-        const bound = createBrowserFromScope(scope);
+        let vintage = "";
+        const bound = createBrowserFromScope(scope, () => vintage);
         expect(bound.columns.map((c) => c.key)).toEqual(["lea", "cost"]);
         expect(bound.availableGrains).toEqual([
             { kind: "dataset" },
@@ -73,8 +125,75 @@ describe("SourceDataBrowser", () => {
 
         const payload = bound.exportPayload(projection, "districts");
         expect(payload.rows).toHaveLength(3);
-        expect(payload.meta.source.label).toBe("sci-districts");
+        // W-21 — the export names the RECORD, not its key: the exact tier's own label is what a
+        // reader of the downloaded file needs, and the id told them nothing.
+        expect(payload.meta.source.label).toBe("SCI district feed");
         expect(payload.meta.filterExplain).toBe("All rows — no filter active");
+
+        // W-56 — the as-of is the HOST's resolved vintage, read at export time. The feed lands
+        // after the binding is built, so a value captured at construction would ship the empty
+        // stamp forever; a downloaded file must name the bake it actually came from.
+        expect(payload.meta.asOf).toBe("");
+        vintage = "data as of March 2026";
+        expect(bound.exportPayload(projection, "districts").meta.asOf).toBe(
+            "data as of March 2026",
+        );
+    });
+
+    // W-56/A-32 — THE FILE CARRIES ITS OWN PROVENANCE. The download is the one artifact that
+    // leaves the site, so it must state what it is: the record's name, the grain, the query that
+    // reproduces it, that query in prose, and the bake it was taken from. A slice that begins at
+    // the column header is a table of numbers no reader can trace.
+    it("leads every exported file with the record's own provenance", async () => {
+        const bound = createBrowserFromScope(scope, () => "data as of March 2026");
+        const projection = bound.rowsReader.project({ kind: "dataset" }, []);
+        const payload = bound.exportPayload(projection, "districts");
+
+        const csv = await exportOnce(payload, "csv");
+        expect(csv.file?.name).toBe("districts.csv");
+        const lines = csv.file!.text.split("\r\n");
+        expect(lines.slice(0, 2)).toEqual(["Source,SCI district feed", "Grain,dataset"]);
+        expect(lines[2]).toMatch(/^Filter query,/);
+        expect(lines[3]).toBe("Filter,All rows — no filter active");
+        expect(lines[4]).toBe("As of,data as of March 2026");
+        // the blank line keeps the data header + rows byte-for-byte tabular beneath the preamble.
+        expect(lines[5]).toBe("");
+        expect(lines[6]).toBe("District,Cost");
+        expect(lines[7]).toBe("010,4");
+        expect(lines).toHaveLength(10);
+
+        const json = await exportOnce(payload, "json");
+        expect(json.file?.name).toBe("districts.json");
+        const parsed = JSON.parse(json.file!.text);
+        expect(Object.keys(parsed)).toEqual(["meta", "rows"]);
+        expect(parsed.meta.source.label).toBe("SCI district feed");
+        expect(parsed.meta.asOf).toBe("data as of March 2026");
+        expect(parsed.meta.grain).toEqual({ kind: "dataset" });
+        expect(parsed.rows).toHaveLength(3);
+        expect(parsed.rows[0]).toEqual({ lea: "010", cost: 4 });
+
+        // an aggregated export names its scope, so two files off one feed are distinguishable.
+        const aggregated = await exportOnce(
+            bound.exportPayload(
+                bound.rowsReader.project({ kind: "aggregation", scope: "state" }, []),
+                "districts",
+            ),
+            "csv",
+        );
+        expect(aggregated.file!.text.split("\r\n")[1]).toBe("Grain,aggregation:state");
+    });
+
+    // A control the toolbar ENABLES must keep what it says: PRINT prints. It serializes nothing —
+    // it renders the open panel through the browser's own dialog — so it writes no file.
+    it("prints from the toolbar's print control, and writes no file doing it", async () => {
+        const bound = createBrowserFromScope(scope, () => "data as of March 2026");
+        const payload = bound.exportPayload(
+            bound.rowsReader.project({ kind: "dataset" }, []),
+            "districts",
+        );
+        const printed = await exportOnce(payload, "print");
+        expect(printed.printed).toBe(1);
+        expect(printed.file).toBeNull();
     });
 
     it("restores one tab stop when pointer scrolling recycles the focused row", () => {

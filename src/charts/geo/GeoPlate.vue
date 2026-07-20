@@ -178,7 +178,13 @@ defineSlots<{
         slot a VizPlate plate does. Without this, the five geo plates (ecf DistrictChoropleth, sci
         SchoolMap, speedtest HexMapPlate, usf NetRetentionMap, usf-integrity WfaMap) could not fill
         the bar through the slot — the /speedtest GeoPlate-only route painted no bar (the O-A9 residue). */
-    provenance(props: { provenance: ProvenanceFacet; contractId: string }): unknown;
+    provenance(props: {
+        provenance: ProvenanceFacet;
+        contractId: string;
+        /** [W-23] VizPlate's appendix dock IS the disclosure — forwarded so the bar the consumer
+            fills this slot with opens with its host instead of growing a second handle. */
+        hosted: boolean;
+    }): unknown;
     /** Pre-host content (a status label / a control row) — a SIBLING of the host div inside the viz
         body, rendered BEFORE the layer (the NormalizationFlip status label's exact DOM position). */
     prelude(): unknown;

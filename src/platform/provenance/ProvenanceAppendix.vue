@@ -9,14 +9,16 @@
 // per-item `<article>` rows, each a `<dl>` of rungs), NOT a font. A paper route styles it in its
 // register; the atlas plate routes inherit the platform tokens. The vft Q-31 in-paper appendix is the
 // sibling precedent (one provenance, rendered deftly inline AND fully in the appendix).
+import { computed } from "vue";
 import {
     appendixAnchorId,
     appendixOrdinal,
     figureOrdinalFor,
     plateAnchorId,
     type AppendixEntry,
-    type AppendixSource,
 } from "./appendix.js";
+import { dedupeSources } from "./aggregation.js";
+import type { DataSource } from "./source-registry.js";
 import SourceLink from "./SourceLink.vue";
 import {
     sourceLine,
@@ -32,17 +34,16 @@ const { entries, heading = "Provenance", sources = [], figureNos } = defineProps
     /** the section heading, in the route's words (default "Provenance"). */
     heading?: string;
     /** Verified sources addressable by each entry's `sourceIds`. */
-    sources?: readonly AppendixSource[];
+    sources?: readonly DataSource[];
     /** Optional route-authored figure ordinals for appendix-to-figure return links. */
     figureNos?: Readonly<Record<string, number>>;
 }>();
 
-function sourcesFor(entry: AppendixEntry): AppendixSource[] {
-    const sourceById = new Map(sources.map((source) => [source.id, source]));
-    return (entry.sourceIds ?? [])
-        .map((sourceId) => sourceById.get(sourceId))
-        .filter((source): source is AppendixSource => source != null);
-}
+// A-31 — the records are enumerated ONCE for the whole appendix, with the figures that cite each,
+// instead of a "Link" rung repeated down every row. The fold is the platform's ONE dedup home; this
+// surface consumes it and implements nothing.
+const cited = computed(() => dedupeSources(entries, sources));
+
 </script>
 
 <template>
@@ -95,16 +96,35 @@ function sourcesFor(entry: AppendixEntry): AppendixSource[] {
                     <dt>Filter</dt>
                     <dd>{{ filterLine(entry.provenance) }}</dd>
                 </div>
-                <div
-                    v-for="source in sourcesFor(entry)"
-                    :key="source.id"
-                    class="provenance-appendix__rung"
-                >
-                    <dt>Link</dt>
-                    <dd><SourceLink :source="source" /></dd>
-                </div>
             </dl>
         </article>
+
+        <!-- A-31 — THE RECORDS, ONCE. Every source the rows above cite, each appearing exactly
+             once, carrying the figures that read it. The repeated per-row "Link" rung is retired:
+             it printed one source as many times as figures happened to share it, which told the
+             reader nothing the union does not tell better. -->
+        <div v-if="cited.length" class="provenance-appendix__sources">
+            <h3 class="provenance-appendix__sources-heading">Records</h3>
+            <dl class="provenance-appendix__records">
+                <div
+                    v-for="{ source, citedBy } in cited"
+                    :key="source.id"
+                    class="provenance-appendix__record"
+                    data-testid="provenance-appendix-source"
+                >
+                    <dt><SourceLink :source="source" /></dt>
+                    <dd>
+                        <a
+                            v-for="(citation, index) in citedBy"
+                            :key="citation.vizId"
+                            class="provenance-appendix__cite"
+                            :href="`#${appendixAnchorId(citation.vizId)}`"
+                            >{{ index ? " · " : "" }}{{ citation.title }}</a
+                        >
+                    </dd>
+                </div>
+            </dl>
+        </div>
     </section>
 </template>
 
@@ -204,5 +224,57 @@ function sourcesFor(entry: AppendixEntry): AppendixSource[] {
     font-size: var(--type-small);
     color: color-mix(in oklab, var(--foreground), transparent 8%);
     text-wrap: pretty;
+}
+/* A-31 — the records block. Its own grid, because a record's LABEL is prose (a dataset name, a
+   document title) and must not wear the rung `dt`'s uppercase mono nowrap; the citing figures sit
+   opposite in the recessive register. */
+.provenance-appendix__sources {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-block-start: 0.75rem;
+    border-block-start: 1px solid color-mix(in oklab, currentColor, transparent 88%);
+}
+.provenance-appendix__sources-heading {
+    margin: 0;
+    font-family: var(--font-mono, inherit);
+    font-size: var(--type-micro);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: light-dark(
+        color-mix(in oklab, var(--foreground), transparent 32%),
+        color-mix(in oklab, var(--foreground), transparent 5%)
+    );
+}
+.provenance-appendix__records {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    gap: 0.3rem 0.75rem;
+    margin: 0;
+    line-height: 1.5;
+}
+.provenance-appendix__record {
+    display: contents;
+}
+.provenance-appendix__records dt {
+    font-size: var(--type-small);
+    text-wrap: pretty;
+}
+.provenance-appendix__records dd {
+    margin: 0;
+    max-inline-size: 62ch;
+    font-size: var(--type-micro);
+    color: color-mix(in oklab, var(--foreground), transparent 32%);
+    text-wrap: pretty;
+}
+.provenance-appendix__cite {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: color-mix(in oklab, currentColor, transparent 70%);
+}
+.provenance-appendix__cite:hover {
+    color: var(--foreground);
 }
 </style>

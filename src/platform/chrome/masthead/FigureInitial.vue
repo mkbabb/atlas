@@ -73,7 +73,13 @@ const ariaLabel = computed(() => props.label ?? `Chapter ${roman.value}`);
 </script>
 
 <template>
-    <div class="figure-initial" role="img" :aria-label="ariaLabel" data-testid="figure-initial">
+    <div
+        class="figure-initial"
+        role="img"
+        :aria-label="ariaLabel"
+        data-attn-mark="versal"
+        data-testid="figure-initial"
+    >
         <svg
             class="figure-initial__svg"
             viewBox="0 0 100 120"
@@ -116,20 +122,22 @@ const ariaLabel = computed(() => props.label ?? `Chapter ${roman.value}`);
    margin (the manuscript gesture, FD3 §0). Sized by the --type-display-mega rung so it
    reads at the figure-number scale; the SVG host is square-ish to give the glyph room.
 
-   OF-22 — THE NUMERAL YIELDS TO ATMOSPHERE (exactly ONE register carries the numeral at reading
-   size — the eyebrow is that honest seat). At full ink the ~287px illuminated cap is a SECOND
-   numeral at reading prominence, competing with the eyebrow. The overlay permits at most ONE quiet
-   echo that earns its seat, and the platform's one unforgettable signature (FD3 §0) is exactly it:
-   so the cap keeps its glyph + live-legend gradient + its announced chapter label (role="img",
-   SR-unchanged) but its INK recedes to `--attn-atmosphere` (the §HIERARCHY perceptual floor). It
-   reads as a sub-threshold watermark echo of the eyebrow's numeral, never a co-equal reading register
-   — the diverging gradient stays as a ghosted brand presence, the eyebrow does the reading. */
+   THE RECESSION LADDER (dial 1, RULED — the OF-22 reversal). OF-22 pinned this cap at
+   `--attn-atmosphere` on EVERY beat: the right diagnosis (a ~287px illuminated numeral at reading
+   ink is a SECOND numeral competing with the eyebrow) and the wrong cure — a uniform 0.06 turned
+   the platform's one unforgettable signature into a ghost nobody sees, on six beats a corridor. The
+   special-case is DELETED for the token: the cap declares no alpha of its own, it binds
+   `--versal-ink`, and the ladder decides. The route's shell writes the rung its intensity earns;
+   the essay re-points a beat that does not OPEN its section down to the ⑤ floor. So the ONE beat
+   that opens the chapter carries the mark, and the rest recede — which is what makes the opener
+   legible at all. Announced label + live-legend gradient are untouched (role="img", SR-unchanged);
+   the glyph is `aria-hidden` decoration by construction, so the ④ non-text clause covers the rung. */
 .figure-initial {
     width: var(--type-display-mega);
     aspect-ratio: 100 / 120;
     margin-inline-start: -0.25em;
     margin-block-start: -0.5em;
-    opacity: var(--attn-atmosphere);
+    opacity: var(--versal-ink);
     pointer-events: none;
     user-select: none;
 }

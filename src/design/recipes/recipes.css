@@ -421,7 +421,12 @@
 }
 @utility text-prose-muted {
     font-family: var(--font-serif);
-    @apply text-sm text-muted-foreground;
+    /* W-ATMOS — the muted rung reads the TOKEN-OWNED ladder, like its `text-prose`/`text-caption`
+       siblings (values byte-identical to the retired `text-sm`). A route tunes its reading register
+       by re-pointing the token, never by shadowing this recipe. */
+    font-size: var(--type-prose-muted);
+    line-height: var(--type-prose-muted-lh);
+    @apply text-muted-foreground;
 }
 @utility text-caption {
     font-family: var(--font-serif);

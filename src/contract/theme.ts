@@ -137,7 +137,12 @@ export function themeCssVars(theme: Theme): Record<string, string> {
     `--viz-category-*`, and the earthtone sheet's proven alias onto its botanical ramp), the
     platform data poles, the chrome accent pair, the surface finish, and the ONE non-colour member:
     `--rank-grow-lede`, the ranked-crown track claim a route tunes as a MEASURE (usfi's crown needs
-    3 where the platform default is 2) — a route measure is as much theme as a hue. NOT here, by
+    3 where the platform default is 2) — a route measure is as much theme as a hue — and the three
+    READING rungs a route may set its own register on (`--type-kicker` · `--type-heading-section` ·
+    `--type-prose-muted`/`-lh`). Those four are the retirement of the vft DUAL LADDER (W-70 arm b):
+    a journal that reads a golden step above the dense-atlas default used to fork the RECIPES on its
+    marker, which shadowed the token ladder with a second one. Re-pointing the rung keeps ONE ladder
+    and one locus — the route turns the platform's own dial instead of standing up a rival. NOT here, by
     law: `--rainbow-tier-*` (the stops ARE the data), `--route-*` (JS-bound — one writer),
     `--emphasis-record` (DERIVED off the warm pole — re-point the pole, not the record), and
     `--ink-*` (DERIVED: Law C-1's root-marker scoping re-derives them through the cascade, and a
@@ -156,6 +161,7 @@ export const THEME_REPOINT_ROSTER: readonly string[] = [
     "--paper-grain-opacity", "--glass-under-shadow-quiet", "--glass-under-shadow-default",
     "--glass-under-shadow-vivid", "--glass-key-direction",
     "--rank-grow-lede",
+    "--type-kicker", "--type-heading-section", "--type-prose-muted", "--type-prose-muted-lh",
 ];
 
 /** The Law C-1/C-2 audit over a theme sheet's TEXT: every custom-property declared under the route

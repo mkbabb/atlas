@@ -69,21 +69,19 @@
 .usf-dock {
     /* the stable morph scalar — 1 (the expanded surface). */
     --dock-morph-t: 1;
-    /* THE EVEN-PLATE FLOOR (J-CLOSE re-gate · arm b · RAISED O-DIR-4 ARM 4) — the sanctioned
-       `--glass-opacity-dock` consumer pin so the rail is opaque enough that content behind it never
-       telegraphs through. Raised 0.74 → 0.90 (within the EXISTING token — no new one): the owner's
-       evidence shot (dir4-dock-toc-blue-seam.png) shows the district CHOROPLETH map's hard brown/blue
-       colour boundary blurring straight through the phone-sheet panel at the prior 0.74; a
-       high-chroma backdrop needs more opacity headroom than the dock's own even-plate use case
-       (aurora bleed alone) required. This is a MATCHED PAIR with the ARM 2 aurora-ceiling lift
-       (useAuroraConfig.ts CEILING_LIGHT/CEILING_DARK 0.10/0.12 → 0.30/0.36) — raising the ceiling
-       without raising this floor would have reopened the exact dock-bleed the prior 0.74 pin closed.
+    /* THE EVEN-PLATE FLOOR is NOT declared here (W-ATMOS · the d.3 dock-pair law). It used to be a
+       hard 0.90 pin on this plate — which SILENTLY WON over the route cascade, so the ARM 2 aurora
+       ceiling could rise while the plate that guards against its bleed stayed put. That is the exact
+       drift the "matched pair" language was written to prevent, and a plate-local constant can never
+       honour it. The floor now rides `ATMOSPHERE_PRESETS[intensity].dockOpacity` and is bound ONCE by
+       the platform shell beside the ceiling it is paired with, so the two levers cannot separate.
+       Every dock in the app mounts inside that shell (PlatformShell's `dock` slot is its only site),
+       so there is no un-bound dock to default for.
        INTERIM (WG-E backdrop-attenuation seam): the ROOT lever is glass-ui's — a dedicated backdrop
        ATTENUATION control (surface tint strength / backdrop luminance clamp, distinct from blur/
        saturate) so high-chroma content behind ANY glass panel can never paint a hard seam through it
-       (the glass-ui packet, O-DIR-4 owner directive doc). This opacity raise is the atlas-side interim
+       (the glass-ui packet, O-DIR-4 owner directive doc). The opacity floor is the atlas-side interim
        until that primitive lands. */
-    --glass-opacity-dock: 0.9;
     /* THE PLATE-BG — the liquid glass plate, lifted by the morph scalar so the surface reads as a
        single material membrane. The sub-component rungs read this below (cascaded). */
     --dock-plate-bg: color-mix(

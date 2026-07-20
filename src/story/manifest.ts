@@ -1,5 +1,5 @@
 import { defineAsyncComponent, type Component } from "vue";
-import type { ChapterTitle, RevealSpec, TitlePole } from "../contract/index.js";
+import type { Chapter, ChapterTitle, RevealSpec, TitlePole } from "../contract/index.js";
 import type { VizContract } from "../charts/contract/viz-contract.js";
 import type { ChapterStage } from "../charts/contract/scene-contract.js";
 import type { ColorKind } from "../charts/scale/colorKind.js";
@@ -46,6 +46,9 @@ export interface StoryPoint<Stage extends ChapterStage = ChapterStage> {
     readonly marquee?: boolean;
     readonly colorKind?: ColorKind;
     readonly hinge?: number;
+    /** A-20 · the illuminated numeral's REGISTER, overriding the occasional law the essay derives
+        from this point's POSITION. Omitted on every shipped point — the law is the default. */
+    readonly versal?: Chapter["versal"];
     readonly viz: PointViz<Stage>;
     readonly transition?: EdgeSpec;
     readonly focus?: readonly FocusEffect[];
@@ -213,6 +216,7 @@ export function chaptersOf<Stage extends ChapterStage>(
             isBeat: point.kind === "beat",
             colorKind: point.colorKind ?? story.colorKind,
             hinge: point.hinge,
+            versal: point.versal,
             transition: point.transition,
             focus: point.focus ? [...point.focus] : undefined,
             card: point.card ?? (point.kind === "beat" ? story.card : undefined),
@@ -226,6 +230,36 @@ export function isBeat<Stage extends ChapterStage>(
     point: StoryPoint<Stage>,
 ): point is BeatPoint<Stage> {
     return point.kind === "beat";
+}
+
+/** A projected chapter that mounts a PLATE — the narrative beats, never the cover/colophon
+    sentinels (which carry their own header and never a flank versal). */
+export function isPlateBeat(chapter: Chapter): boolean {
+    return chapter.isBeat !== false && chapter.viz !== "hero" && chapter.viz !== "colophon";
+}
+
+/** The versal's RESOLVED register. `"route"` is the restored watermark at whatever rung the route's
+    intensity earns (`--versal-ink`, written by the shell); the other three are the declared
+    overrides, `"off"` mounting no glyph at all. */
+export type VersalRegister = "off" | "route" | "atmosphere" | "legend";
+
+/** DIAL 1 · THE OCCASIONAL LAW — resolve each chapter's versal register off manifest POSITION.
+    A beat OPENS its section iff it is the FIRST plate beat under its ancestor `path` (A-16's one
+    recursion supplies the path; depth is its length), so a corridor restores exactly as many
+    versals as it has SECTIONS — one for a flat manifest, one more per nested group. Every other
+    beat recedes to the `atmosphere` floor, and a declared `Chapter.versal` overrides the law
+    outright. Position-derived, so no route can drift a versal count away from its own structure. */
+export function versalRegisters(
+    chapters: readonly ManifestChapter[],
+): VersalRegister[] {
+    const opened = new Set<string>();
+    return chapters.map((chapter) => {
+        if (!isPlateBeat(chapter)) return "off";
+        const section = (chapter.path ?? []).join(" ");
+        const opens = !opened.has(section);
+        opened.add(section);
+        return chapter.versal ?? (opens ? "route" : "atmosphere");
+    });
 }
 
 /** Every beat in the manifest, nested beats included — the recursion flattened once (A-16), so the

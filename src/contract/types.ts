@@ -213,8 +213,8 @@ export interface DepositionProfile {
     `resolveColorsBatch` — a colour LITERAL is a guard failure (no minted pigment outside
     tokens.css), and each declared pole must be a pole some DATA surface on the route paints
     (page-glow IS data-glow). Both poles are OPTIONAL: omit them to leave the poles to the
-    mechanical D6 (`Theme.chrome`) derivation. Poles + cap + intensity is the WHOLE facet — the
-    deposition arm is the resolver's, off the intensity's preset. */
+    mechanical D6 (`Theme.chrome`) derivation. Poles + cap + hue-arc + intensity is the WHOLE
+    facet — the deposition arm is the resolver's, off the intensity's preset. */
 export interface AtmosphereFacet {
     /** The warm data pole — a CSS token EXPR. Omit ⇒ the D6 `chrome.accentWarm` derivation. */
     warm?: string;
@@ -223,6 +223,14 @@ export interface AtmosphereFacet {
     /** The directional pole-lean cap: 0.3 directional (the default) · 0 magnitude/neutral (no lean —
         a magnitude ramp encodes no direction). */
     biasCap?: number;
+    /** The palette-interpolation ARC between the two poles — CHARACTER, not loudness, which is why
+        it survived A-36's deposition strike while granulation/breath/elongation did not: those are
+        the knobs the intensity preset owns and clamps; a hue ARC has no envelope to breach. It is
+        a real identity leg of /sci (`increasing` = the spectral sweep the band-cake route's aurora
+        wears floor→apex, matching its rainbow ramp) and had no seat once the raw `deposition` block
+        died, so it is seated HERE, beside the poles it interpolates. Omit ⇒ the clean
+        OKLab-rectangular blend (diverging / single-hue magnitude). */
+    huePath?: AtmosphereHuePath;
     /** The declared LOUDNESS rung (A-36) — the ONE atmosphere dial a route turns, resolved through
         the shared `ATMOSPHERE_PRESETS` table. There is deliberately no `deposition` member: a raw
         per-route deposition block was the second declaration channel clean-break forbids, and the
@@ -407,6 +415,17 @@ export interface RevealSpec {
     /** The PLACEMENT grammar (K-EXPRESS D2). Omit ⇒ the beat auto-zebras by its masthead-phase
         index. Independent of `aside`, which retains only its real inset + scrub-host semantics. */
     layout?: BeatLayout;
+    /** A-14 · THE EXIT POSTURE — the grammar's other half of "fade in/out". Omit ⇒ `"hold"`: the
+        `fill-mode: both` terminal every beat rests at today, byte-identical for every route that
+        declares nothing. `"fade"` opts this beat into the departure — its card leaves the way it
+        arrived (opacity 1→0 back along the beat's OWN resolved entrance axis, sign preserved: a
+        card that entered from the left leaves to the left, so the eye's model of where it lives
+        holds) over the beat's `exit 0% → 45%` phase. Scrub-reversible by construction (the whole
+        curve is position-derived), and PRM rests it at opacity 1 — information parity total.
+        Opt-in per point: this is the full in-dwell-out breath, for marquee beats that earn it,
+        never the route-wide default. `scroll-driven.css` compiles it on `.story-card` (the beat
+        host's descendant), so a card-less beat declares it to no effect. */
+    out?: "hold" | "fade";
 }
 
 /** A furniture SIDE (K-EXPRESS D2). `auto` ⇒ the zebra resolver picks by beat phase. The masthead
@@ -435,9 +454,11 @@ export interface BeatLayout {
         HORIZONTAL subset of `Side` (the masthead resolves to left|center|right — the O-A15 `center`
         third pole joins as a union member, NOT a host fork; the D5 extensibility law). */
     title?: Exclude<Side, "top" | "bottom">;
-    /** The aggregate-stats band POLE. Omit ⇒ even=top, odd=bottom. RESOLVED but NOT stamped this
-        cut — the pole-router that consumes it is the DEFERRED vocabulary seam (no consumer ⇒ no
-        `data-numbers` stamp; the resolver carries it READY). The VERTICAL subset of `Side`. */
+    /** The aggregate-stats band POLE. Omit ⇒ even=top, odd=bottom. A-11 WIRES it: `resolveLayout`
+        resolves the side, the essay hands it to the beat's `StoryCard`, and the card stamps
+        `data-numbers` + feeds `StoryCardContext.numbers` — the band's `placement` and its grid row
+        both read that ONE pole, so an authored value breaks the zebra for that beat alone. The
+        VERTICAL subset of `Side`. */
     numbers?: Exclude<Side, "left" | "right" | "center">;
     /** The three-item dock corner. Omit ⇒ OPPOSITE the resolved title (the balance counterweight; a
         `center` title has no opposite margin, so the dock rests at its default right corner). A
@@ -485,7 +506,12 @@ export interface Chapter {
         `aria-hidden` decoration beside the separately-labelled `<h2>`, never a title treatment:
         `"off"` renders none; `"atmosphere"` the recessed watermark; `"legend"` the live-legend
         prominence, the one beat where the numeral IS the plate's key. The field is authored HERE;
-        the render + the omission default belong to the atmosphere family. */
+        the render + the omission default belong to the atmosphere family. OMIT ⇒ THE OCCASIONAL
+        LAW (dial 1, RULED): a beat that OPENS its section wears the route's `--versal-ink` rung,
+        every other beat recedes to the `--attn-atmosphere` floor. The default is derived from the
+        beat's POSITION in the manifest, so a corridor's restored-versal count is its SECTION count,
+        never its beat count — declaring this field is how a route overrides that, not how it
+        gets one. */
     versal?: "off" | "atmosphere" | "legend";
 }
 
