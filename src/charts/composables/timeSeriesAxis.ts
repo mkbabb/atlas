@@ -118,6 +118,15 @@ export interface TimeSeriesDials {
         that never latches is unmoved. The `selectableCurves` PROP on the SFC gates whether the click
         seam is wired at all; this dial is what the SFC feeds once a curve is picked. */
     latchedKey?: string | null;
+    /** THE CURVE-LATCH EVENT GATE (W-VFT · the CurvePersist hallmark — F-CP1). A `showSymbol:false`
+        line does NOT dispatch a series `click`/`mouseover` on its STROKE unless `triggerLineEvent`
+        is on; the arm wired the click LISTENER (`useEChart`) but the stroke was never a pick target,
+        so the click could never fire. When `true`, every real drawn line (non-band, non-hidden) is
+        given `triggerLineEvent:true` so its stroke IS the event target the arm listens for. This
+        mirrors the SFC's `selectableCurves` prop — set it exactly when the SFC wires the click seam.
+        Omit/false ⇒ NO `triggerLineEvent` on any series (the option is BYTE-IDENTICAL — every other
+        consumer unmoved); it is inert to render either way (a pickable stroke paints nothing). */
+    selectableCurves?: boolean;
 }
 
 /** The pinned x-axis tick spec (min/max/interval) for an EVENLY-spaced explicit tick set — the two

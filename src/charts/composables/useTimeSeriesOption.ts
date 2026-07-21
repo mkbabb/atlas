@@ -247,6 +247,17 @@ export function buildTimeSeriesOption(
                 (p) => [p.x, bandSign(p.y)] as [number, number | null],
             ),
             showSymbol: false,
+            // THE CURVE-LATCH EVENT TARGET (W-VFT · CurvePersist — F-CP1 cure). A `showSymbol:false`
+            // line does not dispatch a series `click`/`mouseover` on its STROKE unless
+            // `triggerLineEvent` is on. The arm wired the click LISTENER (`useEChart`) but never made
+            // the stroke a pick target, so the latch could never fire on a real gesture. Enabled ONLY
+            // on the arm's SELECTABLE real lines (`selectableCurves`, never a band / hidden base — the
+            // same targets that can latch), so every other consumer's option is BYTE-IDENTICAL (no
+            // field emitted) and the render is unmoved: `triggerLineEvent` makes the stroke pickable
+            // WITHOUT symbols (compatible with `showSymbol:false`), it paints nothing.
+            ...(dials.selectableCurves && !isBand && !s.hidden
+                ? { triggerLineEvent: true }
+                : {}),
             ...(attachMark ? { markLine: mergedMarkLine } : {}),
             ...(attachCrown && dials.markPoint != null
                 ? { markPoint: dials.markPoint }

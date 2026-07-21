@@ -109,6 +109,38 @@ describe("W-VFT — the curve-latch option arm (buildTimeSeriesOption)", () => {
     });
 });
 
+// ── F-CP1 · THE CURVE-LATCH EVENT TARGET (triggerLineEvent present IFF selectableCurves) ───────────
+// The R3 cure: a `showSymbol:false` line dispatches a series click/mouseover on its STROKE ONLY when
+// `triggerLineEvent` is on. The arm wired the click LISTENER but never made the stroke a pick target,
+// so the latch could never fire on a real gesture. These bind the SHIPPED builder and CAN FAIL:
+// drop the enable → the ON row reds; make it unconditional → the OFF row reds; drop the band/hidden
+// guard → the guard row reds.
+type Sel = Record<string, unknown> & { name?: string };
+const sel = (selectableCurves?: boolean): Sel[] =>
+    (buildTimeSeriesOption(series, { selectableCurves }, palette).series as Sel[]) ?? [];
+const has = (rows: Sel[], name: string): boolean =>
+    "triggerLineEvent" in (rows.find((r) => r.name === name) as Sel);
+
+describe("W-VFT — the curve-latch EVENT target (F-CP1 · triggerLineEvent iff selectableCurves)", () => {
+    it("selectableCurves ON — every real drawn line carries triggerLineEvent:true (the stroke is pickable)", () => {
+        const rows = sel(true);
+        expect((rows.find((r) => r.name === "no smoke") as Sel).triggerLineEvent).toBe(true);
+        expect((rows.find((r) => r.name === "smoke") as Sel).triggerLineEvent).toBe(true);
+    });
+
+    it("selectableCurves OFF / omitted — NO triggerLineEvent on ANY series (byte-no-op for every other consumer)", () => {
+        for (const rows of [sel(undefined), sel(false)]) {
+            for (const r of rows) expect("triggerLineEvent" in r).toBe(false);
+        }
+    });
+
+    it("even selectable, triggerLineEvent never rides a read-only BAND or a HIDDEN stack base (only real lines are event targets)", () => {
+        const rows = sel(true);
+        expect(has(rows, "gap")).toBe(false); // the read-only band
+        expect(has(rows, "base")).toBe(false); // the hidden stack base
+    });
+});
+
 // ── The SHIPPED SFC / lifecycle bytes — the emit/gate/toggle wiring (readFileSync, can fail) ──────
 const sfc = readFileSync(
     fileURLToPath(new URL("../../src/charts/marks/TimeSeries.vue", import.meta.url)),
@@ -133,6 +165,9 @@ describe("W-VFT — the curve-latch producer edge (shipped TimeSeries.vue / useE
         expect(sfc).toContain('emit("curve-select", latchedKey.value)');
         // the latch drives the option-side visual + the re-paint fingerprint
         expect(sfc).toContain("latchedKey: latchedKey.value");
+        // F-CP1 — the opt-in is threaded into the builder dials so the strokes become event targets
+        // EXACTLY when the click seam is wired (else the wired click can never fire).
+        expect(sfc).toContain("selectableCurves: props.selectableCurves");
     });
 
     it("useEChart wires the click→key seam only when `onSelect` is supplied", () => {

@@ -367,6 +367,9 @@ const option = computed<EChartsOption>(() =>
             markLine: props.markLine,
             directLabels: props.directLabels,
             latchedKey: latchedKey.value,
+            // F-CP1 — thread the opt-in so the builder makes the real line strokes event targets
+            // (`triggerLineEvent`) EXACTLY when the SFC wires the click seam; else byte-identical.
+            selectableCurves: props.selectableCurves,
             hostWidth: hostWidth.value,
         },
         palette.value,
