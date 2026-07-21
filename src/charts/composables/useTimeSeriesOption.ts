@@ -230,6 +230,16 @@ export function buildTimeSeriesOption(
         // downward. A plain line is unguarded (a line may go negative).
         const bandSign = (y: number | null): number | null =>
             y == null ? null : isBand ? Math.max(0, y) : y;
+        // THE CURVE-LATCH VISUAL (W-VFT · the CurvePersist hallmark — "click on the curves… persist
+        // that"). A real drawn line whose key matches the SFC-held `latchedKey` renders as the
+        // PERSISTENT read a click leaves behind: it thickens (2 → 3) to full opacity. Driven off the
+        // OPTION (not ECharts' `select` state — a line-series select does not restyle the whole
+        // stroke), so it re-paints deterministically on latch (the SFC folds `latchedKey` into the
+        // re-paint fingerprint). A band / hidden-base is never a latch target. `latchedKey` unset ⇒
+        // `latched` is false for every series ⇒ the lineStyle is BYTE-IDENTICAL (every consumer that
+        // never latches is unmoved).
+        const latched =
+            dials.latchedKey != null && s.key === dials.latchedKey && !isBand && !s.hidden;
         const line = {
             type: "line" as const,
             name: s.label,
@@ -247,8 +257,8 @@ export function buildTimeSeriesOption(
             ...(s.stack ? { stack: s.stack } : {}),
             lineStyle: {
                 color: s.color,
-                width: s.hidden ? 0 : isBand ? 0 : recede ? 1 : 2,
-                opacity: s.hidden ? 0 : isBand ? 0 : recede ? 0.45 : 1,
+                width: s.hidden ? 0 : isBand ? 0 : latched ? 3 : recede ? 1 : 2,
+                opacity: s.hidden ? 0 : isBand ? 0 : latched ? 1 : recede ? 0.45 : 1,
                 // THE NON-COLOUR SECONDARY ENCODING (1.4.1) — the dash pattern rides the stroke so a
                 // line is told apart WITHOUT hue. Bands keep their solid (zero-width) edge.
                 ...(s.dash && !isBand ? { type: s.dash } : {}),

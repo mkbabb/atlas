@@ -279,6 +279,18 @@ const props = withDefaults(
          * markLine (every existing consumer unchanged).
          */
         markLine?: Record<string, unknown>;
+        /**
+         * THE CURVE-LATCH (W-VFT · the CurvePersist hallmark — "click on the curves… persist that").
+         * When `true`, each real drawn line becomes CLICK-SELECTABLE: a click LATCHES that curve (a
+         * persistent thickened `select` state — ORTHOGONAL to the hover emphasis, so it survives a
+         * stray hover), emits `@curve-select` with the picked series key, and re-clicking the same
+         * curve (or clicking another) toggles/moves the latch — ONE curve latched at a time. The
+         * consumer listens to `@curve-select` to drive its own persistent read (the VFT survival
+         * overlay expands on the latched cohort, its auto-sweep pauses). **Defaults FALSE** — the
+         * option is BYTE-IDENTICAL and no click listener is registered when omitted (every existing
+         * consumer unchanged).
+         */
+        selectableCurves?: boolean;
         ariaLabel?: string;
     }>(),
     {
@@ -298,13 +310,25 @@ const props = withDefaults(
         gridRight: undefined,
         axisFontFamily: undefined,
         markLine: undefined,
+        selectableCurves: false,
         ariaLabel: "Time series",
     },
 );
 
-const emit = defineEmits<{ hover: [key: string | null] }>();
+const emit = defineEmits<{
+    hover: [key: string | null];
+    /** W-VFT · the CurvePersist latch — the currently latched series key, or `null` when the last
+        latch was toggled off. Fires only when `selectableCurves` is set (see the click handler). */
+    "curve-select": [key: string | null];
+}>();
 
 const host = ref<HTMLElement | null>(null);
+
+// W-VFT · THE CURVE-LATCH STATE (the CurvePersist hallmark). The key of the currently latched curve,
+// or null when nothing is latched. It feeds the option (the matched line thickens — the persistent
+// read) AND the re-paint fingerprint (so a latch deterministically re-paints), and it is the value
+// `@curve-select` emits. Only mutated by `onCurveClick`, wired ONLY when `selectableCurves` is set.
+const latchedKey = ref<string | null>(null);
 
 // The canvas-colour bridge (T-4): the legend ink + gridline tokens the canvas cannot
 // read are injected as resolved rgb (the muted caption ink, the gridline hairline) —
@@ -342,6 +366,7 @@ const option = computed<EChartsOption>(() =>
             axisFontFamily: props.axisFontFamily,
             markLine: props.markLine,
             directLabels: props.directLabels,
+            latchedKey: latchedKey.value,
             hostWidth: hostWidth.value,
         },
         palette.value,
@@ -357,12 +382,26 @@ const legendChips = computed<LegendChip[]>(() =>
         .map((s) => ({ key: s.key, color: s.color, label: s.label })),
 );
 
-/** Resolve an ECharts mouseover params to the hovered series key. */
+/** Resolve an ECharts mouseover/click params to the series key (by the drawn series NAME =
+    `s.label`; the trend twin is `"<label> trend"` and never matches a real key, so a click on a
+    trend curve resolves to null — correct, only real lines latch). */
 function keyOf(params: unknown): string | null {
     const name = (params as { seriesName?: string }).seriesName;
     if (name == null) return null;
     const match = props.series.find((s) => s.label === name);
     return match?.key ?? null;
+}
+
+// ── W-VFT · THE CURVE-LATCH (the CurvePersist hallmark) ───────────────────────────────────────────
+// `useEChart` carries the clicked series key up here (resolved via `keyOf`); the SFC owns the latch
+// STATE, single at a time: re-clicking the latched curve toggles it OFF, any other click MOVES the
+// latch. The new latch flows back into the option (the matched line thickens) via `latchedKey` and is
+// emitted on `@curve-select` so a consumer drives its own persistent read (the VFT survival overlay
+// expands on the latched cohort, its auto-sweep pauses). A click that misses every line is a no-op.
+function onCurveClick(key: string | null): void {
+    if (key == null) return; // a click that missed every line — the latch is unchanged
+    latchedKey.value = latchedKey.value === key ? null : key;
+    emit("curve-select", latchedKey.value);
 }
 
 // D6 (F-filters §4.4) — the cheap re-paint FINGERPRINT. A compact string of the DRAWN data
@@ -381,7 +420,10 @@ const seriesFingerprint = computed<string>(
             .map((s) => `${s.key}:${s.points.map((p) => p.y ?? "·").join(",")}`)
             .join("|") +
         `#${props.partialYearX ?? ""}` +
-        `#${endLabelGutterCollapsed(hostWidth.value, props.gridRight) ? "floor" : ""}`,
+        `#${endLabelGutterCollapsed(hostWidth.value, props.gridRight) ? "floor" : ""}` +
+        // W-VFT — the curve-latch is a real re-paint (the latched line thickens), so it rides the
+        // digest; the option-driven visual only paints when this string moves.
+        `#${latchedKey.value ?? ""}`,
 );
 
 useEChart({
@@ -389,6 +431,10 @@ useEChart({
     option: () => option.value,
     fingerprint: () => seriesFingerprint.value,
     onHover: (key) => emit("hover", key),
+    // W-VFT · the CurvePersist latch — wire the click seam ONLY when the consumer opts in, so a
+    // non-selecting chart registers no click listener (byte-identical). `onCurveClick` owns the
+    // toggle + single-latch + the `@curve-select` emit; `useEChart` resolves the key via `keyOf`.
+    onSelect: props.selectableCurves ? onCurveClick : undefined,
     keyOf,
     // T-PERF-4 (I-PERF-DATA.c) — defer init+paint to first viewport. The host below reserves its
     // box via `chart-h-lg` (a fixed 560/640px), so the deferred canvas mounts into an already-sized

@@ -67,7 +67,15 @@ export interface UseEChartOptions {
     option: () => EChartsOption;
     /** Fired when a datum is hovered — emit a key upward for the Vue HoverCard. */
     onHover?: (key: string | null) => void;
-    /** Map a datum's ECharts params to its entity key (for onHover + linking). */
+    /**
+     * Fired when a mark is CLICKED — the latch gesture (W-VFT · CurvePersist). Emits the mark's
+     * entity key (via `keyOf`), or `null` when the click misses every mark. Symmetric with
+     * `onHover`; wired ONLY when supplied, so a chart that omits it registers no click listener
+     * (byte-identical). The caller owns what the click means (a curve latch, a drill) — this seam
+     * only resolves the picked key and hands it up.
+     */
+    onSelect?: (key: string | null) => void;
+    /** Map a datum's ECharts params to its entity key (for onHover / onSelect / linking). */
     keyOf?: (params: unknown) => string | null;
     /**
      * D6 (C.W5.3) — an OPTIONAL cheap re-paint fingerprint: a string that changes ONLY when a
@@ -218,6 +226,18 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
                 opts.onHover?.(opts.keyOf?.(params) ?? null);
             });
             chart.value.on("mouseout", () => opts.onHover?.(null));
+        }
+
+        // W-VFT · the CurvePersist latch — a series click resolves to its key (the SAME `keyOf`
+        // the hover reads) and fires up. Wired only when a caller opts in, so a non-selecting chart
+        // registers no click listener (byte-identical). Symmetric with the `mouseover` hover above.
+        // The SFC holds the latch state and re-paints the latched line off the OPTION (a
+        // `lineStyle.width` bump — not ECharts' `select` state, which does not restyle a line
+        // stroke); this listener only carries the picked key up so the SFC can emit + hold the latch.
+        if (opts.onSelect && opts.keyOf) {
+            chart.value.on("click", (params) => {
+                opts.onSelect?.(opts.keyOf?.(params) ?? null);
+            });
         }
     }
 

@@ -108,6 +108,16 @@ export interface TimeSeriesDials {
         `dials.directLabels === true`). The host BLOCK-WRAPS the `<ChartLegend>` `sr-only` so the AT
         key stays mounted (the canvas labels are `role="img"`-opaque). Omit ⇒ the prior register. */
     directLabels?: boolean;
+    /** THE CURVE-LATCH VISUAL (W-VFT · the CurvePersist hallmark — "click on the curves… persist
+        that"). The KEY of the currently latched curve (the one a reader clicked), or null/omitted
+        when nothing is latched. The matching real line renders as the PERSISTENT read a click leaves
+        behind — it thickens (2 → 3) to full opacity. Driven off the option (NOT ECharts' `select`
+        state — a line-series select does not restyle the whole stroke), so the latch re-paints
+        deterministically (the SFC folds this key into the re-paint fingerprint). A band / hidden-base
+        never latches. Omit/null ⇒ the option is BYTE-IDENTICAL (no line thickens), so every consumer
+        that never latches is unmoved. The `selectableCurves` PROP on the SFC gates whether the click
+        seam is wired at all; this dial is what the SFC feeds once a curve is picked. */
+    latchedKey?: string | null;
 }
 
 /** The pinned x-axis tick spec (min/max/interval) for an EVENLY-spaced explicit tick set — the two
