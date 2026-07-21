@@ -68,7 +68,7 @@ export type DimArity = "single" | "multi" | "range" | "set";
  * set-algebra is universe-scoped, never a bare global lookup. Arm c reads this tag; this
  * module only CARRIES it.
  */
-export type RouteUniverse = "sci-lea" | "ecf-district" | "usf-region" | "speedtest-cell";
+export type RouteUniverse = "sci-lea" | "ecf-district" | "usf-state" | "speedtest-cell";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE DIMENSION DECLARATION — the per-dim shape a viz declares on `filterDimensions`.

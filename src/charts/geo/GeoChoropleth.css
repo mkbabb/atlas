@@ -127,3 +127,36 @@
     stroke: none;
     opacity: 0.7;
 }
+
+/* D-02 · THE GRADUATED-SYMBOL MAGNITUDE RING (the ratio×dollars fusion). A centre-anchored ring
+   whose AREA carries the caller's second quantity over the hue-borne fill. Hairline `--foreground`
+   ink (hue-independent — both themes, survives a grayscale strip), pointer-transparent so the
+   hover/select stays the fill's; `non-scaling-stroke` holds the hairline at every raster size, so
+   the 390 phone map keeps a crisp ring at readable weight. */
+.geo-magnitude-ring {
+    fill: none;
+    stroke: var(--foreground);
+    stroke-opacity: 0.55;
+    stroke-width: 1.1;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+}
+
+/* A-28 · THE PLACE-LABEL AUGMENT CHANNEL (dial 5 — bold state letters AUGMENT, never replace). A
+   BOLD place word (the state / entity letters) seated at each declaring feature's centroid, drawn ON
+   TOP of the value-label channel so the letters AUGMENT the map — they never replace it. The weight
+   + the paper halo keep the letters legible on any fill; hit-test-transparent (the path beneath owns
+   the pointer). Mounted only where a route wires `placeLabel` — the resting map is unchanged for
+   every route that does not. */
+.geo-place-label {
+    font-family: var(--font-mono);
+    /* The phone counter-scale var (component-bound; ≤2×) holds the word near its CSS size when
+       the viewBox scales a narrow render down — desktop renders bind nothing and read 11px. */
+    font-size: calc(11px * var(--geo-place-letter-scale, 1));
+    font-weight: 700;
+    fill: var(--foreground);
+    pointer-events: none;
+    paint-order: stroke;
+    stroke: var(--background);
+    stroke-width: 2.5px;
+}

@@ -19,9 +19,18 @@ import type { EdgeSpec, FocusEffect, StoryChapter } from "./story-contract.js";
 export type PointKind = "cover" | "beat" | "colophon" | "appendix";
 export type SkinRef = SkinId;
 
-/** A point owns its figure binding. The closed union prevents parallel per-route viz maps. */
+/** A point owns its figure binding. The closed union prevents parallel per-route viz maps.
+    A component point MAY carry the RESOLVED `component` beside its `load` thunk (the A1 sync
+    arm): the projection then mounts it directly — no async wrapper, no one-tick-late first
+    paint. The page COVER needs this (a late cover loses the t0 active-section race, stamps
+    `?at=` on the first beat, auto-scrolls, then GROWS above the viewport — the CLS trace's
+    dominant `beat--lead` shift); interior beats keep the lazy default. */
 export type PointViz<Stage extends ChapterStage = ChapterStage> =
-    | { readonly kind: "component"; readonly load: () => Promise<{ default: Component }> }
+    | {
+          readonly kind: "component";
+          readonly load: () => Promise<{ default: Component }>;
+          readonly component?: Component;
+      }
     | { readonly kind: "contract"; readonly contract: VizContract }
     | { readonly kind: "stage"; readonly stage: Stage }
     | { readonly kind: "hero"; readonly hero: HeroFacet }
@@ -180,8 +189,12 @@ export function chaptersOf<Stage extends ChapterStage>(
             Partial<Pick<ManifestChapter, "hero" | "colophon">>;
         switch (point.viz.kind) {
             case "component":
+                // The A1 sync arm: a point carrying its RESOLVED component mounts it directly
+                // (the cover's first-paint crown); the lazy `load` thunk stays the default.
                 figure = {
-                    viz: asyncPointComponent(story.id, point.slug, point.viz.load),
+                    viz:
+                        point.viz.component ??
+                        asyncPointComponent(story.id, point.slug, point.viz.load),
                 };
                 break;
             case "contract":

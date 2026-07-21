@@ -35,6 +35,7 @@
 // seats a letter, never a firm name — O-A12's fence), so the restraint carries by construction.
 import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
+import { Button } from "@mkbabb/glass-ui/button";
 import { Card } from "@mkbabb/glass-ui/card";
 import {
     Collapsible,
@@ -537,26 +538,34 @@ function onPanelKeydown(e: KeyboardEvent): void {
                     </Collapsible>
                 </div>
 
-                <!-- (4) THE PROMOTE + UN-FILTER FOOT ([ANSWERS Q-45/Q-47]). -->
+                <!-- (4) THE PROMOTE + UN-FILTER FOOT ([ANSWERS Q-45/Q-47]) — W-29: the raw verbs
+                     migrate to the shipped glass `Button` (the metal border + liquid press are the
+                     library's, never re-rolled here — the ReadoutDrill register). The N6 re-label
+                     drops the ✕ from `un-filter`: it is a RE-SCOPE verb, not a close, so it carries
+                     no corner-chip glyph (G-CLOSE convention — the ✕ is reserved for closes). -->
                 <footer class="drilldown__foot">
-                    <button
+                    <Button
                         v-if="promoteGroup"
+                        emphasis="secondary"
+                        size="sm"
                         type="button"
                         class="drilldown__promote"
                         data-testid="drilldown-promote"
                         @click="onPromote"
                     >
                         Filter to these ▸
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         v-if="filtered"
+                        emphasis="quiet"
+                        size="sm"
                         type="button"
                         class="drilldown__unfilter"
                         data-testid="drilldown-unfilter"
                         @click="onUnfilter"
                     >
-                        ✕ un-filter
-                    </button>
+                        un-filter
+                    </Button>
                 </footer>
             </template>
         </Card>
@@ -857,39 +866,13 @@ function onPanelKeydown(e: KeyboardEvent): void {
     border-top: 1px solid
         color-mix(in oklab, var(--border, currentColor) 30%, transparent);
 }
+/* W-29 — the glass `Button` owns each verb's surface (border · liquid press · hover · focus ·
+   radius); this only sets the drilldown's mono tracked-caps register on the label so the foot
+   reads as the plate's control rung, not body prose. */
 .drilldown__promote,
 .drilldown__unfilter {
-    appearance: none;
-    min-height: 2.2rem;
-    padding: 0.35rem 0.7rem;
-    border-radius: var(--radius-plate-control);
     font-family: var(--font-mono, monospace);
     font-size: 0.68rem;
     letter-spacing: 0.03em;
-    cursor: pointer;
-    border: 1px solid
-        color-mix(in oklab, var(--route-accent), transparent 55%);
-    background: color-mix(in oklab, var(--route-accent), transparent 90%);
-    color: var(--foreground);
-    transition:
-        background-color 0.15s ease,
-        border-color 0.15s ease;
-}
-.drilldown__promote:hover {
-    background: color-mix(in oklab, var(--route-accent), transparent 80%);
-}
-.drilldown__unfilter {
-    border-color: color-mix(in oklab, var(--muted-foreground), transparent 55%);
-    background: transparent;
-    color: var(--muted-foreground);
-}
-.drilldown__unfilter:hover {
-    color: var(--foreground);
-    background: color-mix(in oklab, var(--muted-foreground), transparent 88%);
-}
-.drilldown__promote:focus-visible,
-.drilldown__unfilter:focus-visible {
-    outline: 2px solid color-mix(in oklab, var(--route-accent), transparent 35%);
-    outline-offset: 2px;
 }
 </style>

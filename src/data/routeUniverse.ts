@@ -41,12 +41,16 @@ import {
  * universe vs the ECF district universe), NOT a route name: a SCI LEA is not an ECF district even where
  * the composite key matches, and the tag survives a future route-merge because it names the DATA truth.
  */
-export type RouteUniverse = "sci-lea" | "ecf-district";
+export type RouteUniverse = "sci-lea" | "ecf-district" | "usf-state";
 
 /** The SCI district universe — a raw `leaNumber` keyed as `district:{lea}` on /sci (the map/scatter grain). */
 export const UNIVERSE_SCI_LEA: RouteUniverse = "sci-lea";
 /** The ECF district universe — a raw `leaNumber` keyed as `district:{lea}` on /ecf (the choropleth grain). */
 export const UNIVERSE_ECF_DISTRICT: RouteUniverse = "ecf-district";
+/** The USF state universe — a fips keyed as `state:{fips}` on /usf (the retention/scatter grain). No
+    cross-route collision exists for the `state` kind today; the member exists so the usf `DataScope`
+    (the W-USF S6 adoption) can declare its universe honestly rather than borrowing a district one. */
+export const UNIVERSE_USF_STATE: RouteUniverse = "usf-state";
 
 // ── THE UNIVERSE REGISTRY (the tag that rides ALONGSIDE the composite key) ────────────────────────────
 //

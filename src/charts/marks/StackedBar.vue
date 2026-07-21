@@ -61,6 +61,14 @@ const props = withDefaults(
         tierOrder: number[];
         /** Reverse the category axis (e.g. newest year on top). */
         reverseCategories?: boolean;
+        /**
+         * W-SCI SS3-5 — THE Y-AXIS UNIT/FORMAT ARM. A consumer-facing formatter for the y-axis TICK:
+         * the numeric tick value → its unit-bearing label ("573 Mbps", "40%"). When present, the
+         * y-axis carries its unit at the ticks (the SS3-5 gap: "the y-axis carries its unit"); omit
+         * ⇒ ECharts' default number labels, today's behaviour byte-for-byte. The x-axis (the
+         * category buckets) is untouched.
+         */
+        yAxisFormat?: (value: number) => string;
         ariaLabel?: string;
     }>(),
     { reverseCategories: false, ariaLabel: "Stacked bar" },
@@ -177,7 +185,15 @@ const option = computed<EChartsOption>(() => {
             min: 0,
             ...(isShareStack.value ? { max: 1 } : {}),
             splitLine: { lineStyle: { color: palette.value.grid } },
-            axisLabel: BOUNDARY_AXIS.label(palette.value.muted, palette.value.fontMono),
+            // W-SCI SS3-5 — the y-axis carries its unit when the consumer hands a `yAxisFormat`: the
+            // formatter is merged onto the shared boundary axisLabel so the tick reads "573 Mbps" /
+            // "40%". Omit ⇒ the bare boundary label, today's number ticks byte-for-byte.
+            axisLabel: props.yAxisFormat
+                ? {
+                      ...BOUNDARY_AXIS.label(palette.value.muted, palette.value.fontMono),
+                      formatter: (value: number) => props.yAxisFormat!(value),
+                  }
+                : BOUNDARY_AXIS.label(palette.value.muted, palette.value.fontMono),
         },
         series,
     };

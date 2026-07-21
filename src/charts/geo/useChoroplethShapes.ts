@@ -125,6 +125,24 @@ export interface ChoroplethProps {
      * force a channel; `'none'` disables it (colour-only — the NEG).
      */
     redundantChannel?: RedundantChannel;
+    /**
+     * D-02 (W-USF hallmark) — THE GRADUATED-SYMBOL MAGNITUDE CHANNEL. A second, size-borne
+     * quantity fused onto the hue-borne ratio: when present, each feature draws a centre-anchored
+     * RING at the radius (SVG user units) this returns — the caller owns the √-area scaling so
+     * ring AREA ∝ its magnitude. Return null to omit a feature's ring. Rings are
+     * pointer-transparent hairline ink (`.geo-magnitude-ring`) above the fills, below the value
+     * labels, so the hue channel stays legible beneath. Omit the prop ⇒ byte-identical render.
+     */
+    symbolR?: (key: string) => number | null;
+    /**
+     * A-28 (dial 5 — bold state letters AUGMENT, never replace) — THE PLACE-LABEL AUGMENT CHANNEL.
+     * A short per-feature PLACE word (the bold state / entity letters — "NC", "TX") drawn at the
+     * feature's centroid, ON TOP of the value-label channel it never replaces: the letters carry
+     * PLACE while the magnitude stays on the fill + hover, the two labels coexisting (the ruling's
+     * AUGMENT word). Return "" to omit a feature's letters; omit the prop ⇒ no channel, byte-
+     * identical render for every route that does not declare it.
+     */
+    placeLabel?: (key: string) => string;
     ariaLabel?: string;
 }
 
@@ -292,8 +310,11 @@ export function useChoroplethShapes(props: ChoroplethProps) {
             const key = keyOf(f);
             // GAP-5 — the centroid the value LABEL is seated at, measured off the SAME path generator
             // the fill draws through (one projection, one coordinate frame), whenever a WORD source
-            // exists (`valueLabel` OR `valueFormat`).
-            const [cx, cy] = wordOf ? draw.centroid(f) : [0, 0];
+            // exists (`valueLabel` OR `valueFormat`) OR the D-02 magnitude-ring channel needs an
+            // anchor (`symbolR` — the ring seats at the same centroid the label would) OR the A-28
+            // place-label augment channel seats its bold letters here (`placeLabel`).
+            const [cx, cy] =
+                wordOf || props.symbolR || props.placeLabel ? draw.centroid(f) : [0, 0];
             // X10-LIB — the region's bounding-box minor axis, measured off the SAME path generator.
             // Measured for EVERY feature (A-04): the label size-gate reads it, and so does the
             // aggregated-cell tap floor below — which must judge a field carrying no word source.

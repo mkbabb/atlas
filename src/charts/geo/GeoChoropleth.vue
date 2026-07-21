@@ -67,6 +67,8 @@ const props = withDefaults(
         valueFormat: undefined,
         valueLabel: undefined,
         redundantChannel: "auto",
+        symbolR: undefined,
+        placeLabel: undefined,
         ariaLabel: "Geographic choropleth",
         sourceGridId: undefined,
         sourceGridOpen: false,
@@ -148,6 +150,41 @@ function onSelect(s: Shape, ev: MouseEvent) {
     if (ev.timeStamp - lastTouchSelect.value < 700) return;
     emit("select", { key: s.key, multi: isMultiSelect(ev) });
 }
+
+// D-02 — THE GRADUATED-SYMBOL MAGNITUDE RINGS: one centre-anchored ring per feature whose
+// `symbolR` returns a positive radius, seated at the same centroid the value label uses. The
+// caller owns the √-area scaling; this only projects the placements (null/0 ⇒ no ring).
+const magnitudeRings = computed(() => {
+    const fn = props.symbolR;
+    if (!fn) return [];
+    return shapes.value.flatMap((s) => {
+        const r = fn(s.key);
+        return r != null && r > 0 ? [{ key: s.key, cx: s.cx, cy: s.cy, r }] : [];
+    });
+});
+
+// A-28 (dial 5 — bold state letters AUGMENT, never replace) · THE PLACE-LABEL LETTERS: one bold
+// place word per feature whose `placeLabel` returns a non-empty string, seated at the SAME centroid
+// the value label uses. It AUGMENTS the value-label channel below (never replaces it); omit the
+// prop ⇒ no layer, byte-identical render.
+const placeLabels = computed(() => {
+    const fn = props.placeLabel;
+    if (!fn) return [];
+    return shapes.value.flatMap((s) => {
+        const text = fn(s.key);
+        return text ? [{ key: s.key, cx: s.cx, cy: s.cy, text }] : [];
+    });
+});
+
+// The PHONE counter-scale: the viewBox scales the letters with the geometry, so a narrow render
+// shrinks the 11px word below legibility (~4px at 390). When the field renders UNDER user scale
+// (`fieldWidth / WIDTH < 1`) the letters counter-scale toward their CSS size, CAPPED at 2× so the
+// ratified desktop geometry is the identity and centroid crowding stays bounded. Desktop renders
+// (scale ≥ 1) bind no style — the resting render is unchanged.
+const placeLetterScale = computed<number>(() => {
+    const s = fieldWidth.value / WIDTH.value;
+    return s > 0 && s < 1 ? Math.min(1 / s, 2) : 1;
+});
 
 const hasTable = computed(() => props.valueFormat != null);
 const tableRows = computed(() =>
@@ -278,6 +315,24 @@ const tableRows = computed(() =>
                     />
                 </template>
             </g>
+            <!-- D-02 · THE MAGNITUDE RINGS (the graduated-symbol channel) — ring AREA carries the
+                 caller's second quantity over the hue-borne first; hairline foreground ink,
+                 pointer-transparent, above the fills and below the value labels. -->
+            <g
+                v-if="magnitudeRings.length"
+                class="geo-magnitude-rings"
+                aria-hidden="true"
+                data-testid="geo-magnitude-rings"
+            >
+                <circle
+                    v-for="ring in magnitudeRings"
+                    :key="`ring-${ring.key}`"
+                    :cx="ring.cx"
+                    :cy="ring.cy"
+                    :r="ring.r"
+                    class="geo-magnitude-ring"
+                />
+            </g>
             <!-- GAP-5 · THE FORCED-COLORS TEXT CHANNEL (I9.c). A per-feature value WORD seated at each
                  shape's centroid: the magnitude as text, so a `forced-colors: active` / colour-blind
                  reader keeps the meaning the colour ramp carries even when the OS palette flattens
@@ -302,6 +357,30 @@ const tableRows = computed(() =>
                     dominant-baseline="central"
                 >
                     {{ s.label }}
+                </text>
+            </g>
+            <!-- A-28 (dial 5 — bold state letters AUGMENT, never replace) · THE PLACE-LABEL LETTERS.
+                 Bold PLACE words seated at each declaring feature's centroid, drawn ON TOP of the
+                 value-label channel above so the letters AUGMENT the map (they never replace its
+                 labels). Pointer-transparent; mounted only when a route wires `placeLabel` — omit ⇒
+                 no layer, the resting map is unchanged for every route that does not declare it. -->
+            <g
+                v-if="placeLabels.length"
+                class="geo-place-labels"
+                :style="placeLetterScale > 1 ? { '--geo-place-letter-scale': placeLetterScale } : undefined"
+                aria-hidden="true"
+                data-testid="geo-place-labels"
+            >
+                <text
+                    v-for="p in placeLabels"
+                    :key="`place-${p.key}`"
+                    :x="p.cx"
+                    :y="p.cy"
+                    class="geo-place-label"
+                    text-anchor="middle"
+                    dominant-baseline="central"
+                >
+                    {{ p.text }}
                 </text>
             </g>
         </svg>
