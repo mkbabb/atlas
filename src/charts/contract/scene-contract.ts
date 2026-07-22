@@ -147,7 +147,11 @@ export function stageEventsFromHub(
     };
 }
 
-/** The stage export callback remains the delegating seat; panel content is additive. */
+/** The stage's source-data seat. `open` is the delegating seat (URL-backed — ChapterStage writes
+    `?browse=<stageId>` and mounts the pane); `panel` is the additive companion the route declares.
+    Since A-32 (B4) that panel is the platform `SourceDataBrowser` fed by the route's declared
+    `DataScope` (`createBrowserFromScope`) — the per-route hand-rolled `SciScatterSourceBrowser`
+    reader was retired at that swap (−284), so no seat mounts a bespoke browser any longer. */
 export interface StageExport {
     open(scope: { readonly grain: "stage"; readonly stageId: string }): void;
     readonly panel: Component<SourcePanelProps>;
