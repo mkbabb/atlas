@@ -35,6 +35,7 @@ import { atmosphereCssVars } from "../background/composables/atmosphere.js";
 import { useSelection } from "../../stores/useSelection.js";
 import { useFilterPane } from "../../../filter/composables/useFilterPane.js";
 import { provideDismissArbiter, useDismissArbiter } from "../../interaction/useDismissArbiter.js";
+import { provideDockPortals } from "../dock/composables/useDockPortals.js";
 
 // The active dashboard's context — the dock reads its nav at every register (the filter is the
 // floating Drawer, one affordance for both). Bound here as the `--route-*` cascade + injected by
@@ -92,6 +93,14 @@ const routeThemeStyle = computed<Record<string, string>>(() => {
 //     plate's own (the SelectionRegion sibling handles the keyboard clear). We never reach in.
 const selection = useSelection();
 const { open: filterOpen } = useFilterPane();
+
+// ── THE DOCK PORTAL OWNERSHIP REGISTRY (E24-ADJUDICATION §6.3 · the app/dock-scoped owner model) ──
+// The shell wraps the dock, the filter drawer, and the content stage's plates, so it is the ONE
+// element that scopes their shared outside-interaction-hold registry (the `useDismissArbiter` idiom).
+// Providing it HERE — not a module singleton — isolates two app roots / HMR scopes / test mounts, and
+// lets the dock (`anyHeld` pin), the drawer, and each plate reach the SAME claim registry by inject.
+provideDockPortals();
+
 const dismissArbiter = provideDismissArbiter();
 useDismissArbiter(dismissArbiter).claim(() =>
     selection.hasSelection && !filterOpen.value

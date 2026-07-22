@@ -59,6 +59,16 @@ import { useMobileRegister } from "../../composables/useMobileRegister.js";
 import { useScrollChrome } from "./composables/useScrollChrome.js";
 import { useDocumentScrollProgress } from "../../../motion/useScrollProgress.js";
 import { useDismissArbiter } from "../../interaction/useDismissArbiter.js";
+import { useDockPortals } from "./composables/useDockPortals.js";
+import {
+    revealReleasesOnLeave,
+    revealPersists,
+} from "./composables/coarse-reveal.js";
+import {
+    resolvePhoneExclusion,
+    type PhoneSurface,
+} from "./composables/phone-surface-exclusion.js";
+import { useFilterPane } from "../../../filter/composables/useFilterPane.js";
 import { DASHBOARD_KEY } from "../../../contract/index.js";
 
 const props = withDefaults(
@@ -101,7 +111,12 @@ const identityRamp = computed<readonly string[]>(
 // (reclaiming its width to the prose) and is gear-toggle-collapsible everywhere. The `isPhone`
 // register read CONSUMES the ONE `useMobileRegister` seam (the breakpoint-DRY law — no second home);
 // it drives the GlassDock `:start-collapsed` rest-posture + the phone class.
-const { isPhone } = useMobileRegister();
+const { isPhone, isNoHover } = useMobileRegister();
+// The device hover CAPABILITY — `!(hover: none)`. The wide-coarse reveal semantics (coarse-reveal.ts)
+// key their release decision off this capability + the pointer kind, never a single event string: a
+// gesture reveal (touch/pen, or ANY pointer on a no-hover surface) persists; a hover mouse stays
+// transient. `isNoHover` is the ONE `useMobileRegister` seam (no second matchMedia home).
+const canHover = computed(() => !isNoHover.value);
 
 // ── The COLLAPSE posture (J-DOCK §approach-4 · useDockCollapse · C26) ──────────
 // The re-enabled 4.0.1 collapse machine — `useDockCollapse` wraps the GlassDock `expanded` /
@@ -144,6 +159,23 @@ watch(
     { immediate: true },
 );
 
+// ── THE PORTAL-OPEN PIN (ADJUDICATION-R4-REOPEN · the child-portal ownership model) ──────────────
+// While ANY facet portal the dock spawned is OPEN — the filter DRAWER or the export MENU, both of
+// which TELEPORT to <body> outside this rail's `$el` — the dock yields collapse-authority to that
+// portal and stays PINNED expanded (the `portal` intent, priority ABOVE bloom, non-releasing). This is
+// the ONE cure for C1/C2/F9/G1: a pointer/focus move into the teleported portal still fires the dock's
+// pointerleave/focusout (releasing the bloom below), but the pin outranks it so the rail never
+// collapses mid-interaction — the trigger stays put, focus stays managed, and glass's expand-flip guard
+// never re-fires (no fresh flip to guard). DESKTOP ONLY: on phone the expanded rail IS the sheet, so
+// pinning it open would collide with the drawer — the phone arbiter (below) subordinates one to the
+// other instead. When every portal closes the pin releases (null) and the rail returns to transient bloom.
+const { anyHeld: anyPortalOpen } = useDockPortals();
+watch(
+    [anyPortalOpen, isPhone],
+    ([open, phone]) => setIntent("portal", !phone && open ? false : null),
+    { immediate: true },
+);
+
 // ── THE COLLAPSED-REST BLOOM (spec-chrome §a.2 · W-MEMBRANE) ─────────────────────────────────────
 // The resting disc BLOOMS to the full rail on DESKTOP intent — a pointer or keyboard-focus over the
 // dock — and re-collapses the instant intent leaves (a transient reveal, never persistent chrome).
@@ -159,19 +191,52 @@ function bindBloom(inst: DockExposed | null): void {
     const bloom = (): void => {
         if (!isPhone.value) setIntent("bloom", false);
     };
-    const rest = (): void => setIntent("bloom", null);
+    // F9/U4/S8 — THE WIDE-COARSE REVEAL SEMANTICS (coarse-reveal.ts). A GESTURE reveal has no transient
+    // "hover": a tap/stroke REVEALS the rail and it must PERSIST so the follow-up gesture lands on the
+    // now-visible facet control. A gesture `pointerleave` is the gesture ENDING, NOT a hover departure —
+    // releasing on it re-collapses the rail mid-gesture and the click hit-tests the collapsed disc
+    // behind (drawer never opens). `revealReleasesOnLeave` returns true ONLY for a hover-transient
+    // pointer (a mouse on a hover-capable device); a touch OR pen, or ANY pointer on a no-hover surface,
+    // PERSISTS. This cures the E24 defect where the raw touch-only pointer-kind fork still released a
+    // no-hover STYLUS (pen) and recreated the second-action race.
+    const restFromPointer = (e: PointerEvent): void => {
+        if (revealReleasesOnLeave(e.pointerType, canHover.value)) setIntent("bloom", null);
+    };
     const onFocusOut = (e: FocusEvent): void => {
-        if (!el.contains(e.relatedTarget as Node | null)) rest();
+        if (!el.contains(e.relatedTarget as Node | null)) setIntent("bloom", null);
+    };
+    // THE GESTURE-REVEAL DISMISSALS — a persisted reveal releases on an OUTSIDE tap, or deterministically
+    // (timer-free) when the opening gesture is INTERRUPTED: `pointercancel` (the browser took the gesture
+    // over for a scroll starting inside the dock, or the stroke was cancelled) or `lostpointercapture`.
+    // All three gate on the reveal PERSISTING (`revealPersists` — touch OR pen, never a hover mouse
+    // that already released on leave) and on NO portal owning the dock (an open drawer/menu keeps the
+    // pin regardless — the banked already-open hold). Bounded to the one gesture: no idle timer, no
+    // stranded bloom. `onOutsidePointerDown` is capture-phase so it reads the tap before any descendant
+    // stops it; it only reads + releases, never prevents.
+    const onOutsidePointerDown = (e: PointerEvent): void => {
+        if (!revealPersists(e.pointerType, canHover.value) || anyPortalOpen.value) return;
+        if (e.target instanceof Node && el.contains(e.target)) return;
+        setIntent("bloom", null);
+    };
+    const onGestureInterrupt = (e: PointerEvent): void => {
+        if (!revealPersists(e.pointerType, canHover.value) || anyPortalOpen.value) return;
+        setIntent("bloom", null);
     };
     el.addEventListener("pointerenter", bloom);
-    el.addEventListener("pointerleave", rest);
+    el.addEventListener("pointerleave", restFromPointer);
+    el.addEventListener("pointercancel", onGestureInterrupt);
+    el.addEventListener("lostpointercapture", onGestureInterrupt);
     el.addEventListener("focusin", bloom);
     el.addEventListener("focusout", onFocusOut);
+    document.addEventListener("pointerdown", onOutsidePointerDown, true);
     detachBloom = (): void => {
         el.removeEventListener("pointerenter", bloom);
-        el.removeEventListener("pointerleave", rest);
+        el.removeEventListener("pointerleave", restFromPointer);
+        el.removeEventListener("pointercancel", onGestureInterrupt);
+        el.removeEventListener("lostpointercapture", onGestureInterrupt);
         el.removeEventListener("focusin", bloom);
         el.removeEventListener("focusout", onFocusOut);
+        document.removeEventListener("pointerdown", onOutsidePointerDown, true);
     };
 }
 watch(dockRef, (inst) => bindBloom(inst), { immediate: true });
@@ -208,6 +273,41 @@ const crestRef = ref<InstanceType<typeof DockCrest> | null>(null);
 // armed the scrim + `:sheet` register for one pre-bind tick on phone (a scrim flash). `bound`
 // holds the sheet shut until the posture is knowable — the register bridge has collapsed by then.
 const sheetOpen = computed(() => bound.value && isPhone.value && !collapsed.value);
+
+// ── THE PHONE ARBITER (C4 · sheet ↔ drawer mutual exclusivity) ───────────────────────────────────
+// On phone the crest-tap SHEET and the filter DRAWER must never co-occupy the viewport: the drawer
+// teleports to <body> UNDER the dock scrim/sheet (the 215,407 px² buried-under-scrim collision). They
+// are mutually exclusive — opening one SUBORDINATES the other. Opening the drawer (from the sheet's
+// facet-7 trigger) COLLAPSES the dock, closing the sheet so the drawer stands alone and reachable (no
+// scrim above it); opening the sheet closes the drawer. The FORM of the phone dock stays dial-13
+// owner-held — this is only the exclusivity LOGIC + the reachability it buys, not a new phone posture.
+const { open: filterOpen } = useFilterPane();
+// THE CONTINUOUS PHONE EXCLUSION (phone-surface-exclusion.ts · U5/S5). `lastActivated` is the crossfade
+// tie-break: during a drawer's open transition the sheet has not yet collapsed, so BOTH flags are
+// briefly true — the just-activated surface must own the viewport and the outgoing one must yield
+// hit-testing. Eventual boolean exclusivity (the two watchers alone) left the OUTGOING scrim a
+// full-viewport, pointer-active element for its 200ms (120ms PRM) leave clock; the resolver + the
+// pointer-events yield below make the handoff a SINGLE-owner invariant at onset, mid, AND settle.
+const lastActivated = ref<PhoneSurface>("none");
+watch(filterOpen, (drawerOpen) => {
+    if (!isPhone.value || !drawerOpen) return;
+    lastActivated.value = "drawer";
+    if (sheetOpen.value) collapse(); // subordinate the sheet — the drawer owns the viewport
+});
+watch(sheetOpen, (open) => {
+    if (!isPhone.value || !open) return;
+    lastActivated.value = "sheet";
+    if (filterOpen.value) filterOpen.value = false; // subordinate the drawer — the sheet owns it
+});
+// The single-owner projection THIS frame — drives the scrim's hit ownership (never two surfaces at
+// once). STATE + exclusivity only: the phone FORM (dial-13 posture) stays owner-held.
+const phoneExclusion = computed(() =>
+    resolvePhoneExclusion({
+        sheetOpen: sheetOpen.value,
+        drawerOpen: isPhone.value && filterOpen.value,
+        lastActivated: lastActivated.value,
+    }),
+);
 
 function onCrestToggle(): void {
     if (!isPhone.value) return;
@@ -259,6 +359,7 @@ useDismissArbiter().claim(() =>
         <div
             v-if="ctx && sheetOpen"
             class="usf-dock-scrim"
+            :class="{ 'usf-dock-scrim--yield': !phoneExclusion.scrimOwnsHit }"
             aria-hidden="true"
             data-testid="dock-scrim"
             @click="closeSheet"

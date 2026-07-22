@@ -46,6 +46,24 @@ describe("dock posture", () => {
         intents.set("manual", false);
         expect(resolveDockCollapse(intents)).toBe(false);
     });
+
+    it("the PORTAL pin outranks the bloom — an open portal holds the rail open THROUGH a bloom release (ADJUDICATION-R4-REOPEN)", () => {
+        // The pinned-open dock model: while a facet portal (filter drawer / export menu) is OPEN the
+        // dock is pinned expanded (`portal: false`) ABOVE the bloom. The C1/C2/F9/G1 cure hinges on
+        // this outranking: a pointer move INTO the teleported portal fires the dock's own
+        // pointerleave/focusout (RELEASING the bloom), but the portal pin must keep the rail expanded so
+        // it never re-collapses mid-interaction (no fresh flip → glass's guard never re-fires).
+        const intents = new Map<DockCollapseSource, boolean>([
+            ["register", true], // rests collapsed
+            ["bloom", false], // hovered open
+            ["portal", false], // a portal opened
+        ]);
+        expect(resolveDockCollapse(intents)).toBe(false); // expanded
+        intents.delete("bloom"); // pointer left INTO the teleported portal — bloom releases
+        expect(resolveDockCollapse(intents)).toBe(false); // STILL expanded — the pin holds (the cure)
+        intents.delete("portal"); // every portal closed — the pin releases
+        expect(resolveDockCollapse(intents)).toBe(true); // returns to the resting disc (transient bloom restored)
+    });
 });
 
 describe("filter continuum register", () => {

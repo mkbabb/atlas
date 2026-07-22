@@ -27,12 +27,19 @@
 
 import { computed, ref, type ComputedRef } from "vue";
 
-export type DockCollapseSource = "bloom" | "manual" | "register" | "scroll";
+export type DockCollapseSource = "portal" | "bloom" | "manual" | "register" | "scroll";
+// `portal` is the PINNED-OPEN intent (ADJUDICATION-R4-REOPEN · the child-portal ownership model): while
+// ANY facet portal the dock spawned is OPEN (the filter drawer, the export menu — `useDockPortals`), the
+// dock is pinned expanded (`portal:false`) and does NOT auto-collapse on pointer/focus departure. It
+// sits ABOVE `bloom` and is NON-RELEASING for the portal's lifetime, so a pointer/focus move INTO the
+// teleported portal (which fires the dock's own pointerleave/focusout, releasing the bloom) can no
+// longer collapse the rail mid-interaction — the trigger stays, focus stays managed, and glass's
+// expand-flip guard never re-fires. The pin RELEASES (null) when every portal closes, restoring bloom.
 // `bloom` is the on-INTENT expand (hover/focus over the collapsed rail — W-MEMBRANE's collapsed-rest
 // bloom, spec-chrome §a.2). It sits ABOVE `manual`/`register` so a hover ALWAYS reveals the rail from
 // the resting disc regardless of the rest posture, and RELEASES (null) back to the rest the instant
 // the pointer/focus leaves — a transient, never persistent, chrome (W-10/W-14).
-const COLLAPSE_PRIORITY: Record<DockCollapseSource, number> = { bloom: 40, manual: 30, register: 20, scroll: 10 };
+const COLLAPSE_PRIORITY: Record<DockCollapseSource, number> = { portal: 60, bloom: 40, manual: 30, register: 20, scroll: 10 };
 
 export function resolveDockCollapse(
     intents: ReadonlyMap<DockCollapseSource, boolean>,

@@ -24,7 +24,7 @@
 //   • ChartDataTable  — the a11y rows that ARE the export payload (E3, off the contract).
 //   • VizDescription / VizKeyStats / PlateVoid — the new furniture rungs (E1 / B4 / E8).
 //   • vizExport       — the getDataURL / DOM-snapshot / CSV serializers (E3, ZERO heavy dep).
-import { defineAsyncComponent, inject, onBeforeUnmount, watch } from "vue";
+import { defineAsyncComponent, inject, onBeforeUnmount, ref, watch } from "vue";
 import { Download } from "@lucide/vue";
 import { DockControl, DockTrigger } from "@mkbabb/glass-ui/dock";
 import {
@@ -41,6 +41,7 @@ import PlateVoid from "./PlateVoid.vue";
 import PlateSkeleton from "./PlateSkeleton.vue";
 import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
 import { useMembraneProvenanceSource } from "../../platform/provenance/useMembraneProvenance.js";
+import { useDockPortals } from "../../platform/chrome/dock/composables/useDockPortals.js";
 import { STORY_CARD_KEY } from "./story-card-context.js";
 import { useVizPlate, type VizPlateProps } from "./useVizPlate.js";
 import { STAGE_ANATOMY_KEY } from "../contract/scene-contract.js";
@@ -105,6 +106,77 @@ onBeforeUnmount(() => storyCard?.clearAggregateStats(props.contract.id));
 // place (the pre-fold header home), so nothing is stranded until this viz is projected.
 const { teleport: teleportPlateChrome, targetSelector: membraneProvenanceSlot } =
     useMembraneProvenanceSource(() => props.contract.id);
+
+// ── THE DOCK HOLDS (E24-ADJUDICATION §6.3 · the typed outside-interaction census · S2/§3.1) ────────
+// When this plate is the dial viz its export affordance TELEPORTS into the dock's facet-6 detent, and
+// two distinct outside-interaction surfaces can hold the rail open — each named TRUTHFULLY (the §3.1
+// strike of the old "both teleport to <body>" prose):
+//   • the export CSV/image DropdownMenu — BODY-TELEPORTED (Reka → <body>), wholly outside the rail;
+//   • the source-data browser — an INLINE <aside> in THIS plate (`viz-plate__source-data` below); only
+//     its download DOOR is relocated into the dock detent, so collapsing the rail would strand that
+//     door (stale aria-expanded) while the inline browser stays open.
+// Each claim carries the typed census payload and a spec keyed reactively by contract id: a NON-dial
+// plate (teleportPlateChrome false) claims NOTHING, and a dial-away→dial-back evicts the stale owner
+// and mints a fresh one (no resurrected hold — S6). Both auto-release on scope dispose.
+const exportMenuOpen = ref(false);
+const { claimOpen } = useDockPortals();
+
+// THE EXPORT CLOSE RECEIVER (§3.2 · S3) — the export menu is body-teleported, so on close Reka returns
+// focus to its DockTrigger. But if the dock pin releases FIRST the collapsing rail unmounts that
+// trigger and focus falls to BODY. The close transaction keeps the pin held through `closing` and
+// seats focus on the download trigger (the exact invoker, still rendered) BEFORE the pin releases —
+// reclaiming ONLY when focus is stranded (inside the closing menu, or fell to BODY), never yanking a
+// focus the user deliberately moved.
+function restoreExportFocus(): void {
+    if (typeof document === "undefined") return;
+    const active = document.activeElement;
+    const strayed =
+        active === document.body ||
+        active === null ||
+        (active instanceof Element && Boolean(active.closest('[role="menu"]')));
+    if (!strayed) return;
+    const trigger = document.querySelector<HTMLElement>(
+        `[data-testid='viz-dock-download-${props.contract.id}']`,
+    );
+    if (!trigger) return;
+    const target = trigger.matches("button, [tabindex]")
+        ? trigger
+        : (trigger.querySelector<HTMLElement>("button, [tabindex]") ?? trigger);
+    target.focus({ preventScroll: true });
+}
+
+claimOpen(
+    () =>
+        teleportPlateChrome.value
+            ? {
+                  key: `export-menu-${props.contract.id}`,
+                  trigger: "facet-6-export-door",
+                  surface: "body-teleport",
+                  reason: "teleported-surface-fires-dock-leave",
+              }
+            : null,
+    exportMenuOpen,
+    // close → focus → release (S3): keep the download trigger actionable through focus-restore, release after.
+    { restoreFocus: restoreExportFocus },
+);
+claimOpen(
+    () =>
+        teleportPlateChrome.value
+            ? {
+                  key: `source-data-${props.contract.id}`,
+                  trigger: "facet-6-source-door",
+                  surface: "inline-aside",
+                  reason: "door-in-dock-surface-outside",
+              }
+            : null,
+    sourceDataOpen,
+);
+// S6 — clear the controlled export-open flag when this plate leaves the facet-6 detent, so a
+// dial-away/dial-back cannot remount the `v-model:open` DropdownMenu subtree already-open and
+// resurrect a stale hold (the phase model evicts the claim; this evicts the controlled state it read).
+watch(teleportPlateChrome, (onDial) => {
+    if (!onDial) exportMenuOpen.value = false;
+});
 
 defineExpose({ archetype });
 </script>
@@ -185,7 +257,7 @@ defineExpose({ archetype });
                 >
                     <Download class="viz-dock__glyph" aria-hidden="true" />
                 </DockControl>
-                <DropdownMenu v-else>
+                <DropdownMenu v-else v-model:open="exportMenuOpen">
                     <DockTrigger
                         for="dropdown"
                         :aria-label="`Download ${contract.title} — CSV or image`"

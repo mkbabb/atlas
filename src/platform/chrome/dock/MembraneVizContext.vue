@@ -106,6 +106,16 @@ function toggleFilter(): void {
 const showAppliedPip = computed(
     () => !filterDrawerOpen.value && appliedCount.value > 0,
 );
+
+// THE TRUTHFUL ACCESSIBLE NAME (U9 · §6.5) — the trigger discloses the "Filters" DIALOG for the
+// active dashboard, so its accessible name is that HUMAN contract, NEVER the technical `dialVizId`
+// slug (`ecf-choropleth`, `sci-scatter`, …). `ctx.title` is the dashboard's human title (the same
+// string FilterPanel's save default reads); absent ⇒ the bare "Filters". The truthful popup ROLE
+// (`aria-haspopup="dialog"` — the receiver IS a named dialog, not a menu), the `aria-controls` join
+// to the drawer body, and `aria-expanded` complete the honest disclosure contract on the template.
+const filterName = computed(() =>
+    ctx?.title ? `Filters — ${ctx.title}` : "Filters",
+);
 </script>
 
 <template>
@@ -141,10 +151,11 @@ const showAppliedPip = computed(
             <DockControl
                 compact
                 class="membrane-viz-context__filter"
-                :aria-label="`Filters — ${dialVizId}`"
+                :aria-label="filterName"
                 :aria-expanded="filterDrawerOpen"
-                aria-haspopup="true"
-                :title="`Filters · ${dialVizId}`"
+                aria-haspopup="dialog"
+                aria-controls="filter-drawer-body"
+                :title="filterName"
                 :data-membrane-facet="FILTER_FACET"
                 :data-testid="`membrane-filter-trigger-${dialVizId}`"
                 data-membrane-filter-trigger

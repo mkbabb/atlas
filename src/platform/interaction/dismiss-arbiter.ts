@@ -51,7 +51,13 @@ export function createDismissArbiter(
         if (event.key !== "Escape" || event.defaultPrevented) return;
         const path = eventPath(event);
         if ([...claims.values()].some((claim) => claim.guards?.(path))) return;
-        top((claim) => claim.escape === true)?.onDismiss("escape");
+        const winner = top((claim) => claim.escape === true);
+        if (!winner) return;
+        winner.onDismiss("escape");
+        // TOPMOST SINGLE-SURFACE DISMISSAL (U6): mark the Escape handled so it never cascades to a
+        // co-open surface. A body-teleported Reka menu's own document Escape handler defers to
+        // `defaultPrevented`, so one Escape closes exactly the topmost surface — never two at once.
+        event.preventDefault();
     }
 
     doc.addEventListener("pointerdown", onPointer, true);

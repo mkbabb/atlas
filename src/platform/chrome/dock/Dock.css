@@ -326,6 +326,16 @@
     z-index: var(--z-overlay);
     background: color-mix(in oklab, var(--background) 55%, transparent);
 }
+/* CONTINUOUS HIT HANDOFF (U5/S5 · phone sheet↔drawer exclusivity) — a scrim that is not the viewport
+   OWNER is hit-INERT. `--yield` fires the instant the drawer is opening (the resolver flips
+   owner→drawer while the sheet has not yet collapsed); `.dock-scrim-leave-active` covers the outgoing
+   scrim's WHOLE leave clock. Both are pointer-events, NOT opacity — independent of the motion
+   preference, so PRM's shorter opacity clock can never hide a hit-test collision (U5 ¶5). The scrim
+   still tap-closes while it OWNS the viewport (no yield, not leaving). */
+.usf-dock-scrim--yield,
+.dock-scrim-leave-active {
+    pointer-events: none;
+}
 .dock-scrim-enter-active,
 .dock-scrim-leave-active {
     transition: opacity 200ms var(--ease-out, ease);
