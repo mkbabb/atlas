@@ -5,9 +5,9 @@
 // reads the mounted-plate registry projected to the K-ACTIVE in-viewport SET (`useFilterPanel`,
 // READ-ONLY off `activeVizIds` — it NEVER writes the K-ACTIVE signal), and stacks:
 //
-//   (0) the ALGEBRA band         — the `#algebra` slot (band-0, ABOVE the selection-set pane): the
-//        route's GLOBAL filter-algebra readout (`AlgebraReadout`, provenance-surface §3.2). First-
-//        class HERE so a route need not prepend it inside its `filterBody`; unfilled ⇒ nothing.
+//   (0) the ALGEBRA band         — `ctx.algebraBody` (band-0, ABOVE the selection-set pane): the
+//        route's GLOBAL filter-algebra readout (`AlgebraReadout`, provenance-surface §3.2), read
+//        DIRECTLY off the route contract like `filterBody` below; unfilled ⇒ nothing.
 //   (1) the SELECTION-SET pane   — `<SelectionSetPane />` (the lifted `FilterView` body);
 //   (2) the route's own controls — the active dashboard's `filterBody` (the route's base dials,
 //        injected off `DASHBOARD_KEY` — consumed in-place so the route's filter vocabulary survives
@@ -36,6 +36,13 @@ const ctx = inject(DASHBOARD_KEY);
 // surface; the route's controls live HERE now, not in a separate card/dock).
 const routeBody = computed(() => ctx?.filterBody);
 
+// THE BAND-0 ALGEBRA BODY (F5/M1 cure · A-39) — the route's GLOBAL filter-algebra readout, read
+// DIRECTLY off the route contract (`DASHBOARD_KEY.algebraBody`) exactly as `routeBody` reads
+// `filterBody`. The A-39 fold makes the ONE membrane drawer host self-sufficient: it sources the
+// algebra relay from the contract, so the consumer never wires a chrome slot for it (the prior
+// DashboardView `#algebra` slot-forward is retired — one source, no dual path). Undefined ⇒ nothing.
+const algebraBody = computed(() => ctx?.algebraBody);
+
 const { contextDims, viewDims, pinnedVizId } = useFilterPanel();
 const { registry } = useVizRegistry();
 
@@ -55,19 +62,15 @@ const optionsController = computed(
     () => registry.value.get(dialVizId.value)?.optionsController ?? null,
 );
 
-// THE BAND-0 SLOT (O-A9 residue close) — the route's GLOBAL filter-algebra readout (`AlgebraReadout`)
-// renders ABOVE the selection-set pane. First-class so a route need not prepend it inside `filterBody`;
-// unfilled ⇒ nothing (the consumer paints it, no default — mirroring the VizPlate `#provenance` slot).
-defineSlots<{ algebra(): unknown }>();
 </script>
 
 <template>
     <section class="unified-filter-panel" aria-label="Filters" data-testid="unified-filter-panel">
         <!-- (0) THE ALGEBRA BAND — band-0, ABOVE the selection-set pane: the route's GLOBAL filter-
-             algebra readout (AlgebraReadout, provenance-surface §3.2). First-class HERE so a route
-             need not prepend it inside its `filterBody`; unfilled ⇒ renders nothing (the consumer
-             paints it, no default — mirroring the VizPlate `#provenance` slot). -->
-        <slot name="algebra" />
+             algebra readout (AlgebraReadout, provenance-surface §3.2), sourced DIRECTLY from the route
+             contract (`ctx.algebraBody`) — the ONE membrane drawer host owns the relay, no consumer
+             chrome-wiring. Undefined ⇒ renders nothing (mirroring the `routeBody` band-2 read). -->
+        <component :is="algebraBody" v-if="algebraBody" />
 
         <!-- (1) THE SELECTION-SET BAND — the lifted FilterView body (self-gates on a live selection). -->
         <SelectionSetPane />

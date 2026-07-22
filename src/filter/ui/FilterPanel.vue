@@ -137,7 +137,12 @@ useDismissArbiter().claim(() =>
               priority: 30,
               outsidePointer: true,
               escape: true,
-              within: (path) => path.some((node) => node instanceof HTMLElement && Boolean(node.closest("[data-testid='filter-panel']"))),
+              // The OUTSIDE-POINTER exemption (F8 cure) — the filter's own surface AND the co-located
+              // dock membrane (`[data-membrane-band]`, which the facet-6 provenance detent carries): a
+              // facet-6 / membrane-facet pointer click is NOT "outside", so the two co-located
+              // affordances coexist (a provenance click no longer closes an open drawer). Scoped to
+              // `within` (pointer only) so ESCAPE from the dock still closes the drawer (guards-only).
+              within: (path) => path.some((node) => node instanceof HTMLElement && Boolean(node.closest("[data-testid='filter-panel'], [data-membrane-band]"))),
               guards: (path) => path.some((node) => node instanceof HTMLElement && Boolean(node.closest("[data-viz-plate]"))),
               onDismiss: () => (open.value = false),
           }

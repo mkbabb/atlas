@@ -70,7 +70,6 @@ const {
     focusRim,
     onFigureKey,
     focusedStat,
-    filterDimensions,
     reveal,
     aggregateStats,
     keyStats,
@@ -215,24 +214,13 @@ defineExpose({ archetype });
             </Teleport>
         </template>
 
-        <!-- J-FRAME · FACET 1 — the per-viz host-read seam, OUTSIDE the chart body. The host READS
-             the declared facets and ROUTES each to its OWNING-WAVE renderer through a scoped slot
-             (J-FRAME renders NOTHING — a viz hand-rolling a facet inline is the parallel-layer
-             anti-pattern J-FEEDBACK-5 §2 forbids). `filterDimensions` → J-WORKBOOK/J-VIZDOCK rails,
-             guarded ABSENT when undeclared.
-
-             A-11 · THE TOP AGGREGATE SEAT IS STRUCK. A second aggregate-band template stood here,
-             addressed at a `ChartFrame` slot that was never declared — it filled nothing, on any
-             path. The numerals POLE is not a second seat: `StoryCardContext.numbers` carries the
-             resolved side and the card places the ONE band by grid row (StoryCard.vue), so the pole
-             alternates with no duplicate template and no DOM reorder. -->
-        <template v-if="filterDimensions.length" #filter-dimensions>
-            <slot
-                name="filter-dimensions"
-                :dimensions="filterDimensions"
-                :contract-id="contract.id"
-            />
-        </template>
+        <!-- A7 (A-39) · THE PER-VIZ FILTER-DIMENSIONS HOST-READ SEAT IS STRUCK. A `#filter-dimensions`
+             template stood here, addressed at a `ChartFrame` slot that was never declared and filled
+             by zero consumers — it painted nothing on any path. The projected dims now render ONLY in
+             the ONE membrane drawer (`UnifiedFilterPanel`, off `useFilterPanel`'s `⋃ filterDimensions`
+             projection); the per-plate seat dies by construction. (Same nil-DOM strike as A-11's
+             struck top-aggregate seat: the numerals POLE is `StoryCardContext.numbers`, placed by
+             grid row in StoryCard.vue — no per-plate template, no DOM reorder.) -->
 
         <!-- THE CHART BODY — the consumer's figure, wrapped in a `data-viz-body` host so the E3
              DOM-snapshot can find its SVG. On the empty-data signal (E8) the body swaps for the
