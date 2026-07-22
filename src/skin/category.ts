@@ -11,6 +11,30 @@ import type { DashboardCategory } from "../contract/index.js";
 export type BackgroundFamily = "aurora" | "constellation";
 export type SkinBackground = "liquid-grid" | "watercolor-dot" | "blob";
 
+/** THE CARD-FINGERPRINT CONTRACT (A-27 · home H6) — the miniature of a route's OWN instrument the
+    contents-page card wears, so seven cards read as seven instruments and not seven identical
+    rectangles. A CLOSED display-form vocabulary (the shared contract atlas owns); the consumer maps
+    each route to its form and renders the per-route mark. Each name is the SHAPE of the route's
+    signature figure — a decorative echo, never its data:
+      · `flow-trunk`      — a diverging two-strand flow (the USF fund trunk).
+      · `ribbon-fan`      — stacked ridge lines fanning open (the demand ridge).
+      · `window-arc`      — an arc rising over a baseline (the ECF filing-window arc).
+      · `rainbow-stack`   — an ascending spectral stack (the SCI band-cake).
+      · `hex-field`       — a honeycomb of cells (the speedtest hex map).
+      · `diverging-fleck` — a scatter with one outlying fleck (the integrity anomaly).
+      · `trap`            — a sigmoid germination curve (the flytrap seed story).
+    A small CLOSED union — a new route's form joins as a member, never a per-card fork. This is the
+    seam the two dead skin husks vacated (T-2, zero declarers — struck on sight): the fingerprint is
+    the gallery's real per-route presentation identity those husks never carried, never a revival. */
+export type CardFingerprint =
+    | "flow-trunk"
+    | "ribbon-fan"
+    | "window-arc"
+    | "rainbow-stack"
+    | "hex-field"
+    | "diverging-fleck"
+    | "trap";
+
 /** One narrative family's rendered identity (the gallery card + the category-home hero). */
 export interface CategorySkin {
     id: string;

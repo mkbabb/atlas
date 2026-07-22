@@ -67,6 +67,12 @@ export interface DashboardMeta {
     flagship?: FlagshipFigure;
     /** ISO date the dashboard was last updated; sorts the gallery newest-first. */
     updated?: string;
+    /** THE EDITORIAL LEAD (A-26 · home H5 · dial 4) — marks this route the gallery's ONE featured
+        lead card (the 2-col span + the display-serif flagship figure). An EDITORIAL weight, orthogonal
+        to `updated`: the contents page derives the lead from this flag FIRST and falls back to the
+        newest card only when no route declares one, so recency is a TIEBREAK, never the editor. At
+        most one route sets it — the owner names which (dial 4); omit ⇒ an ordinary card. */
+    featured?: boolean;
     /** The gallery NARRATIVE-FAMILY group (J-STORY §11 / J-FEEDBACK-4 §6 A9 · C33) — the
         scale-conditional contents-page axis (funds → connectivity → outcomes). Omit ⇒ the route
         falls to the 'More' section. A STRUCTURE facet (a closed union), not a copy register. */
