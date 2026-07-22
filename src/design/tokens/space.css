@@ -131,8 +131,19 @@
        the body re-centres in the non-dock track via `.dashboard-body`'s `margin-inline: auto`.
        The phone re-bases to the collapsed-tab floor (the dock rests collapsed there —
        PlatformShell's `@media (--phone)`); the gate asserts the RELATION
-       (reserve === inset + dock-w + inset), not a magic px. */
-    --cp-dock-reserve: calc(var(--cp-inset) + var(--cp-dock-w) + var(--cp-inset));
+       (reserve === inset + collapsed-w), not a magic px.
+
+       ── THE GUTTER DEATH (W-MEMBRANE · A-39 · spec-chrome §d.1, B-3/B-7) ──────────────────────────
+       The A-39 fold makes the desktop rail rest COLLAPSED (the disc + progress rim + the facet-3
+       lozenge; the full rail is now a transient BLOOM-on-intent, never persistent chrome — W-10/W-14).
+       So the persistent reserve is CHROME-FIRST: it reserves only the collapsed disc, not the bloomed
+       rail. `--cp-dock-collapsed-w` (NET-NEW, = the disc `--dock-control-size`, Dock.css:18) is the
+       collapsed footprint; the reserve reclaims ~48px (112px → 64px). The bloom overlaps only spent
+       flank ink (D's versal watermark) on intent — the plate's own controls moved into the membrane,
+       so nothing live sits under it (§d.2/§d.3). The RELATION (reserve === inset + collapsed-w) is what
+       the gate asserts, not the px. */
+    --cp-dock-collapsed-w: 2.75rem; /* NET-NEW — the collapsed disc (= --dock-control-size, Dock.css:18) */
+    --cp-dock-reserve: calc(var(--cp-inset) + var(--cp-dock-collapsed-w)); /* 4rem/64px — the disc + one inset */
     /* ── THE DOCK-AWARE ASYMMETRIC MEASURE (J-STORY §8 · C25 the measure half) ──────────────────
        The keystone SPACE transposition: the figure reclaims the width the prose does not need.
        Two measures, ONE grid (the route body is the column track):

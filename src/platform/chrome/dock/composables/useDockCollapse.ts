@@ -27,8 +27,12 @@
 
 import { computed, ref, type ComputedRef } from "vue";
 
-export type DockCollapseSource = "manual" | "register" | "scroll";
-const COLLAPSE_PRIORITY: Record<DockCollapseSource, number> = { manual: 30, register: 20, scroll: 10 };
+export type DockCollapseSource = "bloom" | "manual" | "register" | "scroll";
+// `bloom` is the on-INTENT expand (hover/focus over the collapsed rail — W-MEMBRANE's collapsed-rest
+// bloom, spec-chrome §a.2). It sits ABOVE `manual`/`register` so a hover ALWAYS reveals the rail from
+// the resting disc regardless of the rest posture, and RELEASES (null) back to the rest the instant
+// the pointer/focus leaves — a transient, never persistent, chrome (W-10/W-14).
+const COLLAPSE_PRIORITY: Record<DockCollapseSource, number> = { bloom: 40, manual: 30, register: 20, scroll: 10 };
 
 export function resolveDockCollapse(
     intents: ReadonlyMap<DockCollapseSource, boolean>,

@@ -32,3 +32,10 @@ export * from "./provenance-lines.js";
 export { default as ProvenanceAppendix } from "./ProvenanceAppendix.vue";
 export { default as SourceLink } from "./SourceLink.vue";
 export { default as VizAppendixDock } from "./VizAppendixDock.vue";
+
+// ── W-MEMBRANE (A-39 · STRAND A) — THE FACET-6 PROVENANCE-DETENT TELEPORT SEAM ─────────────────
+// The membrane's facet-6 re-homes the active viz's provenance + CSV/image export into the dock via
+// TELEPORT (the KISS mechanism — the dock hosts ONE target, each plate's own nodes relocate in). The
+// dashboards' `PlateProvenance` consumes `useMembraneProvenanceSource` to teleport its bar; the dock
+// hosts the target with `useMembraneProvenanceHost`. No cross-repo import — the plate keeps its own.
+export * from "./useMembraneProvenance.js";

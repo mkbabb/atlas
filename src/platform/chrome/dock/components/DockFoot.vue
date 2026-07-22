@@ -70,7 +70,11 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
          it off the scroll middle above. The `#persistent-end` re-host is an OPTIONAL future 4.3.0
          simplification (R-FOOT-1, off the K critical path), never a K-H dependency. -->
     <div class="usf-dock__persistent-foot" data-testid="dock-persistent-foot">
-        <DockSeparator />
+        <!-- W-22≡W-74 · FACET-8 FOOT GATING — the leading separator fences the DATA-STATE register
+             (year-range · save) off the scroll middle. It paints ONLY on a route that DECLARES that
+             content (`hasYearScope`), so vft AND speedtest (no multi-year scope, §c.3) render no
+             phantom hairline; on phone it fences the DockSettings gear sheet, so it stays. -->
+        <DockSeparator v-if="isPhone || hasYearScope" />
 
         <!-- ⓪ THE SELECTION CHIP → the FilterView OPENER (C24 · J-FEEDBACK-4 §2/§9). Mounts ONLY
              when a selection is live (`v-if="showChip"`) — at count 0 the node is ABSENT. When shown
@@ -138,8 +142,11 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
                  live-behind Drawer; it drives the SAME `useFilterPane().open` the FilterPanel
                  trigger flips (ONE open truth). -->
             <!-- The DARK-TOGGLE DIVIDER (H.W9 §D) — the DockSeparator fencing the dark toggle into
-                 its own compartment, a visually separate register from the controls. -->
-            <DockSeparator />
+                 its own compartment, a visually separate register from the controls. W-22≡W-74 ·
+                 FACET-8 GATING: it divides the theme zone from the data-state controls ABOVE it, so it
+                 paints ONLY when those controls exist (`hasYearScope`) — on vft/speedtest there is
+                 nothing above to fence off, so the phantom hairline dies (the second of the two). -->
+            <DockSeparator v-if="hasYearScope" />
 
             <!-- ⑤ The dark-mode toggle + the collapse toggle. `size="dock"` routes the theme toggle through the
                  dock-control register; `:disable-transitions` wires the INSTANT theme re-print. Beside

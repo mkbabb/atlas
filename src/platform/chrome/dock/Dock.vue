@@ -41,12 +41,16 @@
 // is RE-ENABLED here via `useDockCollapse`. The posture is gear-TOGGLED + collapse-on-phone, NOT
 // forced-collapsed-everywhere; the desktop register may still rest expanded (a register OPTION,
 // J-PATH §8 Decision 2). The `:always-expanded` true-literal opt-OUT is DELETED.
-import { computed, inject, ref, watch } from "vue";
+import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
 import { GlassDock } from "@mkbabb/glass-ui/dock";
 import { ScrollProgressRim } from "@mkbabb/glass-ui/scroll-progress-rim";
 import DockCrest from "./components/DockCrest.vue";
 import DockStepperRender from "./components/DockStepperRender.vue";
 import DockFoot from "./components/DockFoot.vue";
+import MembraneVizContext from "./MembraneVizContext.vue";
+import MembraneProvenanceDetent from "./MembraneProvenanceDetent.vue";
+import MembraneTitleLozenge from "./MembraneTitleLozenge.vue";
+import { MEMBRANE_FACETS } from "./membrane-facet.js";
 import {
     useDockCollapse,
     type DockExposed,
@@ -72,6 +76,11 @@ const props = withDefaults(
 
 // The active dashboard's chrome contract — the dock reads ONLY this.
 const ctx = inject(DASHBOARD_KEY);
+
+// The CLOSED eight-facet roster (spec-chrome §c.1/§c.2) stamped as a shipped fact — the membrane
+// declares its facet count in the DOM so the closure is inspectable, not merely type-asserted. A
+// ninth facet is a compile error at `membrane-facet.ts`'s total switch, never a silent DOM add.
+const membraneFacets = MEMBRANE_FACETS.join(" ");
 
 // The ONE document-progress scalar for the whole dock. Collapse behavior, the stepper's terminal
 // beat correction, and the collapsed Glass rim all read this same computed; no child instantiates a
@@ -123,28 +132,59 @@ watch(dockRef, (inst) => bindDock(inst), { immediate: true });
 // scroll — that acts THEREAFTER; on phone it early-returns, so this bridge is the sole phone owner.
 watch(
     [dockRef, isPhone],
-    ([inst, phone]) => {
+    ([inst]) => {
         if (!inst) return;
-        setIntent("register", phone ? true : null);
+        // W-MEMBRANE COLLAPSED-REST (spec-chrome §a.2 · the gutter death): the rail rests COLLAPSED at
+        // EVERY register — the disc + progress rim + the facet-3 lozenge carry wayfinding, the full
+        // rail is a transient BLOOM on intent (below), never persistent chrome (W-10/W-14). So the
+        // persistent gutter reserves only the disc (112px → 64px). Phone is unchanged (it already
+        // rested collapsed; its expand is the crest-tap sheet, a `manual` intent that outranks this).
+        setIntent("register", true);
     },
     { immediate: true },
 );
 
-// ── COLLAPSE-ON-SCROLL — the CD-05 WITNESS (O-A21) ─────────────────────────────
-// `useScrollChrome` finally OWNS the mechanism CD-05 named for 5 tranches (comment-only in
-// `useDockCollapse.ts`): a discrete collapse edge off the ONE page scroll clock, PRM-guarded,
-// AG8-safe (no wheel/touchmove capture, no continuous transform), writing NOTHING back here. This is
-// the MINIMAL live binding — a `watch` on the edge drives the dock's EXISTING collapse machine, so
-// the down-scroll collapse is wired, not commented, and the seam re-collapses reactively (curing the
-// mount-latch strand at THIS point). Gated off the phone register: on phone the posture is crest-tap
-// owned (the sheet), so the scroll edge must never force-EXPAND the dock over content (the CD-01
-// regression). O-D1/O-D2 build the fuller reactive register bridge (the isPhone rewire, the phone
-// collapse-on-scroll consume) atop this witness.
-const { collapsed: scrollCollapsed } = useScrollChrome({ source: scrollProgress });
-watch(scrollCollapsed, (edge) => {
-    if (isPhone.value) return;
-    setIntent("scroll", edge);
-});
+// ── THE COLLAPSED-REST BLOOM (spec-chrome §a.2 · W-MEMBRANE) ─────────────────────────────────────
+// The resting disc BLOOMS to the full rail on DESKTOP intent — a pointer or keyboard-focus over the
+// dock — and re-collapses the instant intent leaves (a transient reveal, never persistent chrome).
+// GlassDock forwards ATTRS but not template LISTENERS to its real node (the same reason the sheet Esc
+// is a document listener), so we bind pointer/focus NATIVELY to the dock's own `$el`. Phone is fenced:
+// its expand is the crest-tap sheet, so hover/focus never blooms there (the CD-01 over-content regress).
+let detachBloom: (() => void) | null = null;
+function bindBloom(inst: DockExposed | null): void {
+    detachBloom?.();
+    detachBloom = null;
+    const el = (inst as unknown as { $el?: HTMLElement } | null)?.$el;
+    if (!el) return;
+    const bloom = (): void => {
+        if (!isPhone.value) setIntent("bloom", false);
+    };
+    const rest = (): void => setIntent("bloom", null);
+    const onFocusOut = (e: FocusEvent): void => {
+        if (!el.contains(e.relatedTarget as Node | null)) rest();
+    };
+    el.addEventListener("pointerenter", bloom);
+    el.addEventListener("pointerleave", rest);
+    el.addEventListener("focusin", bloom);
+    el.addEventListener("focusout", onFocusOut);
+    detachBloom = (): void => {
+        el.removeEventListener("pointerenter", bloom);
+        el.removeEventListener("pointerleave", rest);
+        el.removeEventListener("focusin", bloom);
+        el.removeEventListener("focusout", onFocusOut);
+    };
+}
+watch(dockRef, (inst) => bindBloom(inst), { immediate: true });
+onBeforeUnmount(() => detachBloom?.());
+
+// ── THE CROWN ZONE — `atTop` off the CD-05 scroll clock (O-A21) ────────────────────────────────
+// `useScrollChrome` reads the ONE page scroll clock (PRM-guarded, AG8-safe — no wheel/touch capture)
+// and yields `atTop` (progress ≤0.4%, the crown). W-MEMBRANE consumes ONLY that scalar here: it gates
+// the facet-3 lozenge's materialise (§a.2 — bare disc at the crown, the pill grows once the reader
+// leaves it). The composable's collapse-on-scroll EDGE is no longer driven: the collapsed-rest posture
+// (register bridge, above) rests the rail collapsed at every scroll position, so a scroll→collapse
+// driver is redundant; the only expansion is the on-intent bloom.
+const { atTop } = useScrollChrome({ source: scrollProgress });
 
 // ── THE VIEW-MODE TOGGLE — RETIRED FROM THE SERVED DOCK (O-DIR-4 ARM 3) ──────────────────────────
 // The owner's verdict on the A23 TOC interim: "entirely worthless" — it duplicated the stepper
@@ -239,6 +279,7 @@ useDismissArbiter().claim(() =>
         :class="{ 'usf-dock--phone': isPhone }"
         aria-label="Section navigation"
         data-testid="dock"
+        :data-membrane-facets="membraneFacets"
     >
         <!-- band 1 — THE PERSISTENT CREST + THE DOCK-BOX PROGRESS RIM (#persistent slot, H9 §B.1).
              The library renders this slot OUTSIDE the collapsed↔expanded crossfade, so the crest
@@ -285,6 +326,16 @@ useDismissArbiter().claim(() =>
                     @close="closeSheet"
                 />
             </div>
+            <!-- FACET 5 — THE VIZ-CONTEXT ZONE (spec-chrome §c.1 · the A-39 fold). The ONE
+                 registry-projected detent: the ACTIVE viz's controls + enlarge, `facetsFor([activeVizId])`
+                 SINGULAR. Self-gates on a live active id; replaces the N per-plate VizGearDock capsules
+                 (the per-plate renders still compile until the stage-3 subtraction). -->
+            <MembraneVizContext />
+            <!-- FACET 6 — THE PROVENANCE DETENT (spec-chrome §c.1 · the A-39 fold · STRAND A). The
+                 ONE teleport target the active plate's provenance + CSV/image export relocate into
+                 (`useMembraneProvenance`); atlas never imports the dashboards' PlateProvenance. Self-
+                 gates on the SAME dial viz the facet-5 zone tracks; `detent:"shut"`. -->
+            <MembraneProvenanceDetent />
             <DockFoot
                 :ctx="ctx"
                 :disable-transitions="props.disableTransitions"
@@ -294,6 +345,14 @@ useDismissArbiter().claim(() =>
         </template>
 
     </GlassDock>
+
+    <!-- FACET 3 — THE TITLE LOZENGE (spec-chrome §a · §c.1 · the A-39 fold). The wayfinding pill
+         grafted onto the collapsed disc's right edge: it carries the active beat's navLabel
+         (`useActiveBeat`, the ONE dock-IO scalar — the seam-15 seat) once the reader leaves the crown
+         (`!atTop`), and re-collapses to the bare disc at the top as the in-content title re-reveals.
+         A fixed sibling of the rail so it survives the collapse (never inside `.dock-layers`), yet is
+         one membrane at the node grain. Desktop-only: the phone readout is the O-03 bar (dial-13). -->
+    <MembraneTitleLozenge v-if="ctx" :at-top="atTop" :is-phone="isPhone" />
 </template>
 
 <style scoped src="./Dock.css"></style>

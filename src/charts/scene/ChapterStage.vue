@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, provide, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from "vue";
+import { Download } from "@lucide/vue";
+import { DockControl } from "@mkbabb/glass-ui/dock";
 import StickyScene from "./StickyScene.vue";
 import FootAnatomy from "../frame/FootAnatomy.vue";
-import VizGearDock from "../frame/VizGearDock.vue";
 import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
+import { useMembraneProvenanceSource } from "../../platform/provenance/useMembraneProvenance.js";
 import {
     createStageMorphDriver,
     STAGE_MORPH_KEY,
@@ -27,6 +29,8 @@ import {
     stageEventsFromHub,
 } from "../contract/scene-contract.js";
 import type { AppendixDetent } from "../../platform/provenance/appendix.js";
+import { useVizRegistry, type VizToken } from "../composables/useVizRegistry.js";
+import { stageControlsOf } from "./stage-viz-adapter.js";
 
 const props = defineProps<{
     stage: ChapterStageContract;
@@ -92,6 +96,25 @@ const sourcePanelProps = {
     eventScope: scope,
     vizId: props.stage.id,
 } satisfies SourcePanelProps;
+
+// ── S-20 — THE ChapterStage ANATOMY ADAPTER (spec-chrome §e.3) ───────────────────────────────────
+// A composed stage does NOT render through VizPlate, so it never self-registers — under the A-39 fold
+// the facet-5 zone (which projects the active viz's controls off the registry) would have no source
+// for THIS stage's scene-aware gear controls. The adapter registers the stage's `anatomy.gear.controls`
+// into the DEDICATED stage-anatomy seam (token-guarded, deregister on leave) so the fold projects the
+// stage's controls WITHOUT rendering ChapterStage through VizPlate. It never touches the graphic's own
+// plate entry under the same id (that stays the graphic's), so the fold-1 tree renders byte-faithful.
+const vizRegistry = useVizRegistry();
+let stageControlsToken: VizToken | null = null;
+onMounted(() => {
+    const controls = stageControlsOf(props.stage);
+    if (controls)
+        stageControlsToken = vizRegistry.registerStageControls(props.stage.id, controls);
+});
+onUnmounted(() => {
+    if (stageControlsToken)
+        vizRegistry.deregisterStageControls(props.stage.id, stageControlsToken);
+});
 
 function emitActiveViz(index = activeSceneIndex.value): void {
     const option = props.stage.scenes[index];
@@ -159,6 +182,14 @@ const sceneReadout = computed(
 function openSourceData(): void {
     props.stage.anatomy.export.open(scope);
 }
+
+// W-MEMBRANE (A-39 · STRAND A) — the stage's source-data BROWSE re-homes into the membrane's facet-6
+// provenance detent, the ChapterStage analog of VizPlate's export teleport. The stage does NOT render
+// through VizPlate (no header export seat), so once its per-plate `VizGearDock` is deleted the browse
+// would strand — this teleport gives it the SAME facet-6 home, firing only when the stage is the dial
+// viz (`useMembraneProvenanceSource`, the ONE dial-viz truth).
+const { teleport: stageChromeTeleport, targetSelector: membraneProvenanceSlot } =
+    useMembraneProvenanceSource(() => props.stage.id);
 
 function closeSourceData(): void {
     if (view.param("browse") === props.stage.id) view.setParam("browse", undefined);
@@ -229,18 +260,28 @@ watch(sourceDataOpen, (open) => {
                         />
                     </template>
                     <template #gear>
-                        <VizGearDock
-                            :label="stage.anatomy.gear.label"
-                            source-data
-                            @open-source-data="openSourceData"
+                        <!-- W-MEMBRANE (A-39) — the stage's scene-aware controls project into the
+                             membrane's facet-5 zone via the S-20 adapter (`registerStageControls`),
+                             so they no longer render in this foot seat (the fold's de-duplication).
+                             Only the source-data BROWSE survives, and only as a TELEPORT into facet-6
+                             when the stage is the dial viz — nothing strands when the per-plate
+                             `VizGearDock` is deleted. -->
+                        <Teleport
+                            v-if="stageChromeTeleport"
+                            :to="membraneProvenanceSlot"
                         >
-                            <component
-                                :is="stage.anatomy.gear.controls"
-                                v-if="stage.anatomy.gear.controls"
-                                :event-hub="events"
-                                :stage-id="stage.id"
-                            />
-                        </VizGearDock>
+                            <DockControl
+                                compact
+                                :aria-label="`Browse source data — ${stage.anatomy.gear.label}`"
+                                :aria-expanded="sourceDataOpen"
+                                :title="`Source data · ${stage.anatomy.foot.title}`"
+                                :data-testid="`stage-source-data-${stage.id}`"
+                                data-viz-dock-download
+                                @click="openSourceData"
+                            >
+                                <Download aria-hidden="true" />
+                            </DockControl>
+                        </Teleport>
                     </template>
                     <template #readout>
                         <component

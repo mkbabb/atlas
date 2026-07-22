@@ -25,16 +25,14 @@
 //   • VizDescription / VizKeyStats / PlateVoid — the new furniture rungs (E1 / B4 / E8).
 //   • vizExport       — the getDataURL / DOM-snapshot / CSV serializers (E3, ZERO heavy dep).
 import { defineAsyncComponent, inject, onBeforeUnmount, watch } from "vue";
-import { Download, SlidersHorizontal, Maximize2, Minimize2 } from "@lucide/vue";
+import { Download } from "@lucide/vue";
 import { DockControl, DockTrigger } from "@mkbabb/glass-ui/dock";
-import { Badge } from "@mkbabb/glass-ui/badge";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
 } from "@mkbabb/glass-ui/dropdown-menu";
 import ChartFrame from "./ChartFrame.vue";
-import VizGearDock from "./VizGearDock.vue";
 import VizDescription from "../legend/VizDescription.vue";
 import VizKeyStats from "../legend/VizKeyStats.vue";
 import ChartLegend from "../legend/ChartLegend.vue";
@@ -42,6 +40,7 @@ import ChartDataTable from "../legend/ChartDataTable.vue";
 import PlateVoid from "./PlateVoid.vue";
 import PlateSkeleton from "./PlateSkeleton.vue";
 import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
+import { useMembraneProvenanceSource } from "../../platform/provenance/useMembraneProvenance.js";
 import { STORY_CARD_KEY } from "./story-card-context.js";
 import { useVizPlate, type VizPlateProps } from "./useVizPlate.js";
 import { STAGE_ANATOMY_KEY } from "../contract/scene-contract.js";
@@ -77,19 +76,12 @@ const {
     keyStats,
     provenance,
     archetype,
-    filterDockOpen,
-    toggleFilterDock,
-    activeDimChips,
-    activeFilterCount,
-    showAppliedSummary,
     sourceData,
     sourceEventHub,
     sourceDataOpen,
     sourceDataRegionId,
     openSourceData,
     closeSourceData,
-    isFullscreen,
-    toggleEnlarge,
     ariaLabel,
     size,
     frameRef,
@@ -107,6 +99,13 @@ watch(
     { immediate: true },
 );
 onBeforeUnmount(() => storyCard?.clearAggregateStats(props.contract.id));
+
+// W-MEMBRANE (A-39 · STRAND A) — the FACET-6 re-home. When this plate is the dial viz and the dock's
+// facet-6 target is live, the header CSV/image export TELEPORTS into the membrane's provenance detent
+// (the dashboards' `PlateProvenance` teleports the bar beside it). Disabled ⇒ the export renders in
+// place (the pre-fold header home), so nothing is stranded until this viz is projected.
+const { teleport: teleportPlateChrome, targetSelector: membraneProvenanceSlot } =
+    useMembraneProvenanceSource(() => props.contract.id);
 
 defineExpose({ archetype });
 </script>
@@ -159,57 +158,22 @@ defineExpose({ archetype });
             </slot>
         </template>
 
-        <!-- THE #actions RUNG — J-VIZDOCK's ONE standardized <DockControl compact> cluster (C38).
-             The three loose nodes (the dual export <button>s + the VizOptions popover) are GONE: a
-             filter-TOGGLE + ONE folded download (the CSV/image choice behind a DockTrigger) +
-             an enlarge, sourced from @mkbabb/glass-ui/dock (the dock-control register — rounded,
-             ≥44px hitbox). A COLLAPSED applied-filters summary Badge rides the cluster when dials are
-             active + the dock is closed. The expand seam ChartFrame owns rides the enlarge button. -->
+        <!-- THE #actions RUNG — W-MEMBRANE (A-39) FOLD. The per-plate `VizGearDock` capsule is GONE:
+             the filter-TOGGLE re-homed to the membrane's facet-7 trigger (`MembraneVizContext`), the
+             ENLARGE to the facet-5 zone, and the applied-filters summary to facet-7's pip — all
+             projected off the ONE dial viz, so exactly one filter+enlarge affordance paints per route
+             (the membrane), never one per plate. Only the CSV/image EXPORT survives in this host, and
+             only as a TELEPORT into the facet-6 provenance detent — and only when THIS plate is the
+             dial viz (`teleportPlateChrome`), so the export lands in the membrane, never in the header
+             seat (no in-place fallback, no per-plate duplicate). -->
         <template v-if="!suppressFoot" #actions>
             <slot name="actions" />
-            <VizGearDock
-                class="viz-dock"
-                :label="`${contract.title} controls`"
-                :applied-count="activeFilterCount"
-            >
-                <!-- (1) THE FILTER-TOGGLE — raises the inline per-viz filter dock (a TOGGLE, the open
-                     state persisting until re-toggled; NOT a click-away popover). Bound to the viz's
-                     `filterDimensions` (J-FRAME's facet, CONSUMED). A Badge count-pip rides it when
-                     ≥1 dial is active + the dock is closed (the applied-filters summary). -->
-                <span class="viz-dock__filter-slot">
-                    <DockControl
-                        compact
-                        :aria-label="`Filters — ${contract.title}`"
-                        :aria-expanded="filterDockOpen"
-                        aria-haspopup="true"
-                        :title="`Filters · ${contract.title}`"
-                        :data-testid="`viz-dock-filter-toggle-${contract.id}`"
-                        data-viz-dock-filter-toggle
-                        @click="toggleFilterDock"
-                    >
-                        <SlidersHorizontal class="viz-dock__glyph" aria-hidden="true" />
-                    </DockControl>
-                    <!-- THE COLLAPSED APPLIED-FILTERS SUMMARY — a state-derived count pip reading the
-                         live active `filterDimensions` dials; present-when-active + dock-closed,
-                         absent when no dial is active. The full chip-list rides the title. -->
-                    <Badge
-                        v-if="showAppliedSummary"
-                        variant="secondary"
-                        size="sm"
-                        class="viz-dock__applied"
-                        :title="`${activeFilterCount} filter(s): ${activeDimChips.join(', ')}`"
-                        :data-testid="`viz-applied-summary-${contract.id}`"
-                        data-viz-applied-summary
-                        :data-filter-count="activeFilterCount"
-                    >
-                        {{ activeFilterCount }}
-                    </Badge>
-                </span>
-
-                <!-- (2) THE FOLDED DOWNLOAD — ONE control, the CSV/image choice behind a
-                     DockTrigger (the two export handlers `onExportCsv`/`onExportImage`
-                     re-homed onto the menu, never re-authored). The image export is no longer hidden
-                     in an sr-only twin; both exports stay reachable behind the one visible control. -->
+            <!-- THE FOLDED DOWNLOAD — ONE control, the CSV/image choice behind a DockTrigger (the two
+                 export handlers `onExportCsv`/`onExportImage` re-homed onto the menu, never
+                 re-authored). W-MEMBRANE (A-39 · STRAND A): rendered ONLY when this plate is the dial
+                 viz and TELEPORTED into the membrane's facet-6 provenance detent — the live vnode
+                 relocates, no cross-repo import, no duplicate, no header-seat render. -->
+            <Teleport v-if="teleportPlateChrome" :to="membraneProvenanceSlot">
                 <DockControl
                     v-if="sourceData"
                     compact
@@ -248,36 +212,7 @@ defineExpose({ archetype });
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-
-                <!-- (3) THE ENLARGE — the `?fig=` expand seam ChartFrame owns, driven from the
-                     cluster (CONSUMED, not re-owned). Toggles this plate's fullscreen `?fig=` state. -->
-                <DockControl
-                    compact
-                    :aria-label="
-                        isFullscreen
-                            ? `Collapse ${contract.title}`
-                            : `Enlarge ${contract.title}`
-                    "
-                    :aria-pressed="isFullscreen"
-                    :title="isFullscreen ? 'Collapse' : 'Enlarge'"
-                    :data-testid="`viz-dock-enlarge-${contract.id}`"
-                    data-viz-dock-enlarge
-                    @click="toggleEnlarge"
-                >
-                    <Minimize2
-                        v-if="isFullscreen"
-                        class="viz-dock__glyph"
-                        aria-hidden="true"
-                    />
-                    <Maximize2 v-else class="viz-dock__glyph" aria-hidden="true" />
-                </DockControl>
-            </VizGearDock>
-
-            <!-- THE INLINE PER-VIZ FILTER DOCK IS RETIRED (K-FILTER-UNIFIED §4.H). The filter-toggle
-                 above now PINS + opens the ONE unified panel (`UnifiedFilterPanel`); the viz's
-                 `filterDimensions` dials + the re-homed E2 options render THERE, projected off the
-                 K-ACTIVE active viz-set (the self-register seam). The 3-item dock chrome STAYS — only
-                 the filter-toggle's TARGET changed (the two-filter fork collapses into the one panel). -->
+            </Teleport>
         </template>
 
         <!-- J-FRAME · FACET 1 — the per-viz host-read seam, OUTSIDE the chart body. The host READS

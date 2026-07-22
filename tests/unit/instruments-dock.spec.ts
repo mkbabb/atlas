@@ -30,6 +30,22 @@ describe("dock posture", () => {
         intents.clear();
         expect(resolveDockCollapse(intents)).toBeNull();
     });
+
+    it("the collapsed-rest BLOOM outranks the rest posture — hover reveals, release re-collapses (W-MEMBRANE §a.2)", () => {
+        // The rail RESTS collapsed at every register (`register: true`); the on-intent bloom
+        // (`bloom: false` = expand) must WIN so a hover/focus reveals the full rail from the disc, and
+        // RELEASING the bloom (delete) must fall back to the resting collapse — a transient reveal,
+        // never persistent chrome (the gutter death depends on this: nothing bloomed is reserved).
+        const intents = new Map<DockCollapseSource, boolean>([["register", true]]);
+        expect(resolveDockCollapse(intents)).toBe(true); // rest: collapsed
+        intents.set("bloom", false);
+        expect(resolveDockCollapse(intents)).toBe(false); // hover: bloomed open (bloom outranks register)
+        intents.delete("bloom");
+        expect(resolveDockCollapse(intents)).toBe(true); // release: back to the resting disc
+        // and a manual pin (gear-toggle open) still holds once bloom releases.
+        intents.set("manual", false);
+        expect(resolveDockCollapse(intents)).toBe(false);
+    });
 });
 
 describe("filter continuum register", () => {

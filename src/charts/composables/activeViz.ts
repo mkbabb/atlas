@@ -35,6 +35,7 @@
 // {@link startLoop}, which is itself PRM-gated so reduced-motion keeps the scheduler parked (PLAT-7:
 // the CSS `@media (prefers-reduced-motion)` guard never reaches this JS rAF — the gate lives here).
 
+import { computed, ref, type ComputedRef } from "vue";
 import { RAFPlayback } from "@mkbabb/keyframes.js";
 import { useActiveBeat } from "../../platform/stores/useActiveBeat.js";
 import type { RevealCuePump } from "../../motion/reveal-score.js";
@@ -190,6 +191,27 @@ export function onActiveScrubHostChange(
 
 /** The registered hosts (the registry iterates this set once per frame). */
 const hosts = new Set<ScrubHostRecord>();
+/** Bumped on every host add/remove — the reactive trip so {@link hasVizScrubHost} re-derives when
+    the scrub-host roster changes (the plain `Set` above is not reactive; a `computed` cannot track it). */
+const hostRosterVersion = ref(0);
+
+/**
+ * TRUE when the current route mounts ≥1 scrub host that WRITES the centre-grain `activeVizId` — a
+ * host with a NON-EMPTY `vizId()` (a `StickyScene`/`ChapterStage` scene step), NOT a bare
+ * `useSectionReveal` whose `vizId` is `""` (a pure page-clock reveal opts OUT of the argmin, §4.D).
+ *
+ * The membrane's plain-plate PRIMARY-viz fallback reads this (the A-19 route-gate): a SCRUB route
+ * (`/sci`, `/usf`) resolves its facet-5 zone off `activeVizId` and rests EMPTY at the page top, so
+ * the fallback must NOT fire there (no double-activation with the incoming centred id); a PLAIN-PLATE
+ * route (`/ecf`, `/usf-integrity`, `/demand`) mounts no such host, so the membrane paints its zone
+ * off the registry's primary viz instead. Re-derived on the roster edge; `vizId()` is read at that
+ * moment (the in-practice getters are stable — a constant stage id or a constant `""`).
+ */
+export const hasVizScrubHost: ComputedRef<boolean> = computed(() => {
+    void hostRosterVersion.value;
+    for (const h of hosts) if (h.vizId() !== "") return true;
+    return false;
+});
 /** The ONE rAF owner — keyframes.js `RAFPlayback` (4.1.0), generation-guarded + re-arm-idempotent. */
 const driver = new RAFPlayback();
 /** The store, resolved lazily (SPA-safe — the active pinia is set after `app.use(createPinia())`). */
@@ -350,10 +372,12 @@ function bindWakeInteractions(): void {
  */
 export function registerScrubHost(record: ScrubHostRecord): () => void {
     hosts.add(record);
+    hostRosterVersion.value++; // the reactive trip for `hasVizScrubHost` (the roster changed).
     bindWakeInteractions();
     startLoop();
     return () => {
         hosts.delete(record);
+        hostRosterVersion.value++; // ditto on removal (both disposer branches below).
         if (hosts.size === 0) {
             const empty: ActiveScrubHostResolution = {
                 hostKey: "",

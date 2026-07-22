@@ -137,6 +137,11 @@
 .usf-dock.collapsed {
     padding-block: 0.5rem;
     gap: 0;
+    /* THE GUTTER DEATH (W-MEMBRANE · A-39 · spec-chrome §d.1) — the collapsed rail hugs its crest to
+       the TRUE disc width (`--cp-dock-collapsed-w`, 2.75rem), so its right edge lands at exactly the
+       reclaimed 64px reserve (inset + disc) — zero persistent overlap. Snapped (no width transition):
+       glass owns the collapse morph clock; animating inline-size desyncs the rim/grain corner (O-D1). */
+    inline-size: var(--cp-dock-collapsed-w, 2.75rem);
 }
 .usf-dock.collapsed :deep(.dock-layers) {
     display: none;
