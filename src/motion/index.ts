@@ -16,8 +16,8 @@
 //     taxonomy); lands GREEN once activeViz lands. **Its >500-LOC split stays O-B18.**
 //   · `useScrollTimeline` (523) + `useCoverProgress` — same activeViz edge (O-B4R). useScrollTimeline's
 //     split is the named successor **O-B18**.
-//   · `useMarkMorphology` (→ charts `mark-tokens`, O-B4R) · `useHandMarkClock` (→ `useThemeKey`,
-//     the global composable residue, O-B9).
+//   · `useHandMarkClock` (→ `useThemeKey`, the global composable residue, O-B9). (`useMarkMorphology`
+//     retired with the glass 9.0.0 HandMark re-cut — the 1:1-px pen measures its own word.)
 // The monorepo import flip to this home is O-B11.
 
 // — the variant grammar: spec vocabulary + resolved registers + micro-bounds + the resolver —
@@ -53,15 +53,10 @@ export * from "./useLoadSequence";
 export * from "./motion-director";
 export * from "./useCoverProgress";
 export * from "./useScrollTimeline";
-export * from "./useMarkMorphology";
-// useHandMarkClock's `MarkAnimation` string-union clashes by NAME with buildMarkAnimation's handle
-// interface (two distinct concepts); the union is deep-imported where needed, so the barrel omits it.
 export {
     type MarkClock,
-    type MarkAppear,
     type DarkLiftPair,
     RED_INK,
-    clockAppear,
-    clockAnimation,
+    clockDraws,
     useHandMarkClock,
 } from "./useHandMarkClock";

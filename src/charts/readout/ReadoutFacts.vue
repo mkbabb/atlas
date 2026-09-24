@@ -84,7 +84,7 @@ withDefaults(
             :key="bar.label"
             class="mb-0.5 flex items-center gap-2"
         >
-            <span class="figure w-20 shrink-0 text-xs text-muted-foreground">{{
+            <span class="figure w-20 shrink-0 text-(length:--type-caption) text-muted-foreground">{{
                 bar.label
             }}</span>
             <span class="h-2 flex-1 rounded-full bg-muted/40">
@@ -96,7 +96,7 @@ withDefaults(
                     }"
                 />
             </span>
-            <span class="figure w-12 shrink-0 text-right text-xs">{{
+            <span class="figure w-12 shrink-0 text-right text-(length:--type-caption)">{{
                 bar.value
             }}</span>
         </div>

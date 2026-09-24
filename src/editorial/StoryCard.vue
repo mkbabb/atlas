@@ -80,7 +80,6 @@ const secondSeam = computed(
                 :surface="surface"
                 :tier="facet.tier ?? 'quiet'"
                 :shadow="false"
-                :grain="false"
                 class="story-card"
                 :class="{ 'story-card--keyline': facet.frame === 'keyline' }"
                 :data-card-mode="facet.mode ?? 'plate'"
@@ -121,16 +120,16 @@ const secondSeam = computed(
 <style scoped>
 .story-card {
     display: grid;
-    padding: var(--card-pad-block) var(--card-pad-inline);
+    padding: var(--card-pad);
 }
 .story-card[data-card-mode="stage"] {
     overflow: clip;
 }
 .story-card > * + * {
-    margin-block-start: var(--card-pad-section-gap);
+    margin-block-start: var(--card-group-gap);
 }
 .story-card > :deep(.animated-rule--seam) {
-    margin-block: var(--card-pad-section-gap) 0;
+    margin-block: var(--card-group-gap) 0;
 }
 .story-card--keyline {
     border: 1px solid var(--silver-rule, var(--border));
@@ -141,7 +140,7 @@ const secondSeam = computed(
 }
 .story-card__title-band > .atlas-title-align {
     display: grid;
-    gap: var(--card-pad-title-gap);
+    gap: var(--card-gap);
 }
 .story-card__sector {
     min-inline-size: 0;
@@ -157,6 +156,6 @@ const secondSeam = computed(
     margin-inline: auto;
 }
 .story-card > .story-card__appendix {
-    margin-block-start: var(--card-pad-footer);
+    margin-block-start: var(--card-group-gap);
 }
 </style>

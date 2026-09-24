@@ -153,11 +153,11 @@ const emit = defineEmits<{
     }
     .usf-dock__step.figure {
         /* M16 (N.WG1 Arm D · motion conformance): the raw 360ms cubic-bezier retires — the rung
-           rise rides the library spring register (`--spring-snappy` + its duration), the same
+           rise rides the library spring register (`--spring-dock` + its duration), the same
            40ms×i column stagger (the D2 row-stagger law; the old curve stands as the fallback
            only where the glass tokens are unresolved). */
-        animation: usf-dock-rung-rise var(--spring-snappy-duration, 360ms)
-            var(--spring-snappy, cubic-bezier(0.22, 1, 0.36, 1)) both;
+        animation: usf-dock-rung-rise var(--spring-dock-duration, 360ms)
+            var(--spring-dock, cubic-bezier(0.22, 1, 0.36, 1)) both;
         animation-delay: calc(var(--rivet-i, 0) * 40ms);
     }
 }

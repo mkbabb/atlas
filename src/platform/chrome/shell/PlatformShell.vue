@@ -24,7 +24,7 @@
 //                component (the atlas-unified-register law, MEMORY "Unified chrome register"):
 //                the floating VERTICAL LEFT rail at every viewport (position:fixed off the left
 //                margin). It rests COLLAPSED at the phone register (Dock.vue
-//                `:start-collapsed="isPhone"`), where its gilt crest is the BUTTON that expands
+//                `:collapse="isPhone ? 'closed' : 'open'"`), where its gilt crest is the BUTTON that expands
 //                the top-left ruled section-menu SHEET — crest→ruled-sheet, NEVER a
 //                bottom/horizontal fork. One Dock, one orientation, re-collapsed responsively.
 //   `filter`   — the right live-behind filter Drawer (C3.3 fills; a peer at --z-panel).
@@ -198,7 +198,7 @@ useDismissArbiter(dismissArbiter).claim(() =>
    env(safe-area-inset-bottom) is 0 on every non-notched surface. */
 @media (--phone) {
     .platform-shell__main {
-        /* the dock rests COLLAPSED at the phone register (Dock.vue `:start-collapsed="isPhone"`)
+        /* the dock rests COLLAPSED at the phone register (Dock.vue `:collapse="isPhone ? 'closed' : 'open'"`)
            — it floats over the page margin as the tab sliver, so the phone re-bases the reserve
            to the collapsed-tab footprint and the prose reclaims the phone width (j0-dock-reserve
            holds). */

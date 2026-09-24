@@ -35,7 +35,7 @@
 //     4.1.0 OR 4.2.0 to flip it), so the `position:sticky bottom:0` foot self-serves with ZERO
 //     glass-ui dependency. The `#persistent-end` re-host is an OPTIONAL future 4.3.0 simplification
 //     (R-FOOT-1, off the K critical path), never a dependency.
-// The collapse machine the PINNED 4.0.1 SHIPS (`startCollapsed`/`expand()`/`collapse()`/`expanded`)
+// The collapse machine glass SHIPS (`collapse="closed"|"open"` + `expand()`/`collapse()`/`expanded`)
 // is RE-ENABLED here via `useDockCollapse`. The posture is gear-TOGGLED + collapse-on-phone, NOT
 // forced-collapsed-everywhere; the desktop register may still rest expanded (a register OPTION,
 // J-PATH §8 Decision 2). The `:always-expanded` true-literal opt-OUT is DELETED.
@@ -87,7 +87,7 @@ const identityRamp = computed<readonly string[]>(
 // register. What J-DOCK ADDS is the COLLAPSE posture: the rail rests collapsed at @media(--phone)
 // (reclaiming its width to the prose) and is gear-toggle-collapsible everywhere. The `isPhone`
 // register read CONSUMES the ONE `useMobileRegister` seam (the breakpoint-DRY law — no second home);
-// it drives the GlassDock `:start-collapsed` rest-posture + the phone class.
+// it drives the GlassDock `:collapse` rest-posture + the phone class.
 const { isPhone } = useMobileRegister();
 
 // ── The COLLAPSE posture (J-DOCK §approach-4 · useDockCollapse · C26) ──────────
@@ -110,7 +110,7 @@ const dockRef = ref<DockExposed | null>(null);
 watch(dockRef, (inst) => bindDock(inst), { immediate: true });
 
 // ── THE REACTIVE REGISTER BRIDGE (O-D1 · dock-chrome §2.1/§7.1 · mobile §1 resize-strand) ───────
-// `:start-collapsed="isPhone"` is a MOUNT-ONLY latch — GlassDock reads it once in `onMounted`, so a
+// `:collapse="isPhone ? 'closed' : 'open'"` is a MOUNT-ONLY latch — GlassDock reads it once in `onMounted`, so a
 // desktop→phone RESIZE / orientation flip / devtools emulation (mounted at desktop width) never
 // re-collapsed the dock: it stranded EXPANDED as the 20rem sheet OVER content (mobile §1). This
 // watch reconciles the REST posture to the LIVE register on EVERY entry path — it fires on `isPhone`
@@ -204,11 +204,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <!-- The CONSUMED GlassDock composite (C3-2) — the VERTICAL 3-BAND rail. `position="fixed"`
-         floats it off the left margin (A3); the content stage flows full-bleed UNDER it. The
+    <!-- The CONSUMED GlassDock composite (C3-2) — the VERTICAL 3-BAND rail. `.usf-dock` fixes it
+         off the left margin (A3; glass 9.0.0 folded `position` onto the consumer's own classes);
+         the content stage flows full-bleed UNDER it. The
          `:always-expanded` opt-OUT is DELETED; the dock binds its `<GlassDock ref>` so
          `useDockCollapse` reaches the exposed `expand()` / `collapse()` / `expanded`. The rail rests
-         COLLAPSED at @media(--phone) (`:start-collapsed="isPhone"`) and is gear-toggle-collapsible
+         COLLAPSED at @media(--phone) (`collapse="closed"`; glass 9.0.0 folded `startCollapsed` onto
+         `collapse`) and is gear-toggle-collapsible
          everywhere (the desktop register may still rest expanded — J-PATH §8 Decision 2). -->
     <!-- THE SHEET SCRIM (D2) — phone-sheet-open only: the paper-wash veil the ruled menu floats
          over; a tap closes the sheet with the same focus return as Esc. Sits ONE rung under the
@@ -227,11 +229,8 @@ onBeforeUnmount(() => {
         v-if="ctx"
         ref="dockRef"
         orientation="vertical"
-        position="fixed"
         shape="card"
-        density="comfortable"
-        overflow="grow"
-        :start-collapsed="isPhone"
+        :collapse="isPhone ? 'closed' : 'open'"
         class="usf-dock"
         :class="{ 'usf-dock--phone': isPhone }"
         aria-label="Section navigation"

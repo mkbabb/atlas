@@ -12,24 +12,10 @@
    printed on dark stock with ivory ink," D1 §3.2). Overriding glass-ui's
    --background/--card/--foreground/--muted-foreground here recolors the page warm; glass-ui's
    glass-tier tokens (--glass-*) read these grounds, so the chrome warms in lockstep. */
-:root {
-    /* §POPOVER-MOTION — the SPRING RE-POINT (f-vizoptions §2.2/§5 · E5a). glass-ui 3.11's
-       `popover-animate` utility (styles/utilities.css) exposes FOUR custom properties as the
-       documented consumer seam — "override per host, never fork the utility":
-         --popover-enter-ease / --popover-enter-duration   (the open bloom)
-         --popover-exit-ease  / --popover-exit-duration    (the dismissal)
-       The library DEFAULT enter is `--spring-snappy` (a crisper overshoot). The atlas register
-       wants the popover to MATERIALIZE on `--spring-smooth` (the ~0.5% whisper-overshoot — the
-       lens condensing into being, not a snap), blooming over `--duration-fast` (0.2s). The exit
-       is a DISMISSAL — fast, never overshoot — so it keeps the library `--ease-out` default at
-       `--duration-instant`. PRM is the utility's own internal fence (1ms both directions), so the
-       spring lives only in the full-motion arm. This is the CONSUMER token override the e0f
-       proof:popover-spring gate reads (`--popover-enter-ease` resolving to a `linear()` spring);
-       NO @keyframes is hand-rolled on the panel (that would re-fork the primitive — the A3 anti-
-       move). One re-point at :root → every atlas popover (options, hover-popover, select) blooms. */
-    --popover-enter-ease: var(--spring-smooth);
-    --popover-enter-duration: var(--duration-fast);
-}
+/* §POPOVER-MOTION — RETIRED at the glass 10.1 repin. glass 3.11's `popover-animate`
+   `--popover-enter-*` seam no longer exists: every overlay now materializes on glass's own
+   `.glass-reveal[data-reveal]` register (the panel row reads `--enter-overlay-spring`, the
+   `--spring-panel` arrival), so the popover bloom is the library's and atlas re-points nothing. */
 
 /* §CORRIDOR — the between-beat shared-element corridor register (N.WB1 · compositor-only, D7-safe;
    P2-B Ruling 2, values verbatim). FELT, never SEEN: breathing room + receded type — no runway rules,
@@ -153,13 +139,13 @@
    The card in/out, the veil reveal/hue-crossfade/select-sweep, the I7 filter inner-strata, the
    VizOptions popover, and the chapter reveal all ride ONE named curve — the DEFINE-ONCE law (no
    second liquid cubic-bezier authority anywhere). I7 OWNS the canonical definition; until that wave
-   lands these alias FALLBACK-FIRST off the SHIPPED glass-ui register (the `--spring-smooth` ~0.5%
-   whisper-overshoot the popover already materializes on + `--duration-fast`), so I7 re-points the
+   lands these alias FALLBACK-FIRST off the SHIPPED glass-ui register (`--spring-present`, the rung
+   glass 8.0.0 folded `--spring-smooth` into, + `--duration-fast`), so I7 re-points the
    alias in ONE place with zero consumer change. The card consumes `var(--liquid-reveal-*)` and is
    correct today; it does NOT re-mint the curve. */
 :root {
     --liquid-reveal-ease: var(
-        --spring-smooth
+        --spring-present
     ); /* the iOS-control reveal curve (I7 re-points) */
     --liquid-reveal-duration: var(
         --duration-fast

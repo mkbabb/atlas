@@ -53,13 +53,8 @@ describe("StoryCard composition", () => {
         const frameCss = source("src/charts/frame/ChartFrame.css");
 
         expect(card).toContain("provide(STORY_CARD_KEY, context)");
-        for (const variable of [
-            "--card-pad-inline",
-            "--card-pad-block",
-            "--card-pad-section-gap",
-            "--card-pad-footer",
-            "--card-pad-title-gap",
-        ]) {
+        // glass 8.0.0: ONE pad (`--card-pad`) and two gaps (`--card-gap`, `--card-group-gap`).
+        for (const variable of ["--card-pad", "--card-gap", "--card-group-gap"]) {
             expect(card).toContain(`var(${variable})`);
         }
         expect(card).not.toContain("var(--space-phi-");

@@ -63,7 +63,7 @@ onBeforeUnmount(cancelSettle);
     >
         <Button
             type="button"
-            variant="glass"
+            emphasis="secondary"
             class="filter-continuum__trigger"
             :aria-expanded="open"
             :aria-label="open ? 'Close filters' : 'Open filters'"

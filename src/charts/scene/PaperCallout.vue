@@ -12,11 +12,10 @@
 //     on the SHIPPED `--paper-aged-texture` paper stock via the K-PAPER-GRAIN `paper-aged-surface`
 //     @utility. The chip is `ResizeObserver`-self-measured (its OWN rendered box) and fed to the Cox
 //     solver BEFORE any `inside()`/no-clip verdict — never a hard-coded estimate.
-//   · THE LEADER — the SHIPPED `@mkbabb/glass-ui/handmark` `InkMark shape="path"` (via the platform
-//     `HandMark` collapse, the arbitrary-`d` escape hatch — NOT a parallel SVG draw engine), drawn-on
-//     bidirectionally via `clock="scroll"` (the `AnimatedRule` draw-on precedent). The leader's `d` is
-//     the solver's `leaderPath` (tiers ③④), re-mapped from the host pixel frame into the brush's
-//     100×40 viewBox. `aria-hidden` + `pointer-events:none` — the leader is decorative; the chip carries
+//   · THE LEADER — glass-ui's own hand pen (`strokeRibbon`, via the atlas `InkStroke` — NOT a
+//     parallel SVG draw engine), drawn-on bidirectionally via `clock="scroll"` (the `AnimatedRule`
+//     draw-on precedent). The leader is the solver's `leaderPath` (tiers ③④), normalized over its
+//     segment box. `aria-hidden` + `pointer-events:none` — the leader is decorative; the chip carries
 //     the editorial text (itself supplementary to the chart's `role=img` label + the export table).
 //
 // THE FRAME. This seat mounts in the SHIPPED `VizTextOverlay` `#annotation-<id>` slot, which the
@@ -27,7 +26,8 @@
 // origin lands exactly on the datum.
 
 import { computed, onBeforeUnmount, ref, watch } from "vue";
-import HandMark from "@/charts/glyph/HandMark.vue";
+import InkStroke from "@/charts/glyph/InkStroke.vue";
+import { RED_INK } from "@/motion/useHandMarkClock";
 import {
     solveCallout,
     type CalloutPlacement,
@@ -82,11 +82,16 @@ const placement = computed<CalloutPlacement>(() =>
     solveCallout({ left: 0, top: 0 }, chipBox.value, props.plate, props.occupancy),
 );
 
-// ── THE LEADER GEOMETRY — re-map the solver's host-pixel `leaderPath` (tiers ③④) into the `InkMark`
-// 100×40 viewBox. The leader wrapper covers the segment's bounding box (slot-local), and the brush's
-// `preserveAspectRatio="none"` viewBox stretches to fill it — an affine map, so the two endpoints land
-// on their exact pixels. A purely axis-aligned leader floors its zero extent to 1px (a hairline span).
-const leader = computed<{ style: Record<string, string>; path: string } | null>(() => {
+/** The leader ink — the editorial red, lifted per theme (glass's own `light-dark()` idiom). */
+const ink = `light-dark(${RED_INK.light}, ${RED_INK.dark})`;
+
+// ── THE LEADER GEOMETRY — the solver's host-pixel `leaderPath` (tiers ③④) as a normalized polyline
+// over the segment's bounding box (slot-local). InkStroke fits the box and inks the two endpoints on
+// their exact pixels with glass's pen. A purely axis-aligned leader floors its zero extent to 1px.
+const leader = computed<{
+    style: Record<string, string>;
+    points: { x: number; y: number }[];
+} | null>(() => {
     const d = placement.value.leaderPath;
     if (!d) return null;
     const m = /M\s*(-?[\d.]+)\s+(-?[\d.]+)\s+L\s*(-?[\d.]+)\s+(-?[\d.]+)/.exec(d);
@@ -99,11 +104,14 @@ const leader = computed<{ style: Record<string, string>; path: string } | null>(
     const minY = Math.min(y1, y2);
     const bw = Math.max(Math.abs(x2 - x1), 1);
     const bh = Math.max(Math.abs(y2 - y1), 1);
-    const vx = (x: number): string => (((x - minX) / bw) * 100).toFixed(2);
-    const vy = (y: number): string => (((y - minY) / bh) * 40).toFixed(2);
+    const nx = (x: number): number => (x - minX) / bw;
+    const ny = (y: number): number => (y - minY) / bh;
     return {
         style: { left: `${minX}px`, top: `${minY}px`, width: `${bw}px`, height: `${bh}px` },
-        path: `M ${vx(x1)} ${vy(y1)} L ${vx(x2)} ${vy(y2)}`,
+        points: [
+            { x: nx(x1), y: ny(y1) },
+            { x: nx(x2), y: ny(y2) },
+        ],
     };
 });
 </script>
@@ -113,9 +121,15 @@ const leader = computed<{ style: Record<string, string>; path: string } | null>(
          seat in the anchor-relative frame. `aria-hidden` — the leader is decorative + the chip is
          supplementary to the chart's role=img label and the export table. -->
     <div class="paper-callout" data-paper-callout aria-hidden="true">
-        <!-- THE LEADER — the SHIPPED InkMark shape="path", drawn-on via clock="scroll" (tiers ③④). -->
+        <!-- THE LEADER — glass's hand pen over the leader polyline (InkStroke), drawn-on via clock="scroll" (tiers ③④). -->
         <div v-if="leader" class="paper-callout__leader" :style="leader.style">
-            <HandMark shape="path" :path="leader.path" clock="scroll" :seed="seed" />
+            <InkStroke
+                kind="path"
+                :points="leader.points"
+                :color="ink"
+                clock="scroll"
+                :seed="seed"
+            />
         </div>
         <!-- THE CHIP — Newsreader-italic, rung-④ --attn-chrome, on the paper-aged stock, offset to the
              solver's clear seat. `ref` + the ResizeObserver above self-measure its OWN box. -->
@@ -176,21 +190,10 @@ const leader = computed<{ style: Record<string, string>; path: string } | null>(
     opacity: 0.82;
 }
 
-/* THE LEADER — the InkMark fills the segment-bbox wrapper (the brush's `preserveAspectRatio="none"`
-   100×40 viewBox stretches to it). `pointer-events:none` — decorative. */
+/* THE LEADER — the ink fills the segment-bbox wrapper (InkStroke fits the box it is given).
+   `pointer-events:none` — decorative. */
 .paper-callout__leader {
     position: absolute;
     pointer-events: none;
-}
-.paper-callout__leader :deep(.hand-mark),
-.paper-callout__leader :deep(.hm) {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-.paper-callout__leader :deep(.hm__svg) {
-    left: 0;
-    width: 100%;
-    height: 100%;
 }
 </style>

@@ -34,7 +34,7 @@
    viewport-projected). It TRAVELS on the glass-ui SPATIAL spring and repositions INSTANTLY under PRM
    (parity, not absence of meaning). REGISTER (N5 design consult, signed): 2.5px var(--focus-ring-color) stands
    (glass-ui's theme-resolved near-ink/near-ivory ring — ≥3:1 on both stocks); the travel rides
-   `--spring-snappy` (the scheme-spring table's position-movement register — a ~3% overshoot that
+   `--spring-present` (the scheme-spring table's position-movement register — a ~3% overshoot that
    settles by a third of the beat), so each arrow-step ARRIVES with a felt spring, never a float. */
 .viz-plate__focus-rim {
     position: fixed;
@@ -46,8 +46,8 @@
     transform: translate(-50%, -50%);
     pointer-events: none;
     transition:
-        left var(--duration-normal, 0.3s) var(--spring-snappy, cubic-bezier(0.22, 1, 0.36, 1)),
-        top var(--duration-normal, 0.3s) var(--spring-snappy, cubic-bezier(0.22, 1, 0.36, 1));
+        left var(--duration-normal, 0.3s) var(--spring-present, cubic-bezier(0.22, 1, 0.36, 1)),
+        top var(--duration-normal, 0.3s) var(--spring-present, cubic-bezier(0.22, 1, 0.36, 1));
 }
 @media (prefers-reduced-motion: reduce) {
     .viz-plate__focus-rim {

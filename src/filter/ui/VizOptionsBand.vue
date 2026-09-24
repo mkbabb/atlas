@@ -56,7 +56,6 @@ function resetOptions(): void {
                 v-for="spec in optionSpecs"
                 :key="spec.key"
                 :label="spec.label"
-                :label-class="'viz-options-band__label'"
                 class="viz-options-band__row"
                 v-slot="{ controlId, labelledBy }"
             >
@@ -79,7 +78,7 @@ function resetOptions(): void {
                         :aria-label="ch.label"
                         :disabled="ch.disabled"
                         :title="ch.hint"
-                        class="min-h-[44px] text-xs"
+                        class="min-h-[44px] text-(length:--type-caption)"
                     >
                         {{ ch.label }}
                     </ToggleGroupItem>
@@ -93,7 +92,7 @@ function resetOptions(): void {
                     <SelectTrigger
                         :id="controlId"
                         :aria-labelledby="labelledBy"
-                        class="viz-options-band__select min-h-[44px] text-xs"
+                        class="viz-options-band__select min-h-[44px] text-(length:--type-caption)"
                         :data-testid="`viz-opt-${vizId}-${spec.key}`"
                         :data-viz-scope="spec.scope === 'global' ? 'global' : undefined"
                     >
@@ -159,7 +158,7 @@ function resetOptions(): void {
     flex-direction: column;
     gap: 0.4rem;
 }
-.viz-options-band__rows :deep(.viz-options-band__label) {
+.viz-options-band__rows :deep(.viz-options-band__row [data-slot="label"]) {
     font-size: 0.75rem;
     font-weight: 500;
     color: var(--foreground);

@@ -123,7 +123,7 @@ export function useDeckDetent(
             activeIndex.value = 0;
             return null;
         }
-        if (deck?.total === total) return deck;
+        if (deck?.total.value === total) return deck;
         deck = useDeck(total, {
             initial: activeIndex.value,
             onChange: (index) => {

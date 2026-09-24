@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from "vue";
 import {
-    Drawer,
-    DrawerClose,
-    DrawerContent,
-    DrawerDescription,
-    DrawerHeader,
-    DrawerTitle,
-    DrawerTrigger,
-} from "@mkbabb/glass-ui/drawer";
+    Dialog,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@mkbabb/glass-ui/dialog";
+import { SheetContent } from "@mkbabb/glass-ui/sheet";
 import { useMobileRegister } from "@/platform/composables/useMobileRegister";
 import {
     resolveAppendixDetent,
@@ -79,8 +78,8 @@ defineExpose({
 
 <template>
     <section class="appendix-dock" :data-detent="state" data-appendix-dock>
-        <Drawer v-model:open="drawerOpen" direction="bottom" mode="modal">
-            <component :is="isPhone ? DrawerTrigger : 'span'" :as-child="isPhone || undefined">
+        <Dialog v-model:open="drawerOpen">
+            <component :is="isPhone ? DialogTrigger : 'span'" :as-child="isPhone || undefined">
                 <button
                     class="appendix-dock__control"
                     type="button"
@@ -109,7 +108,7 @@ defineExpose({
             </div>
 
             <component
-                :is="isPhone ? DrawerContent : 'div'"
+                :is="isPhone ? SheetContent : 'div'"
                 :id="paneId"
                 class="appendix-dock__pane"
                 :hidden="isPhone ? undefined : state !== 'full'"
@@ -118,26 +117,24 @@ defineExpose({
                 :aria-hidden="isPhone && state !== 'full' ? true : undefined"
                 :inert="isPhone && state !== 'full' ? true : undefined"
                 :force-mount="isPhone ? true : undefined"
-                :show-overlay="isPhone ? true : undefined"
+                :side="isPhone ? 'bottom' : undefined"
                 :surface="isPhone ? 'opaque' : undefined"
             >
-                <component :is="isPhone ? DrawerHeader : 'div'" class="appendix-dock__pane-head">
-                    <component :is="isPhone ? DrawerTitle : 'h2'" :id="headingId">
+                <component :is="isPhone ? DialogHeader : 'div'" class="appendix-dock__pane-head">
+                    <component :is="isPhone ? DialogTitle : 'h2'" :id="headingId">
                         {{ label }}
                     </component>
-                    <DrawerDescription v-if="isPhone" class="sr-only">
+                    <DialogDescription v-if="isPhone" class="sr-only">
                         Source, method, and provenance detail for this figure.
-                    </DrawerDescription>
-                    <DrawerClose v-if="isPhone" as-child>
-                        <button type="button">Close</button>
-                    </DrawerClose>
-                    <button v-else type="button" @click="apply('close')">Close</button>
+                    </DialogDescription>
+                    <!-- On the phone the sheet's own ✕ (glass SheetContent) is the close. -->
+                    <button v-if="!isPhone" type="button" @click="apply('close')">Close</button>
                 </component>
                 <div class="appendix-dock__reading">
                     <slot />
                 </div>
             </component>
-        </Drawer>
+        </Dialog>
     </section>
 </template>
 
@@ -259,7 +256,7 @@ defineExpose({
         inline-size: 100%;
     }
 
-    :global(.appendix-dock__pane[data-glass-drawer]) {
+    :global(.appendix-dock__pane[data-slot="sheet-content"]) {
         max-block-size: min(82dvh, 44rem);
         overflow: auto;
     }
@@ -281,7 +278,7 @@ defineExpose({
     }
 
     .appendix-dock__pane,
-    :global(.appendix-dock__pane[data-glass-drawer]) {
+    :global(.appendix-dock__pane[data-slot="sheet-content"]) {
         position: static;
         display: block;
         max-block-size: none;
@@ -295,7 +292,7 @@ defineExpose({
         display: block;
     }
 
-    :global([data-stage-scrim]) {
+    :global(.bg-overlay-scrim) {
         display: none !important;
     }
 }

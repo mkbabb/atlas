@@ -5,7 +5,7 @@
 // from ONE source. Mints NO new curve authority — it CONSUMES tokens.css:951-995 + keyframes.js springs +
 // value.js `easeOutExpo` (the root-repo law: consume glass-ui's curve, never re-type its coefficients).
 
-import { CSSCubicBezier, easeOutExpo, type TimingFunction } from "@mkbabb/value.js";
+import { CubicBezier, easeOutExpo, type EasingFunction } from "@mkbabb/value.js/easing";
 import {
     springTimingFunction,
     springLinearStops,
@@ -45,19 +45,27 @@ export interface ResolvedEase {
         `linear(...)` string for the springs. The T1 tier reads this. */
     css: string;
     /** The JS sampler (the T2 `.at(p)` tier) — the SAME curve as `css`. */
-    fn: TimingFunction;
+    fn: EasingFunction;
 }
 
 // The verified tokens.css:951-995 state: `--ease-engrave: cubic-bezier(0.22,1,0.36,1)` (atlas-OWNED) and
 // `--ease-overshoot: cubic-bezier(0.34,1.56,0.64,1)` (atlas-OWNED); `--ease-expo: var(--ease-out-expo)`
 // (NO literal — ALIASED to glass-ui's own curve). So `expo` has no atlas-minted coefficient to mirror;
 // the JS tier CONSUMES value.js `easeOutExpo` directly (ONE authority, zero atlas copy). The two OWNED
-// literals are mirrored via CSSCubicBezier; the k-variety-parity gate reconciles them against the LIVE
+// literals are mirrored via CubicBezier; the k-variety-parity gate reconciles them against the LIVE
 // tokens.css value (NOT a third hardcoded copy), so a tokens.css edit that drifts the curve RED-flags.
 const BEZIER = {
     engrave: [0.22, 1, 0.36, 1], // ≡ --ease-engrave (ease-out-quint) — atlas-OWNED literal
     overshoot: [0.34, 1.56, 0.64, 1], // ≡ --ease-overshoot (ease-out-back) — atlas-OWNED literal
 } as const;
+
+/** value.js 4 `CubicBezier` is failure-explicit (`Result`); the two owned literals are valid by
+    construction, so a failure here is a programming error surfaced at module load, never masked. */
+function bezier(coeffs: readonly [number, number, number, number]): EasingFunction {
+    const r = CubicBezier(...coeffs);
+    if (!r.ok) throw new Error(`atlas EASE: invalid cubic-bezier(${coeffs.join(",")}): ${r.error.code}`);
+    return r.value;
+}
 
 // The 3 spring presets. `soft` ≡ the lettering default (response .42, ζ .62).
 const SPRING = {
@@ -70,8 +78,8 @@ export const EASE: Record<EaseToken, ResolvedEase> = {
     // expo: CONSUME glass-ui's curve both tiers — `var(--ease-expo)` for CSS, value.js `easeOutExpo` for
     // the sampler. NO atlas-minted coefficient.
     expo: { css: "var(--ease-expo)", fn: easeOutExpo },
-    engrave: { css: "var(--ease-engrave)", fn: CSSCubicBezier(...BEZIER.engrave) },
-    overshoot: { css: "var(--ease-overshoot)", fn: CSSCubicBezier(...BEZIER.overshoot) },
+    engrave: { css: "var(--ease-engrave)", fn: bezier(BEZIER.engrave) },
+    overshoot: { css: "var(--ease-overshoot)", fn: bezier(BEZIER.overshoot) },
     soft: { css: springLinearStops(SPRING.soft), fn: springTimingFunction(SPRING.soft).fn },
     crisp: { css: springLinearStops(SPRING.crisp), fn: springTimingFunction(SPRING.crisp).fn },
     bouncy: { css: springLinearStops(SPRING.bouncy), fn: springTimingFunction(SPRING.bouncy).fn },

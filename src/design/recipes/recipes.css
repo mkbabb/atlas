@@ -421,7 +421,7 @@
 }
 @utility text-prose-muted {
     font-family: var(--font-serif);
-    @apply text-sm text-muted-foreground;
+    @apply text-small text-muted-foreground; /* glass 10 cleared Tailwind's static `text-sm` for its √φ `text-small` rung */
 }
 @utility text-caption {
     font-family: var(--font-serif);

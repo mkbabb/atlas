@@ -13,7 +13,8 @@
 // draw loop consume it. The canvas morph itself is N.WP-sci's (GO ruling, §4.B2); WB1 ships the pure
 // geometry + the SVG/DOM path.
 
-import { clamp, lerp, srgbToOKLab, oklabToRgb255 } from "@mkbabb/value.js";
+import { clamp, lerp } from "@mkbabb/value.js/math";
+import { mixColors, rgb, toRgba8, type Color } from "@mkbabb/value.js/color";
 
 // ── The renderer pick (chart-type-blind, by mark count — the D5 no-overfit law) ───────────────────
 
@@ -87,15 +88,17 @@ export type Rgb255 = [number, number, number];
     back to sRGB 0..255. The canvas-tier fill lerp (the DOM tier emits `cssOklabMix`, browser-native).
     Pure + unit-testable (endpoints round-trip; `t=0`/`t=1` return the input fills within rounding). */
 export function oklabFillLerp(a: Rgb255, b: Rgb255, t: number): Rgb255 {
-    // `srgbToOKLab` takes sRGB in [0,1]; `oklabToRgb255` returns [0,255] — normalize the inputs.
-    const [la, aa, ba] = srgbToOKLab(a[0] / 255, a[1] / 255, a[2] / 255);
-    const [lb, ab, bb] = srgbToOKLab(b[0] / 255, b[1] / 255, b[2] / 255);
-    const [r, g, bl] = oklabToRgb255(
-        lerp(la, lb, t),
-        lerp(aa, ab, t),
-        lerp(ba, bb, t),
-    );
-    return [Math.round(r), Math.round(g), Math.round(bl)];
+    // value.js 4 `/color`: `rgb` takes 0..255 channels; `mixColors` interpolates in OKLab;
+    // `toRgba8` projects back to clipped 8-bit sRGB. Every step is a `Result` — a non-finite fill
+    // is a caller error, surfaced rather than painted.
+    const from = rgb(a[0], a[1], a[2]);
+    const to = rgb(b[0], b[1], b[2]);
+    if (!from.ok || !to.ok) throw new Error("oklabFillLerp: invalid sRGB fill");
+    const mixed = mixColors(from.value, to.value, clamp(t, 0, 1), { space: "oklab" });
+    if (!mixed.ok) throw new Error(`oklabFillLerp: mix failed (${mixed.error.code})`);
+    const out = toRgba8(mixed.value as Color<"oklab">, { gamut: "clip" });
+    if (!out.ok) throw new Error(`oklabFillLerp: projection failed (${out.error.code})`);
+    return [out.value[0], out.value[1], out.value[2]];
 }
 
 /** The DOM-tier fill lerp — a browser-native `color-mix(in oklab, …)` string (zero JS color math per

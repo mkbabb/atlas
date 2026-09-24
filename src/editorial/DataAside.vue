@@ -104,7 +104,7 @@ const isGlobal = computed(() => props.spec.scope === "global");
                     :aria-label="ch.label"
                     :disabled="ch.disabled"
                     :title="ch.hint"
-                    class="min-h-[44px] text-xs"
+                    class="min-h-[44px] text-(length:--type-caption)"
                 >
                     {{ ch.label }}
                 </ToggleGroupItem>
@@ -119,7 +119,7 @@ const isGlobal = computed(() => props.spec.scope === "global");
                 <SelectTrigger
                     :aria-label="spec.label"
                     :aria-describedby="promptId"
-                    class="data-aside__select min-h-[44px] text-xs"
+                    class="data-aside__select min-h-[44px] text-(length:--type-caption)"
                     :data-testid="`data-aside-${vizId}-${spec.key}`"
                     :data-viz-scope="isGlobal ? 'global' : undefined"
                 >

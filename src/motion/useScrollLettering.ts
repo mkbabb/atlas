@@ -49,7 +49,8 @@
 // single-scroll-scalar discipline; the hot path is the band arithmetic, pure).
 
 import { computed, type ComputedRef } from "vue";
-import { clamp, type TimingFunction } from "@mkbabb/value.js";
+import { clamp } from "@mkbabb/value.js/math";
+import { type EasingFunction } from "@mkbabb/value.js/easing";
 import {
     stagger,
     springTimingFunction,
@@ -76,10 +77,10 @@ export interface UseScrollLetteringOptions {
     from?: StaggerOrigin;
     /**
      * The per-glyph reveal CURVE. Default a soft spring (`springTimingFunction`, ζ 0.62) — the
-     * glyph springs up + settles, the audacious register's voice. Pass any `TimingFunction` to
+     * glyph springs up + settles, the audacious register's voice. Pass any `EasingFunction` to
      * override (e.g. a flatter `easeOutExpo` for a quieter sub-head).
      */
-    glyphEasing?: TimingFunction;
+    glyphEasing?: EasingFunction;
     /**
      * The arrival LIFT in em units — each glyph rises this far as it reveals (`y: +lift → 0`).
      * Default 0.5em (a restrained rise, scaled to the glyph's own size, never a swoop).
@@ -124,7 +125,7 @@ export function splitGraphemes(text: string): string[] {
 }
 
 /** The default per-glyph spring — a soft, audacious settle (ζ 0.62, a touch of ring, no wobble). */
-const DEFAULT_GLYPH_SPRING: TimingFunction = springTimingFunction({
+const DEFAULT_GLYPH_SPRING: EasingFunction = springTimingFunction({
     response: 0.42,
     dampingFraction: 0.62,
 }).fn;

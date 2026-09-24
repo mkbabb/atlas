@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // SelectionSetPane.vue — THE SELECTION-SET BAND of the ONE unified filter panel (K-FILTER-UNIFIED
-// §4.E · the `FilterView.vue` body LIFTED byte-faithful). The frosted `<Card variant="selection">`
+// §4.E · the `FilterView.vue` body LIFTED byte-faithful). The frosted `<Card>` with the `--glass-accent` selection rim
 // holding (1) an aggregate-HEADER band — a grain-aware MINI-MAP row of just the selected marks + the
 // whole-selection roll-up — ABOVE (2) a `Collapsible`-floor accordion LIST where each selected entity
 // is a section (Glyph + name trigger). The FIRST section is open at mount and SEEDED from the readout
@@ -14,7 +14,7 @@
 // (accordion / ring / mini-map / route-fold / aggregate-header — the `j0-filter.spec.ts` laws GREEN
 // by COMPOSITION), so only the HOST moved: it is no longer Teleported to body / fixed top-left — it
 // renders as a band INSIDE `UnifiedFilterPanel` (inside the live-behind drawer, the ONE filter home
-// at every register). The `data-testid="filter-view"` + the `<Card variant="selection">` + the
+// at every register). The `data-testid="filter-view"` + the `<Card>` with the `--glass-accent` selection rim + the
 // selection self-gate (`hasCards`) are PRESERVED (the producer/instrument bind).
 //
 // IT IS THE PERSISTENCE, NOT A NEW STATE HOME. The pane derives ENTIRELY from
@@ -30,7 +30,6 @@ import {
     CollapsibleTrigger,
 } from "@mkbabb/glass-ui/collapsible";
 import { ToggleGroup, ToggleGroupItem } from "@mkbabb/glass-ui/toggle-group";
-import { StatusDot } from "@mkbabb/glass-ui/status-dot";
 import Glyph, { type GlyphGrain } from "@/charts/glyph/Glyph.vue";
 import ReadoutFacts from "@/charts/readout/ReadoutFacts.vue";
 import {
@@ -136,6 +135,13 @@ const aggregateNoun = computed(() => {
 // The verdict hue the card rim wears — the SAME data-hue locus the veil reads (NEVER a hand-hex). The
 // rim collapses to the neutral glass rim when nothing is lit (`veilHue → null`).
 const rimHue = computed<string | null>(() => selection.veilHue);
+/** The selection rim (glass 8.0.0 struck `Card variant="selection"` + `data-hue`): the per-instance
+    `--glass-accent` hue at the selected strength, written on the element; unset = a bare card. */
+const rimStyle = computed(() =>
+    rimHue.value
+        ? { "--glass-accent": rimHue.value, "--glass-accent-strength": "28%" }
+        : undefined,
+);
 
 /** The contextual stat for a member — `useSelectionStat.statFor` tracks the active beat, falling back
     to the pinned readout's own facts. Seeded SYNCHRONOUSLY at mount, so the first-open body is NON-BLANK
@@ -188,12 +194,11 @@ function release(m: FilterMember): void {
         aria-label="Selected places"
     >
         <Card
-            variant="selection"
             surface="glass"
             tier="quiet"
-            :selected="!!rimHue"
-            :data-hue="rimHue ?? undefined"
             class="filter-view__card"
+            :class="{ 'metal-gold-border': rimHue }"
+            :style="rimStyle"
         >
             <!-- (1) THE AGGREGATE-HEADER BAND — the whole-selection roll-up + the grain-aware MINI-MAP
                  row of JUST the chosen marks, ABOVE the granular list. -->
@@ -236,13 +241,14 @@ function release(m: FilterMember): void {
                             size="sm"
                             :selected="m.sel.key === openKey"
                         />
-                        <StatusDot
-                            v-else
-                            variant="custom"
-                            size="sm"
-                            :color="m.fill"
-                            :label="m.title"
-                        />
+                        <template v-else>
+                            <span
+                                class="filter-view__swatch"
+                                :style="{ background: m.fill }"
+                                aria-hidden="true"
+                            />
+                            <span class="filter-view__swatch-label">{{ m.title }}</span>
+                        </template>
                     </ToggleGroupItem>
                 </ToggleGroup>
             </header>
@@ -279,12 +285,11 @@ function release(m: FilterMember): void {
                                 :fill="m.fill"
                                 size="sm"
                             />
-                            <StatusDot
+                            <span
                                 v-else
-                                variant="custom"
-                                size="sm"
-                                :color="m.fill"
-                                :label="m.title"
+                                class="filter-view__swatch"
+                                :style="{ background: m.fill }"
+                                aria-hidden="true"
                             />
                             <span class="filter-view__title">{{ m.title }}</span>
                         </CollapsibleTrigger>
@@ -320,9 +325,9 @@ function release(m: FilterMember): void {
 
 <style scoped>
 /* THE SELECTION-SET BAND — a calm resting instrument the selection projects onto, INSIDE the unified
-   panel (no fixed/Teleport geometry: the drawer owns the placement). The frosted `<Card
-   variant="selection">` wears the verdict RING (the variant's BUILT `--glass-accent` rim, routed off
-   `:data-hue`), NOT a saturated plate-fill — the ring, not the slab. */
+   panel (no fixed/Teleport geometry: the drawer owns the placement). The frosted `<Card>` wears the
+   verdict RING (the `--glass-accent` rim written on the element off `rimHue`), NOT a saturated
+   plate-fill — the ring, not the slab. */
 .filter-view__card {
     display: flex;
     flex-direction: column;
@@ -409,6 +414,23 @@ function release(m: FilterMember): void {
 .filter-view__trigger:focus-visible {
     outline: 2px solid color-mix(in oklab, var(--route-accent), transparent 40%);
     outline-offset: 2px;
+}
+/* The aspatial member's colour swatch (glass 7.0.0 re-cut `StatusDot` into a seven-state status
+   mark; a free data fill is not a status, so the swatch is atlas-owned — the 8px pill the retired
+   `variant="custom"` dot painted). */
+.filter-view__swatch {
+    display: inline-block;
+    flex: none;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: var(--radius-pill);
+    vertical-align: middle;
+}
+.filter-view__swatch-label {
+    margin-inline-start: 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1;
+    color: var(--muted-foreground);
 }
 .filter-view__trigger-glyph {
     flex: none;

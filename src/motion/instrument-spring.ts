@@ -1,7 +1,7 @@
 /** The one motion family shared by Atlas's page and per-viz instruments. */
 export const INSTRUMENT_SPRING = Object.freeze({
     durationMs: 360,
-    easing: "var(--spring-smooth, cubic-bezier(0.22, 1, 0.36, 1))",
+    easing: "var(--spring-present, cubic-bezier(0.22, 1, 0.36, 1))",
 });
 
 export type InstrumentSpringStyle = Readonly<Record<string, string>>;

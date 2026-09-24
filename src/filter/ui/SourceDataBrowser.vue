@@ -414,9 +414,6 @@ function titleCase(value: string): string {
                 }"
                 :columns="tableColumns"
                 :rows="tableRows"
-                :total="rows.length"
-                :page="1"
-                :page-size="Math.max(1, tableRows.length)"
                 role="grid"
                 :aria-label="`${ariaLabel ?? 'Source data'} rows`"
                 :aria-col-count="columns.length"
@@ -426,7 +423,6 @@ function titleCase(value: string): string {
                 :row-ref="setTableRow"
                 :tabbable-row-id="focusedKey"
                 :responsive="false"
-                infinite
             >
                 <template #empty>No rows match this view.</template>
             </DataTable>

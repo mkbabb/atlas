@@ -20,7 +20,7 @@
 // destructured `ctx` is handed to `useDockDataState` exactly as the orchestrator's injected ctx was;
 // `ctx` read inside `hasFilter` compiles to a tracked `__props` read (reactive without a wrapper).
 import { DockSeparator } from "@mkbabb/glass-ui/dock";
-import { DarkModeToggle } from "@mkbabb/glass-ui/controls";
+import { DarkModeToggle } from "@mkbabb/glass-ui/dark-mode-toggle";
 import {
     Download,
     GitCompareArrows,
@@ -75,7 +75,7 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
         <!-- ⓪ THE SELECTION CHIP → the FilterView OPENER (C24 · J-FEEDBACK-4 §2/§9). Mounts ONLY
              when a selection is live (`v-if="showChip"`) — at count 0 the node is ABSENT. When shown
              it is the FilterView OPENER: a `<button>` `N selected` pip that RAISES J-FILTER's
-             filter-view facility. The StatusDot carries the non-color ON signal; `aria-live="polite"`
+             filter-view facility. The chip carries the non-color ON signal; `aria-live="polite"`
              announces the count when the chip mounts on the first select. -->
         <!-- ① THE MOBILE GEAR (@media(--phone), C23) — the four secondary controls collapse behind
              ONE `Settings` glyph opening the `DockSettings` controls sheet. The desktop register is
@@ -242,11 +242,6 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
     outline: 2px solid var(--focus-ring-color, currentColor);
     outline-offset: 2px;
 }
-/* The selection dot rides the consumed glass-ui <StatusDot variant="custom"> — it OWNS the circle
-   shape + size; the accent fill (the `:color` prop) reads as the channel's ON signal. */
-.usf-dock__sel-dot :deep(.status-dot__dot) {
-    transition: background-color var(--transition-control);
-}
 .usf-dock__sel-label {
     font-family: var(--font-mono);
     font-size: 0.625rem;
@@ -255,16 +250,8 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
     text-transform: lowercase;
     white-space: nowrap;
 }
-@media (forced-colors: active) {
-    .usf-dock__sel-dot :deep(.status-dot__dot),
-    .usf-dock__sel-dot :deep(.status-dot__fill) {
-        background-color: Highlight;
-        border-color: Highlight;
-    }
-}
 @media (prefers-reduced-motion: reduce) {
-    .usf-dock__sel-chip,
-    .usf-dock__sel-dot :deep(.status-dot__dot) {
+    .usf-dock__sel-chip {
         transition: none;
     }
 }

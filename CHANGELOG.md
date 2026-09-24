@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Breaking changes
+
+- Peer ranges move to the Glass 10 line: `@mkbabb/glass-ui` `^6.0.0` → `^10.1.0`, `@mkbabb/value.js` `^3.1.0` → `^4.0.0`, and `@mkbabb/keyframes.js` `^5.3.5` → `^6.0.0` (Glass 10.1 peers Value 4 and Keyframes 6, and Keyframes 6 pins Value 4.0.0, so all three move together to keep one Value copy).
+- `HandMark` follows Glass 9's one-pen re-cut: props are `shape` (`underline | strike | circle | highlight`), `color`, `weight`, `seed`, `clock`. `variant`, `path`, `drawMs`, `boil`, and `progress` are removed, as are `useMarkMorphology`, `MarkVariant`, `MarkAppear`, `clockAppear`, `clockAnimation`, `BOIL_BUDGET`, and `HIGHLIGHT_WEIGHT_VB`. `useHandMarkClock` returns `{ draw, resolveInkColor }`; `clockDraws(clock)` replaces the appear/animation map.
+- `CompletionSeal` is Atlas-owned (Glass 8 deleted it and relayed it here); import it from `@mkbabb/atlas/editorial`. `CompletionSealShape` is `check | ring | wordmark`.
+
+### Changed
+
+- Drawers compose Glass `Dialog` + `SheetContent` (Glass 8 folded `Drawer` into `Sheet`); the sheet's own close control replaces Atlas's duplicate close buttons.
+- Buttons use Glass `emphasis` (`variant` was removed in Glass 7); selection cards write `--glass-accent` directly; aspatial and year swatches are Atlas-owned (Glass 7 made `StatusDot` a status vocabulary).
+- Atlas mints `--paper-aged-texture` (dropped by Glass 7) and re-points retired spring tokens onto `--spring-present` / `--spring-dock`.
+
 ## 3.0.0 — 2026-07-15
 
 ### Breaking changes

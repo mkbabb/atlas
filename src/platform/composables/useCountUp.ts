@@ -45,7 +45,8 @@ import {
     type Ref,
 } from "vue";
 import { NumericAnimation } from "@mkbabb/keyframes.js";
-import { clamp, easeOutExpo, type TimingFunction } from "@mkbabb/value.js";
+import { clamp } from "@mkbabb/value.js/math";
+import { easeOutExpo, type EasingFunction } from "@mkbabb/value.js/easing";
 import { useReducedMotion } from "@/motion/useReducedMotion";
 
 /** A record of numeric figures the count-up tweens together (e.g. `{in, out, net}`). */
@@ -89,7 +90,7 @@ export interface UseCountUpOptions {
      */
     scrollProgress?: () => number;
     /** The scrub's per-segment easing (default `easeOutExpo`). Honored only with `scrollProgress`. */
-    scrubEasing?: TimingFunction;
+    scrubEasing?: EasingFunction;
 }
 
 export interface UseCountUp<T extends CountFigures> {

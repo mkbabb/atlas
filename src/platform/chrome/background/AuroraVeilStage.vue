@@ -25,7 +25,7 @@
 //
 // `.glass-refract` stays OFF the glow (the §I-VEIL DO-NOT-GRAFT — Chromium-only, resize-expensive);
 // the membrane never carries it. The reveal/crossfade/select-sweep ride the published `--glass-reveal`
-// grammar (BB.W-LIQUID-REVEAL — the spring-snappy clock + the no-overshoot ease the library DEFINES),
+// grammar (BB.W-LIQUID-REVEAL — the spring-present clock + the no-overshoot ease the library DEFINES),
 // compositor-only (opacity / background / background-position the ONLY animated props), PRM hard-cut to
 // static (the structure shows; the motion is gated). NO consumer `--liquid-reveal-*` fallback envelope.
 import { computed, toRef } from "vue";
@@ -114,10 +114,10 @@ const hostClass = computed<string>(() => {
             var(--cp-glass-rim),
             var(--veil-accent, transparent) calc(var(--veil-strength, 0) * 100%)
         );
-    /* the rim eases on the PUBLISHED reveal clock — the spring-snappy settle duration + the
+    /* the rim eases on the PUBLISHED reveal clock — the spring-present settle duration + the
        no-overshoot ease the `.glass-reveal` recipe reads (BB.W-LIQUID-REVEAL), NOT a consumer
        `--liquid-reveal-*` fallback. */
-    transition: border-color var(--spring-snappy-duration) var(--ease-out);
+    transition: border-color var(--spring-present-duration) var(--ease-out);
 }
 
 /* THE RING, NOT THE SLAB (J-FILTER C31 · arm d). The `.aurora-veil__glow` radial-membrane rule is

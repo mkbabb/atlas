@@ -18,9 +18,9 @@ import { DockTrigger } from "@mkbabb/glass-ui/dock";
 import {
     DropdownMenu,
     DropdownMenuContent,
-} from "@mkbabb/glass-ui/dropdown-menu";
+} from "@mkbabb/glass-ui/menu";
 import { Button } from "@mkbabb/glass-ui/button";
-import { DarkModeToggle } from "@mkbabb/glass-ui/controls";
+import { DarkModeToggle } from "@mkbabb/glass-ui/dark-mode-toggle";
 import {
     Settings,
     GitCompareArrows,
@@ -84,7 +84,7 @@ const emit = defineEmits<{
             <!-- The year-range compare toggle (the third arm of the year grammar). -->
             <Button
                 v-if="hasYearScope"
-                variant="ghost"
+                emphasis="quiet"
                 size="sm"
                 class="usf-dock-settings__row"
                 :class="{ 'usf-dock-settings__row--on': yearModeNow === 'range' }"
@@ -101,7 +101,7 @@ const emit = defineEmits<{
 
             <!-- The ⤓-save door — quick-save the current full URL state onto the views shelf. -->
             <Button
-                variant="ghost"
+                emphasis="quiet"
                 size="sm"
                 class="usf-dock-settings__row"
                 :class="{ 'usf-dock-settings__row--flash': saveFlash }"

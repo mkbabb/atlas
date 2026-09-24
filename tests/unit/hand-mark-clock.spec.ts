@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { clockAnimation } from "@/motion/useHandMarkClock";
+import { clockDraws } from "@/motion/useHandMarkClock";
 
 describe("hand-mark clock", () => {
-    it("boils only a live load-clock mark", () => {
-        expect(clockAnimation("load", true)).toBe("draw-then-boil");
-        expect(clockAnimation("load", false)).toBe("draw-on");
-        expect(clockAnimation("scroll", true)).toBe("none");
-        expect(clockAnimation("static", true)).toBe("none");
+    it("draws on only the load clock", () => {
+        expect(clockDraws("load")).toBe(true);
+        expect(clockDraws("scroll")).toBe(false);
+        expect(clockDraws("static")).toBe(false);
     });
 });

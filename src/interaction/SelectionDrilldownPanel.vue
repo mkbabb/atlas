@@ -115,6 +115,13 @@ const n = computed(() => selectedItems.value.length);
 
 // The verdict hue the card rim wears — the SAME data-hue locus the veil reads (never a hand-hex). */
 const rimHue = computed<string | null>(() => selection.veilHue);
+/** The selection rim (glass 8.0.0 struck `Card variant="selection"` + `data-hue`): the per-instance
+    `--glass-accent` hue at the selected strength, written on the element; unset = a bare card. */
+const rimStyle = computed(() =>
+    rimHue.value
+        ? { "--glass-accent": rimHue.value, "--glass-accent-strength": "28%" }
+        : undefined,
+);
 
 // ── PER-ITEM DESCRIPTION — the icon descriptor + title + verdict fill, resolved through the O-A12
 // facility so the mini-map row, the dropdown rows, and the single card all read ONE resolver. ──────
@@ -322,12 +329,11 @@ function onPanelKeydown(e: KeyboardEvent): void {
         @keydown="onPanelKeydown"
     >
         <Card
-            variant="selection"
             surface="glass"
             tier="quiet"
-            :selected="!!rimHue"
-            :data-hue="rimHue ?? undefined"
             class="drilldown__card"
+            :class="{ 'metal-gold-border': rimHue }"
+            :style="rimStyle"
         >
             <!-- ═══ SINGLE (n=1) — the hover card, docked. Glyph + name + stat facts + drill verbs.
                  NO aggregate, NO dropdown, NO mini-map header (the owner's law; asserted by the gate). ═══ -->

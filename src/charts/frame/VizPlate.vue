@@ -32,7 +32,7 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-} from "@mkbabb/glass-ui/dropdown-menu";
+} from "@mkbabb/glass-ui/menu";
 import ChartFrame from "@/charts/frame/ChartFrame.vue";
 import VizGearDock from "@/charts/frame/VizGearDock.vue";
 import VizDescription from "@/charts/legend/VizDescription.vue";

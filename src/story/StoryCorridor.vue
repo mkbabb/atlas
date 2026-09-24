@@ -24,7 +24,7 @@ import {
     type CSSProperties,
 } from "vue";
 import { useResizeObserver } from "@vueuse/core";
-import { lerp } from "@mkbabb/value.js";
+import { lerp } from "@mkbabb/value.js/math";
 import {
     pickMarkCapacity,
     resolveCloneFrame,

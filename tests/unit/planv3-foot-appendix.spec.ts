@@ -89,14 +89,14 @@ describe("VizAppendixDock state law", () => {
         expect(source).toContain("data-appendix-dock");
         expect(source).toContain(':aria-expanded="state === \'full\'"');
         expect(source).toContain(':aria-controls="paneId"');
-        expect(source).toContain(':is="isPhone ? DrawerContent : \'div\'"');
+        // glass 8.0.0 folded Drawer into Sheet: a modal Dialog + a bottom SheetContent (whose own ✕ closes).
+        expect(source).toContain(':is="isPhone ? SheetContent : \'div\'"');
         expect(source).toContain(":role=\"isPhone ? undefined : 'region'\"");
-        expect(source).toContain('mode="modal"');
-        expect(source).toContain('direction="bottom"');
+        expect(source).toContain('<Dialog v-model:open="drawerOpen">');
+        expect(source).toContain(":side=\"isPhone ? 'bottom' : undefined\"");
         expect(source).toContain(':force-mount="isPhone ? true : undefined"');
         expect(source).toContain(":inert=\"isPhone && state !== 'full' ? true : undefined\"");
-        expect(source).toContain("DrawerTrigger");
-        expect(source).toContain("DrawerClose");
+        expect(source).toContain("DialogTrigger");
         expect(source.match(/<slot\s*\/>/g)).toHaveLength(1);
         expect(source).not.toContain('role="dialog"');
         expect(source).not.toContain('aria-modal="true"');

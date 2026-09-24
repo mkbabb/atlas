@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { EChartsType } from "echarts/core";
-import HandMark from "./HandMark.vue";
+import InkStroke from "./InkStroke.vue";
+import { RED_INK } from "@/motion/useHandMarkClock";
+
+/** The editorial-red ring ink, lifted per theme (glass's own `light-dark()` idiom). */
+const ink = `light-dark(${RED_INK.light}, ${RED_INK.dark})`;
 import { useEChartOrnament } from "@/charts/composables/useEChartOrnament";
 
 const props = defineProps<{ chart: EChartsType | null; markKey: string | null }>();
@@ -13,15 +17,14 @@ const position = computed(() => anchor.value
 </script>
 
 <template>
-    <HandMark
+    <InkStroke
         v-if="anchor"
         class="echart-ornament"
-        variant="pencil"
-        shape="circle"
-        clock="static"
+        kind="ring"
+        :weight="0.7"
+        :color="ink"
         :seed="3"
         :style="position"
-        aria-hidden="true"
     />
 </template>
 

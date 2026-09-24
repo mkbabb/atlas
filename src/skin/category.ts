@@ -1,5 +1,5 @@
 import { inject, type Component, type InjectionKey } from "vue";
-import type { CompletionSealShape } from "@mkbabb/glass-ui/completion-seal";
+import type { CompletionSealShape } from "@/editorial/CompletionSeal.vue";
 import type {
     AtmosphereFacet,
     ChromeIdentity,

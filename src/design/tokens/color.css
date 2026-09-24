@@ -434,6 +434,16 @@
     --red-text: light-dark(#cc0000, hsl(6 88% 62%));
 }
 
+/* §AGED-STOCK — the aged paper-grain tile, ATLAS-OWNED. glass-ui 7.0.0 dropped
+   `--paper-aged-texture` (its paper register re-cut onto `--paper-grain-tooth`/`-relief`) with no
+   MIGRATION row; the masthead grain-clip, the `paper-aged-surface` felt, and the dock TOC wash are
+   all tuned to THIS noise (the 560px felt upscale is ≈3× its native cell), so atlas mints the
+   last-shipped glass-ui 6.0.0 value verbatim rather than re-tune three recipes to a different stock.
+   Unlayered `:root` — the token-root contract (glass MIGRATION §10.0.0). */
+:root {
+    --paper-aged-texture: url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+}
+
 /* §GRAIN — the per-surface plate-grain calibration (K-PAPER-GRAIN, P5).
    glass-ui 4.2.0 RETIRED the old 3.10.0 `--glass-grain-opacity-plate` rung (grep the dist:
    zero consumers) and re-calibrated the PUBLIC `--paper-grain-opacity` LOUD to a JND floor
@@ -449,7 +459,7 @@
    surface that wears the overlay class calms to the felt floor. Authored once, at the source:
    0.038 light arm (≤ the 0.05 kitsch line, the felt plate tooth) / 0.028 dark arm (keeps the
    rendered plate ΔL < 0.03, the atmosphere-gate band, so the espresso plate reads AS its --card
-   ground). The page-wide PaperBackdrop underpaint keeps the loud public default untouched. */
+   ground). The page-wide `paper-underpaint` grain keeps the loud public default untouched. */
 .paper-grain-overlay {
     --paper-grain-opacity: 0.038; /* light arm — felt plate tooth, ≤ the 0.05 kitsch line */
 }

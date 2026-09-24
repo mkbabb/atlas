@@ -14,7 +14,7 @@
 //   • gear-toggled  (general, all registers): the gear (`useDockGear`) toggles the posture.
 //   • collapse-by-register (`isPhone`): the rail rests collapsed at @media(--phone). Dock.vue's
 //     REACTIVE register bridge (`watch([dockRef, isPhone], …)`, O-D1) reconciles the rest posture on
-//     EVERY entry path — curing the mount-only `:start-collapsed` latch that stranded the dock
+//     EVERY entry path — curing the mount-only `:collapse` latch that stranded the dock
 //     expanded on a desktop→phone resize (the broken read-once, NOT the broken-4.0 hover).
 //   • collapse-on-scroll (`@/platform/chrome/dock/composables/useScrollChrome`): the atlas-LOCAL scroll-edge hook
 //     (O-A21 is its ruled owner — NOT a `@mkbabb/glass-ui/motion-core` reader). Dock.vue binds a

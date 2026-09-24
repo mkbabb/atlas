@@ -81,7 +81,7 @@ function onFocus(): void {
          drill: pin (isolate) · compare (add) · focus (re-aim). -->
     <div class="readout-drill" data-testid="readout-drill" role="group" aria-label="Drill actions">
         <Button
-            variant="glass-wash"
+            emphasis="secondary"
             size="sm"
             type="button"
             class="readout-drill__verb"
@@ -95,7 +95,7 @@ function onFocus(): void {
             <span class="readout-drill__label">Pin</span>
         </Button>
         <Button
-            variant="glass-wash"
+            emphasis="secondary"
             size="sm"
             type="button"
             class="readout-drill__verb"
@@ -107,7 +107,7 @@ function onFocus(): void {
             <span class="readout-drill__label">Compare</span>
         </Button>
         <Button
-            variant="glass-wash"
+            emphasis="secondary"
             size="sm"
             type="button"
             class="readout-drill__verb"

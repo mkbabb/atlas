@@ -9,13 +9,13 @@
 // J-MOBILE §5 — THE DETENT RE-SEAT (B6 defect 6). The shipped sheet WAS a hand-rolled Teleport +
 // scrim + `role="dialog"` aria-modal with a STATIC `.readout-sheet__handle` (aria-hidden decoration
 // only) — no snap-point detent ladder, so it read as a MODAL DIALOG, not a native bottom sheet.
-// It now re-seats onto the glass `Drawer direction="bottom"` with `snapPoints:[0.12,0.5,1]`
-// (peek/half/full) — draggable to a half-detent + fling-dismissible, the grab handle a REAL drag
-// affordance. The glass `Drawer` (reka substrate) owns the portal, the focus management (trap +
-// restore), the scrim, and the dismiss (Escape + backdrop); the house `useDrawerSnap` engine owns
-// the detent math. So the hand-rolled scrim/ghost-click dedup + the hand-rolled focus contract +
-// the hand-rolled keydown are DELETED — the primitive owns them. This is glass-INDEPENDENT
-// (consume-now on the PINNED 4.0.1 — `Drawer.vue.d.ts` `snapPoints`/`direction`, no BC publish).
+// It now re-seats onto the glass `<Dialog>` + `<SheetContent side="bottom" :detents="[0.12,0.5,1]">`
+// (peek/half/full; glass 8.0.0 folded `Drawer` whole into `Sheet` — a detent is a size) —
+// draggable to a half-detent + fling-dismissible, the grip a REAL drag affordance. The glass
+// Dialog (reka substrate) owns the portal, the focus management (trap + restore), the scrim, and
+// the dismiss (Escape + backdrop); the sheet's detent engine owns the detent math. So the
+// hand-rolled scrim/ghost-click dedup + the hand-rolled focus contract + the hand-rolled keydown
+// are DELETED — the primitive owns them.
 //
 // THE TRANSPOSITION (D1.2 · mirroring HoverCard). Like HoverCard, this reads the ONE
 // `useHoverReadout` platform store directly — NO props for the data. The pointer/tap-owning viz
@@ -28,13 +28,9 @@
 // `eyebrow` / `subhead` / `accent`), so the touch readout and the pointer readout can NEVER drift —
 // one payload, two surfaces. The eyebrow accent + the per-fact accent dot render EXACTLY as
 // SpeedtestReadoutSheet does (the shared sheet idiom, re-used not re-invented).
-import { computed } from "vue";
-import {
-    Drawer,
-    DrawerContent,
-    DrawerTitle,
-    DrawerDescription,
-} from "@mkbabb/glass-ui/drawer";
+import { computed, ref } from "vue";
+import { Dialog, DialogTitle, DialogDescription } from "@mkbabb/glass-ui/dialog";
+import { SheetContent } from "@mkbabb/glass-ui/sheet";
 import { useReducedMotion } from "@/motion/useReducedMotion";
 import { useHoverReadout } from "@/platform/stores/useHoverReadout";
 import { useMobileRegister } from "@/platform/composables/useMobileRegister";
@@ -71,10 +67,10 @@ const readout = computed(() => {
     return r;
 });
 
-// ── THE OPEN MODEL — the Drawer's `v-model:open`. The sheet is OPEN when the tap register is
+// ── THE OPEN MODEL — the Dialog's `v-model:open`. The sheet is OPEN when the tap register is
 // active AND a settled readout (a persistent PIN or a live transient) is present; the pin keeps it
 // open through the cascade that steals the transient. The SETTER routes a close request (a fling
-// dismiss, a backdrop tap, Escape — all delivered by the glass Drawer / reka) through the store's
+// dismiss, a backdrop tap, Escape — all delivered by the glass Dialog / reka) through the store's
 // origin-agnostic `clearAll()` (the platform dismiss seam — it blanks the transient readout the
 // same way a route change does), so the open state stays DERIVED from the store, never a second
 // source of truth. A spurious `open=true` (no live readout) is ignored — the readout drives it.
@@ -85,25 +81,25 @@ const open = computed<boolean>({
     },
 });
 
-// THE DETENT LADDER (J-MOBILE §5) — peek / half / full, the house `useDrawerSnap` default for a
-// bottom drawer, passed explicitly so the readout opens at the comfortable arm's-length peek and
-// can be dragged up to half/full or flung away.
-const snapPoints: number[] = [0.12, 0.5, 1];
+// THE DETENT LADDER (J-MOBILE §5) — peek / half / full, ascending fractions of the anchored axis,
+// with the active rung pinned to the peek so the readout opens at the comfortable arm's-length
+// peek and can be dragged up to half/full or flung away.
+const detents: number[] = [0.12, 0.5, 1];
+const detent = ref<number | null>(detents[0]);
 </script>
 
 <template>
     <!-- THE GLASS BOTTOM-SHEET (J-MOBILE §5) — the platform readout re-seated onto the glass
-         `Drawer direction="bottom"` with the peek/half/full detent ladder. reka owns the portal +
+         `Dialog` + `SheetContent side="bottom"` with the peek/half/full detent ladder. reka owns the portal +
          the focus trap/restore + the dismiss (Escape + backdrop); the house snap engine owns the
          detent drag + fling. The default `modal` mode keeps the iOS scale-down + scrim (the readout
-         IS a deliberate detail surface). PRM → the Drawer's own reduced-motion handling; the
+         IS a deliberate detail surface). PRM → the sheet's own reduced-motion handling; the
          `--still` class on the body retires any residual content transition. -->
-    <Drawer
-        v-model:open="open"
-        direction="bottom"
-        :snap-points="snapPoints"
-    >
-        <DrawerContent
+    <Dialog v-model:open="open">
+        <SheetContent
+            v-model:detent="detent"
+            side="bottom"
+            :detents="detents"
             class="readout-sheet"
             :class="{ 'readout-sheet--still': reduced }"
             aria-labelledby="readout-sheet-title"
@@ -114,18 +110,18 @@ const snapPoints: number[] = [0.12, 0.5, 1];
                  unnamed — the fix is the O-E8 reka dialog-name wrapper (queued behind the 5.0.0
                  cut); this file adopts it once O-E8 lands, unchanged until then. -->
             <template v-if="readout">
-                <DrawerTitle
+                <DialogTitle
                     id="readout-sheet-title"
                     class="text-panel-title readout-sheet__title"
                 >
                     {{ readout.title }}
-                </DrawerTitle>
-                <DrawerDescription class="sr-only">
+                </DialogTitle>
+                <DialogDescription class="sr-only">
                     Tapped-datum readout detail.
-                </DrawerDescription>
+                </DialogDescription>
 
                 <!-- THE TWO-TIER HEAD — the eyebrow (the verdict / kind lede, tinted by the card-
-                     level accent), the title (above, the DrawerTitle), the subhead (the plate's
+                     level accent), the title (above, the DialogTitle), the subhead (the plate's
                      context). The SAME head grammar as the desktop HoverCard. -->
                 <p
                     v-if="readout.eyebrow"
@@ -156,17 +152,17 @@ const snapPoints: number[] = [0.12, 0.5, 1];
                     </template>
                 </dl>
             </template>
-        </DrawerContent>
-    </Drawer>
+        </SheetContent>
+    </Dialog>
 </template>
 
 <style scoped>
-/* THE BOTTOM-SHEET BODY — the glass `DrawerContent` provides the surface + the real drag handle +
+/* THE BOTTOM-SHEET BODY — the glass `SheetContent` provides the surface + the real drag handle +
    the detent ladder; this rules ONLY the readout content lockup + the consumer-owned safe-area
    floor. The two-tier head grammar + the facts grid mirror SpeedtestReadoutSheet (one sheet idiom).
    J-MOBILE §approach-5 — the CONSUMER owns the iOS home-indicator inset: `--safe-foot`
    (arm-a's single safe-area `max()` token, retiring the per-surface env() re-derivations) is
-   applied here, NOT pushed up as a glass-ui Drawer prop. It degrades to a bare env() floor until
+   applied here, NOT pushed up as a glass-ui Sheet prop. It degrades to a bare env() floor until
    the token lands (J-FEEDBACK-4 §8 — zero net-new abstract-up). */
 .readout-sheet {
     padding-block-end: var(--safe-foot, env(safe-area-inset-bottom, 0px));

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-// FilterPanel — the ONE filter, re-seated as a CLOSED-BY-DEFAULT right
-// `Drawer mode="live-behind"` (C.W3.3, CP-1/CP-3). Not a modal, not a left-anchored
-// `position:fixed` rail: a glass lens that slides from the RIGHT, over a single
-// full-width content stage. The viz stays LIVE behind it the whole time —
-// `mode="live-behind"` bundles `modal:false` + no scrim + page-behind-interactive as
-// CONFIGURED policy (the "lens not a modal" property, not a re-derived surface).
+// FilterPanel — the ONE filter, re-seated as a CLOSED-BY-DEFAULT right non-modal sheet
+// (`<Dialog :modal="false">` + `<SheetContent side="right">`; C.W3.3, CP-1/CP-3). Not a modal,
+// not a left-anchored `position:fixed` rail: a glass lens that slides from the RIGHT, over a
+// single full-width content stage. The viz stays LIVE behind it the whole time — a non-modal
+// Dialog paints no scrim and leaves the page behind interactive as CONFIGURED policy (the
+// "lens not a modal" property, not a re-derived surface).
 //
 // The B-tranche `.filter-shell` left-`calc` anchor (`inset-inline-start:
 // calc(var(--dock-w)…)`) + the hand-rolled collapse-spine + the §K5 open-default
@@ -13,7 +13,7 @@
 // `PlatformShell` was deleted by C3.1; here `useFilterPane().open` flips to
 // closed-default and there is no gutter for the content to react to.
 //
-// Glass Drawer owns the right-axis geometry, material, and motion. This drawer is also the A4 dock
+// Glass SheetContent owns the right-axis geometry, material, and motion. This drawer is also the A4 dock
 // pull-out target (C3.2's affordance drives the same `useFilterPane().open`).
 //
 // It is a generic SHELL: it owns the chrome (the "Filters" header, the freshness
@@ -21,14 +21,9 @@
 // by the consumer as the `body` prop — inside it. The reset/apply affordances belong
 // to the body; the shell never reaches into the body's logic.
 import { computed, inject, ref, watch, type Component } from "vue";
-import {
-    Drawer,
-    DrawerContent,
-    DrawerTitle,
-    DrawerDescription,
-} from "@mkbabb/glass-ui/drawer";
-import { Button } from "@mkbabb/glass-ui/button";
-import { SlidersHorizontal, X } from "@lucide/vue";
+import { Dialog, DialogTitle, DialogDescription } from "@mkbabb/glass-ui/dialog";
+import { SheetContent } from "@mkbabb/glass-ui/sheet";
+import { SlidersHorizontal } from "@lucide/vue";
 import { DASHBOARD_KEY, useDashboardRegistry } from "@/contract";
 import { useFilterPane } from "@/filter/composables/useFilterPane";
 import { useFilterPanel } from "@/filter/composables/useFilterPanel";
@@ -44,7 +39,7 @@ import { useDismissArbiter } from "@/platform/interaction/useDismissArbiter";
 // The consumer (DashboardView) mounts this shell in PlatformShell's `filter` slot and
 // passes the active dashboard's filter BODY as `body`. The shell owns only the chrome
 // (header, freshness, cross-links); the body owns its own controls + membership
-// machinery. This is the ONE filter for every viewport — the live-behind Drawer is
+// machinery. This is the ONE filter for every viewport — the live-behind sheet is
 // the same primitive at every register, dissolving the old desktop/mobile fork.
 const props = defineProps<{ body?: Component }>();
 const ctx = inject(DASHBOARD_KEY);
@@ -217,41 +212,28 @@ function cancelSave(): void {
              SAME drawer). No page-level affordance is re-added — the dock instrument already
              fills that role at every viewport, so nothing here occludes content on first paint. -->
 
-        <!-- The right live-behind filter Drawer — closed by default. `mode="live-behind"`
-             bundles `modal:false` + no scale-down; `:show-overlay="false"` drops the
-             scrim so the viz stays LIVE + interactive behind. `direction="right"` slides
-             from the right edge; Glass DrawerContent owns the material, geometry, motion,
-             and Reka dismissal semantics. -->
-        <Drawer
-            v-model:open="open"
-            mode="live-behind"
-            direction="right"
-        >
-            <DrawerContent
-                :show-overlay="false"
+        <!-- The right live-behind filter sheet — closed by default. `:modal="false"` paints no
+             scrim and keeps the viz LIVE + interactive behind. `side="right"` slides from the
+             right edge; Glass SheetContent owns the material, geometry, motion, and Reka
+             dismissal semantics. -->
+        <Dialog v-model:open="open" :modal="false">
+            <SheetContent
+                side="right"
                 class="cp-drawer"
                 @interact-outside.prevent
                 data-testid="filter-panel"
                 aria-label="Filters"
             >
-                <DrawerTitle class="cp-drawer__title">
+                <DialogTitle class="cp-drawer__title">
                     <SlidersHorizontal class="h-4 w-4" aria-hidden="true" />
                     Filters
-                </DrawerTitle>
-                <DrawerDescription class="sr-only">
+                </DialogTitle>
+                <DialogDescription class="sr-only">
                     Filter and scope the active dashboard. The visualization stays live
                     behind this panel.
-                </DrawerDescription>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    class="cp-drawer__close"
-                    aria-label="Close filters"
-                    data-testid="filter-close"
-                    @click="open = false"
-                >
-                    <X class="h-4 w-4" aria-hidden="true" />
-                </Button>
+                </DialogDescription>
+                <!-- The close ✕ is the sheet's OWN (glass SheetContent renders its unconditional
+                     `[data-slot="dialog-close"]` affordance; a second atlas button would double it). -->
 
                 <!-- The year-scrubber — the top stratum (B4 §3, FD6 §6.3). The control is
                      the colocated <YearScrubber> sub-component; the host owns the
@@ -299,14 +281,14 @@ function cancelSave(): void {
                     @commit-save="commitSave"
                     @cancel-save="cancelSave"
                 />
-            </DrawerContent>
-        </Drawer>
+            </SheetContent>
+        </Dialog>
     </template>
 </template>
 
 <style scoped>
 /* ── THE RIGHT LIVE-BEHIND LENS — surface seam ─────────────────────────────────
-   Glass owns the teleported DrawerContent surface, motion, and directional geometry.
+   Glass owns the teleported SheetContent surface, motion, and directional geometry.
    Only the INNER chrome below (title / close / scrubber / body / foot — authored in
    THIS template, so they carry the scope attr) is styled here. */
 
@@ -322,20 +304,10 @@ function cancelSave(): void {
     font-size: 1rem;
     color: var(--foreground);
 }
-/* The close affordance is the glass `Button` (variant="ghost" size="sm") — it OWNS
-   its own surface/hover/focus/radius. Only the absolute placement in the lens crest is
-   the host's to keep. */
-.cp-drawer__close {
-    position: absolute;
-    inset-block-start: 0.75rem;
-    inset-inline-end: 0.75rem;
-    z-index: 1;
-}
-
 /* The year-scrubber (B4 §3) + the drawer foot (save-view · cross-links · freshness) skins
    live with their colocated sub-components (`components/YearScrubber.vue`,
    `components/FilterDrawerFoot.vue`) — the §Y componentize moved their grammar out of this
-   host. Only the drawer SHELL chrome (title · close · body · summon trigger) is styled here. */
+   host. Only the drawer SHELL chrome (title · body · summon trigger) is styled here. */
 
 /* The body region scrolls when the injected filter outgrows the lens — the header +
    foot stay pinned (the chrome frames the body, never clips it). */

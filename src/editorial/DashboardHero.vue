@@ -29,7 +29,7 @@
 // the chapter cap speak one color).
 //
 // THE REVEAL CLOCK — LOAD (the page's arrival): the series count-ups via the heroes' existing
-// `useCountUp` (NumericAnimation), once. Glass draws the route's ONE CompletionSeal beside the
+// `useCountUp` (NumericAnimation), once. the atlas CompletionSeal draws the route's ONE seal beside the
 // THESIS figure when the count settles. PRM: the count and seal both snap to their final states.
 //
 // THE RING-KILL (H.W1.b · G-MARKS / F7.3 · AXIOM-4 morphology): the editorial DatumRing is RETIRED
@@ -169,7 +169,7 @@ const completionSeal = computed(() =>
 );
 
 onMounted(async () => {
-    // The page arrival: count the series, then let Glass draw the earned completion seal once.
+    // The page arrival: count the series, then draw the earned completion seal once.
     await run();
     complete.value = true;
 });
@@ -356,7 +356,7 @@ function rankNumTrack(f: HeroFigure): Record<string, number> | undefined {
                 :style="rankNumTrack(f)"
             >
                 <!-- THE RING-KILL (H.W1.b): no editorial ring — the figure is found by SIZE, and
-                     the THESIS figure receives the ONE Glass completion seal after the count.
+                     the THESIS figure receives the ONE completion seal after the count.
                      Every figure is the bare audacious slug. -->
                 <FigureSlug
                     as="span"

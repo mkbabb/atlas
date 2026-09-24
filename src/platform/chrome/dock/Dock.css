@@ -27,10 +27,11 @@
     /* THE RAIL WIDTH — one fixed column width (the Roman rungs + the foot controls at their
        label-bearing room). */
     inline-size: var(--cp-dock-w, 4.5rem);
-    /* THE LEFT-MARGIN ANCHOR · CLEAR glass-ui's bottom-centre placement. A fixed GlassDock emits
-       `bottom-(--dock-pos) inset-x-0 mx-auto`; a LEFT vertical rail instead pins top + left to the
-       inset and RELEASES bottom + right to `auto` (both block insets pinned would over-constrain
-       `height:auto` into a top↔bottom stretch). */
+    /* THE LEFT-MARGIN ANCHOR. glass 9.0.0 folded GlassDock's `position` prop onto the consumer's own
+       classes, so the rail fixes ITSELF: it pins top + left to the inset and RELEASES bottom + right
+       to `auto` (both block insets pinned would over-constrain `height:auto` into a top↔bottom
+       stretch). */
+    position: fixed;
     inset-block-start: var(--cp-inset, 1.25rem);
     inset-block-end: auto;
     inset-inline-start: var(--cp-inset, 1.25rem);
@@ -248,8 +249,8 @@
        restarts). Scoped keyframes — DockNavItem's rail-mount rise is a different clock. */
     @media (prefers-reduced-motion: no-preference) {
         .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step) {
-            animation: usf-dock-sheet-row-rise var(--spring-snappy-duration, 0.4s)
-                var(--spring-snappy, ease) both;
+            animation: usf-dock-sheet-row-rise var(--spring-dock-duration, 0.4s)
+                var(--spring-dock, ease) both;
             animation-delay: calc(var(--rivet-i, 0) * 40ms);
         }
     }

@@ -2,7 +2,6 @@
 // The family barrel — re-exports the family's public surface (components as named default
 // re-exports, the .ts leaves whole). Split-internal helpers stay family-internal.
 
-export * from "./mark-tokens";
 export * from "./trajectory-marks";
 export { default as MultiYearFigure } from "./MultiYearFigure.vue";
 export { default as RankedBar } from "./RankedBar.vue";
