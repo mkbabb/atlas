@@ -12,7 +12,7 @@
 
 - Drawers compose Glass `Dialog` + `SheetContent` (Glass 8 folded `Drawer` into `Sheet`); the sheet's own close control replaces Atlas's duplicate close buttons.
 - Buttons use Glass `emphasis` (`variant` was removed in Glass 7); selection cards write `--glass-accent` directly; aspatial and year swatches are Atlas-owned (Glass 7 made `StatusDot` a status vocabulary).
-- Atlas mints `--paper-aged-texture` (dropped by Glass 7) and re-points retired spring tokens onto `--spring-present` / `--spring-dock`.
+- The paper grain adopts Glass's warm tooth register (`--paper-grain-tooth` via `paper-underpaint` / `paper-grain-overlay`); the retired SVG-noise `--paper-aged-texture` stock and Atlas's `paper-aged-surface` utility are removed (use `paper-grain-overlay`). Retired spring tokens re-point onto `--spring-present` / `--spring-dock`.
 
 ## 3.0.0 — 2026-07-15
 

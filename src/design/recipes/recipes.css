@@ -569,7 +569,7 @@
    lockup reads as ONE coherent display family). J-PAPER owns the lockup LAYOUT/recipe (the two
    registers + their seat); J-STORY owns the masthead PLACEMENT in the page flow (the divider/crown
    frame, `J-STORY §1/§11`); J-HANDMARK §6 owns the grain-clip mark-register the headline rung SEATS
-   (`masthead-headline-grain` below CITES it, consumes the shipped `--paper-aged-texture`, does NOT
+   (`masthead-headline-grain` below CITES it, consumes glass's warm `--paper-grain-tooth`, does NOT
    re-author the grain recipe). */
 
 /* THE MASTHEAD-EYEBROW rung — the whispered script/italic register that opens the lockup. The
@@ -623,31 +623,29 @@
 }
 
 /* THE GRAIN-ON-HEADLINE consume (J-HANDMARK §6 — `J-HANDMARK-HEADLINE-GRAIN`, the grain-clip
-   mark-register; J-PAPER's masthead lockup SEATS it, does NOT re-author it). The shipped aged
-   paper-grain texture (`--paper-aged-texture` — glass-ui scale-paper.css's 5-octave feTurbulence
-   fractalNoise; the J-PAPER/J-GLASS-ROOT paper chassis ships it) is clipped to the HEADLINE glyph
-   fill via `background-clip:text`, so the towering display serif wears the paper's tooth WITHIN its
-   letterforms (the audacious masthead grain). The three hard fences (J-HANDMARK §6):
+   mark-register; J-PAPER's masthead lockup SEATS it, does NOT re-author it). glass-ui's warm raster
+   paper tooth (`--paper-grain-tooth` at `--paper-grain-tile`, glass styles/paper.css — the successor
+   register to the SVG-noise "aged" stock glass 7.0.0 retired, which the owner rejected as metallic)
+   is clipped to the HEADLINE glyph fill via `background-clip:text`, so the towering display serif
+   wears the paper's tooth WITHIN its letterforms. The three hard fences (J-HANDMARK §6):
 
    (1) HEADLINE-ONLY — this recipe resolves on the masthead/headline display rung ONLY, NEVER on
-       prose (the §1 text-prose / text-prose-muted body recipes keep their SOLID-INK fill; the grain
-       is a SPARING audacious display flourish, not a uniform texture — J-PAPER §open-q-4).
+       prose (the body recipes keep their SOLID-INK fill; the grain is a SPARING display flourish).
    (2) FALLBACK-FIRST — the `masthead-headline` rung above already paints the glyphs in SOLID INK
-       (`@apply text-foreground`). This recipe LAYERS the grain ON TOP via `background-clip:text`;
+       (`@apply text-foreground`). This recipe LAYERS the tooth OVER the ink via `background-clip:text`;
        where `background-clip:text` is unsupported the `@supports` fence is FALSE, the rule is skipped
-       ENTIRELY, and the glyph keeps its solid-ink fill (NEVER an empty/transparent glyph). The grain
-       is composited OVER the espresso ink (the texture is a low-alpha tooth, the ink reads through),
-       so even WHERE supported the headline never goes hollow.
-   (3) STATIC/CSS RASTER — `--paper-aged-texture` is a STATIC data-URI (no live shader, perf-safe —
-       the `J-HANDMARK §3` motion-budget discipline; a grain-clip is a static raster, never a boil). */
+       ENTIRELY, and the glyph keeps its solid-ink fill (NEVER an empty/transparent glyph). The ink is
+       the base layer, so even WHERE supported the headline never goes hollow.
+   (3) STATIC/CSS RASTER — the tooth is a static gradient raster (no live shader, perf-safe; never a boil). */
 @utility masthead-headline-grain {
     @supports (background-clip: text) or (-webkit-background-clip: text) {
-        /* layer the espresso ink UNDER the aged grain so the glyph reads as inked-paper, never hollow:
-           the foreground ink is the base, the grain texture sits over it, BOTH clip to the glyph. */
-        background-image: var(--paper-aged-texture),
+        /* the espresso ink UNDER the warm tooth so the glyph reads as inked paper, never hollow: the
+           foreground ink is the base layer, the tooth layers sit over it, ALL clip to the glyph. One
+           tile size repeats across every layer (the solid ink tiles seamlessly). */
+        background-image: var(--paper-grain-tooth),
             linear-gradient(var(--foreground), var(--foreground));
-        background-size: cover, cover;
-        background-position: center, center;
+        background-size: var(--paper-grain-tile) var(--paper-grain-tile);
+        background-repeat: repeat;
         -webkit-background-clip: text;
         background-clip: text;
         -webkit-text-fill-color: transparent; /* let the clipped bg paint the glyph (ink base shows through) */
@@ -655,59 +653,7 @@
     }
 }
 
-/* recipes.css — the grain-only paper FELT (K-PAPER-GRAIN, P5). CONSUMES the shipped aged
-   stock `--paper-aged-texture` (glass-ui scale-paper.css:132 — a 5-octave fractalNoise,
-   opacity 0.06 BAKED) through a `::after` overlay, exactly as the §12 comment licenses
-   (scale-paper.css:124-130: "layer a wrapper element with its own opacity:/mix-blend-mode:
-   atop"). ZERO inline feTurbulence (no second noise authored); ZERO `filter` (a filter here
-   would clip a descendant glass plate's backdrop sample — the k-paper-no-filter hazard).
-   SIBLING/OVERLAY law: this is the PAGE-GROUND felt, a layer BENEATH the glass plates — it
-   MUST NOT wrap a `.plate` (ChartFrame.vue:530 `isolation:isolate` backdrop-root). The
-   @utility is INERT on declaration (recipes.css:6 — Tailwind v4 tree-shakes an unconsumed
-   @utility to zero CSS) until a page-host wears it (the fenced :4319 seating signable). */
-@utility paper-aged-surface {
-    position: relative;        /* the overlay's containing block — NOT `isolation`, NOT `filter` */
-
-    &::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        z-index: 0;            /* the felt sits at the ground; content/plates stack above */
-        pointer-events: none;  /* the felt never intercepts a hit (the plates own interaction) */
-        background-image: var(--paper-aged-texture);  /* the SHIPPED token — the ONE noise source */
-        background-repeat: repeat;                     /* the tile lattices the page */
-        /* THE STATIC FIX (K-PAPER-GRAIN, P5): the shipped `--paper-aged-texture` is a 200×200
-           baseFrequency=0.5 fractalNoise — ~2px features that, painted at the native tile size,
-           lattice the page PER-PIXEL = literal gray TV-static. UPSCALE the tile so each noise
-           feature spreads into a soft paper-tooth speckle (≈3× the native cell) rather than a
-           pixel-grid hiss. The exact px is the felt dial of record. */
-        background-size: 560px 560px;
-        /* ELEMENT-OPACITY DAMP: the token bakes opacity 0.06 INTO the SVG rect, but multiplied
-           page-wide that still reads loud; a ~0.4 element opacity pulls the felt to the
-           perceptual floor (paper, not noise) without authoring a second alpha into the token. */
-        opacity: 0.4;
-        mix-blend-mode: multiply;  /* light/cream ground: the tooth DARKENS like ink into stock */
-    }
-
-    /* DARK: the same noise as a gentle fiber sheen — `screen` (NOT `soft-light`, which collapses
-       to IDENTITY on the near-black ink pole, the self-cancelling defect glass-ui's own paper.css
-       avoids by using `screen` for the dark grain arm). Fiber catches light off the ink → lighten. */
-    .dark &::after {
-        mix-blend-mode: screen;
-    }
-
-    /* A11Y REVERT 1 — reduced transparency: drop the translucent flourish (zero info loss;
-       the felt is the `--attn-atmosphere` 0.06 perceptual floor, tokens.css:790). */
-    @media (prefers-reduced-transparency: reduce) {
-        &::after {
-            opacity: 0;
-        }
-    }
-    /* A11Y REVERT 2 — forced colors: the system paints its own canvas; an SVG-noise overlay
-       is meaningless decoration there and must vacate (WCAG 1.4.3/1.4.11 carve-out). */
-    @media (forced-colors: active) {
-        &::after {
-            display: none;
-        }
-    }
-}
+/* The grain-only paper FELT (K-PAPER-GRAIN, P5) is glass-ui's own `paper-grain-overlay` utility — the
+   warm `--paper-grain-tooth` (+ the optional `--paper-grain-relief`) on an `::after`, calibrated down to
+   the felt floor by the `.paper-grain-overlay` `--paper-grain-opacity` scope in tokens/color.css. The
+   atlas-local `paper-aged-surface` recipe over the retired SVG-noise stock is DELETED (glass 7.0.0). */

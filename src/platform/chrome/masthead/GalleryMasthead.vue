@@ -90,7 +90,7 @@ withDefaults(defineProps<{ showEyebrow?: boolean }>(), { showEyebrow: true });
                  the VC masthead move. `masthead-eyebrow` is the Fraunces italic kicker; the wordmark
                  rides `masthead-headline` (the towering serif LAYOUT rung) + `masthead-headline-grain`
                  (J-HANDMARK §6's grain-clip mark-register — the headline wears the shipped
-                 `--paper-aged-texture` within its letterforms, SOLID-INK fallback-first, NEVER on the
+                 glass's warm `--paper-grain-tooth` within its letterforms, SOLID-INK fallback-first, NEVER on the
                  prose tagline below). -->
             <h1 class="masthead-headline masthead__wordmark">
                 The <span class="text-pickout">Connectivity</span> Atlas
@@ -201,7 +201,7 @@ withDefaults(defineProps<{ showEyebrow?: boolean }>(), { showEyebrow: true });
    is continuous with the mark it replaces.
 
    THE GRAIN-CLIP EXEMPTION (J-PAPER ARM c · J-HANDMARK §6 fallback law) — the wordmark's
-   `masthead-headline-grain` clips the aged grain to the glyph fill via `-webkit-text-fill-color:
+   `masthead-headline-grain` clips the paper tooth to the glyph fill via `-webkit-text-fill-color:
    transparent`, which INHERITS to children. The pickout is a HUE event (the brand red), NOT a grain
    surface — so it OPTS OUT of the clip (re-asserting its own `-webkit-text-fill-color` to the red),
    keeping the four-voice TITLE-RED a clean solid pick-out while the surrounding wordmark wears the

@@ -62,7 +62,7 @@ const activeBeat = useActiveBeat();
          WG-E). `data-toc-source` surfaces the OWNER-HELD seam: `interim` while the glass abstraction is
          deferred, `glass` once it lands. The `<nav>` is the labelled landmark; each row deep-links. -->
     <nav
-        class="usf-toc"
+        class="usf-toc paper-grain-overlay"
         aria-label="Table of contents"
         data-testid="dock-toc"
         :data-toc-source="GLASS_TOC_ABSTRACTION_AVAILABLE ? 'glass' : 'interim'"
@@ -136,10 +136,8 @@ const activeBeat = useActiveBeat();
     flex: 1 1 auto;
     min-block-size: 0;
     gap: 0.5rem;
-    /* the recessive paper wash — the shipped static grain (no live shader), floored so the plate reads
-       as tooth, never a loud texture. Falls back to no image where the token is unresolved. */
-    background-image: var(--paper-aged-texture, none);
-    background-blend-mode: multiply;
+    /* the recessive paper wash is glass-ui's `paper-grain-overlay` (the warm tooth on an `::after`,
+       floored by the `.paper-grain-overlay` felt calibration in tokens/color.css) — worn on the host. */
 }
 
 /* THE SCROLL PORT — the ONE growing region (mirrors the stepper's `FadingScroll` idiom): it feathers

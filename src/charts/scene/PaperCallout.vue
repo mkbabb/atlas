@@ -9,8 +9,7 @@
 //   · THE CHIP — a Newsreader-italic DOM chip (the editorial marginalia voice, the closest sanctioned
 //     italic in the Fraunces/Newsreader/Fira triad), inked rung-④ `--attn-chrome` (the editorial-mark
 //     MARGIN rung, recessive to the rung-③ key/axis — NEVER `--attn-legend`; `tokens.css:790`), seated
-//     on the SHIPPED `--paper-aged-texture` paper stock via the K-PAPER-GRAIN `paper-aged-surface`
-//     @utility. The chip is `ResizeObserver`-self-measured (its OWN rendered box) and fed to the Cox
+//     on glass-ui's warm `--paper-grain-tooth` stock via its `paper-grain-overlay` @utility. The chip is `ResizeObserver`-self-measured (its OWN rendered box) and fed to the Cox
 //     solver BEFORE any `inside()`/no-clip verdict — never a hard-coded estimate.
 //   · THE LEADER — glass-ui's own hand pen (`strokeRibbon`, via the atlas `InkStroke` — NOT a
 //     parallel SVG draw engine), drawn-on bidirectionally via `clock="scroll"` (the `AnimatedRule`
@@ -131,11 +130,11 @@ const leader = computed<{
                 :seed="seed"
             />
         </div>
-        <!-- THE CHIP — Newsreader-italic, rung-④ --attn-chrome, on the paper-aged stock, offset to the
+        <!-- THE CHIP — Newsreader-italic, rung-④ --attn-chrome, on the glass paper tooth, offset to the
              solver's clear seat. `ref` + the ResizeObserver above self-measure its OWN box. -->
         <div
             ref="chipEl"
-            class="paper-callout__chip paper-aged-surface"
+            class="paper-callout__chip paper-grain-overlay"
             :style="{ transform: `translate(${placement.chip.left}px, ${placement.chip.top}px)` }"
         >
             <span v-if="eyebrow" class="paper-callout__eyebrow">{{ eyebrow }}</span>
