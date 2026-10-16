@@ -1,3 +1,12 @@
+<script lang="ts">
+import { SETTLE_FRAME_MS } from "../composables/useEChart.js";
+
+/** THE SETTLE BOUND (U RULINGS §I CX-4, §J J-1): the longest a reader act may take, from the act
+    to this figure's `settled` reopening. Ordinary paints are inert; the longest push is the
+    staged view-change morph (`armMorphPush`, 760 ms). Tested in useEChart.browser.spec.ts. */
+export const SETTLE_BOUND_MS = SETTLE_FRAME_MS + 760;
+</script>
+
 <script setup lang="ts">
 // platform/charts/ScatterPlate.vue — THE SHARED SCATTER ENGINE (J-ARCH §1 · D6 major).
 //
@@ -124,7 +133,7 @@ const host = ref<HTMLElement | null>(null);
 // ── THE useEChart LIFECYCLE (the shared host scaffold) — init on the host, the deferred lazy-mount
 // paint (the host pre-sizes its box, no scroll-in CLS), the highlight/downplay bridge EXPOSED so
 // the plate wires its shared-hover watch off it. The option/onHover/keyOf are the plate's forks. ──
-const { chart, stageMorphOwned, highlight, downplay } = useEChart({
+const { chart, stageMorphOwned, highlight, downplay, push } = useEChart({
     host,
     option: () => {
         const option = props.option();
@@ -150,10 +159,8 @@ watch(
             active === previous ||
             !chart.value
         ) return;
-        chart.value.setOption(
-            armMorphPush(withMorphIdentity(props.option(), set.identity), set.transition),
-            { notMerge: true, lazyUpdate: true },
-        );
+        // Through the engine's one structural write path, so the push closes `settled` (J-1).
+        push(armMorphPush(withMorphIdentity(props.option(), set.identity), set.transition));
     },
     { flush: "post" },
 );

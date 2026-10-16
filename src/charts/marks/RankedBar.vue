@@ -1,3 +1,23 @@
+<script lang="ts">
+import { SETTLE_FRAME_MS } from "../composables/useEChart.js";
+
+/** THE SETTLE BOUND (U RULINGS §I CX-4, §J J-1): the longest a reader act may take, from the act
+    to this figure's `settled` reopening. The re-rank morph runs on ECharts' defaults: 1000 ms on
+    the first paint (the longest), 500 ms on an update. Under reduced motion it hard-cuts, inside
+    the same bound. Tested in useEChart.browser.spec.ts. */
+export const SETTLE_BOUND_MS = SETTLE_FRAME_MS + 1000;
+
+/** One ranked row — an entity sized by `value` (the bar length), stained by `hue(item)`. */
+export interface RankedRow {
+    /** A stable join key (an applicant id, a firm name) for the linked-highlight + selection. */
+    key: string;
+    /** The row's display label (the y-axis tick). */
+    name: string;
+    /** The magnitude the BAR LENGTH encodes (e.g. brokered funding). */
+    value: number;
+}
+</script>
+
 <script setup lang="ts">
 // RankedBar.vue — the platform HORIZONTAL RANKED-BAR primitive (I13 · design-ecf §148-188
 // VIZ 3). The sibling of <Treemap> for a distribution too SKEWED to lay out as boxes: where a
@@ -48,15 +68,6 @@ import type { RankHue } from "../scale/ColorScale.js";
 // registration law — the bundle carries the bar renderer only when a dashboard draws one).
 use([BarChart, GridComponent, TooltipComponent]);
 
-/** One ranked row — an entity sized by `value` (the bar length), stained by `hue(item)`. */
-export interface RankedRow {
-    /** A stable join key (an applicant id, a firm name) for the linked-highlight + selection. */
-    key: string;
-    /** The row's display label (the y-axis tick). */
-    name: string;
-    /** The magnitude the BAR LENGTH encodes (e.g. brokered funding). */
-    value: number;
-}
 
 const ROLLUP_KEY = "__rankedbar_rollup__"; // the sentinel key the "…and M more" residual row carries
 

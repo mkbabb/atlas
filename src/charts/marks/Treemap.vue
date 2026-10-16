@@ -1,3 +1,40 @@
+<script lang="ts">
+import { SETTLE_FRAME_MS } from "../composables/useEChart.js";
+
+/** THE SETTLE BOUND (U RULINGS §I CX-4, §J J-1): the longest a reader act may take, from the act
+    to this figure's `settled` reopening. The box morph runs on ECharts' defaults for a treemap:
+    1000 ms on the first paint (the longest), 900 ms on an update. Under reduced motion it
+    hard-cuts, inside the same bound. Tested in useEChart.browser.spec.ts. */
+export const SETTLE_BOUND_MS = SETTLE_FRAME_MS + 1000;
+
+/** One box in the treemap — a charter applicant, a consulting firm. */
+export interface TreemapItem {
+    /** A stable join key (an applicant id, a firm name) for the linked-highlight. */
+    key: string;
+    /** The box's display label. */
+    name: string;
+    /** The magnitude the box AREA encodes (total funding). */
+    value: number;
+}
+
+/** THE RICH IN-BOX LABEL (F6.9 · f6-viz-text-rich §2.2c — the in-plate story callout). A
+    two-tier typeset card INSIDE the box: the firm/applicant NAME reads as a Newsreader prose
+    title (heavier), the count/badge META recedes as Fira-tabular metadata in muted ink with a
+    faint mid-dot — a typeset card, not a flat truncated sentence. Mechanism #2 (in-canvas
+    ECharts rich-text), so the label truncates + morphs WITH its box (a DOM overlay would
+    mis-anchor under the universalTransition box-morph + the per-run truncate). Color per run is
+    a RESOLVED rgb (T-4, the caller hands the contrast-derived ink); no data hue touches the text
+    (the ramp-ink ban — the $/student encoding stays on the box FILL). */
+export interface TreemapRichLabel {
+    /** The prose NAME run (Newsreader, heavier). */
+    name: string;
+    /** The recessive META runs (Fira tabular, muted) — joined by a faint mid-dot. The box
+        drops the meta line first under `overflow:truncate` (the proportion law degrades
+        gracefully — a small box keeps the name, a large box reads the full card). */
+    meta: string[];
+}
+</script>
+
 <script setup lang="ts">
 // Treemap.vue — the part-of-whole box primitive (ECF-PAGES §3/§4, the Charters +
 // Consultants tiles: box AREA = total funding, box FILL = $/ADM on a ColorScale). A
@@ -33,32 +70,7 @@ import {
 // the box renderer when a dashboard actually draws one (modular registration, CH2 §B).
 use([TreemapChart, TooltipComponent]);
 
-/** One box in the treemap — a charter applicant, a consulting firm. */
-export interface TreemapItem {
-    /** A stable join key (an applicant id, a firm name) for the linked-highlight. */
-    key: string;
-    /** The box's display label. */
-    name: string;
-    /** The magnitude the box AREA encodes (total funding). */
-    value: number;
-}
 
-/** THE RICH IN-BOX LABEL (F6.9 · f6-viz-text-rich §2.2c — the in-plate story callout). A
-    two-tier typeset card INSIDE the box: the firm/applicant NAME reads as a Newsreader prose
-    title (heavier), the count/badge META recedes as Fira-tabular metadata in muted ink with a
-    faint mid-dot — a typeset card, not a flat truncated sentence. Mechanism #2 (in-canvas
-    ECharts rich-text), so the label truncates + morphs WITH its box (a DOM overlay would
-    mis-anchor under the universalTransition box-morph + the per-run truncate). Color per run is
-    a RESOLVED rgb (T-4, the caller hands the contrast-derived ink); no data hue touches the text
-    (the ramp-ink ban — the $/student encoding stays on the box FILL). */
-export interface TreemapRichLabel {
-    /** The prose NAME run (Newsreader, heavier). */
-    name: string;
-    /** The recessive META runs (Fira tabular, muted) — joined by a faint mid-dot. The box
-        drops the meta line first under `overflow:truncate` (the proportion law degrades
-        gracefully — a small box keeps the name, a large box reads the full card). */
-    meta: string[];
-}
 
 const props = withDefaults(
     defineProps<{

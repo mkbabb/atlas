@@ -30,6 +30,14 @@
 // The link helper folds in: `highlight(key)` / `downplay()` dispatch the
 // emphasis actions, so a hover anywhere raises the same datum here — the
 // bidirectional bridge with no separate echartsLink module.
+//
+// THE READINESS PRIMITIVE (U RULINGS §J J-1, §I CX-4). ONE mechanism answers "can this chart answer
+// yet?": `settled` closes at every `paint()` and opens at ECharts' next `finished`; `frame` counts
+// every `finished` (the re-projection clock). This composable owns the ONE `finished` subscription
+// in atlas: overlays and plates read `settled`/`frame` (`EChartReadiness`), never a private
+// `chart.on("finished")`. The emphasis verbs are held while unsettled as the reader's LATEST intent
+// and replayed once when it opens; a later paint supersedes a held intent (its data indices belong
+// to the superseded data), so no result of a superseded act is ever painted.
 
 import {
     inject,
@@ -104,6 +112,13 @@ export interface UseEChartOptions {
     lazyMount?: boolean;
 }
 
+/**
+ * The frame allowance in every figure's settle bound: from a `paint()` to its `finished` with no
+ * animation running (the lazy frame, `prepare`, the render and the `finished` check), with headroom
+ * for a loaded CI runner. A figure's stated bound is this plus its longest ECharts animation.
+ */
+export const SETTLE_FRAME_MS = 250;
+
 export interface UseEChart {
     /** The live ECharts instance (null before mount / after dispose). */
     chart: ShallowRef<EChartsType | null>;
@@ -117,7 +132,29 @@ export interface UseEChart {
     ) => void;
     /** Drop any emphasis on this chart. */
     downplay: (seriesIndex?: number) => void;
+    /**
+     * A structural push outside the data watch (a view-change morph): `setOption(option,
+     * {notMerge, lazyUpdate})` through the same path as a data paint, so it closes `settled` and
+     * supersedes a held emphasis. Never call the instance's `setOption` for a structural push.
+     */
+    push: (option: EChartsOption) => void;
+    /**
+     * False from each `paint()` until ECharts' next `finished`; true while the chart can answer
+     * (`convertToPixel`, `getData`, emphasis actions) for the data it shows. A projection reads it:
+     * in a lazy paint window `convertToPixel` answers `undefined` and an emphasis action throws.
+     * The emphasis verbs above never need it: a call while unsettled is held and replayed.
+     */
+    settled: Readonly<ShallowRef<boolean>>;
+    /**
+     * Counts ECharts' `finished` events: every completed render (a paint, a resize, a hover
+     * repaint). The re-projection clock: `watch(frame, reanchor)`, never a private
+     * `chart.on("finished")`.
+     */
+    frame: Readonly<ShallowRef<number>>;
 }
+
+/** What a projecting overlay needs from its host chart: the instance, the gate and the clock. */
+export type EChartReadiness = Pick<UseEChart, "chart" | "settled" | "frame">;
 
 /**
  * Mount + drive an ECharts instance over `host`. Returns the instance plus the
@@ -128,10 +165,16 @@ export interface UseEChart {
  */
 export function useEChart(opts: UseEChartOptions): UseEChart {
     const chart = shallowRef<EChartsType | null>(null);
-    /** U·B3 — true once the live instance has completed its first render (see `mount`). */
-    let ready = false;
+    const settled = shallowRef(false);
+    const frame = shallowRef(0);
+    /** The last key the reader asked to raise (null = cleared); see `highlight`. */
+    let lastKey: string | null = null;
+    /** The latest requested emphasis not yet dispatched (`dataIndex` undefined = clear). */
+    let heldEmphasis: { dataIndex: number | undefined; seriesIndex: number } | null = null;
+    /** The series index carrying a dispatched highlight, or null when nothing is raised. */
+    let raisedSeries: number | null = null;
     const stageMorph = useOptionalStageMorphDriver();
-    const releaseStageMorph = stageMorph?.bind({ chart, host: opts.host, option: opts.option });
+    const releaseStageMorph = stageMorph?.bind({ chart, host: opts.host, option: opts.option, push });
     if (releaseStageMorph) onScopeDispose(releaseStageMorph);
     const dark = useGlobalDark(); // the flip arbiter — drives the settle-batched retint (E9b)
 
@@ -156,6 +199,9 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     // `notMerge:true` re-parse OUT of the interaction's synchronous window (the INP lever).
     let paintPending = false;
     function schedulePaint(): void {
+        // The data act closes the gate NOW, not when the pump runs the paint: until then the chart
+        // shows data the act has replaced, so a verb in between is held for the new data (CX-4).
+        supersede();
         if (paintPending) return;
         paintPending = true;
         enqueuePaint(() => {
@@ -166,6 +212,18 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
 
     function paint(): void {
         if (!chart.value) return;
+        push(opts.option());
+    }
+
+    /**
+     * The ONE structural write path: the data paint above, a view-change morph, a stage-scene push.
+     * It closes `settled` until its `finished`, and SUPERSEDES any held emphasis: the held data index
+     * belongs to the data this push replaces (CX-4). `lastKey` resets so the reader's next hover
+     * dispatches against the new data, even on the same key.
+     */
+    function push(option: EChartsOption): void {
+        const c = chart.value;
+        if (!c) return;
         // A STRUCTURAL change (data / filter): `notMerge:true` fully replaces the prior option
         // so removed series/categories don't linger merged under the new ones. NEVER the theme
         // path — a flip takes the merge tween in `retintPalette` (E9b). `lazyUpdate:true` DEFERS
@@ -175,7 +233,25 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
         // structural `notMerge:true` is KEPT (removed series must not linger); only the draw is
         // deferred. Paired with the `fingerprint` fast-path below, a data/filter tick re-paints
         // ONLY when the fingerprint actually moves — no hover-driven option re-eval trips it.
-        chart.value.setOption(opts.option(), { notMerge: true, lazyUpdate: true });
+        supersede();
+        c.setOption(option, { notMerge: true, lazyUpdate: true });
+    }
+
+    /** A structural act: close `settled` and drop the held emphasis it supersedes (see `push`). */
+    function supersede(): void {
+        settled.value = false;
+        heldEmphasis = null;
+        lastKey = null;
+    }
+
+    // THE ONE `finished` SITE. `finished` fires once ECharts has rendered with no lazy update, no
+    // pending action, no progressive work and no running animation, so the chart can answer for
+    // the data it shows. Subscribed once per instance at `mount`, never per paint.
+    function onFinished(): void {
+        frame.value++;
+        if (settled.value) return; // `finished` also follows a settled hover repaint or resize
+        settled.value = true;
+        applyEmphasis();
     }
 
     // E9b — the theme retint, SPLIT into derive + apply for the I-PERF-DATA.d first-derive slice.
@@ -222,15 +298,11 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
         if (chart.value || !opts.host.value) return;
         const c = init(opts.host.value);
         chart.value = c;
-        // U·B3 — THE READINESS GATE. The first `paint()` is a `lazyUpdate` setOption: ECharts holds
-        // it until its next frame, and only that frame's `prepare` creates the scheduler's pipeline
-        // map. An emphasis action dispatched in between reaches `Scheduler.getPipeline` with
-        // `_pipelineMap` still undefined and throws (the Firefox /ecf `_pipelineMap` page error, the
-        // U-F29 atlas half). The instance is READY at its first `rendered` event — emitted from that
-        // frame's flush, after `prepare` — and any emphasis requested before then is held and
-        // applied there (`flushEmphasis`).
-        ready = false;
-        c.on("rendered", onFirstRendered);
+        // The first `paint()` is a `lazyUpdate` setOption: ECharts holds it until its next frame, and
+        // only that frame's `prepare` creates the scheduler's pipeline map. An emphasis action
+        // dispatched in between reaches `Scheduler.getPipeline` with `_pipelineMap` undefined and
+        // throws (the Firefox /ecf page error, U-F29). `settled` holds every verb until `finished`.
+        c.on("finished", onFinished);
         paint();
 
         if (opts.onHover && opts.keyOf) {
@@ -403,11 +475,11 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     onBeforeUnmount(() => {
         // Dispose drops the instance AND the readiness state, so a held emphasis can never reach a
         // disposed instance (ECharts would only warn, but the held state must not outlive it).
+        heldEmphasis = null;
+        raisedSeries = null;
+        settled.value = false;
         chart.value?.dispose();
         chart.value = null;
-        ready = false;
-        pendingEmphasis = null;
-        raisedSeries = null;
     });
 
     // D5 (C.W5.3) — coalesce the emphasis dispatch. The map's hovered key strobes (now D1-
@@ -417,35 +489,22 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     // plate. `lastKey` guards same-key re-dispatch (a no-op) and skips the leading `downplay`
     // when nothing is currently raised, so a settled key costs AT MOST one `highlight`.
     //
-    // U·B3 — every dispatch goes through `flushEmphasis`, which applies only the LATEST requested
-    // emphasis and only once the instance is READY (see `mount`). A request made before the chart
-    // exists (a `lazyMount` chart still below the fold) or before its first render is held, not
-    // dropped and not thrown.
-    let lastKey: string | null = null;
-    /** The latest requested emphasis not yet dispatched (`dataIndex` undefined = clear). */
-    let pendingEmphasis: { dataIndex: number | undefined; seriesIndex: number } | null = null;
-    /** The series index carrying a dispatched highlight, or null when nothing is raised. */
-    let raisedSeries: number | null = null;
-
-    function flushEmphasis(): void {
+    // Every dispatch goes through `applyEmphasis`, which applies only the LATEST requested emphasis
+    // and only while `settled`. A request made before the chart exists (a `lazyMount` chart still
+    // below the fold) or inside a paint window is held, not dropped and not thrown, and replayed
+    // once by `onFinished`.
+    function applyEmphasis(): void {
         const c = chart.value;
-        if (!c || !ready || !pendingEmphasis) return;
-        const { dataIndex, seriesIndex } = pendingEmphasis;
-        pendingEmphasis = null;
+        if (!c || !settled.value || !heldEmphasis) return;
+        const { dataIndex, seriesIndex } = heldEmphasis;
+        heldEmphasis = null;
         if (raisedSeries !== null) {
-            c.dispatchAction({ type: "downplay", seriesIndex });
+            c.dispatchAction({ type: "downplay", seriesIndex: raisedSeries });
             raisedSeries = null;
         }
         if (dataIndex == null) return;
         c.dispatchAction({ type: "highlight", seriesIndex, dataIndex });
         raisedSeries = seriesIndex;
-    }
-
-    function onFirstRendered(): void {
-        if (ready) return;
-        ready = true;
-        chart.value?.off("rendered", onFirstRendered);
-        flushEmphasis();
     }
 
     function highlight(
@@ -455,16 +514,26 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     ): void {
         if (key === lastKey) return; // same settled key — no re-dispatch
         lastKey = key;
-        pendingEmphasis = { dataIndex: keyToIndex[key], seriesIndex };
-        flushEmphasis();
+        heldEmphasis = { dataIndex: keyToIndex[key], seriesIndex };
+        applyEmphasis();
     }
 
     function downplay(seriesIndex = 0): void {
-        if (lastKey === null) return; // nothing raised — no redundant downplay
+        // Nothing asked for and nothing raised — no redundant downplay. (A paint resets `lastKey`,
+        // so `raisedSeries` still answers for an emphasis dispatched before it.)
+        if (lastKey === null && raisedSeries === null) return;
         lastKey = null;
-        pendingEmphasis = { dataIndex: undefined, seriesIndex };
-        flushEmphasis();
+        heldEmphasis = { dataIndex: undefined, seriesIndex };
+        applyEmphasis();
     }
 
-    return { chart, stageMorphOwned: stageMorph !== null, highlight, downplay };
+    return {
+        chart,
+        stageMorphOwned: stageMorph !== null,
+        highlight,
+        downplay,
+        push,
+        settled,
+        frame,
+    };
 }

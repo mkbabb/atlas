@@ -1,3 +1,22 @@
+<script lang="ts">
+import { SETTLE_FRAME_MS } from "../composables/useEChart.js";
+
+/** THE SETTLE BOUND (U RULINGS §I CX-4, §J J-1): the longest a reader act may take, from the act
+    to this figure's `settled` reopening. The band-rise contract paints with `animation: false`,
+    so a data act settles within the frame allowance alone. Tested in useEChart.browser.spec.ts. */
+export const SETTLE_BOUND_MS = SETTLE_FRAME_MS;
+
+/** One ordinal tier's contribution across the category axis. */
+export interface StackSeries {
+    /** The ordinal tier key — looked up in `colorScale` for its discrete stop. */
+    tier: number;
+    /** A human label for the tier (legend / hover). */
+    label?: string;
+    /** One value per category, same order as `categories`. */
+    values: (number | null)[];
+}
+</script>
+
 <script setup lang="ts">
 // StackedBar.vue — the generic stacked-bar primitive, the platform's band-cake
 // (DL3 §4, the L5 RainbowStack). Given a set of `series` (one per ordinal tier)
@@ -39,15 +58,6 @@ type CategoryKey = FeedRow["year"] | string;
 // Bar + grid; the TooltipComponent is registered but every option keeps it OFF.
 use([BarChart, GridComponent, TooltipComponent, MarkLineComponent]);
 
-/** One ordinal tier's contribution across the category axis. */
-export interface StackSeries {
-    /** The ordinal tier key — looked up in `colorScale` for its discrete stop. */
-    tier: number;
-    /** A human label for the tier (legend / hover). */
-    label?: string;
-    /** One value per category, same order as `categories`. */
-    values: (number | null)[];
-}
 
 const props = withDefaults(
     defineProps<{

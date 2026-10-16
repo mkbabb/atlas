@@ -5,3 +5,5 @@ types/
 *.tsbuildinfo
 .DS_Store
 *.log
+__screenshots__/
+.vitest-attachments/

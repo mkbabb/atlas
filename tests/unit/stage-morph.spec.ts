@@ -26,7 +26,12 @@ function target(option: () => EChartsOption = () => ({ series: [] })) {
     return {
         setOption,
         host,
-        target: { chart, host, option } satisfies StageMorphTarget,
+        target: {
+            chart,
+            host,
+            option,
+            push: (o: EChartsOption) => setOption(o, { notMerge: true, lazyUpdate: true }),
+        } satisfies StageMorphTarget,
     };
 }
 
@@ -253,6 +258,7 @@ describe("createStageMorphDriver", () => {
             chart,
             host: shallowRef({ style: { opacity: "" } } as HTMLElement),
             option: () => ({ title: { text: active } }),
+            push: (o) => chart.value?.setOption(o, { notMerge: true, lazyUpdate: true }),
         });
 
         active = "two";

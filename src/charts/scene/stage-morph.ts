@@ -22,9 +22,15 @@ import type { StageTransition } from "../contract/scene-contract.js";
 import type { MarkIdentity } from "../viz-set.js";
 
 export interface StageMorphTarget {
-    chart: Readonly<ShallowRef<Pick<EChartsType, "setOption"> | null>>;
+    /** The bound instance. The driver pushes only while it exists. */
+    chart: Readonly<ShallowRef<EChartsType | null>>;
     host: Readonly<Ref<HTMLElement | null>>;
     option(): EChartsOption;
+    /**
+     * A structural push (`notMerge`, `lazyUpdate`) through the chart's owner. It is a paint, so it
+     * closes the owner's readiness gate (`useEChart().push`); the driver never calls `setOption`.
+     */
+    push(option: EChartsOption): void;
 }
 
 export interface StageMorphDriver<G extends Grain = Grain> {
@@ -70,7 +76,7 @@ export function createStageMorphDriver<G extends Grain = Grain>(
 
     async function crossfade(
         bound: StageMorphTarget,
-        chart: Pick<EChartsType, "setOption">,
+        chart: EChartsType,
         option: EChartsOption,
         reduced: boolean,
     ): Promise<void> {
@@ -81,7 +87,7 @@ export function createStageMorphDriver<G extends Grain = Grain>(
         const still = { ...option, animation: false };
         if (!host?.animate) {
             if (host) host.style.opacity = "";
-            chart.setOption(still, { notMerge: true, lazyUpdate: true });
+            bound.push(still);
             return;
         }
 
@@ -101,7 +107,7 @@ export function createStageMorphDriver<G extends Grain = Grain>(
 
         host.style.opacity = "0";
         out.cancel();
-        chart.setOption(still, { notMerge: true, lazyUpdate: true });
+        bound.push(still);
 
         const into = host.animate(
             [{ opacity: "0" }, { opacity: "1" }],
@@ -136,12 +142,11 @@ export function createStageMorphDriver<G extends Grain = Grain>(
             );
         } else {
             cancelFade();
-            current.setOption(
-                armMorphPush(
-                    withMorphIdentity(target.option(), options.identity),
-                    { ...options.transition, reduced: false },
-                ),
-                { notMerge: true, lazyUpdate: true },
+            target.push(
+                armMorphPush(withMorphIdentity(target.option(), options.identity), {
+                    ...options.transition,
+                    reduced: false,
+                }),
             );
         }
     }

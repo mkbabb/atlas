@@ -109,6 +109,14 @@ export const BOUNDARY_AXIS = {
         };
     },
 };
+
+import { SETTLE_FRAME_MS } from "../composables/useEChart.js";
+
+/** THE SETTLE BOUND (U RULINGS §I CX-4, §J J-1): the longest a reader act may take, from the act
+    to this figure's `settled` reopening. The update tween (useTimeSeriesOption): 600 ms on the
+    first paint (the longest), 450 ms on an update. A theme retint is a hard swap and does not
+    reopen the gate. Tested in useEChart.browser.spec.ts. */
+export const SETTLE_BOUND_MS = SETTLE_FRAME_MS + 600;
 </script>
 
 <script setup lang="ts">
