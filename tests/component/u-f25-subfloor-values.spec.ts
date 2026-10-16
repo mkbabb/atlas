@@ -13,8 +13,8 @@ async function render(props: Props): Promise<string> {
 }
 
 const rows: SubFloorRow[] = [
-    { key: "f2", label: "Consultant B", values: [{ value: "3", unit: "requests" }, { value: "2", unit: "applicants" }] },
-    { key: "f1", label: "Consultant A", values: [{ value: "41", unit: "requests" }, { value: "9", unit: "applicants" }] },
+    { key: "f2", label: "Consultant B", values: [{ id: "req", value: "3", unit: "requests" }, { id: "app", value: "2", unit: "applicants" }] },
+    { key: "f1", label: "Consultant A", values: [{ id: "req", value: "41", unit: "requests" }, { id: "app", value: "9", unit: "applicants" }] },
 ];
 
 describe("U-F25 — SubFloorValues", () => {
@@ -51,7 +51,7 @@ describe("U-F25 — SubFloorValues", () => {
 
     it("speaks no rank, crown or median word", async () => {
         const html = await render({
-            rows: [{ key: "t", label: "Hex 8a2a", values: [{ value: "767", unit: "Mbps" }] }],
+            rows: [{ key: "t", label: "Hex 8a2a", values: [{ id: "down", value: "767", unit: "Mbps" }] }],
             n: 1,
             noun: countNoun("test"),
             withheld: "A median",

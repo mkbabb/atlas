@@ -67,4 +67,4 @@ export { default as RecordSeam } from "./RecordSeam.vue";
 export * from "./evidence-floor.js";
 export * from "./useEvidenceFloor.js";
 export { default as SubFloorValues } from "./SubFloorValues.vue";
-export type { SubFloorRow } from "./SubFloorValues.vue";
+export type { SubFloorRow, SubFloorValue } from "./SubFloorValues.vue";
