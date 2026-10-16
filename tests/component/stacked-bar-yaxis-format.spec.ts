@@ -11,13 +11,18 @@ import type { EChartsOption } from "echarts";
 
 const captured = vi.hoisted(() => ({ option: null as null | (() => EChartsOption) }));
 
-vi.mock("../../src/charts/composables/useEChart", async () => {
-    const { shallowRef } = await import("vue");
+vi.mock("../../src/charts/composables/useEChart", async (importOriginal) => {
+    const { ref, shallowRef } = await import("vue");
+    const actual = await importOriginal<typeof import("../../src/charts/composables/useEChart")>();
     return {
+        ...actual,
         useEChart: (opts: { option: () => EChartsOption }) => {
             captured.option = opts.option;
             return {
                 chart: shallowRef(null),
+                settled: ref(false),
+                frame: ref(0),
+                push: () => {},
                 stageMorphOwned: false,
                 highlight: () => {},
                 downplay: () => {},
