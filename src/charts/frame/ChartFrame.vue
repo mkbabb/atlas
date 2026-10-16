@@ -72,7 +72,10 @@ import {
 } from "vue";
 import { ExpandableContainer } from "@mkbabb/glass-ui/expandable-container";
 import { useViewParams } from "../../platform/stores/useViewParams.js";
+import { useDismissArbiter } from "../../platform/interaction/useDismissArbiter.js";
 import { EXPAND_SETTLE_KEY } from "../scene/expand-settle.js";
+import SceneAct from "../scene/SceneAct.vue";
+import { figureEscapeClaim } from "./plate-act.js";
 import PlateError from "./PlateError.vue";
 import { STORY_CARD_KEY } from "./story-card-context.js";
 import { useHeadlineLift } from "./useHeadlineLift.js";
@@ -310,6 +313,26 @@ function onSettle(fullscreen: boolean): void {
 // teleported `.fixed.inset-0` surface so the fullscreen host has its real expanded box BEFORE the
 // settle fires — only then does the fresh fullscreen instance's `resize()` read the true bounds
 // (a `nextTick` alone can land before the teleported surface lays out, leaving the canvas unsized).
+// ── THE PLATE'S OWN ACTS (A-39, the plate · RULINGS §I) ─────────────────────────────────────────
+// The figure's Enlarge lives in its act row (`#act`, filled by the host), never in page chrome. The
+// frame hands the row ONE `enlarge` bound to THIS frame: the subject is fixed by construction.
+// Focus returns to the control that opened the figure (the `open` setter records it on open and
+// restores it on close; the glass container also restores it on its own Escape).
+function enlarge(): void {
+    open.value = true;
+}
+
+// While enlarged the figure is the topmost surface: it claims Escape on the page's dismiss arbiter
+// above every page claim (`figureEscapeClaim`), so a held selection or a standing hover card can never
+// take the Escape that closes the figure, and one Escape closes the figure and nothing else (S2-1).
+useDismissArbiter().claim(() =>
+    open.value
+        ? figureEscapeClaim(props.figId ?? props.ariaLabel, () => {
+              open.value = false;
+          })
+        : null,
+);
+
 watch(open, (value) => {
     void nextTick(() => {
         if (typeof requestAnimationFrame === "function") {
@@ -451,12 +474,13 @@ watch(open, (value) => {
                      replaces that drive once the J-GLASS-ROOT reparent ships. -->
                 <ExpandableContainer
                     v-model:open="open"
+                    :data-subject="figId"
                     view-transition-name="chart"
                     :expand-label="`Expand ${ariaLabel}`"
                     :collapse-label="`Collapse ${ariaLabel}`"
                 >
-                    <!-- OF-25 — SUPPRESS the primitive's corner expand trigger so the dock
-                         cluster's enlarge (VizPlate #actions) is the ONE expand affordance. A BARE
+                    <!-- OF-25 — SUPPRESS the primitive's corner expand trigger so the plate's act
+                         row Enlarge (the `#act` seat below, A-39) is the ONE expand affordance. A BARE
                          `<template #expand-trigger />` does NOT suppress it: Vue's renderSlot renders
                          the primitive's DEFAULT corner button whenever the provided slot yields no
                          valid vnode, and an empty template yields none — so the square in-viz
@@ -499,6 +523,21 @@ watch(open, (value) => {
                 <slot name="legend" />
             </aside>
         </div>
+
+        <!-- THE ACT ROW (A-39, the plate). The figure's LAST child, so the sticky row's containing
+             block is the plate: it rides the viewport foot while the plate is on screen and never
+             leaves it. Every act is bound to this plate (`enlarge` opens THIS frame); the host fills
+             the rest. In a focal scene the row is placed in the scene's act seat, above the chips. -->
+        <SceneAct v-if="slots.act" v-slot="{ inSeat }">
+            <div
+                class="plate-act"
+                :class="{ 'plate-act--seated': inSeat }"
+                data-plate-act
+                :data-subject="figId"
+            >
+                <slot name="act" :enlarge="enlarge" :expanded="open" />
+            </div>
+        </SceneAct>
     </figure>
 </template>
 

@@ -427,13 +427,13 @@ useDismissArbiter().claim(() =>
                     @close="closeSheet"
                 />
             </div>
-            <!-- FACET 5 — THE VIZ-CONTEXT ZONE (spec-chrome §c.1 · the A-39 fold). The ONE
-                 registry-projected detent: the ACTIVE viz's controls + enlarge, `facetsFor([activeVizId])`
-                 SINGULAR. Self-gates on a live active id; replaces the N per-plate VizGearDock capsules
-                 (the per-plate renders still compile until the stage-3 subtraction). -->
+            <!-- FACET 5 — THE VIZ-CONTEXT ZONE: the route filter drawer's trigger only. A-39 (the
+                 plate): a figure's options, export and Enlarge live in its own act row; the dock
+                 carries no per-figure action. -->
             <MembraneVizContext />
             <!-- FACET 6 — THE PROVENANCE DETENT (spec-chrome §c.1 · the A-39 fold · STRAND A). The
-                 ONE teleport target the active plate's provenance + CSV/image export relocate into
+                 ONE teleport target the active plate's provenance record relocates into (no export:
+                 a figure's download is its own act, A-39)
                  (`useMembraneProvenance`); atlas never imports the dashboards' PlateProvenance. Self-
                  gates on the SAME dial viz the facet-5 zone tracks; `detent:"shut"`. -->
             <MembraneProvenanceDetent />

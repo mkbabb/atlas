@@ -12,8 +12,25 @@
   under the new contract it would drop the reader's first real focus. Consumers that tested
   `document.activeElement` before writing a hover store can bind `@active-change` straight to the
   store.
+- A-39, the plate. A figure's own actions (Enlarge, export, options) live at the figure, in its act
+  row; the dock carries none of them. Deleted with no alias: the membrane viz-context zone's Enlarge
+  (`data-viz-context-enlarge`) and its options band; the facet-6 export teleport from `VizPlate` and
+  the stage source-data teleport from `ChapterStage` (and their dock-portal holds); the options band
+  in `UnifiedFilterPanel`; `useVizPlate().toggleEnlarge`; and the registry's stage-controls seam
+  (`registerStageControls`, `deregisterStageControls`, `stageControlsFor`, `RegisteredStageControls`,
+  now `StageControls` from the stage adapter). The facet-6 detent keeps the provenance teleport
+  (`useMembraneProvenanceSource`), which carries the record, not an action. A composed stage's
+  graphic must use the stage id as its contract id: the stage's Enlarge opens `?fig=<stage id>`.
 
 ### Added
+
+- `ChartFrame` `#act` seat: the figure's last child, sticky to the viewport foot within the plate,
+  with an `enlarge` slot prop bound to that frame. `VizPlate` fills it with `PlateAct` (subject line;
+  options popover, Download CSV/image or Source data, Enlarge; under a 30rem plate one 44 px "Take
+  this figure" button opening the stock glass bottom sheet). `ChapterStage` renders the same row for
+  a stage. In a focal `StickyScene` the row is placed in the scene's act seat, above the step chips.
+  While enlarged, a figure claims Escape on the dismiss arbiter at priority 100
+  (`figureEscapeClaim`, `FIGURE_ESCAPE_PRIORITY`), so one Escape closes the figure only.
 
 - `@mkbabb/atlas/interaction`: `createReaderIntentGate`, the focus-gated cursor rule that
   `SelectionRegion` rides (a key is raised only while focused; a clear is sent only for a key the

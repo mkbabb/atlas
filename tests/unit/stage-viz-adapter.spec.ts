@@ -1,8 +1,8 @@
-// The S-20 ChapterStage anatomy adapter (spec-chrome §e.3) — the A-39 fold premise. A composed stage
-// projects its bespoke gear controls through a DEDICATED registry seam, decoupled from the graphic's
-// plate facet under the same id, so the two never collide. These specs bind the shipped `stageControlsOf`
-// mapper + the registry seam and FAIL if either is removed (R-1 hollow-test).
-import { beforeEach, describe, expect, it } from "vitest";
+// The ChapterStage controls adapter. Under A-39 (the plate) a composed stage's bespoke gear controls are
+// its own per-figure options and render in the stage's act row; the page-chrome registry seam they used
+// to project through is deleted. These specs bind the shipped `stageControlsOf` mapper and the absence
+// of that seam.
+import { describe, expect, it } from "vitest";
 import { defineComponent, type Component } from "vue";
 import { useVizRegistry } from "../../src/charts/composables/useVizRegistry";
 import { stageControlsOf } from "../../src/charts/scene/stage-viz-adapter";
@@ -37,33 +37,11 @@ describe("stageControlsOf (the S-20 ChapterStage anatomy adapter)", () => {
     });
 });
 
-describe("the stage-anatomy registry seam", () => {
-    const registry = useVizRegistry();
-    beforeEach(() => registry.__resetRegistry());
-
-    it("registers, projects, and deregisters a stage's controls under its id", () => {
-        const controls = stageControlsOf(fixtureStage(DummyControls))!;
-        expect(registry.stageControlsFor("test-stage")).toBeUndefined();
-        const token = registry.registerStageControls("test-stage", controls);
-        expect(registry.stageControlsFor("test-stage")).toBe(controls);
-        registry.deregisterStageControls("test-stage", token);
-        expect(registry.stageControlsFor("test-stage")).toBeUndefined();
-    });
-
-    it("guards a stale unmount so a re-registered stage survives (the double-mount guard)", () => {
-        registry.registerStageControls("test-stage", stageControlsOf(fixtureStage(DummyControls))!);
-        const live = stageControlsOf(fixtureStage(DummyControls))!;
-        registry.registerStageControls("test-stage", live); // HMR / keep-alive re-register
-        registry.deregisterStageControls("test-stage", Symbol("stale")); // superseded token — inert
-        expect(registry.stageControlsFor("test-stage")).toBe(live);
-    });
-
-    it("coexists with the graphic's plate facet under the same id (the byte-faithful crux)", () => {
-        // The /sci scatter graphic registers a plate facet under the stage id; the anatomy seam must
-        // NOT clobber it, nor be clobbered by it — both project independently under one id.
-        registry.register({ vizId: "test-stage", dims: [], filterResponse: "responsive" });
-        registry.registerStageControls("test-stage", stageControlsOf(fixtureStage(DummyControls))!);
-        expect(registry.facetsFor(["test-stage"])).toHaveLength(1);
-        expect(registry.stageControlsFor("test-stage")).toBeDefined();
+describe("the stage's controls have no page seam (A-39, the plate)", () => {
+    it("the registry exposes no stage-controls projection for page chrome to read", () => {
+        const registry = useVizRegistry() as unknown as Record<string, unknown>;
+        expect(registry.registerStageControls).toBeUndefined();
+        expect(registry.stageControlsFor).toBeUndefined();
+        expect(registry.deregisterStageControls).toBeUndefined();
     });
 });

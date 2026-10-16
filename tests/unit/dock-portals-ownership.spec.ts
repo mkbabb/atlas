@@ -187,14 +187,13 @@ describe("dock-portal outside-interaction census — truthful surface destinatio
         for (const entry of reg.census.value) expect(entry.reason).toBeTruthy();
     });
 
-    it("VizPlate names its source-data surface INLINE — not a body-teleported portal (strike S2 prose)", () => {
+    it("VizPlate claims NO dock hold: its export and source acts live on the plate (A-39)", () => {
         const vizPlate = src("charts/frame/VizPlate.vue");
-        // the export menu IS body-teleported; the source-data browser is an inline aside.
-        expect(vizPlate).toMatch(/source-data-\$\{[^}]+\}/);
-        expect(vizPlate).toContain('surface: "inline-aside"');
-        expect(vizPlate).toContain('surface: "body-teleport"');
-        // the false "teleports to <body>" naming of the inline source browser is struck.
-        expect(vizPlate).not.toMatch(/source-data[^\n]*teleports? to (?:<body>|body)/i);
+        // A-39 (the plate): the facet-6 export teleport and its two dock holds are deleted with no
+        // alias. A plate's download is an act in its own act row, so it never holds the dock open.
+        expect(vizPlate).not.toContain("useDockPortals");
+        expect(vizPlate).not.toContain("claimOpen");
+        expect(vizPlate).not.toContain("useMembraneProvenanceSource");
     });
 
     it("ChapterStage adds NO dock hold from DOM syntax alone (§3.1 — no auto inline-family claim)", () => {
@@ -205,10 +204,4 @@ describe("dock-portal outside-interaction census — truthful surface destinatio
         expect(chapterStage).not.toContain("claimPortal");
     });
 
-    it("VizPlate clears the export-open flag on dial-away so a dial-back cannot resurrect it (S6)", () => {
-        const vizPlate = src("charts/frame/VizPlate.vue");
-        // teleportPlateChrome going false must clear exportMenuOpen — else the v-model:open menu subtree
-        // remounts open on dial-back and resurrects a stale controlled hold.
-        expect(vizPlate).toMatch(/teleportPlateChrome[\s\S]{0,120}exportMenuOpen\.value = false/);
-    });
 });

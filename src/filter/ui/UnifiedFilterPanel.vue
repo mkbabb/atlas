@@ -23,12 +23,10 @@
 import { computed, inject } from "vue";
 import { DASHBOARD_KEY } from "../../contract/index.js";
 import { useFilterPanel } from "../composables/useFilterPanel.js";
-import { useVizRegistry } from "../../charts/composables/useVizRegistry.js";
 import { useActiveBeat } from "../../platform/stores/useActiveBeat.js";
 import { storeToRefs } from "pinia";
 import SelectionSetPane from "./SelectionSetPane.vue";
 import DimDial from "./DimDial.vue";
-import VizOptionsBand from "./VizOptionsBand.vue";
 
 const ctx = inject(DASHBOARD_KEY);
 
@@ -37,7 +35,6 @@ const ctx = inject(DASHBOARD_KEY);
 const routeBody = computed(() => ctx?.filterBody);
 
 const { contextDims, viewDims, pinnedVizId } = useFilterPanel();
-const { registry } = useVizRegistry();
 
 // The viz id the dials name their testids for — the pin (when the dock toggle pinned the panel) else
 // the centre-grain singleton (a stable id for the projected dial's `viz-filter-dim-…` relation).
@@ -48,12 +45,8 @@ const dialVizId = computed<string>(() => pinnedVizId.value ?? activeVizId.value 
 const hasContextDims = computed(() => contextDims.value.length > 0);
 const hasViewDims = computed(() => viewDims.value.length > 0);
 
-// THE E2 OPTIONS — the registered facet's controller for the pinned/active viz (the dials the
-// retired inline dock used to host, re-homed into the ONE panel). One viz's options at a time (the
-// dock-toggle target), so the band reads off `dialVizId`'s registered controller.
-const optionsController = computed(
-    () => registry.value.get(dialVizId.value)?.optionsController ?? null,
-);
+// A figure's E2 OPTIONS are its own acts (A-39, the plate · RULINGS §I): they open from the figure's
+// act row, never from this route-level panel, so the panel renders no per-viz options band.
 
 // THE BAND-0 SLOT (O-A9 residue close) — the route's GLOBAL filter-algebra readout (`AlgebraReadout`)
 // renders ABOVE the selection-set pane. First-class so a route need not prepend it inside `filterBody`;
@@ -100,12 +93,6 @@ defineSlots<{ algebra(): unknown }>();
                     :viz-id="dialVizId"
                 />
             </TransitionGroup>
-        </div>
-
-        <!-- (5) THE E2 OPTIONS BAND — the pinned/active viz's per-viz option dials (the retired inline
-             dock's options section, re-homed into the ONE panel). -->
-        <div v-if="optionsController" class="unified-filter-panel__band">
-            <VizOptionsBand :viz-id="dialVizId" :controller="optionsController" />
         </div>
     </section>
 </template>

@@ -1,11 +1,11 @@
 // platform/provenance/useMembraneProvenance.ts — FACET 6, THE PROVENANCE-DETENT TELEPORT SEAM
-// (spec-chrome §c.1 facet 6 · the A-39 fold · STRAND A). The membrane's facet-6 must re-home the
-// active viz's provenance AND its CSV/image export INTO the dock — but atlas cannot import the
-// dashboards' `PlateProvenance`, and re-authoring per-plate export handlers in the dock would fork
-// the logic. TELEPORT is the KISS mechanism: the dock renders ONE target container (the HOST); each
-// plate's own provenance + export nodes relocate INTO it when that plate is the active/dial viz (the
-// SOURCE). The plate keeps OWNING its content — Teleport moves the live vnode, no cross-repo import,
-// no projected copy.
+// (spec-chrome §c.1 facet 6). The membrane's facet 6 re-homes the active viz's PROVENANCE record into
+// the dock. Atlas cannot import the dashboards' `PlateProvenance`, so TELEPORT is the mechanism: the
+// dock renders ONE target container (the HOST); a plate's own provenance node relocates INTO it when
+// that plate is the active/dial viz (the SOURCE). The plate keeps OWNING its content.
+//
+// A-39, THE PLATE (RULINGS §I): a figure's ACTIONS (Enlarge, export, options) never come here. They
+// live in the figure's own act row (`charts/frame/PlateAct.vue`); this seam carries the record only.
 //
 // ONE target, ref-counted liveness: a SOURCE teleports ONLY when a target is mounted (the dock is on
 // screen) AND this viz is the dial viz — so a dock-less mount (the home gallery, an SSR/story
@@ -32,29 +32,15 @@ const hostCount = ref(0);
 // The empty dial for a no-Pinia context — shared so the guard allocates nothing per call.
 const EMPTY_DIAL: ComputedRef<string> = computed(() => "");
 
-/** THE ONE DIAL-VIZ TRUTH — the SAME resolution ALL of the membrane's viz-scoped chrome reads (the
-    facet-5 zone, the facet-6 provenance detent, and the export/provenance teleport gate). The PINNED
-    viz wins, else the centre-grain singleton, else — on ANY route with NO viz-writing scrub host —
-    the route's PRIMARY registered viz. Canonicalized HERE (the facet-5 zone `MembraneVizContext`
-    consumes this exact function) so nothing can drift: on a no-scrub route they ALL resolve the
-    primary viz, so facet-6 PAINTS and the plate's export/provenance teleport lands — WITHOUT this the
-    export would strand once `VizGearDock` is deleted (a filterless plain plate — `vft`, `speedtest` —
-    still declares an `export`, so its CSV/image download must have a home).
+/** THE ONE DIAL-VIZ TRUTH — the resolution the membrane's viz-scoped chrome reads (the facet-7
+    filter trigger, the facet-6 provenance detent, and the provenance teleport gate). The PINNED viz
+    wins, else the centre-grain singleton, else — on a route with NO viz-writing scrub host — the
+    route's PRIMARY registered viz. A SCRUB route (`/sci`, `/usf`) suppresses the fallback, so the dial
+    reduces to `pinned ?? centre-grain`. The home gallery mounts no plate ⇒ `""` ⇒ no dial.
 
-    FILTER-AGNOSTIC ON PURPOSE. The dial does NOT gate on `filterBody`: a route with no filter still
-    has an export + enlarge to project. The A-19 phantom-filter guard rides ONE place only — the
-    facet-7 filter TRIGGER's own `v-if="routeHasFilter"` in `MembraneVizContext` — so a filterless
-    route paints its export/enlarge chrome but grows NO empty-drawer trigger. A SCRUB route (`/sci`,
-    `/usf`) mounts a viz-writing host ⇒ `hasVizScrubHost` suppresses the fallback ⇒ the dial reduces
-    byte-identically to `pinned ?? centre-grain` (the zone rests empty at the page top exactly as
-    before). The home gallery mounts no plate ⇒ `primaryVizId` is `""` ⇒ no dial, no chrome.
-
-    Pinia-safe by construction: a SOURCE (`VizPlate` / the dashboards `PlateProvenance` / the
-    `ChapterStage` source-data seat) can be unit-mounted OUTSIDE the app (no `app.use(pinia)`) — and
-    the store reads (`useFilterPanel`/`activeVizId`) need an active Pinia. Guard the WHOLE read: no
-    active Pinia ⇒ the empty dial (the teleport simply never fires there); inside the app the dock
-    installs Pinia at bootstrap, so the real dial flows. `useVizRegistry`/`hasVizScrubHost` are module
-    singletons, safe even off-app. */
+    Pinia-safe by construction: a SOURCE can be unit-mounted OUTSIDE the app (no `app.use(pinia)`),
+    and the store reads need an active Pinia, so no active Pinia ⇒ the empty dial (the teleport never
+    fires there). `useVizRegistry`/`hasVizScrubHost` are module singletons, safe even off-app. */
 export function useDialVizId(): ComputedRef<string> {
     if (!getActivePinia()) return EMPTY_DIAL;
     const { pinnedVizId } = useFilterPanel();
@@ -81,8 +67,7 @@ export function useMembraneProvenanceHost(): { targetId: string } {
     return { targetId: MEMBRANE_PROVENANCE_TARGET_ID };
 }
 
-/** THE SOURCE — a plate's provenance (dashboards `PlateProvenance`) + its header export control
-    (`VizPlate`) call this with the viz id. `teleport` is true iff a facet-6 target is live AND this
+/** THE SOURCE — a plate's provenance (dashboards `PlateProvenance`) calls this with the viz id. `teleport` is true iff a facet-6 target is live AND this
     viz is the dial viz; when false the node renders in place (the Teleport `disabled` fallback), so
     the pre-fold home stays intact until this viz is projected. `targetSelector` is the ONE stable
     selector both sources point at. */
