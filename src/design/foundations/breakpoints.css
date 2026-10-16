@@ -71,7 +71,9 @@
 /* THE PROPERTY-FORM TOKENS — for the `max-width:`/`min-width:` PROPERTY seams a media
    feature cannot carry, and the single-sourced safe-area floor (§approach-4: the ONE
    `max()` retiring the per-surface env(safe-area-inset-bottom) re-derivations). The
-   `--bp-read`/`--bp-deck`/`--bp-gallery` VALUES are J-DOCK/J-STORY's to RE-BASE. */
+   `--bp-read`/`--bp-deck`/`--bp-gallery` VALUES are J-DOCK/J-STORY's to RE-BASE. The sheet imports
+   top-level (@custom-media and @theme cannot nest), so this plain rule layers in source. */
+@layer atlas.recipes {
 :root {
     --bp-phone: 767.98px; /* the primary phone register (property form) */
     --bp-compact: 640px; /* the dense-grid seam (property form) */
@@ -79,4 +81,5 @@
     --bp-read: 1024px; /* the route-body content cap (the `max-w-5xl` re-point; J-STORY re-bases) */
     --bp-deck: 700px; /* the gallery 3-up seam (property form; J-STORY re-cuts) */
     --bp-gallery: 1320px; /* the gallery max-width (J-STORY §11 widen 1080→1320 — the card grid breathes; the 360px/25% dead gutter at 1440 reclaimed) */
+}
 }

@@ -103,8 +103,6 @@ const visible = computed<boolean>(
        the dock reads, so the two surfaces are one material (the C-AESTHETIC cohesion law). */
     background: var(--cp-glass-bg, color-mix(in oklab, var(--card) 78%, transparent));
     backdrop-filter: blur(var(--cp-glass-blur, 18px)) saturate(var(--cp-glass-sat, 1.35));
-    -webkit-backdrop-filter: blur(var(--cp-glass-blur, 18px))
-        saturate(var(--cp-glass-sat, 1.35));
     border: 1px solid var(--cp-glass-rim, oklch(1 0 0 / 0.55));
     box-shadow: 0 10px 30px -18px color-mix(in oklab, CanvasText 55%, transparent);
     pointer-events: none; /* wayfinding readout, not a control — never intercepts a page pointer */

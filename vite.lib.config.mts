@@ -14,13 +14,15 @@
 // Relative imports stay IN the graph (preserveModulesRoot: src). `base: "./"` makes the
 // feed-worker URL module-relative so it survives off-origin-root. `copyPublicDir: false` keeps any
 // instance public/ out of the lib dist. `cssCodeSplit: false` collapses per-component SFC <style>
-// chunks into ONE dist/assets/core.css aggregate (folded into dist/style.css by build-styles.mjs).
+// chunks into ONE dist/assets/core.css aggregate (shipped as dist/styles/components.css by
+// build-styles.mjs). No Tailwind pass runs here: the consumer's one Tailwind root compiles atlas's
+// styles (the styles contract, styles/index.css), so no published atlas byte depends on the glass-ui
+// or Tailwind present at atlas's build.
 import { fileURLToPath, URL } from "node:url";
 import { resolve } from "node:path";
 import { builtinModules } from "node:module";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
-import tailwindcss from "@tailwindcss/vite";
 
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
 const OUT = resolve(ROOT, "dist");
@@ -64,7 +66,7 @@ export default defineConfig({
     base: "./", // module-relative worker/asset URLs (survive off-origin-root)
     cacheDir: resolve(ROOT, ".vite-cache"),
     logLevel: "info",
-    plugins: [vue(), tailwindcss()],
+    plugins: [vue()],
     build: {
         outDir: OUT,
         emptyOutDir: true,
@@ -84,7 +86,7 @@ export default defineConfig({
                 preserveModulesRoot: resolve(ROOT, "src"),
                 entryFileNames: "[name].js",
                 // The single `cssCodeSplit:false` SFC aggregate MUST land at the documented
-                // `assets/core.css` (build-styles.mjs folds THAT path into `@layer atlas.components`).
+                // `assets/core.css` (build-styles.mjs ships THAT path as dist/styles/components.css).
                 // Vite otherwise names the lib CSS after the package (`atlas.css`), so the fold silently
                 // missed the 68 SFC <style> blocks (232 KB of scoped component CSS never reached
                 // dist/style.css → consumer plates rendered unstyled). Pin the CSS name so the stated

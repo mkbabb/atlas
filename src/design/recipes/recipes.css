@@ -107,6 +107,9 @@
    REGARDLESS of scroll position in the PRODUCTION build (dev-server-only testing never caught
    this; a single-animation shorthand survives the same pipeline unexpanded). ONE animation name,
    parameterized, sidesteps the minifier defect entirely.) */
+/* The styles contract: this sheet imports top-level (its @utility blocks cannot nest), so its plain
+   rules, keyframes and media blocks sit in atlas.recipes in SOURCE. */
+@layer atlas.recipes {
 .text-page-title {
     position: sticky;
     top: var(--title-sticky-top, 0px);
@@ -226,6 +229,7 @@
                 var(--title-scrub-range, 320px);
         }
     }
+}
 }
 
 /* THE FIGURE-SLUG recipe (FD1 §1.3, C.W2.1; the four laws L1–L4). ONE contained

@@ -1,7 +1,48 @@
-/* @mkbabb/atlas — the platform aggregate build entry (compiled to dist/style.css, shipped as
-   `./styles`). O-B2 filled the O-B0 scaffold: the real aggregate root is `src/design/index.css`
-   (the design-module home per src-rearchitecture §A.5); this build entry is the thin door
-   build-styles.mjs compiles through the Tailwind pipeline. The folded per-component SFC layer
-   lands with the later component-move waves. */
-@import "../src/design/index.css";
-@import "../src/editorial/title-align.css";
+/* @mkbabb/atlas · ./styles — THE CONSUMER-COMPILED STYLES CONTRACT (U · D5A-W1).
+
+   This file ships as Tailwind v4 SOURCE (dist/styles/index.css). The CONSUMER's one Tailwind root
+   compiles it, after that root imports tailwindcss and @mkbabb/glass-ui/styles, in ONE .css file:
+
+       @import "tailwindcss";
+       @import "@mkbabb/glass-ui/styles";
+       @import "@mkbabb/atlas/styles";
+
+   The preset (`@mkbabb/atlas/vite`, atlasCorePreset) enforces that order (atlas:root-order) and keeps
+   the cascade contract in the compiled root (atlas:layers). This sheet imports and references NO
+   glass-ui byte, so the published atlas bytes are the same whichever glass-ui was present at atlas's
+   build; the glass theme it reads resolves against the consumer's glass.
+
+   Every atlas-authored rule sits inside `@layer atlas`, so unlayered consumer CSS always wins. Plain
+   sheets import with layer(...); the sheets that hold @utility / @custom-variant / @custom-media
+   (which cannot nest) import top-level and layer their own plain rules in source. The order is the
+   retired aggregate's (src/design/index.css), verbatim, then the editorial title register, then the
+   SFC <style> aggregate. atlas.tokens stays in the order statement and is empty: the token sheets
+   sit in atlas.recipes, after the glass-ui they override, as the retired aggregate's winning copy did. */
+
+@layer atlas, atlas.tokens, atlas.recipes, atlas.components;
+
+@source "../**/*.js"; /* atlas's own class candidates: the compiled component modules */
+@import "tw-animate-css";
+@variant dark (&:where(.dark, .dark *));
+
+@import "./design/foundations/base.css" layer(atlas.recipes);
+@import "./design/fonts/fonts-primary.css" layer(atlas.recipes);
+@import "./design/fonts/fonts.css" layer(atlas.recipes);
+@import "./design/overlays/map-draw.css" layer(atlas.recipes);
+@import "./design/foundations/breakpoints.css"; /* @custom-media and @theme cannot nest: top-level, its :root layers in-file */
+@import "./design/tokens/color.css" layer(atlas.recipes);
+@import "./design/tokens/type.css" layer(atlas.recipes);
+@import "./design/tokens/space.css" layer(atlas.recipes);
+@import "./design/tokens/motion.css" layer(atlas.recipes);
+@import "./design/tokens/elevation.css" layer(atlas.recipes);
+@import "./design/tokens/radius.css" layer(atlas.recipes);
+@import "./design/recipes/recipes.css"; /* @utility cannot nest: top-level, its plain rules layer in-file */
+@import "./design/recipes/affordance.css" layer(atlas.recipes);
+@import "./design/recipes/variants.css"; /* @custom-variant only */
+@import "./design/overlays/scroll-driven.css" layer(atlas.recipes);
+@import "./design/overlays/breath.css" layer(atlas.recipes);
+@import "./design/overlays/spot-graphics.css"; /* @utility only */
+@import "./design/overlays/measure.css" layer(atlas.recipes);
+@import "./design/overlays/chrome-overlays.css" layer(atlas.recipes);
+@import "./editorial/title-align.css" layer(atlas.recipes);
+@import "./components.css" layer(atlas.components);

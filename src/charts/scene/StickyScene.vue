@@ -526,7 +526,6 @@ function Prose(p: { prose: SceneProse }): VNodeChild {
     border-radius: var(--radius-plate);
     background: color-mix(in oklab, var(--surface-card, Canvas) 82%, transparent);
     backdrop-filter: blur(10px) saturate(1.1);
-    -webkit-backdrop-filter: blur(10px) saturate(1.1);
     box-shadow: 0 8px 28px -12px color-mix(in oklab, CanvasText 40%, transparent);
     border: 1px solid color-mix(in oklab, CanvasText 12%, transparent);
     transition: opacity 320ms var(--ease-out-expo, ease-out);

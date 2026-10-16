@@ -18,5 +18,5 @@
     "noUnusedParameters": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "tests/**/*.ts", "vite.lib.config.mts"]
+  "include": ["src/**/*.ts", "src/**/*.vue", "tests/**/*.ts", "styles/**/*.ts", "vite.lib.config.mts"]
 }
