@@ -21,6 +21,16 @@
 
 @layer atlas, atlas.tokens, atlas.recipes, atlas.components;
 
+/* THE SHEET'S MARK. Tailwind rewrites the order statement above when it compiles a root (it becomes
+   `@layer atlas, atlas.tokens;`), so the statement cannot identify this sheet in compiled CSS. This
+   declaration can: the preset's compiled-output check (atlas:layers) reads it to refuse a sheet that
+   compiled these styles without being the one recorded root. The value is the contract's major. */
+@layer atlas {
+    :root {
+        --atlas-styles: 8;
+    }
+}
+
 @source "../**/*.js"; /* atlas's own class candidates: the compiled component modules */
 @import "tw-animate-css";
 @variant dark (&:where(.dark, .dark *));

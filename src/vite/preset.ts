@@ -115,8 +115,19 @@ export function wrapInAtlasLayers(css: string): string {
     return out.join("\n");
 }
 
-const isCss = (id: string) => id.split("?", 1)[0].endsWith(".css");
+// A CSS request as Vite sees it: a `.css` file, or an SFC `<style>` block (`X.vue?vue&type=style&…&lang.css`).
+const isCss = (id: string) => /\.css(?:$|\?)/.test(id);
 const moduleFile = (id: string) => id.split("?", 1)[0];
+
+/**
+ * Whether COMPILED css carries the atlas styles sheet. The sheet declares `--atlas-styles` in
+ * `@layer atlas` (styles/index.css); that declaration survives the consumer's compile wherever the
+ * sheet was inlined from. The layer order statement does not (Tailwind rewrites it), and an
+ * `@layer atlas.*` block proves nothing: a consumer sheet may write into an atlas layer.
+ */
+export function carriesAtlasStyles(compiled: string): boolean {
+    return /(?<![\w-])--atlas-styles\s*:/.test(compiled);
+}
 
 /** The two plugins of the cascade contract. List them BEFORE `tailwindcss()` (see atlasCorePreset). */
 export function atlasLayers(): Plugin[] {
@@ -126,15 +137,32 @@ export function atlasLayers(): Plugin[] {
             name: "atlas:root-order",
             enforce: "pre",
             transform(code, id) {
-                if (isCss(id) && checkRootOrder(code, id)) roots.add(moduleFile(id));
+                if (!isCss(id)) return undefined;
+                // Re-decided on every transform: an HMR edit that turns a root into an indirect sheet
+                // un-records it, so atlas:layers refuses it on the dev path exactly as the build does.
+                if (checkRootOrder(code, id)) roots.add(moduleFile(id));
+                else roots.delete(moduleFile(id));
                 return undefined;
             },
         },
         {
             name: "atlas:layers",
             transform(code, id) {
-                if (!isCss(id) || !roots.has(moduleFile(id))) return undefined;
-                return { code: wrapInAtlasLayers(code), map: null };
+                if (!isCss(id)) return undefined;
+                const file = moduleFile(id);
+                // A root is a `.css` FILE whose own source passed atlas:root-order.
+                if (file.endsWith(".css") && roots.has(file))
+                    return { code: wrapInAtlasLayers(code), map: null };
+                // THE COMPILED-OUTPUT CHECK (CX-1). Tailwind inlines nested `@import`s itself, so a
+                // sheet can compile the atlas styles without its own source naming them (one level of
+                // CSS indirection, or an SFC `<style>` block). Such a sheet is never wrapped, glass-ui's
+                // unlayered rules outrank every atlas layer, and the build is green. Refuse it here.
+                if (carriesAtlasStyles(code))
+                    throw new Error(
+                        `atlas:layers: ${id} compiles @mkbabb/atlas/styles but is not an atlas styles root. ` +
+                            `Import ${ROOT_IMPORTS.join(" → ")} directly, in that order, in ONE .css file`,
+                    );
+                return undefined;
             },
         },
     ];

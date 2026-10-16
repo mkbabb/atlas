@@ -2,7 +2,14 @@
 // source; the wrap then leaves only atlas layers at the top level of THAT root, and of no other sheet.
 import { describe, expect, it } from "vitest";
 import type { Plugin } from "vite";
-import { ATLAS_LAYER_ORDER, atlasLayers, checkRootOrder, topLevelItems, wrapInAtlasLayers } from "./preset";
+import {
+    ATLAS_LAYER_ORDER,
+    atlasLayers,
+    carriesAtlasStyles,
+    checkRootOrder,
+    topLevelItems,
+    wrapInAtlasLayers,
+} from "./preset";
 
 const ROOT = '@import "tailwindcss";\n@import "@mkbabb/glass-ui/styles";\n@import "@mkbabb/atlas/styles";\n';
 const compiled = [
@@ -64,5 +71,34 @@ describe("atlas:layers", () => {
     });
     it("throws on unbalanced input instead of passing it through", () => {
         expect(() => wrapInAtlasLayers("a { b: c;")).toThrow(/unbalanced/);
+    });
+});
+
+// CX-1: the compiled-output check. Tailwind inlines nested imports, so a sheet can compile the atlas
+// styles without naming them; it is refused by what its COMPILED output carries (the sheet's mark).
+describe("atlas:layers compiled-output check (CX-1)", () => {
+    const MARKED = "@layer atlas { :root { --atlas-styles: 8; } } body{color:red}";
+    it("reads the mark, not a layer name", () => {
+        expect(carriesAtlasStyles(MARKED)).toBe(true);
+        expect(carriesAtlasStyles(":root{--atlas-styles:8}")).toBe(true);
+        expect(carriesAtlasStyles("@layer atlas.components { .mine { color: red } }")).toBe(false);
+        expect(carriesAtlasStyles(":root{--x-atlas-styles: 1; --atlas-styles-x: 1}")).toBe(false);
+    });
+    it("refuses a non-root sheet whose compiled output carries the atlas styles", () => {
+        const { wrap } = plugins();
+        expect(() => wrap(MARKED, "/app/indirect.css")).toThrow(
+            /atlas:layers: \/app\/indirect\.css compiles @mkbabb\/atlas\/styles but is not an atlas styles root/,
+        );
+    });
+    it("refuses an SFC <style> block that compiles them (a .vue style request is CSS)", () => {
+        const { wrap } = plugins();
+        expect(() => wrap(MARKED, "/app/App.vue?vue&type=style&index=0&lang.css")).toThrow(/atlas:layers: .*App\.vue/);
+    });
+    it("re-decides the root on every transform: an HMR edit that makes the root indirect un-records it", () => {
+        const { pre, wrap } = plugins();
+        pre(ROOT, "/app/styles.css");
+        expect(wrap(MARKED, "/app/styles.css")?.code.startsWith(ATLAS_LAYER_ORDER)).toBe(true);
+        pre('@import "tailwindcss";\n@import "@mkbabb/glass-ui/styles";\n@import "./atlas-part.css";', "/app/styles.css");
+        expect(() => wrap(MARKED, "/app/styles.css")).toThrow(/atlas:layers: .*not an atlas styles root/);
     });
 });
