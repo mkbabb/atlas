@@ -1,5 +1,6 @@
 import { shallowRef, toValue, watch, type MaybeRefOrGetter } from "vue";
 import type { EChartsType } from "echarts/core";
+import type { EChartReadiness } from "./useEChart.js";
 
 export interface OrnamentAnchor { x: number; y: number }
 
@@ -32,53 +33,30 @@ export function resolveOrnamentAnchor(chart: EChartsType, key: string): Ornament
     return null;
 }
 
-/** Follow ECharts' own rendered event; no private rAF loop or per-frame setOption is introduced. */
-export function useEChartOrnament(
-    chart: MaybeRefOrGetter<EChartsType | null>,
-    key: MaybeRefOrGetter<string | null>,
-) {
+/**
+ * The ornament seat follows the host chart's readiness primitive (useEChart, U RULINGS §J J-1): it
+ * resolves only while the chart is `settled` (`resolveOrnamentAnchor` reads `getData()`, which throws
+ * in any lazy paint window before `prepare` builds the series pipeline: the cold-mount throw on a
+ * reloaded `/sci?at=scatter&sel=district:*`, and every later structural paint), re-resolves on its
+ * `frame` clock, and clears while a paint is in flight, so it never circles where a superseded mark
+ * stood (CX-4). It subscribes to no chart event of its own: useEChart owns the one `finished` site.
+ */
+export function useEChartOrnament(echart: EChartReadiness, key: MaybeRefOrGetter<string | null>) {
     const anchor = shallowRef<OrnamentAnchor | null>(null);
 
-    // THE PAINTED GATE (the R11 painted-gate family; mirrors VizTextOverlay's `painted`). The
-    // ornament seat may resolve ONLY once the chart has drawn ≥1 pass: `useEChart` paints with
-    // `lazyUpdate: true`, so the series PIPELINE that `resolveOrnamentAnchor`'s `getData()` reads
-    // is built on the DEFERRED flush — it does NOT exist at this composable's synchronous
-    // (`immediate`) watch tick. Resolving before that flush is the cold-mount throw
-    // (`SeriesModel.getData → Scheduler.getPipeline`, reproduced by a reloaded deep link such as
-    // `/sci?at=scatter&sel=district:*`). ECharts' own `rendered` event is the truth-bearing "the
-    // chart can answer" signal — the gate never probes the throwing API, opens no rAF loop, and
-    // masks no throw.
-    let painted = false;
-
     const resolve = (): void => {
-        const instance = toValue(chart);
+        const instance = echart.chart.value;
         const itemKey = toValue(key);
         anchor.value =
-            painted && instance && itemKey
+            instance && itemKey && echart.settled.value
                 ? resolveOrnamentAnchor(instance, itemKey)
                 : null;
     };
-    const onRendered = (): void => {
-        painted = true;
-        resolve();
-    };
 
-    // Re-arm the gate on each chart INSTANCE change: reset readiness, drop the stale anchor, and
-    // (re)bind `rendered`. `cleanup` runs before the next instance binds AND on scope teardown,
-    // so the handler never leaks and a disposed instance never re-anchors.
-    watch(
-        () => toValue(chart),
-        (instance, _previous, cleanup) => {
-            painted = false;
-            anchor.value = null;
-            instance?.on("rendered", onRendered);
-            cleanup(() => instance?.off("rendered", onRendered));
-        },
-        { immediate: true },
-    );
-    // A key change re-resolves against the already-painted instance (its pipeline exists — no
-    // throw); the gate keeps a pre-render key from ever touching `getData()`.
-    watch(() => toValue(key), resolve);
+    watch(() => echart.frame.value, resolve);
+    watch(() => echart.settled.value, resolve);
+    watch(() => echart.chart.value, resolve);
+    watch(() => toValue(key), resolve, { immediate: true });
 
     return { anchor };
 }

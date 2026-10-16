@@ -133,7 +133,7 @@ const host = ref<HTMLElement | null>(null);
 // ── THE useEChart LIFECYCLE (the shared host scaffold) — init on the host, the deferred lazy-mount
 // paint (the host pre-sizes its box, no scroll-in CLS), the highlight/downplay bridge EXPOSED so
 // the plate wires its shared-hover watch off it. The option/onHover/keyOf are the plate's forks. ──
-const { chart, stageMorphOwned, highlight, downplay, push } = useEChart({
+const { chart, stageMorphOwned, highlight, downplay, push, settled, frame } = useEChart({
     host,
     option: () => {
         const option = props.option();
@@ -186,7 +186,9 @@ watch(
 // marquee brush, the shared-hover highlight, the datum-anchor `convertToPixel` projection that
 // needs the host's viewport rect) off the SAME instance — the parameterized-arm seam, never an
 // engine render-mode conditional.
-defineExpose({ chart, host, highlight, downplay });
+// The overlay's readiness handle: the instance, the gate and the clock (J-1; no private `finished`).
+const echart = { chart, settled, frame };
+defineExpose({ chart, host, highlight, downplay, settled, frame });
 </script>
 
 <template>
@@ -237,7 +239,7 @@ defineExpose({ chart, host, highlight, downplay });
                  plate owns the placement projection + the delegated pointer; the engine reserves
                  its slot. -->
             <slot name="overlay" />
-            <EChartOrnament :chart="chart" :mark-key="ornamentKey" />
+            <EChartOrnament :echart="echart" :mark-key="ornamentKey" />
             <!-- F6.9 (#14) — THE STYLED AXIS-NAME LOCKUPS (the BreakEvenScatter/RankedStrip seam):
                  measure + recessive unit typeset in the reserved grid gutters. The gutter geometry
                  is the plate's skin (the `--axis-*` placement CSS); the MOUNT is the engine's. -->
@@ -261,7 +263,7 @@ defineExpose({ chart, host, highlight, downplay });
                  to pair with the chart's deferral. The plate names a `#<id>` slot per placement
                  with its own <VizAnnotation> voice. Empty placements ⇒ no chip. -->
             <VizTextOverlay
-                :chart="chart"
+                :echart="echart"
                 :placements="annotationPlacements"
                 :lazy-mount="true"
             >

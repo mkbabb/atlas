@@ -5,16 +5,16 @@
 // <polyline> hero leaves. Called in the CHART-bearing component (which owns useEChart AND the <svg ref>
 // in its OWN template, INSIDE the ChartFrame slot — so the SVG Teleports WITH the canvas on expand, the
 // strand-fix). It projects each declared leaf's data-space points to PIXEL space via `convertToPixel`,
-// and re-anchors on EXACTLY the SHIPPED clock RankedStrip uses: the chart's `finished` render (the
-// canonical "convertToPixel is valid" / first-paint signal — convertToPixel is null pre-layout under
-// lazyMount), the SHIPPED `EXPAND_SETTLE_KEY` tick (the re-parent reanchor — NO new seam, NO "reproject"
-// counter), and a ResizeObserver (non-expand resizes). `convertToPixel` is wrapped in try/catch (it THROWS
-// — not just returns null — before the coordinate system exists). Coarse signals only — the geometry is
+// and re-anchors on the host chart's readiness primitive (useEChart, U RULINGS §J J-1): it projects only
+// while the chart is `settled` (in a lazy paint window `convertToPixel` answers `undefined`) and re-runs
+// on its `frame` clock (every `finished`); plus the SHIPPED `EXPAND_SETTLE_KEY` tick (the re-parent
+// reanchor — NO new seam) and a ResizeObserver (non-expand resizes). No private `finished` subscription
+// and no try/catch: useEChart owns the one `finished` site. Coarse signals only — the geometry is
 // re-derived when the GRID moves, NEVER per scroll-tick; the catalog's draw scrub then drives the stroke
 // off the STABLE projected `d`. ChartFrame is byte-UNTOUCHED.
 
-import { inject, watch, onBeforeUnmount, type Ref, type ShallowRef } from "vue";
-import type { EChartsType } from "echarts/core";
+import { inject, watch, onBeforeUnmount, type Ref } from "vue";
+import type { EChartReadiness } from "./useEChart.js";
 import { EXPAND_SETTLE_KEY } from "../scene/expand-settle.js"; // the SHIPPED seam — consumed, not re-minted
 
 /** A declared hero leaf — a class hook + a thunk producing its data-space points (re-projected to pixels
@@ -27,14 +27,14 @@ export interface OverlayLeaf {
 }
 
 export function useVizOverlay(
-    chart: ShallowRef<EChartsType | null>,
+    echart: EChartReadiness,
     svgRef: Ref<SVGSVGElement | null>,
     leaves: OverlayLeaf[],
 ): void {
     function project(): void {
         const svg = svgRef.value;
-        const ec = chart.value;
-        if (!svg || !ec) return; // bare mount (no chart/svg yet) — author nothing, never throw
+        const ec = echart.chart.value;
+        if (!svg || !ec || !echart.settled.value) return; // no chart, no svg, or a paint in flight: hold
         for (const leaf of leaves) {
             let el = svg.querySelector<SVGGeometryElement>(`.${leaf.className}`);
             if (!el) {
@@ -44,18 +44,11 @@ export function useVizOverlay(
                 el.setAttribute("stroke", "currentColor"); // the data hue flows from the host CSS
                 svg.appendChild(el);
             }
-            // convertToPixel THROWS before the coord system is ready — wrap it. The overlay shares the
-            // canvas box (inset:0 sibling), so convertToPixel px == SVG user-units (1 unit = 1px).
+            // The overlay shares the canvas box (inset:0 sibling), so convertToPixel px == SVG user-units (1 unit = 1px).
             const px: Array<[number, number]> = [];
             for (const [si, v] of leaf.points()) {
-                try {
-                    const p = ec.convertToPixel({ seriesIndex: si }, v) as
-                        | [number, number]
-                        | undefined;
-                    if (Array.isArray(p)) px.push(p);
-                } catch {
-                    /* point outside any coord system — skip (a degenerate leaf draws nothing). */
-                }
+                const p = ec.convertToPixel({ seriesIndex: si }, v) as [number, number] | undefined;
+                if (Array.isArray(p)) px.push(p);
             }
             if (px.length < 2) {
                 el.removeAttribute("d");
@@ -73,16 +66,8 @@ export function useVizOverlay(
         }
     }
 
-    // THE REANCHOR CLOCK (RankedStrip.vue:260-284, verbatim shape).
-    watch(
-        () => chart.value,
-        (c, prev) => {
-            prev?.off("finished", project);
-            project();
-            c?.on("finished", project); // the FIRST-paint "convertToPixel is valid" anchor
-        },
-        { immediate: true },
-    );
+    // THE REANCHOR CLOCK: the host chart's `frame` (every `finished`), the expand tick, a resize.
+    watch(() => echart.frame.value, project, { immediate: true });
     const settle = inject(EXPAND_SETTLE_KEY, undefined); // the SHIPPED expand-settle tick — no new seam
     if (settle) watch(settle.tick, project);
     let ro: ResizeObserver | null = null;
@@ -99,6 +84,5 @@ export function useVizOverlay(
     );
     onBeforeUnmount(() => {
         ro?.disconnect();
-        chart.value?.off("finished", project);
     });
 }

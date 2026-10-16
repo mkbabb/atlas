@@ -11,6 +11,7 @@ import {
     createApp,
     defineComponent,
     h,
+    nextTick,
     onMounted,
     ref,
     shallowRef,
@@ -24,6 +25,8 @@ import { use } from "echarts/core";
 import { ScatterChart } from "echarts/charts";
 import { GridComponent } from "echarts/components";
 import { useEChart, type UseEChart } from "./useEChart";
+import { useVizOverlay } from "./useVizOverlay";
+import VizTextOverlay from "../legend/VizTextOverlay.vue";
 
 use([ScatterChart, GridComponent]);
 
@@ -522,4 +525,151 @@ describe("each atlas figure settles within its stated bound", () => {
             expect(t.update).toBeLessThanOrEqual(bound);
         });
     }
+});
+
+// ── CX-5 (atlas half): the overlays ride the primitive. The paint windows on a real engine: the first
+// lazy paint (W0), after the first `finished` (W1), a later lazy paint (W2), after the later
+// `finished` (W3). In W2 `convertToPixel` answers `undefined`, so a projector that latched "painted"
+// at the first `finished` projects garbage there; the overlays project only while `settled` and
+// re-project on `frame`, with no private `finished` subscription and no try/catch. ──
+
+type Probe = { settled: boolean; out: string; slot: string; d: string };
+
+function windows(): Promise<Record<string, Probe>> {
+    return new Promise((resolve) => {
+        const el = document.createElement("div");
+        document.body.appendChild(el);
+        const seen: Record<string, Probe> = {};
+        const data = ref([
+            [1, 2],
+            [3, 4],
+        ]);
+        const span = ref(10);
+        const placements = ref([{ id: "p", x: 5, y: 5 }]);
+        const app = createApp(
+            defineComponent({
+                setup() {
+                    const host = ref<HTMLElement | null>(null);
+                    const wrap = ref<HTMLElement | null>(null);
+                    const svg = ref<SVGSVGElement | null>(null);
+                    const api = useEChart({
+                        host,
+                        option: () => ({
+                            animation: false,
+                            xAxis: { min: 0, max: span.value },
+                            yAxis: { min: 0, max: 10 },
+                            series: [{ type: "scatter", data: data.value }],
+                        }),
+                    });
+                    const echart = { chart: api.chart, settled: api.settled, frame: api.frame };
+                    useVizOverlay(echart, svg, [
+                        { className: "hero-line", as: "path", points: () => [[0, [1, 2]], [0, [5, 5]]] },
+                    ]);
+                    const slotLeft = () => {
+                        const sl = wrap.value?.querySelector<HTMLElement>(".viz-text-overlay__slot");
+                        return sl && sl.style.display !== "none" ? sl.style.left : "hidden";
+                    };
+                    const probe = (name: string) => {
+                        const c = api.chart.value as unknown as {
+                            convertToPixel: (f: unknown, v: unknown) => [number, number] | undefined;
+                        };
+                        const px = c.convertToPixel({ gridIndex: 0 }, [5, 5]);
+                        seen[name] = {
+                            settled: api.settled.value,
+                            out: px ? `px:${Math.round(px[0])}` : `value:${String(px)}`,
+                            slot: slotLeft(),
+                            d: svg.value?.querySelector(".hero-line")?.getAttribute("d") ?? "none",
+                        };
+                    };
+                    let step = 0;
+                    const poll = () => {
+                        const c = api.chart.value as unknown as {
+                            setOption: (...a: unknown[]) => unknown;
+                            on: (e: string, fn: () => void) => void;
+                        } | null;
+                        if (!c) return void setTimeout(poll, 0);
+                        probe("W0 first lazy window");
+                        step = 1;
+                        const setOption = c.setOption.bind(c);
+                        c.setOption = (...a: unknown[]) => {
+                            const out = setOption(...a);
+                            if (step === 2) {
+                                step = 3;
+                                placements.value = [{ id: "p", x: 5, y: 5 }]; // asked to re-anchor inside W2
+                                void nextTick(() => probe("W2 later lazy window"));
+                            }
+                            return out;
+                        };
+                        c.on("finished", async () => {
+                            await nextTick(); // the overlays' `frame` watchers have run
+                            if (step === 1) {
+                                step = 2;
+                                probe("W1 after first finished");
+                                span.value = 20; // a later paint: the x scale doubles
+                                data.value = [
+                                    [1, 2],
+                                    [3, 4],
+                                    [5, 6],
+                                ];
+                            } else if (step === 3) {
+                                step = 4;
+                                probe("W3 after later finished");
+                                app.unmount();
+                                el.remove();
+                                resolve(seen);
+                            }
+                        });
+                    };
+                    queueMicrotask(poll);
+                    return () =>
+                        h("div", { ref: wrap, style: "position:relative;width:400px;height:300px" }, [
+                            h("div", { ref: host, style: "width:400px;height:300px" }),
+                            h("svg", { ref: svg, class: "viz-overlay", style: "position:absolute;inset:0" }),
+                            h(VizTextOverlay, { echart, placements: placements.value }, { p: () => h("span", "chip") }),
+                        ]);
+                },
+            }),
+        );
+        app.mount(el);
+    });
+}
+
+describe("CX-5: the overlays project only while settled and re-project on frame", () => {
+    for (let i = 0; i < 3; i++)
+        it(`VizTextOverlay and useVizOverlay across the four paint windows (run ${i})`, async () => {
+            const s = await windows();
+            expect(s["W0 first lazy window"]).toMatchObject({ settled: false, slot: "hidden", d: "none" });
+            expect(s["W1 after first finished"]).toMatchObject({ settled: true });
+            expect(s["W1 after first finished"].out).toMatch(/^px:/);
+            // a later lazy window: the chart cannot answer, so nothing may project here
+            expect(s["W2 later lazy window"]).toMatchObject({ settled: false, out: "value:undefined" });
+            expect(s["W3 after later finished"]).toMatchObject({ settled: true });
+            expect(s["W3 after later finished"].out).not.toBe(s["W1 after first finished"].out);
+            const left = (k: string) => Math.round(parseFloat(s[k].slot));
+            const px = (k: string) => Number(s[k].out.slice(3));
+            // the text overlay: seated at W1's projection, HELD through W2, re-seated at W3's
+            expect(left("W1 after first finished")).toBe(px("W1 after first finished"));
+            expect(left("W2 later lazy window")).toBe(left("W1 after first finished"));
+            expect(left("W3 after later finished")).toBe(px("W3 after later finished"));
+            // the hero leaf: drawn at W1, HELD through W2, re-projected at W3
+            expect(s["W1 after first finished"].d).not.toBe("none");
+            expect(s["W2 later lazy window"].d).toBe(s["W1 after first finished"].d);
+            expect(s["W3 after later finished"].d).not.toBe(s["W1 after first finished"].d);
+        });
+
+    it("ScatterPlate mounts and unmounts without touching a disposed instance", async () => {
+        const warned: string[] = [];
+        const warn = console.warn;
+        const error = console.error;
+        console.warn = (...a: unknown[]) => void warned.push(a.map(String).join(" "));
+        console.error = (...a: unknown[]) => void warned.push(a.map(String).join(" "));
+        try {
+            const p = { ...scatterProps(12), annotationPlacements: [{ id: "p", x: 3, y: 4 }] };
+            await settleTimes(ScatterPlate, p, { ...p, option: scatterOption(14), fingerprint: () => "14" });
+        } finally {
+            console.warn = warn;
+            console.error = error;
+        }
+        expect(warned.filter((w) => /disposed/i.test(w))).toEqual([]);
+    });
 });

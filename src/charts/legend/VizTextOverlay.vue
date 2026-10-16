@@ -7,7 +7,7 @@
 // post-layout) — NEVER per mousemove.
 //
 // THE SHAPE. A plate wraps its `<div ref=host>` chart in a `.relative`, mounts ONE
-// `<VizTextOverlay :chart :placements>` as a sibling, and names a `#slot` per placement. The
+// `<VizTextOverlay :echart :placements>` as a sibling, and names a `#slot` per placement. The
 // overlay projects each placement's `[x, y]` data coord through `chart.convertToPixel` (the
 // grid transform) into the host's local pixel box and seats the slot absolutely there — the
 // EXACT seam the HoverCard's datum-anchor already uses, now a reusable primitive (the audit-
@@ -19,14 +19,14 @@
 // A ResizeObserver on the host catches a layout reflow; no per-frame polling.
 
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
-import type { ECharts } from "echarts/core";
+import type { EChartReadiness } from "../composables/useEChart.js";
 import { EXPAND_SETTLE_KEY } from "../scene/expand-settle.js";
 import type { VizAnnotationPlacement } from "../contract/viz-contract.js";
 
 const props = withDefaults(
     defineProps<{
-        /** The host ECharts instance (the plate's `useEChart().chart`). Null until mounted. */
-        chart: ECharts | null;
+        /** The host chart's readiness handle (`chart`, `settled`, `frame` from its `useEChart()`). */
+        echart: EChartReadiness;
         /** The grid index the coords project against (default grid 0 — the single-grid plates). */
         gridIndex?: number;
         /** The placements to seat (each names a `#<id>` slot). */
@@ -51,76 +51,51 @@ const root = ref<HTMLElement | null>(null);
 /** The projected pixel positions, keyed by placement id — recomputed on every re-anchor tick. */
 const pixels = ref<Record<string, { left: number; top: number }>>({});
 
-/** The chart has completed ≥1 render pass, so a coordinate system exists — the readiness the
-    `convertToPixel` projection HOLDS for (ECharts' `finished` event; see the re-anchor clock). */
-const painted = ref(false);
-
 /** Project every placement's data coord into the host's local pixel box. The chart's
     `convertToPixel` returns canvas-local pixels; the canvas fills the host, so they ARE the
     host-local coords (no viewport offset needed — the overlay is absolutely positioned INSIDE
     the same `.relative` host the canvas fills). An axis-only placement pins to the grid gutter. */
 function reanchor(): void {
-    const c = props.chart;
-    // HOLD until the chart has painted once — a coordinate system does not exist before the first
-    // `finished` render (nor under lazyMount before scroll-in), and `convertToPixel` against an empty
-    // coord-system list WARNS ("[ECharts] No coordinate system … found by the given finder") and
-    // yields nothing. `painted` is the real readiness gate; without it the immediate chart-arrival
-    // re-anchor projected pre-layout and fired that console warn on the /usf strip's break-even chip.
-    if (!c || !painted.value) {
+    const c = props.echart.chart.value;
+    // Project only while the chart is SETTLED: `convertToPixel` answers `undefined` in any lazy
+    // paint window, the first and every later one (U-F-D5A2-2). Unsettled, the last placement HOLDS
+    // until the next `frame`; with no chart there is nothing to place.
+    if (!c) {
         pixels.value = {};
         return;
     }
+    if (!props.echart.settled.value) return;
     const next: Record<string, { left: number; top: number }> = {};
     for (const p of props.placements) {
-        try {
-            let px: number | undefined;
-            let py: number | undefined;
-            if (p.x != null && p.y != null) {
-                const xy = c.convertToPixel({ gridIndex: props.gridIndex }, [p.x, p.y]) as
-                    | [number, number]
-                    | undefined;
-                if (xy) [px, py] = xy;
-            } else if (p.y != null) {
-                const yy = c.convertToPixel({ yAxisIndex: 0 }, p.y) as number | undefined;
-                if (yy != null) py = yy;
-                px = p.gutter ?? 0; // the true left-gutter inset — 0 (the host's raw left edge) if unset.
-            } else if (p.x != null) {
-                const xx = c.convertToPixel({ xAxisIndex: 0 }, p.x) as number | undefined;
-                if (xx != null) px = xx;
-                py = p.gutter ?? 0; // the SAME lever on the omitted y-axis — 0 (unchanged) if unset.
-            }
-            if (px == null && py == null) continue;
-            next[p.id] = {
-                left: (px ?? 0) + (p.dx ?? 0),
-                top: (py ?? 0) + (p.dy ?? 0),
-            };
-        } catch {
-            // defensive: a genuinely degenerate point yields nothing — skip it. The init transient
-            // (pre-layout, no coord system) is fenced by the `painted` gate above, not masked here.
+        let px: number | undefined;
+        let py: number | undefined;
+        if (p.x != null && p.y != null) {
+            const xy = c.convertToPixel({ gridIndex: props.gridIndex }, [p.x, p.y]) as
+                | [number, number]
+                | undefined;
+            if (xy) [px, py] = xy;
+        } else if (p.y != null) {
+            const yy = c.convertToPixel({ yAxisIndex: 0 }, p.y) as number | undefined;
+            if (yy != null) py = yy;
+            px = p.gutter ?? 0; // the true left-gutter inset — 0 (the host's raw left edge) if unset.
+        } else if (p.x != null) {
+            const xx = c.convertToPixel({ xAxisIndex: 0 }, p.x) as number | undefined;
+            if (xx != null) px = xx;
+            py = p.gutter ?? 0; // the SAME lever on the omitted y-axis — 0 (unchanged) if unset.
         }
+        if (px == null && py == null) continue;
+        next[p.id] = {
+            left: (px ?? 0) + (p.dx ?? 0),
+            top: (py ?? 0) + (p.dy ?? 0),
+        };
     }
     pixels.value = next;
 }
 
-// The re-anchor clock. The chart's `finished` render is the canonical "convertToPixel is valid"
-// first-paint signal (the SAME clock useVizOverlay + RankedStrip's projector gate on); plus the
-// placements change and the expand-settle tick (below). On each chart INSTANCE change the finished
-// handler is re-bound and readiness reset, so a fresh (lazyMount) or re-created chart re-arms its
-// own paint gate and a torn-down instance never re-anchors.
-function onFinished(): void {
-    painted.value = true;
-    reanchor();
-}
-watch(
-    () => props.chart,
-    (c, prev) => {
-        prev?.off("finished", onFinished);
-        painted.value = false;
-        pixels.value = {};
-        c?.on("finished", onFinished);
-    },
-    { immediate: true },
-);
+// The re-anchor clock: the chart's `frame` (every `finished`), the placements, and the expand-settle
+// tick. No private `finished` subscription: `useEChart` owns the one.
+watch(() => props.echart.frame.value, reanchor);
+watch(() => props.echart.chart.value, () => (pixels.value = {}));
 watch(() => props.placements, reanchor, { deep: true });
 
 const settle = inject(EXPAND_SETTLE_KEY, undefined);
@@ -140,15 +115,14 @@ function wireResizeObserver(): void {
     const el = root.value;
     if (!el || typeof ResizeObserver === "undefined") return;
     // Under lazyMount, defer the observer until the chart instance exists (the lazy host is live).
-    if (props.lazyMount && !props.chart) return;
+    if (props.lazyMount && !props.echart.chart.value) return;
     ro = new ResizeObserver(() => reanchor());
     ro.observe(el);
 }
 watch(root, wireResizeObserver);
-watch(() => props.chart, wireResizeObserver);
+watch(() => props.echart.chart.value, wireResizeObserver);
 onBeforeUnmount(() => {
     ro?.disconnect();
-    props.chart?.off("finished", onFinished);
 });
 
 /** The per-placement transform that seats the slot relative to its projected point (mirroring

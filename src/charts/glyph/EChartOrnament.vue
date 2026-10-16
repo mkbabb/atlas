@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { EChartsType } from "echarts/core";
 import HandMark from "./HandMark.vue";
+import type { EChartReadiness } from "../composables/useEChart.js";
 import { useEChartOrnament } from "../composables/useEChartOrnament.js";
 
-const props = defineProps<{ chart: EChartsType | null; markKey: string | null }>();
-const { anchor } = useEChartOrnament(() => props.chart, () => props.markKey);
+/** `echart`: the host chart's readiness handle (`chart`, `settled`, `frame` from its useEChart). */
+const props = defineProps<{ echart: EChartReadiness; markKey: string | null }>();
+const { anchor } = useEChartOrnament(props.echart, () => props.markKey);
 const position = computed(() => anchor.value
     ? { transform: `translate3d(${anchor.value.x}px, ${anchor.value.y}px, 0)` }
     : undefined,
