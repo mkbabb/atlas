@@ -26,6 +26,9 @@ export * from "./useAffordance.js";
 export * from "./useAffordanceHint.js";
 export * from "./hover-bridge.js";
 export * from "./useHoverBridge.js";
+// U-F59a (sci-report §H M-5) — the focus-gated cursor: a keyboard control raises a key only while it
+// holds focus and clears only what it raised. `SelectionRegion` rides it; any roving control may.
+export * from "./reader-intent.js";
 
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
 export * from "./useVizContext.js";

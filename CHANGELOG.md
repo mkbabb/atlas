@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased (8.0.0 train)
+
+### Breaking changes
+
+- `SelectionRegion` emits `active-change` only as reader intent (U-F59a). It no longer emits
+  `keys[0]` from its setup watcher, and it no longer emits when `keys` re-orders or narrows under an
+  unfocused cursor. It raises a key on focus and on arrow movement while focused, and emits `null`
+  only to release a key it raised (on blur, on unmount while focused, or when the list empties).
+  Consumers that swallowed the first emission with a local "seeded" flag must delete that flag:
+  under the new contract it would drop the reader's first real focus. Consumers that tested
+  `document.activeElement` before writing a hover store can bind `@active-change` straight to the
+  store.
+
+### Added
+
+- `@mkbabb/atlas/interaction`: `createReaderIntentGate`, the focus-gated cursor rule that
+  `SelectionRegion` rides (a key is raised only while focused; a clear is sent only for a key the
+  control raised). Any other roving keyboard control can drive it the same way.
+- `@mkbabb/atlas/editorial`: the U-F25 evidence floor. `EVIDENCE_FLOOR` (5), `floorMet`,
+  `countNoun`, `nounFor`, `nCount`, `valueSpan`, `subFloorReason`, `subFloorNote`, the reactive
+  `useEvidenceFloor(n, noun, floor?)`, and the `SubFloorValues` plate. The floor licenses rank,
+  crown, superlative and "median" wording only. Below it a cell prints its value with its n, and
+  the n names what it counts.
+
 ## 6.0.1 — 2026-07-16
 
 ### Fixed
