@@ -4,6 +4,36 @@
 
 ### Breaking changes
 
+- **The styles contract (U · D5A-W1).** `@mkbabb/atlas/styles` is now Tailwind v4 *source*
+  (`dist/styles/index.css`), compiled by the consumer's one Tailwind root, which imports
+  `tailwindcss`, then `@mkbabb/glass-ui/styles`, then `@mkbabb/atlas/styles`, in that order, in one
+  `.css` file. The compiled `dist/style.css` aggregate is gone, atlas no longer compiles Tailwind or
+  glass-ui into its own bytes, and `src/design/index.css` / `styles/tokens.css` are deleted.
+  `./styles/breakpoints` resolves to `dist/styles/design/foundations/breakpoints.css`.
+  `tw-animate-css` is a dependency. See MIGRATION.md §1.
+- **`atlasCorePreset()` enforces the cascade contract.** It now returns
+  `[vue(), ...atlasLayers(), tailwindcss()]`: `atlas:root-order` throws when a root imports the
+  three sheets out of order, and `atlas:layers` wraps the recorded root's non-atlas items in
+  `@layer atlas.recipes` and throws when any other compiled sheet (a second `.css` file, an SFC
+  `<style>` block) carries the atlas styles (CX-1). New exports from `./vite`: `atlasLayers`,
+  `checkRootOrder`, `importSpecifiers`, `topLevelItems`, `wrapInAtlasLayers`, `carriesAtlasStyles`,
+  `ATLAS_LAYER_ORDER`, `ROOT_IMPORTS`.
+- **One readiness mechanism (J-1, CX-4).** `useEChart` returns `settled` (false from every
+  structural act until the next `finished`), `frame` (counts every `finished`) and `push(option)`
+  (the one structural write path), and exports `EChartReadiness` and `SETTLE_FRAME_MS`. A data act
+  or a push supersedes a held emphasis: no stale index is painted. The B3 `rendered` gate is gone.
+  `StageMorphTarget` requires `push(option)`; the stage-morph driver no longer calls `setOption`.
+- **Overlays ride the primitive (CX-5).** `VizTextOverlay` takes `:echart` (an `EChartReadiness`)
+  instead of `:chart`; `useVizOverlay(echart, svgRef, leaves)` and `useEChartOrnament(echart, key)`
+  take the handle; `EChartOrnament` takes `:echart`. None subscribes to a chart event; useEChart
+  holds the one `finished` site. ScatterPlate's view-change morph goes through `push`.
+- **`SubFloorValues` values carry an `id` (J-6).** `SubFloorRow.values` is
+  `SubFloorValue { id, value, unit }[]` (new export); cells are keyed by `id`, not `unit`. The rows
+  share a label column (subgrid, label up to 16rem, a 40rem measure) and stack below a 30rem plate.
+- **`SelectionRegion` keyboard entry (J-4).** On focus the cursor moves to the first selected key
+  in key order, or the first key, and that key is raised; the region's focus ring is drawn inside
+  it. A key is emitted once per distinct value.
+
 - `SelectionRegion` emits `active-change` only as reader intent (U-F59a). It no longer emits
   `keys[0]` from its setup watcher, and it no longer emits when `keys` re-orders or narrows under an
   unfocused cursor. It raises a key on focus and on arrow movement while focused, and emits `null`
@@ -15,6 +45,23 @@
 
 ### Added
 
+- `Treemap` emits `layout` (`TreemapBoxLayout[]`: key, x, y, width, height) after each settled
+  render, once per distinct layout (J-2). Consumers size labels from it instead of polling
+  ECharts' model.
+- Each mark exports its `SETTLE_BOUND_MS` (StackedBar, RankedBar, Treemap, TimeSeries,
+  DiscreteColumns, ScatterPlate), tested in a real engine (CX-4).
+- The engine lane: `npm run test:engines` (vitest browser mode, playwright 1.60.0 exactly:
+  chromium-1223, firefox-1522, webkit-2287) runs the colocated `*.browser.spec.ts` specs; `ci.yml`
+  runs it as a three-engine matrix on push to master and `release/**`, on `workflow_dispatch` and
+  on pull requests.
+- Release vehicle: `scripts/release.sh` admits `vX.Y.Z-rc.N`; `release.yml` publishes a
+  prerelease under `--tag next` and a final under `--tag latest`, over OIDC trusted publishing
+  (no `NPM_TOKEN`), after checking that `ci.yml` passed on the tagged commit.
+- Contract tests: `styles/contract.spec.ts` (no declaration lost in the consumer's Lightning CSS
+  pass; every utility candidate in `dist/**/*.js` renders, CX-2), `src/vite/preset.spec.ts`,
+  `src/vite/preset.compile.spec.ts` (six consumer fixtures), and
+  `tests/unit/source-styles-contract.spec.ts` (every source sheet parses under PostCSS).
+
 - `@mkbabb/atlas/interaction`: `createReaderIntentGate`, the focus-gated cursor rule that
   `SelectionRegion` rides (a key is raised only while focused; a clear is sent only for a key the
   control raised). Any other roving keyboard control can drive it the same way.
@@ -23,6 +70,17 @@
   `useEvidenceFloor(n, noun, floor?)`, and the `SubFloorValues` plate. The floor licenses rank,
   crown, superlative and "median" wording only. Below it a cell prints its value with its n, and
   the n names what it counts.
+
+### Fixed
+
+- `src/design/foundations/base.css:92` carried a stray `</content>` that PostCSS's strict parser
+  rejects.
+- Two `-webkit-backdrop-filter` duplicates (MembraneTitleLozenge, StickyScene) that the consumer's
+  Lightning CSS pass kept in place of the unprefixed declaration are deleted.
+- The skip link's `focus-visible:ring-ring` named a theme colour glass 7 does not define; it reads
+  `--focus-ring-color`.
+- GeoChoropleth texture bins follow the ramp ordinal (optional `value` prop); the texture is an
+  ink-only overlay over each region's own fill (M-1).
 
 ## 6.0.1 — 2026-07-16
 

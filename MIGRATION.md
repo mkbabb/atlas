@@ -1,3 +1,65 @@
+# Migrating to Atlas 8.0.0 (unreleased; the rc train)
+
+Each row is drawn from the `u/build-atlas-rc` commits over 6dd96b9 (`git log 6dd96b9..`), not from
+intent. The version is not bumped here; the rc tag is an owner act.
+
+## 1 · The styles contract: the consumer compiles atlas's styles
+
+`@mkbabb/atlas/styles` is Tailwind v4 source. Replace any import of the old compiled sheet with ONE
+root stylesheet, in ONE `.css` file, in exactly this order:
+
+```css
+@import "tailwindcss";
+@import "@mkbabb/glass-ui/styles";
+@import "@mkbabb/atlas/styles";
+```
+
+and build with `atlasCorePreset()` from `@mkbabb/atlas/vite` (it already includes `tailwindcss()`;
+do not add a second one). The preset refuses, at build and on the dev server:
+
+| Shape | Error |
+|---|---|
+| the three imports out of order, or glass missing | `atlas:root-order: … imports …; an atlas styles root imports tailwindcss → @mkbabb/glass-ui/styles → @mkbabb/atlas/styles, in that order` |
+| a root that reaches `@mkbabb/atlas/styles` through a second `.css` file | `atlas:layers: … compiles @mkbabb/atlas/styles but is not an atlas styles root` |
+| the root written in an SFC `<style>` block | the same `atlas:layers` error |
+
+An SFC that needs atlas utilities uses `@reference "<path to the root>.css";`. `./styles/breakpoints`
+keeps its specifier; it now resolves to `dist/styles/design/foundations/breakpoints.css`.
+`dist/style.css` no longer exists.
+
+## 2 · useEChart readiness: `settled`, `frame`, `push`
+
+| Before | After |
+|---|---|
+| `chart.on("finished", fn)` or a private "painted" flag in a plate | `watch(api.frame, fn)`, reading the chart only while `api.settled.value` |
+| `try { chart.convertToPixel(…) } catch {}` | project only while `settled` (in a lazy paint window it answers `undefined`) |
+| `chart.value.setOption(option, { notMerge: true, lazyUpdate: true })` for a view or scene change | `api.push(option)` |
+| a `StageMorphTarget` literal `{ chart, host, option }` | add `push(option)` (useEChart passes its own) |
+| a highlight held across a data change, replayed on the new data | superseded: the reader's next hover dispatches against the new data |
+
+`EChartReadiness = Pick<UseEChart, "chart" | "settled" | "frame">` is the handle to pass to
+projecting components.
+
+## 3 · Overlays and the ornament take the handle
+
+| Before | After |
+|---|---|
+| `<VizTextOverlay :chart="chart" …>` | `<VizTextOverlay :echart="{ chart, settled, frame }" …>` |
+| `useVizOverlay(chart, svgRef, leaves)` | `useVizOverlay({ chart, settled, frame }, svgRef, leaves)` |
+| `<EChartOrnament :chart="chart" :mark-key>` | `<EChartOrnament :echart="{ chart, settled, frame }" :mark-key>` |
+| `useEChartOrnament(() => chart, key)` | `useEChartOrnament({ chart, settled, frame }, key)` |
+
+## 4 · Smaller breaks and new seams
+
+| Change | Consumer edit |
+|---|---|
+| `SubFloorRow.values[]` requires `id` (cells keyed by it) | add a stable `id` per value, unique within the row, e.g. `{ id: "requests", value, unit }` |
+| `Treemap` emits `layout: TreemapBoxLayout[]` (additive) | delete any `getModel().getSeriesByIndex(0).getData()` poll and its timers; bind `@layout` |
+| `SelectionRegion` focus seats the cursor on the first selected key | none; plates that ring `@active-change` now ring the selection on entry |
+| marks export `SETTLE_BOUND_MS`; useEChart exports `SETTLE_FRAME_MS` (additive) | a figure built on `useEChart` states its own bound the same way |
+| `GeoChoropleth` gains an optional `value` prop (M-1, additive) | pass the number the scale was fed, so the texture order is ordinal |
+| release tags `vX.Y.Z-rc.N` publish under `next`; trusted publishing replaces `NPM_TOKEN` | owner: set the npmjs.com trusted publisher (mkbabb/atlas, `.github/workflows/release.yml`) |
+
 # Migrating to Atlas 7.0.0
 
 Every row below is drawn from the real `v6.0.1..HEAD` diff (the export map, the type/barrel
