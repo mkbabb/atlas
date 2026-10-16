@@ -6,7 +6,7 @@
 // yet built), where a raw `highlight` throws (`_pipelineMap` in Firefox and WebKit, "reading 'get'"
 // in Chromium). The primitive must (a) not throw, (b) land the reader's LATEST intent exactly once
 // after `finished`, and (c) never paint the result of a superseded act.
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
     createApp,
     defineComponent,
@@ -351,6 +351,19 @@ describe("useEChart readiness primitive: the emphasis verbs", () => {
         expect(r.thrown).toBeNull();
         expect(dispatches(r)).toEqual(["highlight0", "downplay", "highlight0"]);
         expect(r.emphasis0).toBe(true);
+    });
+});
+
+describe("useEChart's public surface", () => {
+    // RULINGS §J H-A3: no `select` verb until a consumer exists (it had 0); the first consumer brings
+    // it back with K6/K6b as its test, and CX-3 (a stale `selectedIndex` after a re-paint) closes by
+    // deletion. §J J-1: no `ready` latch beside `settled`. Checked at the type (vue-tsc) and at runtime.
+    it("carries exactly chart, stageMorphOwned, highlight, downplay, push, settled and frame", async () => {
+        expectTypeOf<UseEChart>().not.toHaveProperty("select");
+        expectTypeOf<UseEChart>().not.toHaveProperty("ready");
+        let keys: string[] = [];
+        await run(SIZED, (api) => (keys = Object.keys(api).sort()), 50);
+        expect(keys).toEqual(["chart", "downplay", "frame", "highlight", "push", "settled", "stageMorphOwned"]);
     });
 });
 
