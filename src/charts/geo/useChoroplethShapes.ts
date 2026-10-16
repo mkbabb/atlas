@@ -42,6 +42,7 @@ import {
     type RedundantChannel,
     type ResolvedChannel,
     type PatternDef,
+    type DataFillEntry,
 } from "./redundant-channel.js";
 // X10-LIB — the label-vs-A22 reconcile's CONTRAST leg: resolve the label ink + a region's own
 // resolved fill to OKLab and measure WCAG contrast between them (the size gate's sibling axis).
@@ -80,6 +81,14 @@ export interface ChoroplethProps {
     viewport?: readonly [number, number];
     /** Fill colour for a feature, keyed by its feed entity key. */
     fill: (key: EntityKey) => string;
+    /**
+     * U·B3 M-1 — THE RAMP ORDINAL. The value the caller's colour scale was fed for a key (the same
+     * number `fill` maps to a colour). The O-A22 texture tiers are ordered by it, so texture k is a
+     * contiguous run of the ramp. A colour string is not an order on the ramp, so without this prop
+     * the textures fall back to first-seen (feature) order — distinct per colour but not ordinal.
+     * Return null for a no-data key.
+     */
+    value?: (key: EntityKey) => number | null | undefined;
     /**
      * J-COLOR §5.1 — THE COORDINATED CATEGORICAL FILL (the VC ranked-bar↔choropleth pair). Supply a
      * per-key INDEX into the `--viz-category-{1..4}` quad; the choropleth emits the cascade-resolved
@@ -157,9 +166,12 @@ export interface Shape {
     cy: number;
     /** GAP-5 — the per-feature value word (the forced-colors text channel); "" ⇒ no label. */
     label: string;
-    /** O-A22 — the RESOLVED data fill (computed once) — the ONE shared bin source the redundant
-        tier-texture keys off (tier k's texture carries tier k's colour). */
+    /** O-A22 — the RESOLVED data fill (computed once). The region always paints this exact colour;
+        the redundant tier texture is an ink overlay above it, never a replacement fill. */
     fill: string;
+    /** U·B3 M-1 — the ramp ordinal (`value` prop) the texture tiers are ordered by; null when the
+        caller declares none or the key has no finite value. */
+    ordinal: number | null;
     /** X10-LIB — the region's bounding-box MINOR AXIS (SVG user-space px, the SAME space `cx`/`cy`
         are measured in) — the label-declutter SIZE gate's input. 0 when no word source exists. */
     minorAxis: number;
@@ -168,10 +180,10 @@ export interface Shape {
     hasValue: boolean;
 }
 
-/** The emitted tier-texture `<pattern>` descriptor (the SFC renders it into `<defs>`). */
+/** The emitted tier-texture `<pattern>` descriptor (the SFC renders it into `<defs>`). INK ONLY:
+    the pattern has no background, so the overlay it fills shows the region's own colour beneath. */
 export interface PatternDefEmit {
     id: string;
-    fill: string;
     geom: PatternDef;
 }
 
@@ -215,6 +227,11 @@ export function cellFloorScale(shapes: Shape[], pxPerUnit: number): number {
     return CELL_TAP_FLOOR_PX / renderedPx;
 }
 
+/** A finite ramp ordinal, else null (no-data / undeclared). */
+function ordinalOf(v: number | null | undefined): number | null {
+    return v != null && Number.isFinite(v) ? v : null;
+}
+
 const defaultKeyField = (f: Feature<Geometry, Record<string, unknown>>): string =>
     String(f.id ?? "").padStart(2, "0");
 const defaultNameField = (f: Feature<Geometry, Record<string, unknown>>): string =>
@@ -231,7 +248,7 @@ function categoryVar(idx: number): string {
 }
 
 /**
- * THE CHOROPLETH DERIVATION — `props → { shapes, resolvedChannel, patternDefs, fillFor, labels… }`.
+ * THE CHOROPLETH DERIVATION — `props → { shapes, resolvedChannel, patternDefs, textureFor, labels… }`.
  * The reactive orchestration the SFC braided inline, lifted once. Reads `props` reactively (the Vue
  * reactive proxy), so a prop change re-derives exactly the affected computeds.
  */
@@ -275,6 +292,7 @@ export function useChoroplethShapes(props: ChoroplethProps) {
         const nameOf = props.nameField ?? defaultNameField;
         const draw = path.value;
         const rankOf = props.rank;
+        const valueOf = props.value;
         // O-A22 — the on-mark WORD source UNIFIES the two label props: the explicit `valueLabel`
         // WINS, else the per-key `valueFormat` EVERY data plate already supplies (the offscreen a11y
         // table's formatter). Deriving the word from `valueLabel ?? valueFormat` lets a plate that
@@ -334,6 +352,7 @@ export function useChoroplethShapes(props: ChoroplethProps) {
                 label: word,
                 minorAxis,
                 fill: fillOf(key),
+                ordinal: ordinalOf(valueOf?.(key)),
                 // THE ABSENCE ORACLE — a cell is DATA unless the word carries the GAP-5 "" no-data
                 // sentinel. A formatter that renders no-data as "" marks the cell ABSENT: it mints NO
                 // tier bin AND shows NO word. A GLYPH no-data face ("—") carries no "" oracle, so its
@@ -348,9 +367,11 @@ export function useChoroplethShapes(props: ChoroplethProps) {
     // colour (`shapes[].fill`). Distinct data colours are ordered into tier bins; `auto` resolves per
     // density: few colour bins → a tier TEXTURE, many bins → the on-mark VALUE-LABEL.
 
-    /** The DISTINCT data fills (absence cells excluded — they mint no bin). */
-    const dataFills = computed(() =>
-        shapes.value.filter((s) => s.hasValue).map((s) => s.fill),
+    /** The data (fill, ordinal) entries (absence cells excluded — they mint no bin). */
+    const dataFills = computed<DataFillEntry[]>(() =>
+        shapes.value
+            .filter((s) => s.hasValue)
+            .map((s) => ({ fill: s.fill, ordinal: s.ordinal })),
     );
 
     /** The distinct-DATA-fill → UNIQUE tier-bin map. Its SIZE is the density signal. */
@@ -456,31 +477,26 @@ export function useChoroplethShapes(props: ChoroplethProps) {
 
     /** The tier TEXTURE `<pattern>` defs — built whenever SOME shape renders through the pattern
         channel: the whole frame under `pattern`, or the suppressed subset under `value-label`. ONE
-        def per tier BIN, its background rect the tier colour + the bin's hue-independent ink. */
+        INK-ONLY def per tier BIN (U·B3 M-1): no background rect, so no bin representative colour can
+        stand in for a region's own fill (the dark /usf inversion). */
     const patternDefs = computed<PatternDefEmit[]>(() => {
         const needed =
             resolvedChannel.value === "pattern" ||
             (resolvedChannel.value === "value-label" && shapes.value.some(usesPatternFill));
         if (!needed) return [];
-        const byBin = new Map<number, string>();
-        for (const [color, bin] of patternBins.value) {
-            if (!byBin.has(bin)) byBin.set(bin, color);
-        }
-        return [...byBin.entries()].map(([bin, color]) => ({
+        const used = [...new Set(patternBins.value.values())].sort((a, b) => a - b);
+        return used.map((bin) => ({
             id: patternIdForBin(bin),
-            fill: color,
             geom: DATA_PATTERNS[bin % DATA_PATTERNS.length],
         }));
     });
 
-    /** The per-shape fill — through its tier texture (`url(#…)`) wherever `usesPatternFill` says so,
-        else the plain resolved fill. */
-    function fillFor(s: Shape): string {
-        if (usesPatternFill(s)) {
-            const bin = patternBins.value.get(s.fill);
-            if (bin != null) return `url(#${patternIdForBin(bin)})`;
-        }
-        return s.fill;
+    /** The per-shape tier TEXTURE overlay (`url(#…)`) wherever `usesPatternFill` says so, else null.
+        The region itself always paints `s.fill`; this ink layer sits over it. */
+    function textureFor(s: Shape): string | null {
+        if (!usesPatternFill(s)) return null;
+        const bin = patternBins.value.get(s.fill);
+        return bin != null ? `url(#${patternIdForBin(bin)})` : null;
     }
 
     // ── GAP-5 · THE FORCED-COLORS TEXT CHANNEL + its O-F10 on-demand mount ──────────────────────
@@ -514,7 +530,7 @@ export function useChoroplethShapes(props: ChoroplethProps) {
         drawOn,
         resolvedChannel,
         patternDefs,
-        fillFor,
+        textureFor,
         labelsMounted,
         labelsRedundant,
         labelGateFails,
@@ -525,7 +541,7 @@ export function useChoroplethShapes(props: ChoroplethProps) {
         drawOn: ComputedRef<boolean>;
         resolvedChannel: ComputedRef<ResolvedChannel>;
         patternDefs: ComputedRef<PatternDefEmit[]>;
-        fillFor: (s: Shape) => string;
+        textureFor: (s: Shape) => string | null;
         labelsMounted: ComputedRef<boolean>;
         labelsRedundant: ComputedRef<boolean>;
         labelGateFails: (s: Shape) => boolean;

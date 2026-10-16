@@ -11,12 +11,12 @@
 // component renders from and the gate asserts against, so the two channels can NEVER drift.
 //
 // THE ONE SHARED BIN SOURCE (the O-C7 tier-bin canon coupling): the redundant channel keys off the
-// RESOLVED DATA FILL COLOUR itself — two features that fill the SAME colour share a tier bin, two
-// that fill DIFFERENT colours are distinct bins. Because the bin is a pure function of the emitted
-// fill (the SAME colour the `ColorScale` ramp produced), tier k's texture LITERALLY carries tier k's
-// colour (the pattern's background rect IS the tier fill) — the "tier k's pattern == tier k's colour
-// bin" agreement is unbreakable by construction, with ZERO per-plate wiring (the O-A7 inheritance
-// law: every choropleth inherits `redundantChannel:'auto'`).
+// RESOLVED DATA FILL COLOUR — two features that fill the SAME colour share a tier bin — and ORDERS
+// the bins by the ordinal that colour encodes (the scale's input value), so tier k is a contiguous
+// run of the ramp (U·B3 M-1). The texture is an INK-ONLY overlay drawn over the region's own exact
+// fill: the hue channel is never replaced by a bin representative, so a texture can never carry the
+// opposite pole's colour (the M-1 inversion: receivers painted payer red on dark /usf). Every
+// choropleth inherits `redundantChannel:'auto'` (the O-A7 inheritance law).
 //
 // THE ABSENCE DISJOINTNESS (render-A/L13 · a11y §"no-data hatch"): the reserved `#geo-dim-hatch` (a
 // 45° muted single-line hatch) already signals DIM / NO-DATA — a receded state, never a data tier.
@@ -137,38 +137,58 @@ export function patternIdForBin(bin: number): string {
     return `geo-data-pattern-${bin % DATA_PATTERNS.length}`;
 }
 
+/** One DATA region's bin input: its resolved fill colour and the ORDINAL that colour encodes (the
+    value the caller's scale was fed — `GeoChoropleth`'s `value` prop). `null` when the caller
+    declares no ordinal. */
+export interface DataFillEntry {
+    fill: string;
+    ordinal: number | null;
+}
+
 /**
- * THE ONE SHARED BIN SOURCE — order the distinct DATA fill colours into tier bins. The bin index is
- * a pure, DETERMINISTIC function of the colour (a stable sort), so a re-render assigns the SAME bin
- * to the SAME colour (the texture never re-shuffles within a frame). Absence colours are EXCLUDED by
- * the caller (it passes only data-shape fills), so a no-data grey never mints a data bin.
+ * THE ONE SHARED BIN SOURCE — order the distinct DATA fill colours into tier bins BY THE RAMP'S
+ * ORDINAL (U·B3 M-1). A fill's ordinal is the smallest finite value seen with it; distinct fills sort
+ * by that ordinal (ascending), so a low bin is the low end of the ramp and the bins never interleave
+ * the two poles of a diverging scale. A fill with no ordinal keeps its first-seen (feature) order
+ * after every ordinal-bearing fill — never a string sort of the colour, which is not an order on the
+ * ramp (the M-1 inversion: `rgb()` strings sorted lexically folded payers and receivers into one
+ * bin). Absence colours are EXCLUDED by the caller (it passes only data-shape fills), so a no-data
+ * grey never mints a data bin.
  */
 export function buildDataFillBins(
-    dataFills: Iterable<string>,
+    entries: Iterable<DataFillEntry>,
     maxBins?: number,
 ): Map<string, number> {
-    const distinct: string[] = [];
-    const seen = new Set<string>();
-    for (const f of dataFills) {
-        if (!seen.has(f)) {
-            seen.add(f);
-            distinct.push(f);
+    const order: { fill: string; ordinal: number | null; seen: number }[] = [];
+    const byFill = new Map<string, (typeof order)[number]>();
+    for (const { fill, ordinal } of entries) {
+        const o = ordinal != null && Number.isFinite(ordinal) ? ordinal : null;
+        const hit = byFill.get(fill);
+        if (hit) {
+            if (o != null && (hit.ordinal == null || o < hit.ordinal)) hit.ordinal = o;
+            continue;
         }
+        const row = { fill, ordinal: o, seen: order.length };
+        byFill.set(fill, row);
+        order.push(row);
     }
-    // A stable sort → a deterministic bin index (independent of feature draw order): the SAME colour
-    // set always yields the SAME colour→bin map, so tier k's texture is invariant across re-renders.
-    distinct.sort();
+    // Ordinal ascending; ordinal-less fills after, in first-seen order. Deterministic for a frame:
+    // the same (fill, ordinal) set always yields the same colour→bin map.
+    order.sort((x, y) => {
+        if (x.ordinal != null && y.ordinal != null) return x.ordinal - y.ordinal || x.seen - y.seen;
+        if (x.ordinal != null) return -1;
+        if (y.ordinal != null) return 1;
+        return x.seen - y.seen;
+    });
     const bins = new Map<string, number>();
-    const n = distinct.length;
+    const n = order.length;
     // The bin is a UNIQUE rank per colour (0..n-1) by default. When `maxBins` is supplied AND the
-    // distinct colours EXCEED it, the ranks rank/quantile-COLLAPSE into `maxBins` MONOTONE buckets
-    // (rank i → floor(i / n · maxBins)) — the >8 pattern SAFETY-NET (`resolveRedundantChannel`), so a
-    // label-less continuous frame textures into the ≤PATTERN_TIER_MAX set instead of over-subscribing
-    // the texture ids. The bucket stays a pure, deterministic function of the colour's RANK, so the
-    // "tier k's texture == tier k's colour" agreement holds within the collapsed set.
+    // distinct colours EXCEED it, the ranks collapse into `maxBins` MONOTONE buckets
+    // (rank i → floor(i / n · maxBins)) — the >8 pattern SAFETY-NET (`resolveRedundantChannel`).
+    // Because the rank is the ramp ordinal, each bucket is a CONTIGUOUS run of the ramp.
     const collapse = maxBins != null && n > maxBins;
-    distinct.forEach((color, i) =>
-        bins.set(color, collapse ? Math.floor((i * maxBins!) / n) : i),
+    order.forEach((row, i) =>
+        bins.set(row.fill, collapse ? Math.floor((i * maxBins!) / n) : i),
     );
     return bins;
 }
@@ -308,7 +328,7 @@ export function checkRedundantChannel(): { ok: boolean; failures: string[] } {
 
     // ③ TIER-BIN AGREEMENT — the bin (and thus the texture id) is a pure function of the fill.
     const fills = ["rgb(10,20,30)", "rgb(10,20,30)", "rgb(200,10,10)", "rgb(40,60,80)"];
-    const bins = buildDataFillBins(fills);
+    const bins = buildDataFillBins(fills.map((fill, i) => ({ fill, ordinal: i })));
     // the SAME colour maps to ONE bin (idempotent) …
     if (bins.get("rgb(10,20,30)") == null) {
         failures.push("③ a data fill did not receive a bin");
@@ -357,7 +377,7 @@ export function checkRedundantChannel(): { ok: boolean; failures: string[] } {
     // THE >8 QUANTIZE — the safety-net collapse keeps the pattern tier-set within the texture cap, so
     // the `auto`-routed label-less continuous frame textures into a distinct-per-tier (≤8) set.
     const collapsed = buildDataFillBins(
-        Array.from({ length: 51 }, (_, i) => `rgb(${i},0,0)`),
+        Array.from({ length: 51 }, (_, i) => ({ fill: `rgb(${i},0,0)`, ordinal: i })),
         PATTERN_TIER_MAX,
     );
     if (new Set(collapsed.values()).size > PATTERN_TIER_MAX) {

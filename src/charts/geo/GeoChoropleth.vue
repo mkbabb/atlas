@@ -85,7 +85,7 @@ const {
     shapes,
     drawOn,
     patternDefs,
-    fillFor,
+    textureFor,
     labelsMounted,
     labelsRedundant,
     labelGateFails,
@@ -233,11 +233,11 @@ const tableRows = computed(() =>
                         opacity="0.7"
                     />
                 </pattern>
-                <!-- O-A22 · THE TIER TEXTURES (the sighted-colorblind data channel). One `<pattern>`
-                     per distinct DATA tier: its background rect IS the tier colour, a hue-independent
-                     ink drawn over it — so a colour-blind reader tells the tiers apart by TEXTURE, and
-                     tier k's texture literally carries tier k's colour. The set is DISJOINT from the
-                     45° absence hatch above. -->
+                <!-- O-A22 · THE TIER TEXTURES (the sighted-colorblind data channel). One INK-ONLY
+                     `<pattern>` per DATA tier, the tiers ordered by the ramp ordinal (U·B3 M-1). It
+                     fills an overlay drawn over the region's own colour, so a colour-blind reader
+                     tells the tiers apart by TEXTURE while every region keeps its exact ramp colour.
+                     The set is DISJOINT from the 45° absence hatch above. -->
                 <pattern
                     v-for="p in patternDefs"
                     :key="p.id"
@@ -246,11 +246,6 @@ const tableRows = computed(() =>
                     :height="DATA_PATTERN_TILE"
                     patternUnits="userSpaceOnUse"
                 >
-                    <rect
-                        :width="DATA_PATTERN_TILE"
-                        :height="DATA_PATTERN_TILE"
-                        :fill="p.fill"
-                    />
                     <line
                         v-for="(l, i) in p.geom.lines ?? []"
                         :key="`ln-${i}`"
@@ -287,7 +282,7 @@ const tableRows = computed(() =>
                     <path
                         :d="s.d"
                         pathLength="1"
-                        :fill="fillFor(s)"
+                        :fill="s.fill"
                         :data-key="s.key"
                         :data-raised="isRaised(s.key) ? 'true' : undefined"
                         :data-dimmed="isDimmed(s.key) ? 'true' : undefined"
@@ -304,6 +299,20 @@ const tableRows = computed(() =>
                         @mouseenter="onEnter(s)"
                         @mouseleave="onLeave"
                         @click="onSelect(s, $event)"
+                    />
+                    <!-- O-A22 · the tier texture: ink over the region's own fill (U·B3 M-1). -->
+                    <path
+                        v-if="textureFor(s)"
+                        :d="s.d"
+                        :fill="textureFor(s)!"
+                        :data-texture-key="s.key"
+                        class="geo-texture pointer-events-none"
+                        :class="{
+                            'geo-shape--draw': drawOn,
+                            'geo-shape--cell-floor': cellFloor > 1,
+                        }"
+                        :style="drawOn ? { '--rank': s.rank ?? 0 } : undefined"
+                        aria-hidden="true"
                     />
                     <path
                         v-if="isDimmed(s.key)"

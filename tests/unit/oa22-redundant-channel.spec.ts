@@ -1,7 +1,8 @@
 // Redundant-channel paint and label decisions.
 import { describe, it, expect } from "vitest";
 import {
-    buildDataFillBins,
+    buildDataFillBins as buildBins,
+    type DataFillEntry,
     resolveRedundantChannel,
     regionClearsLabelGate,
     patternIdForBin,
@@ -12,6 +13,12 @@ import {
     ABSENCE_HATCH_ID,
     ABSENCE_HATCH_KIND,
 } from "../../src/charts/geo/redundant-channel";
+
+// Each fill's ordinal is its position in the list given (the order the caller's ramp assigns).
+const entries = (fills: string[], ords?: number[]): DataFillEntry[] =>
+    fills.map((fill, i) => ({ fill, ordinal: ords ? ords[i] : i }));
+const buildDataFillBins = (fills: string[], max?: number, ords?: number[]) =>
+    buildBins(entries(fills, ords), max);
 
 describe("O-A22 · the tier-bin AGREEMENT (the one shared bin source)", () => {
     it("the SAME data fill maps to the SAME bin (idempotent — a pure function of the colour)", () => {
@@ -28,8 +35,8 @@ describe("O-A22 · the tier-bin AGREEMENT (the one shared bin source)", () => {
     });
 
     it("the bin index is DETERMINISTIC across feature order (the texture never re-shuffles)", () => {
-        const a = buildDataFillBins(["rgb(3,3,3)", "rgb(1,1,1)", "rgb(2,2,2)"]);
-        const b = buildDataFillBins(["rgb(1,1,1)", "rgb(2,2,2)", "rgb(3,3,3)"]);
+        const a = buildDataFillBins(["rgb(3,3,3)", "rgb(1,1,1)", "rgb(2,2,2)"], undefined, [3, 1, 2]);
+        const b = buildDataFillBins(["rgb(1,1,1)", "rgb(2,2,2)", "rgb(3,3,3)"], undefined, [1, 2, 3]);
         expect([...a.entries()].sort()).toEqual([...b.entries()].sort());
         expect(a.get("rgb(2,2,2)")).toBe(b.get("rgb(2,2,2)"));
     });
@@ -40,9 +47,11 @@ describe("O-A22 · the >8 quantize SAFETY-NET (buildDataFillBins maxBins)", () =
         const fills = Array.from({ length: 51 }, (_, i) => `rgb(${i},0,0)`);
         const bins = buildDataFillBins(fills, PATTERN_TIER_MAX);
         expect(new Set(bins.values()).size).toBeLessThanOrEqual(PATTERN_TIER_MAX);
-        // monotone by rank: the sorted-first colour lands in bucket 0, the sorted-last in the top.
+        // monotone by the ORDINAL (U·B3 M-1): the lowest value lands in bucket 0, the highest in the
+        // top — never the colour string ("rgb(9,..)" sorted LAST lexically under the old binner).
         expect(bins.get("rgb(0,0,0)")).toBe(0);
-        expect(bins.get("rgb(9,0,0)")).toBe(PATTERN_TIER_MAX - 1); // "rgb(9,..)" sorts LAST of 0..50
+        expect(bins.get("rgb(50,0,0)")).toBe(PATTERN_TIER_MAX - 1);
+        expect(bins.get("rgb(9,0,0)")).toBe(1);
         // deterministic + a pure function of rank (tier-k-texture == tier-k-colour agreement holds).
         const again = buildDataFillBins(fills, PATTERN_TIER_MAX);
         expect([...bins.entries()].sort()).toEqual([...again.entries()].sort());
@@ -53,6 +62,41 @@ describe("O-A22 · the >8 quantize SAFETY-NET (buildDataFillBins maxBins)", () =
         const capped = buildDataFillBins(fills, PATTERN_TIER_MAX);
         const raw = buildDataFillBins(fills);
         expect([...capped.entries()].sort()).toEqual([...raw.entries()].sort());
+    });
+});
+
+describe("U·B3 M-1 · bins follow the ramp ordinal, never the colour string", () => {
+    it("orders by the ordinal even when the colour strings sort the other way", () => {
+        // A diverging frame: payer reds carry low values, receiver blues high ones. Lexically every
+        // "rgb(2…" red sorts after the "rgb(1…" blues; the ordinal must win.
+        const fills = ["rgb(243 99 86)", "rgb(210 120 100)", "rgb(120 140 200)", "rgb(90 130 230)"];
+        const bins = buildDataFillBins(fills, undefined, [0.3, 0.8, 1.6, 24.3]);
+        expect(fills.map((f) => bins.get(f))).toEqual([0, 1, 2, 3]);
+    });
+
+    it("a collapsed bucket is a CONTIGUOUS run of the ordinal (never interleaves the poles)", () => {
+        const n = 51;
+        const fills = Array.from({ length: n }, (_, i) => `rgb(${(i * 37) % 256} 0 0)`);
+        const ords = Array.from({ length: n }, (_, i) => i);
+        const bins = buildDataFillBins(fills, PATTERN_TIER_MAX, ords);
+        const seq = fills.map((f) => bins.get(f)!);
+        for (let i = 1; i < n; i++) expect(seq[i]).toBeGreaterThanOrEqual(seq[i - 1]);
+    });
+
+    it("a repeated fill takes its smallest ordinal; ordinal-less fills follow in first-seen order", () => {
+        const bins = buildBins([
+            { fill: "c", ordinal: null },
+            { fill: "b", ordinal: 5 },
+            { fill: "a", ordinal: 9 },
+            { fill: "a", ordinal: 1 },
+            { fill: "d", ordinal: Number.NaN },
+        ]);
+        expect([...bins.entries()]).toEqual([
+            ["a", 0],
+            ["b", 1],
+            ["c", 2],
+            ["d", 3],
+        ]);
     });
 });
 

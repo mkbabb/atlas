@@ -128,6 +128,8 @@ export interface UseEChart {
  */
 export function useEChart(opts: UseEChartOptions): UseEChart {
     const chart = shallowRef<EChartsType | null>(null);
+    /** U·B3 — true once the live instance has completed its first render (see `mount`). */
+    let ready = false;
     const stageMorph = useOptionalStageMorphDriver();
     const releaseStageMorph = stageMorph?.bind({ chart, host: opts.host, option: opts.option });
     if (releaseStageMorph) onScopeDispose(releaseStageMorph);
@@ -218,7 +220,17 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     // two entry points produce an identical live instance.
     function mount(): void {
         if (chart.value || !opts.host.value) return;
-        chart.value = init(opts.host.value);
+        const c = init(opts.host.value);
+        chart.value = c;
+        // U·B3 — THE READINESS GATE. The first `paint()` is a `lazyUpdate` setOption: ECharts holds
+        // it until its next frame, and only that frame's `prepare` creates the scheduler's pipeline
+        // map. An emphasis action dispatched in between reaches `Scheduler.getPipeline` with
+        // `_pipelineMap` still undefined and throws (the Firefox /ecf `_pipelineMap` page error, the
+        // U-F29 atlas half). The instance is READY at its first `rendered` event — emitted from that
+        // frame's flush, after `prepare` — and any emphasis requested before then is held and
+        // applied there (`flushEmphasis`).
+        ready = false;
+        c.on("rendered", onFirstRendered);
         paint();
 
         if (opts.onHover && opts.keyOf) {
@@ -389,8 +401,13 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     }
 
     onBeforeUnmount(() => {
+        // Dispose drops the instance AND the readiness state, so a held emphasis can never reach a
+        // disposed instance (ECharts would only warn, but the held state must not outlive it).
         chart.value?.dispose();
         chart.value = null;
+        ready = false;
+        pendingEmphasis = null;
+        raisedSeries = null;
     });
 
     // D5 (C.W5.3) — coalesce the emphasis dispatch. The map's hovered key strobes (now D1-
@@ -399,26 +416,54 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     // storm into ECharts, each pair forcing an emphasis recompute on the linked RankedStrip
     // plate. `lastKey` guards same-key re-dispatch (a no-op) and skips the leading `downplay`
     // when nothing is currently raised, so a settled key costs AT MOST one `highlight`.
+    //
+    // U·B3 — every dispatch goes through `flushEmphasis`, which applies only the LATEST requested
+    // emphasis and only once the instance is READY (see `mount`). A request made before the chart
+    // exists (a `lazyMount` chart still below the fold) or before its first render is held, not
+    // dropped and not thrown.
     let lastKey: string | null = null;
+    /** The latest requested emphasis not yet dispatched (`dataIndex` undefined = clear). */
+    let pendingEmphasis: { dataIndex: number | undefined; seriesIndex: number } | null = null;
+    /** The series index carrying a dispatched highlight, or null when nothing is raised. */
+    let raisedSeries: number | null = null;
+
+    function flushEmphasis(): void {
+        const c = chart.value;
+        if (!c || !ready || !pendingEmphasis) return;
+        const { dataIndex, seriesIndex } = pendingEmphasis;
+        pendingEmphasis = null;
+        if (raisedSeries !== null) {
+            c.dispatchAction({ type: "downplay", seriesIndex });
+            raisedSeries = null;
+        }
+        if (dataIndex == null) return;
+        c.dispatchAction({ type: "highlight", seriesIndex, dataIndex });
+        raisedSeries = seriesIndex;
+    }
+
+    function onFirstRendered(): void {
+        if (ready) return;
+        ready = true;
+        chart.value?.off("rendered", onFirstRendered);
+        flushEmphasis();
+    }
+
     function highlight(
         key: string,
         keyToIndex: Record<string, number>,
         seriesIndex = 0,
     ): void {
         if (key === lastKey) return; // same settled key — no re-dispatch
-        const c = chart.value;
-        if (!c) return;
-        if (lastKey !== null) c.dispatchAction({ type: "downplay", seriesIndex });
-        const idx = keyToIndex[key];
         lastKey = key;
-        if (idx == null) return;
-        c.dispatchAction({ type: "highlight", seriesIndex, dataIndex: idx });
+        pendingEmphasis = { dataIndex: keyToIndex[key], seriesIndex };
+        flushEmphasis();
     }
 
     function downplay(seriesIndex = 0): void {
         if (lastKey === null) return; // nothing raised — no redundant downplay
         lastKey = null;
-        chart.value?.dispatchAction({ type: "downplay", seriesIndex });
+        pendingEmphasis = { dataIndex: undefined, seriesIndex };
+        flushEmphasis();
     }
 
     return { chart, stageMorphOwned: stageMorph !== null, highlight, downplay };
