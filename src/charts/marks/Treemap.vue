@@ -7,6 +7,17 @@ import { SETTLE_FRAME_MS } from "../composables/useEChart.js";
     hard-cuts, inside the same bound. Tested in useEChart.browser.spec.ts. */
 export const SETTLE_BOUND_MS = SETTLE_FRAME_MS + 1000;
 
+/** One laid-out box (U RULINGS §J J-2), in the host canvas's pixel space: what a consumer reads to fit
+    its labels to the real box, so no consumer polls ECharts' private model. */
+export interface TreemapBoxLayout {
+    /** The item's `key`. The "…and M more" cap tile is atlas's own affordance and is not emitted. */
+    key: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
 /** One box in the treemap — a charter applicant, a consulting firm. */
 export interface TreemapItem {
     /** A stable join key (an applicant id, a firm name) for the linked-highlight. */
@@ -106,7 +117,16 @@ const props = withDefaults(
     },
 );
 
-const emit = defineEmits<SelectionEmits>();
+const emit = defineEmits<
+    SelectionEmits & {
+        /**
+         * J-2: the laid-out boxes, emitted after each settled render (the readiness primitive's
+         * `frame`: a paint, a resize, the expand re-home), once per distinct layout. Only boxes the
+         * squarify pass gave a positive area are listed.
+         */
+        layout: [boxes: TreemapBoxLayout[]];
+    }
+>();
 
 const host = ref<HTMLElement | null>(null);
 
@@ -418,7 +438,7 @@ function keyOf(params: unknown): string | null {
     return d?.key ?? null;
 }
 
-const { chart } = useEChart({
+const { chart, settled, frame } = useEChart({
     host,
     option: () => option.value,
     // MB-4 — the rolled cap tile is an affordance, not a datum: never emit a linked-highlight
@@ -429,6 +449,42 @@ const { chart } = useEChart({
     // box via `chart-h-lg` (a fixed 560/640px), so the deferred canvas mounts into an already-sized
     // slot — no scroll-in shift (the ≤0.038 CLS floor holds). Off the route hydration critical path.
     lazyMount: true,
+});
+
+// J-2 — THE LAYOUT SEAM. After each settled render, read every box's laid-out rectangle off the live
+// series (atlas owns the ECharts instance; the read happens only while `settled`, when the pipeline
+// exists) and emit it once per distinct layout. Consumers size labels from this event; they never
+// poll the instance's private model on timers (the Firefox /ecf `_pipelineMap` error).
+interface TreemapLayoutData {
+    count(): number;
+    getId(i: number): string;
+    getItemLayout(i: number): { x?: number; y?: number; width?: number; height?: number } | undefined;
+}
+let lastLayout = "";
+watch(frame, () => {
+    const c = chart.value;
+    if (!c || !settled.value) return;
+    const data = (
+        c as unknown as { getModel(): { getSeriesByIndex(i: number): { getData(): TreemapLayoutData } | undefined } }
+    )
+        .getModel()
+        .getSeriesByIndex(0)
+        ?.getData();
+    if (!data) return;
+    const keys = new Set(budgetedItems.value.map((it) => it.key));
+    keys.delete(ROLLUP_KEY);
+    const boxes: TreemapBoxLayout[] = [];
+    for (let i = 0; i < data.count(); i++) {
+        const key = data.getId(i);
+        const l = data.getItemLayout(i);
+        if (!keys.has(key) || !l || l.width == null || l.height == null) continue;
+        if (!(l.width > 0 && l.height > 0)) continue;
+        boxes.push({ key, x: l.x ?? 0, y: l.y ?? 0, width: l.width, height: l.height });
+    }
+    const signature = boxes.map((b) => `${b.key}:${b.x},${b.y},${b.width},${b.height}`).join("|");
+    if (signature === lastLayout) return;
+    lastLayout = signature;
+    emit("layout", boxes);
 });
 
 // The select producer — the ECharts CANVAS click (RP-4: not an SVG `@click`). The native

@@ -19,4 +19,4 @@ export { default as Treemap } from "./Treemap.vue";
 export type { RankedRow } from "./RankedBar.vue";
 export type { LineSeries, SeriesPoint } from "./TimeSeries.vue";
 export type { StackSeries } from "./StackedBar.vue";
-export type { TreemapItem, TreemapRichLabel } from "./Treemap.vue";
+export type { TreemapBoxLayout, TreemapItem, TreemapRichLabel } from "./Treemap.vue";
