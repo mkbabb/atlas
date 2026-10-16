@@ -124,7 +124,7 @@ useDismissArbiter(dismissArbiter).claim(() =>
         <!-- Skip link — first focusable element (the keyboard landmark). -->
         <a
             href="#main-content"
-            class="skip-link sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:shadow-lg focus-visible:ring-2 focus-visible:ring-ring"
+            class="skip-link sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:shadow-lg focus-visible:ring-2 focus-visible:ring-(--focus-ring-color)"
         >
             Skip to content
         </a>
