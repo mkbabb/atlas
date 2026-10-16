@@ -4,8 +4,9 @@
 set -euo pipefail
 
 TAG="${1:-}"
-if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "Usage: $0 v<X.Y.Z>" >&2
+# A final version, or a prerelease on the `next` channel (RULINGS §J A-2: -rc.N, then final).
+if [[ ! "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-rc\.(0|[1-9][0-9]*))?$ ]]; then
+    echo "Usage: $0 v<X.Y.Z>[-rc.N]" >&2
     exit 1
 fi
 

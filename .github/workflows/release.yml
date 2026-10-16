@@ -11,6 +11,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
   id-token: write
 
 jobs:
@@ -23,6 +24,8 @@ jobs:
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
+      # Trusted publishing over OIDC needs npm >= 11.5.1 (RULINGS §J A-3).
+      - run: npm install -g npm@11.12.1
       - run: npm ci
       - name: Verify tag matches package version
         run: |
@@ -31,7 +34,27 @@ jobs:
             echo "::error::tag ${GITHUB_REF_NAME} does not match $expected"
             exit 1
           fi
-      - name: Publish with provenance
-        run: npm publish --provenance --access public
+      - name: Verify CI is green on the tagged commit
+        # §J H-A5: a tag is cut only from a commit whose verify and engines jobs passed in ci.yml.
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ok=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" \
+            --status success --json event -q '[.[] | select(.event == "push" or .event == "workflow_dispatch")] | length')
+          if [ "$ok" -lt 1 ]; then
+            echo "::error::no successful push or workflow_dispatch run of ci.yml on ${GITHUB_SHA}"
+            exit 1
+          fi
+      - name: Publish with provenance
+        # The channel follows the version: a prerelease (8.0.0-rc.1) publishes under `next`, because
+        # npm refuses a prerelease publish without --tag; `latest` moves only on a final version.
+        # Trusted publishing over OIDC (`id-token: write`): no NODE_AUTH_TOKEN and no NPM_TOKEN
+        # secret. The trusted-publisher entry (mkbabb/atlas, .github/workflows/release.yml) is set
+        # on npmjs.com by the owner.
+        run: |
+          version=$(node -p 'require("./package.json").version')
+          case "$version" in
+            *-*) channel=next ;;
+            *) channel=latest ;;
+          esac
+          npm publish --provenance --access public --tag "$channel"

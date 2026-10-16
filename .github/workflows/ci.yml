@@ -1,7 +1,14 @@
-# Pull-request checks. Publication is tag-only through release.yml.
+# Checks on every pull request, on every push to master and the release line, and on demand.
+# Publication is tag-only through release.yml, and a tag is cut only from a commit whose
+# `verify` and `engines` jobs are green here (RULINGS §J H-A5; release.yml re-checks it).
 name: CI
 
 on:
+  push:
+    branches:
+      - master
+      - "release/**"
+  workflow_dispatch:
   pull_request:
     paths:
       - "src/**"
@@ -15,7 +22,11 @@ on:
       - ".github/workflows/**"
       - "vite.lib.config.mts"
       - "vitest.config.ts"
+      - "vitest.browser.config.ts"
       - "tsconfig*.json"
+
+permissions:
+  contents: read
 
 jobs:
   verify:
@@ -31,3 +42,27 @@ jobs:
       - run: npm run build
       - run: npm run lint:pub
       - run: npm run test
+
+  engines:
+    # The frame-loop specs (`src/**/*.browser.spec.ts`) in real engines. The exact `playwright`
+    # pin in package.json names the builds: 1.60.0 = chromium-1223, firefox-1522, webkit-2287.
+    # WebKit stays on 2287 until the 2311 nested color-mix() crash is characterised (§H M-4).
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - name: Assert the pinned playwright
+        run: node -e 'const v=require("playwright/package.json").version; if (v!=="1.60.0") { console.error("playwright " + v + ", expected 1.60.0"); process.exit(1) }'
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - run: npm run test:engines
+        env:
+          ENGINE: ${{ matrix.engine }}
