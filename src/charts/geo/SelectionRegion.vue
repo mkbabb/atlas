@@ -26,8 +26,17 @@
 // node re-keys to the new active option (its label + selected state + posinset follow), so the SR
 // still announces each option it lands on. Pointer selection is UNAFFECTED — it lives entirely on
 // the plate's own SVG marks (this layer is `pointer-events:none`), never on these option nodes.
-import { computed, ref, watch } from "vue";
+//
+// READER INTENT ONLY (U-F59a · the U-F29 trigger · sci-report §H M-5). `active-change` reports the
+// cursor only while the region holds focus, and its `null` clears only a key the region raised. The
+// region used to emit `keys[0]` from an `immediate` setup watcher and again whenever `keys` moved
+// under an unfocused cursor; consumers routed that into hover stores and rang a ghost key at first
+// paint (six plates), or crashed a route by dispatching a highlight into an ECharts lazy first frame.
+// The rule lives in `createReaderIntentGate` (interaction/reader-intent.ts); consumers bind
+// `@active-change` straight to their store, with no swallow flag and no focus test of their own.
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { isMultiSelect, type SelectEvent } from "../contract/selection-contract.js";
+import { createReaderIntentGate, type IntentEmission } from "../../interaction/reader-intent.js";
 
 const props = defineProps<{
     /** The ordered key list — the offscreen table's row order (the meaningful traversal order). */
@@ -42,7 +51,8 @@ const props = defineProps<{
 const emit = defineEmits<{
     /** The SAME event the pointer producer emits — routed through `useChartSelection`. */
     select: [ev: SelectEvent];
-    /** The roving cursor's current key (or null) — the plate reads it as `kbd-active`. */
+    /** The roving cursor's key while the region holds focus, and `null` when a key it raised is
+        released (blur, unmount, an emptied list). Never emitted at setup or for an unfocused cursor. */
     "active-change": [key: string | null];
 }>();
 
@@ -59,10 +69,13 @@ watch(
 
 const activeKey = computed<string>(() => props.keys[cursor.value] ?? "");
 
-// Surface the active key upward so the plate can ring it (the `data-kbd-active` channel).
-watch(activeKey, (k) => emit("active-change", k === "" ? null : k), {
-    immediate: true,
-});
+// Surface the active key upward so the plate can ring it (the `data-kbd-active` channel) — through
+// the focus gate, so only a reader act reaches the consumer.
+const gate = createReaderIntentGate();
+function send(e: IntentEmission): void {
+    if (e) emit("active-change", e.key);
+}
+watch(activeKey, (k) => send(gate.move(k === "" ? null : k)));
 
 // THE COMPARE CHORD (f6-interaction-grammar §2.1 / G-SHIFT-PIN) — Shift+Enter is the keyboard
 // twin of Shift-click, aliased to Cmd/Ctrl+Enter. Routed through the ONE `isMultiSelect` seam
@@ -106,14 +119,16 @@ function onKeydown(e: KeyboardEvent): void {
     }
 }
 
-// Clear the keyboard ring when focus leaves the region (the cursor is virtual; on blur the
-// plate should not keep a phantom ring lit).
-function onBlur(): void {
-    emit("active-change", null);
-}
+// Focus raises the cursor's key; blur clears it (the cursor is virtual, so on blur the plate must not
+// keep a phantom ring lit). Unmounting while focused releases the key too: the blur event does not
+// fire for a node that leaves the tree.
 function onFocus(): void {
-    emit("active-change", activeKey.value === "" ? null : activeKey.value);
+    send(gate.focus(activeKey.value === "" ? null : activeKey.value));
 }
+function onBlur(): void {
+    send(gate.blur());
+}
+onBeforeUnmount(() => send(gate.blur()));
 </script>
 
 <template>

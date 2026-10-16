@@ -60,3 +60,11 @@ export { default as TypewriterTitle } from "./TypewriterTitle.vue";
 export { default as CrownFigure } from "./CrownFigure.vue";
 export type { CrownPill } from "./CrownFigure.vue";
 export { default as RecordSeam } from "./RecordSeam.vue";
+
+// ── U-F25 (sci-report §H M-5) — THE EVIDENCE FLOOR's library home. The floor licenses rank and
+// superlative wording only; below it a cell prints its value with its n, which names what n counts.
+// The pure predicates, the reactive face, and the sub-floor plate.
+export * from "./evidence-floor.js";
+export * from "./useEvidenceFloor.js";
+export { default as SubFloorValues } from "./SubFloorValues.vue";
+export type { SubFloorRow } from "./SubFloorValues.vue";
