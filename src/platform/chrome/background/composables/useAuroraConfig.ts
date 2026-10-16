@@ -218,10 +218,10 @@ const MOTION_DECAY_MS = 80; // the decay tick cadence (≈12.5 Hz — a brief se
 
     THE DOCK-BLEED TRADE (render-matrix (b) · the Bug-1 radial-glow floor). A brighter envelope
     BLEEDS the aurora's warm centre through the translucent floating dock plate (a light-stock 0.14
-    test lit the plate's centre past its luminance floor), which is why the ceiling and the dock
-    plate are a MATCHED PAIR, never independent dials. The pairing now rides IN the preset row —
-    `dockOpacity` beside `opacityCeiling` — and lands on the route subtree through
-    `atmosphereCssVars`, so a rung cannot lift one lever without the other. */
+    test lit the plate's centre past its luminance floor). Until the glass 10.1 adopt the dock half of
+    that pair was an atlas opacity floor; glass 8 deleted the token it wrote, and the plate's
+    legibility over the field is now glass's adaptive dock register (backdrop-luma veil lift +
+    `contrast-color` ink). The ceiling is the one lever left here. */
 
 /** THE DEVICE-TIER GATES (O-F5 · motion-arch §2.3) — the atmosphere ladder's two levers on the
     field, injected by `Aurora.vue` off the shared `useAtmosphereTier` selector (NOT re-derived here).

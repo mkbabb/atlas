@@ -93,6 +93,20 @@ canon violation nor silently forgotten.
 
 # Migrating to Atlas 5.0.0
 
+## Unreleased · glass-ui 10.1.0
+
+Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.
+
+| Surface | Change | Consumer edit |
+|---|---|---|
+| `HandMark` | glass 9 one-pen re-cut | keep `shape` (`underline`, `strike`, `circle`, `highlight`), `color`, `weight`, `clock`, `seed`; delete `variant`, `drawMs`, `boil`, `progress`; a `shape="path"` mark becomes `<InkStroke kind="path" :points>` |
+| `InkStroke` | new (`@mkbabb/atlas/charts`) | free rules, rings and paths: `kind`, `points`, `color`, `weight`, `seed`, `clock` (`static` or `scroll`) |
+| `useMarkMorphology`, `MarkVariant`, `BOIL_BUDGET`, `HIGHLIGHT_WEIGHT_VB`, `ENGINE_HAS_AMPLITUDE` | removed | delete the import; the pen has one register |
+| `clockAppear`, `clockAnimation`, `MarkAppear` | removed | `clockDraws(clock)` returns the boolean glass's `draw` prop takes |
+| `CompletionSeal` | atlas-owned (glass 8 deleted `@mkbabb/glass-ui/completion-seal`) | `import { CompletionSeal } from "@mkbabb/atlas/editorial"` |
+| `AtmospherePreset.dockOpacity` | removed (glass 8 stopped reading `--glass-opacity-dock`) | delete the field from custom presets |
+| `@mkbabb/glass-ui/drawer` in your own templates | removed by glass 8 | `<Dialog>` + `<SheetContent side :detents v-model:detent>` from `/dialog` and `/sheet`; a live-behind drawer is `<Dialog :modal="false">` |
+
 ## Keep selection keys canonical
 
 Every selection and URL-store ingress now accepts only the `{kind}:{id}` wire form. `parseSelKey` returns a `SelectionKey` or throws; it no longer returns `null` for a bare or malformed string. Validate external input before handing it to Atlas, and mint producer keys with `encodeSelKey`.

@@ -13,7 +13,7 @@
 //
 // THE RUNG — ④ chrome (it is a control, the margin register): DataAside binds --attn-chrome
 // (0.46). The control wears the CONTROL-GLASS register (DESIGN §4.5 — one rung quieter than its
-// host; the `ToggleGroup register="glass"` carve from E1). The `prompt` is Newsreader prose
+// host; the ToggleGroup's own glass track, its default since glass 5). The `prompt` is Newsreader prose
 // (the legend voice) framing the control.
 //
 // GLASS XOR PAPER: the CONTROL is glass (the control register, lawful — it is furniture); the
@@ -89,7 +89,6 @@ const isGlobal = computed(() => props.spec.scope === "global");
                 v-if="spec.kind === 'segmented'"
                 :model-value="strValue"
                 type="single"
-                register="glass"
                 :aria-label="spec.label"
                 :aria-describedby="promptId"
                 class="flex flex-wrap gap-1"
@@ -104,7 +103,7 @@ const isGlobal = computed(() => props.spec.scope === "global");
                     :aria-label="ch.label"
                     :disabled="ch.disabled"
                     :title="ch.hint"
-                    class="min-h-[44px] text-xs"
+                    class="min-h-[44px] text-(length:--type-caption)"
                 >
                     {{ ch.label }}
                 </ToggleGroupItem>
@@ -119,7 +118,7 @@ const isGlobal = computed(() => props.spec.scope === "global");
                 <SelectTrigger
                     :aria-label="spec.label"
                     :aria-describedby="promptId"
-                    class="data-aside__select min-h-[44px] text-xs"
+                    class="data-aside__select min-h-[44px] text-(length:--type-caption)"
                     :data-testid="`data-aside-${vizId}-${spec.key}`"
                     :data-viz-scope="isGlobal ? 'global' : undefined"
                 >
@@ -154,7 +153,7 @@ const isGlobal = computed(() => props.spec.scope === "global");
 <style scoped>
 /* THE PROMOTED CONTROL, AS A BEAT — the editorial prompt above its dial, on the bare river. The
    rung ④ chrome recession rides the host (the SUFFUSION contract — never a per-surface alpha). The
-   control wears the control-glass register (the ToggleGroup `register="glass"` carve); the prompt
+   control wears the control-glass register (the ToggleGroup's default glass track); the prompt
    + the river are paper. */
 .data-aside {
     display: flex;

@@ -1,5 +1,4 @@
-import type { CardTier } from "@mkbabb/glass-ui/card";
-import type { SurfaceDecoration } from "@mkbabb/glass-ui/surface";
+import type { SurfaceDecoration, SurfaceTier } from "@mkbabb/glass-ui/surface";
 import type { TitleAlign } from "./title-align.js";
 
 export type StoryCardSurface = Extract<SurfaceDecoration, "veil" | "opaque">;
@@ -8,7 +7,7 @@ export type StoryCardSurface = Extract<SurfaceDecoration, "veil" | "opaque">;
 export interface StoryCardFacet {
     mode?: "plate" | "stage";
     surface?: StoryCardSurface;
-    tier?: CardTier;
+    tier?: SurfaceTier;
     frame?: "none" | "keyline";
     pole?: TitleAlign;
     /** A-41 (D-2) — the figure's TRACK. `wide` (the DEFAULT when omitted) fills the built

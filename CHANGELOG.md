@@ -1,5 +1,48 @@
 # Changelog
 
+## Unreleased
+
+### Breaking changes
+
+- The `@mkbabb/glass-ui` peer moves `^7.0.0` → `^10.1.0` (dev pin `10.1.0`).
+- `HandMark` follows glass 9's one-pen re-cut. Props are `shape`, `color`, `weight`, `clock`,
+  `seed`; `variant`, `path`, `drawMs`, `boil` and `progress` are removed. Free paths, rings and
+  rules move to the new `InkStroke` (`kind: "line" | "ring" | "path"`, `points`, `color`,
+  `weight`, `seed`, `clock: "static" | "scroll"`).
+- Removed exports: `useMarkMorphology`, `MarkMorphology`, `MarkMorphologyInput`,
+  `ENGINE_HAS_AMPLITUDE`, `MarkVariant`, `BOIL_BUDGET`, `HIGHLIGHT_WEIGHT_VB`, `MarkAppear`,
+  `clockAppear`, `clockAnimation`. `clockDraws(clock)` replaces the appear/animation map, and
+  `useHandMarkClock` returns `{ draw, resolveInkColor }`.
+- `CompletionSeal` is atlas-owned (glass 8 deleted it): `@mkbabb/atlas/editorial` exports it with
+  `CompletionSealProps` and `CompletionSealShape`.
+- `AtmospherePreset.dockOpacity` and the `--glass-opacity-dock` write are removed. Glass 8 stopped
+  reading `--glass-opacity-*`; the glass 10 dock owns its own legibility over the ground.
+
+### Changed
+
+- Drawers compose glass `Dialog` + `SheetContent` (glass 8 folded `Drawer` into Sheet): the readout
+  sheet (bottom, detents 0.12/0.5/1), the filter continuum (right, non-modal, PIP/drawer detents)
+  and the phone appendix sheet. The sheet's own close replaces atlas's duplicate close buttons.
+- Buttons use glass `emphasis` (glass 7 removed `variant`). Selection cards write `--glass-accent`
+  and wear `metal-gold-border`; the year and aspatial swatches are atlas-owned (glass 7 made
+  `StatusDot` a status vocabulary).
+- The paper grain adopts glass's warm tooth (`paper-underpaint`, `paper-grain-overlay`,
+  `--paper-grain-tooth`); atlas's `paper-aged-surface` utility is removed. Retired spring tokens
+  re-point to `--spring-present` / `--spring-dock`. `StoryCard` padding reads the glass space series.
+- `GlassDock` loses `position`, `density`, `overflow`, `interaction` and `start-collapsed`; atlas's
+  dock mounts with `collapse="closed"` and fixes its own position. Glass 10.1.0 has no successor
+  for `interaction="manual"`, so glass's environmental collapse writers are live again (relayed).
+
+### Fixed
+
+- Silent drops under glass 10: the hover card's stacking rung (`z-hovercard` compiled to no rule),
+  `PaperBackdrop`'s ignored `opacity`, `DataTable` pagination props, the `label-class` and
+  `register` props, and nine custom properties glass 8–10 stopped defining. A new
+  `tests/unit/glass-contract.spec.ts` fails on any glass prop, custom property, theme utility or
+  glass class atlas names that the installed glass-ui no longer has.
+- The dock crest has a visible gold focus ring; the `focus-ring-gold` class it relied on was never
+  shipped by glass.
+
 ## 6.0.1 — 2026-07-16
 
 ### Fixed

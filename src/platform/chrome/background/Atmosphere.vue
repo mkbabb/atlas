@@ -30,7 +30,12 @@
 // SCOPED to ChartFrame (C6b/C6c), never page-wide — it is not mounted here.
 //
 // THE GRAIN — consume the primitive via an EXPLICIT, theme-aware `:opacity` (D2.d / M5, REVISED
-// O-DIR-4 ARM 2). <PaperBackdrop> is glass-ui's feTurbulence multiply grain (flipping to
+// O-DIR-4 ARM 2). The grain is glass-ui's `paper-underpaint` utility, the whole body of the
+// `<PaperBackdrop>` component glass 8 deleted (it rendered `<div class="paper-underpaint">` and
+// declared no `opacity` prop, so the `:opacity` atlas passed fell through as an inert HTML
+// attribute and the page wore glass's loud public `--paper-grain-opacity` default instead of the
+// floor below). The floor now writes the utility's own knob, `--paper-grain-opacity`, on the
+// element. It is the feTurbulence multiply grain (flipping to
 // soft-light on .dark). Two prior floors were tried and both proved wrong at THIS mount (a
 // page-wide, full-bleed field): 0.025 measured DEAD ("felt as nothing", fd-usf-gallery §F);
 // 0.038 light / 0.045 dark (glass-ui 3.10.0's "calibrated felt floor", a per-plate-overlay
@@ -61,7 +66,6 @@
 // `--constellation-alpha` master stays the library default (D6's ROOT job, ≤0.9 test cap) —
 // NOT consumer-overridden here.
 import { computed } from "vue";
-import { PaperBackdrop } from "@mkbabb/glass-ui/paper-backdrop";
 import Aurora from "./Aurora.vue";
 import { useThemeKey } from "../../composables/useThemeKey.js";
 import type { BackgroundFamily } from "../../../skin/index.js";
@@ -160,10 +164,13 @@ const field = computed<BackgroundFamily>(() =>
         <!-- z:-1 — the printed-paper tooth, ALWAYS present, on EVERY surface, ABOVE the
              field (the re-order, fb-backgrounds §1.4 / R2): the multiply (light) /
              soft-light (dark) blend now composites against the aurora's colour, not flat
-             paper. The :opacity is the library's CALIBRATED felt floor (0.038 light /
-             0.045 dark; D2.d/M5) — the un-lifted canonical light token would otherwise pin
-             it to the dead, "felt-as-nothing" 0.025 (fd-usf-gallery §F). -->
-        <PaperBackdrop :opacity="grainOpacity" class="atmosphere__grain" />
+             paper. `--paper-grain-opacity` carries `grainOpacity`, the live-pixel-confirmed
+             floor (see the script note above). -->
+        <div
+            class="paper-underpaint atmosphere__grain"
+            :style="{ '--paper-grain-opacity': grainOpacity }"
+            aria-hidden="true"
+        />
     </div>
 </template>
 

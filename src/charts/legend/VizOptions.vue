@@ -62,7 +62,9 @@ const isDefault = computed(() => c.value.isDefault.value);
 // no library reach. The bg/border ride the overlay tier in lockstep.
 const overlayTierVars: Record<string, string> = {
     "--glass-blur-floating": "var(--glass-blur-overlay)",
-    "--glass-bg-floating": "var(--glass-bg-overlay)",
+    // glass 8.0.0 retired the `--glass-bg-*` fills for the one veil ladder: the plate reads its
+    // rung off `--glass-veil-tier`, so the overlay re-point is that one token.
+    "--glass-veil-tier": "var(--glass-veil-overlay)",
     "--glass-border-floating": "var(--glass-border-overlay)",
 };
 
@@ -158,14 +160,14 @@ function reset(): void {
                      `string[]` and cannot carry the per-choice `disabled`/`value≠label`/testid/
                      `data-viz-scope` plumbing these controls need — the slot preserves each reka
                      primitive verbatim while still upgrading the label. The label stays VISIBLE
-                     (no `hide-label`) wearing the prior `.viz-options__label` typography via
-                     `label-class` (the library's own `.labeled-field-label` is absent from the
-                     atlas's glass-ui.css bundle, so this override fully owns the paint). -->
+                     (no `hide-label`) wearing the prior viz-options label typography on the
+                     field's own `[data-slot="label"]` (glass 8+ dropped `label-class`; the
+                     library rule sits in `@layer components`, so this unlayered rule owns the
+                     paint). -->
                 <LabeledField
                     v-for="spec in c.specs"
                     :key="spec.key"
                     :label="spec.label"
-                    :label-class="'viz-options__label'"
                     class="viz-options__row"
                     v-slot="{ controlId, labelledBy }"
                 >
@@ -176,7 +178,6 @@ function reset(): void {
                         :id="controlId"
                         :model-value="strModel(spec)"
                         type="single"
-                        register="glass"
                         :aria-labelledby="labelledBy"
                         class="flex flex-wrap gap-1"
                         :data-testid="`viz-opt-${c.vizId}-${spec.key}`"
@@ -190,7 +191,7 @@ function reset(): void {
                             :aria-label="ch.label"
                             :disabled="ch.disabled"
                             :title="ch.hint"
-                            class="min-h-[44px] text-xs"
+                            class="min-h-[44px] text-(length:--type-caption)"
                         >
                             {{ ch.label }}
                         </ToggleGroupItem>
@@ -206,7 +207,7 @@ function reset(): void {
                         <SelectTrigger
                             :id="controlId"
                             :aria-labelledby="labelledBy"
-                            class="viz-options__select min-h-[44px] text-xs"
+                            class="viz-options__select min-h-[44px] text-(length:--type-caption)"
                             :data-testid="`viz-opt-${c.vizId}-${spec.key}`"
                             :data-viz-scope="spec.scope === 'global' ? 'global' : undefined"
                         >
@@ -341,8 +342,8 @@ function reset(): void {
     gap: 0.875rem;
 }
 /* THE CONTROL-GLASS REGISTER INSIDE THE PANEL (d-glassui R6/M5 — the glass must not stop at the
-   hull). The ToggleGroup wears `register="glass"` (the 3.11 carve) on the element; the Select
-   trigger + the Switch carry no `register` prop, so the control-glass register reaches them here:
+   hull). The ToggleGroup is glass-tracked by default (glass 5 retired its `register` prop); the
+   Select trigger + the Switch carry no glass track, so the control-glass register reaches them here:
    the library's WASH tier (`--glass-blur-wash` — the "wash-rest" control-glass register the glass
    register itself names), the QUIETEST frost rung, so a control reads as a frosted chip in the
    frosted box, never a papered flat control on glass. The wash blur (≈1px) is ALWAYS ≤ the panel's
@@ -372,16 +373,15 @@ function reset(): void {
    labeled-field consume, J-ABSORB arm-b). The class flows onto the child component's
    rendered nodes, which do NOT carry this SFC's `[data-v-*]` scope attribute, so the
    layout/typography reach them through `:deep()`. `.viz-options__row` keeps the prior
-   stacked control register; `.viz-options__label` preserves the prior label typography
-   (it composes over the library's `.labeled-field-label`, which is absent from the
-   atlas's imported glass-ui.css bundle — a harmless no-op — so this rule fully owns the
-   visible label paint). */
+   stacked control register; the row's `[data-slot="label"]` rule preserves the prior label
+   typography (the library's `.label` sits in `@layer components`, so this unlayered rule
+   owns the visible label paint). */
 .viz-options__rows :deep(.viz-options__row) {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
 }
-.viz-options__rows :deep(.viz-options__label) {
+.viz-options__rows :deep(.viz-options__row [data-slot="label"]) {
     font-size: 0.75rem;
     font-weight: 500;
     color: var(--foreground);

@@ -11,7 +11,6 @@
 // clean (one block, one scope) for that re-point.
 import { computed } from "vue";
 import { Button } from "@mkbabb/glass-ui/button";
-import { StatusDot } from "@mkbabb/glass-ui/status-dot";
 import type { YearMode } from "../../../data/useYearScope.js";
 import FilterRow from "./FilterRow.vue";
 
@@ -61,7 +60,7 @@ const emit = defineEmits<{
     >
         <FilterRow label="Year" class="year-scrubber__head">
             <Button
-                :variant="mode === 'aggregate' ? 'accent' : 'outline'"
+                :emphasis="mode === 'aggregate' ? 'primary' : 'secondary'"
                 size="xs"
                 :aria-pressed="mode === 'aggregate'"
                 data-testid="year-aggregate"
@@ -89,15 +88,15 @@ const emit = defineEmits<{
                 :data-year-absent="dimYearSet.has(y) ? '' : undefined"
                 @click="emit('pick', y)"
             >
-                <StatusDot
-                    variant="custom"
-                    size="sm"
+                <span
                     class="year-scrubber__pip-dot"
-                    :color="
-                        mode !== 'aggregate' && y === activeYear
-                            ? 'var(--foreground)'
-                            : 'transparent'
-                    "
+                    :style="{
+                        background:
+                            mode !== 'aggregate' && y === activeYear
+                                ? 'var(--foreground)'
+                                : 'transparent',
+                    }"
+                    aria-hidden="true"
                 />
                 <span class="year-scrubber__pip-year">{{ y }}</span>
             </button>
@@ -119,7 +118,7 @@ const emit = defineEmits<{
 .year-scrubber__head {
     margin-bottom: 0.45rem;
 }
-/* The "All years" toggle is the glass `Button` (accent when on, outline when off) — it
+/* The "All years" toggle is the glass `Button` (primary emphasis when on, secondary when off) — it
    OWNS its own surface/hover/focus/radius/motion. No bespoke skin remains here. */
 .year-scrubber__track {
     display: flex;
@@ -146,12 +145,16 @@ const emit = defineEmits<{
     color: var(--muted-foreground);
     transition: color var(--transition-control);
 }
-/* The year pip rides the consumed glass-ui <StatusDot variant="custom"> — it OWNS the circle
-   shape + size + the filled-on-active presence (the `:color` flips transparent→ink on active).
-   The thin consumer override below adds ONLY the at-rest hollow ring + the active scale the
-   `custom` variant does not carry (J-ABSORB §approach-1, open-Q-1: the dot SHAPE is consumed,
-   the at-rest ring + scale a one-rule override). */
-.year-scrubber__pip-dot :deep(.status-dot__dot) {
+/* The year pip is an atlas-owned 8px pill. glass 7 re-cut `StatusDot` into a seven-state status
+   mark (`state`), and a year pip is not a status, so the swatch the retired `variant="custom"` dot
+   painted lives here: the fill flips transparent→ink on the active year, the hollow ring at rest
+   and the active scale ride below. */
+.year-scrubber__pip-dot {
+    display: inline-block;
+    flex: none;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: var(--radius-pill);
     border: 1px solid color-mix(in srgb, var(--muted-foreground) 55%, transparent);
     transition:
         background-color var(--transition-control),
@@ -167,7 +170,7 @@ const emit = defineEmits<{
 .year-scrubber__pip:hover {
     color: var(--foreground);
 }
-.year-scrubber__pip:hover .year-scrubber__pip-dot :deep(.status-dot__dot) {
+.year-scrubber__pip:hover .year-scrubber__pip-dot {
     border-color: var(--foreground);
 }
 /* The active year — the thumb. The dot fills with ink (achromatic), scaled up a touch;
@@ -175,7 +178,7 @@ const emit = defineEmits<{
 .year-scrubber__pip--active {
     color: var(--foreground);
 }
-.year-scrubber__pip--active .year-scrubber__pip-dot :deep(.status-dot__dot) {
+.year-scrubber__pip--active .year-scrubber__pip-dot {
     border-color: var(--foreground);
     scale: 1.15;
 }
@@ -197,7 +200,7 @@ const emit = defineEmits<{
     opacity: var(--attn-chrome, 0.46);
 }
 @media (prefers-reduced-motion: reduce) {
-    .year-scrubber__pip-dot :deep(.status-dot__dot) {
+    .year-scrubber__pip-dot {
         transition: none;
     }
 }

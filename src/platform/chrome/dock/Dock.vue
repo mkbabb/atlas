@@ -37,7 +37,7 @@
 //     4.1.0 OR 4.2.0 to flip it), so the `position:sticky bottom:0` foot self-serves with ZERO
 //     glass-ui dependency. The `#persistent-end` re-host is an OPTIONAL future 4.3.0 simplification
 //     (R-FOOT-1, off the K critical path), never a dependency.
-// The collapse machine the PINNED 4.0.1 SHIPS (`startCollapsed`/`expand()`/`collapse()`/`expanded`)
+// The collapse machine glass SHIPS (`collapse="closed"|"open"` + `expand()`/`collapse()`/`expanded`)
 // is RE-ENABLED here via `useDockCollapse`. The posture is gear-TOGGLED + collapse-on-phone, NOT
 // forced-collapsed-everywhere; the desktop register may still rest expanded (a register OPTION,
 // J-PATH §8 Decision 2). The `:always-expanded` true-literal opt-OUT is DELETED.
@@ -110,7 +110,7 @@ const identityRamp = computed<readonly string[]>(
 // register. What J-DOCK ADDS is the COLLAPSE posture: the rail rests collapsed at @media(--phone)
 // (reclaiming its width to the prose) and is gear-toggle-collapsible everywhere. The `isPhone`
 // register read CONSUMES the ONE `useMobileRegister` seam (the breakpoint-DRY law — no second home);
-// it drives the GlassDock `:start-collapsed` rest-posture + the phone class.
+// it drives the phone class (the GlassDock `collapse` pole is the fixed `"closed"` rest).
 const { isPhone, isNoHover } = useMobileRegister();
 // The device hover CAPABILITY — `!(hover: none)`. The wide-coarse reveal semantics (coarse-reveal.ts)
 // key their release decision off this capability + the pointer kind, never a single event string: a
@@ -138,7 +138,7 @@ const dockRef = ref<DockExposed | null>(null);
 watch(dockRef, (inst) => bindDock(inst), { immediate: true });
 
 // ── THE REACTIVE REGISTER BRIDGE (O-D1 · dock-chrome §2.1/§7.1 · mobile §1 resize-strand) ───────
-// `:start-collapsed="isPhone"` is a MOUNT-ONLY latch — GlassDock reads it once in `onMounted`, so a
+// GlassDock's `collapse` pole is a MOUNT-ONLY latch — GlassDock reads it once in `onMounted`, so a
 // desktop→phone RESIZE / orientation flip / devtools emulation (mounted at desktop width) never
 // re-collapsed the dock: it stranded EXPANDED as the 20rem sheet OVER content (mobile §1). This
 // watch reconciles the REST posture to the LIVE register on EVERY entry path — it fires on `isPhone`
@@ -335,23 +335,20 @@ useDismissArbiter().claim(() =>
 </script>
 
 <template>
-    <!-- The CONSUMED GlassDock composite (C3-2) — the VERTICAL 3-BAND rail. `position="fixed"`
-         floats it off the left margin (A3); the content stage flows full-bleed UNDER it. The
-         `:always-expanded` opt-OUT is DELETED; the dock binds its `<GlassDock ref>` so
-         `useDockCollapse` reaches the exposed `expand()` / `collapse()` / `expanded`. The rail rests
-         COLLAPSED at @media(--phone) (`:start-collapsed="isPhone"`) and is gear-toggle-collapsible
-         everywhere (the desktop register may still rest expanded — J-PATH §8 Decision 2).
+    <!-- The CONSUMED GlassDock composite (C3-2) — the VERTICAL 3-BAND rail. `.usf-dock` fixes it off
+         the left margin (A3; glass 9 folded GlassDock's `position` prop onto the consumer's own
+         classes, Dock.css); the content stage flows full-bleed UNDER it. The dock binds its
+         `<GlassDock ref>` so `useDockCollapse` reaches the exposed `expand()` / `collapse()` /
+         `expanded`. `collapse="closed"` is the mount pole (glass 9 folded `startCollapsed` onto
+         `collapse`): the rail rests collapsed at every register (the register bridge below).
 
-         `interaction="manual"` (the glass-7 dock-interaction axis — PA-3 / OF-5, and the owner
-         no-consumer-fallback ruling) makes `useDockCollapse` the SOLE posture owner: it quiets
-         glass's six internal environmental writers (hover / focus / idle / outside-click /
-         collapsed-tap / touch) at BOTH poles, leaving only the imperative `expand()` / `collapse()`
-         this dock drives — retiring the two-machine fight (PA-3 D1) with NO consumer-side watcher,
-         mask, pointer-suppression, or forced pole (the bind IS the whole posture story).
-         `start-collapsed` stays the mount pole; the structural `alwaysExpanded` contract is a
-         DISTINCT axis, KEPT unchanged. The attr is INERT on the pinned glass 6 bytes — an additive,
-         not-yet-read prop until the glass 7.0.0 tag lands and atlas consumes it at #226; atlas
-         tsconfig runs no `strictTemplates`, so the not-yet-typed attr passes vue-tsc today. -->
+         glass 9 also removed `interaction` (`"manual"` quieted glass's six environmental writers —
+         hover / focus / idle / outside-click / collapsed-tap / touch — so `useDockCollapse` was the
+         sole posture owner), `density` (one density at 9) and `overflow`. glass 10.1.0 has no
+         successor for the manual pole: `:collapse="false"` quiets the writers but never collapses.
+         Atlas does NOT mask the writers here (no consumer-side watcher, pointer suppression or forced
+         pole); the missing consumer-owned posture mode is relayed to glass-ui at its root
+         (U build B4-ATLAS-GLASS10, relay row R-4). -->
     <!-- THE SHEET SCRIM (D2) — phone-sheet-open only: the paper-wash veil the ruled menu floats
          over; a tap closes the sheet with the same focus return as Esc. Sits ONE rung under the
          raised sheet (`--z-overlay`; the sheet rides `--z-overlay + 1` below). -->
@@ -370,12 +367,8 @@ useDismissArbiter().claim(() =>
         v-if="ctx"
         ref="dockRef"
         orientation="vertical"
-        position="fixed"
         shape="card"
-        density="comfortable"
-        overflow="grow"
-        :start-collapsed="isPhone"
-        interaction="manual"
+        collapse="closed"
         class="usf-dock"
         :class="{ 'usf-dock--phone': isPhone }"
         aria-label="Section navigation"
@@ -388,14 +381,15 @@ useDismissArbiter().claim(() =>
              BUTTON at the phone register (D2 — home then rides the sheet's labeled first row).
              The `ScrollProgressRim` seats HERE (a sibling of the crest, NOT nested inside it) so its
              `position:absolute` box resolves to the GlassDock ROOT — `.dock-persistent` is static,
-             `.glass-dock` is the position:relative + `contain:layout` containing block — letting the
-             conic ring trace the DOCK PILL's own rounded-rect border at rest, never an inner square
-             around the crest raster (OF-21.1). The pill radius + the expand-yield fade live in
+             `.glass-dock` is the position:relative + `contain:layout` containing block — so glass 10's
+             vertical progress track runs down the DOCK PILL's own inline-end edge at rest, never an
+             inner square around the crest raster (OF-21.1). The expand-yield fade lives in
              Dock.css; the value/stops are the same whole-document scalar + identity ramp the crest
              once forwarded. -->
         <template #persistent>
             <ScrollProgressRim
                 class="usf-dock__progress-rim"
+                orientation="vertical"
                 :value="scrollProgress"
                 :stops="identityRamp"
             />

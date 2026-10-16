@@ -31,7 +31,7 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-} from "@mkbabb/glass-ui/dropdown-menu";
+} from "@mkbabb/glass-ui/menu";
 import ChartFrame from "./ChartFrame.vue";
 import VizDescription from "../legend/VizDescription.vue";
 import VizKeyStats from "../legend/VizKeyStats.vue";

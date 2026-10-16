@@ -24,7 +24,7 @@
 //                component (the atlas-unified-register law, MEMORY "Unified chrome register"):
 //                the floating VERTICAL LEFT rail at every viewport (position:fixed off the left
 //                margin). It rests COLLAPSED at the phone register (Dock.vue
-//                `:start-collapsed="isPhone"`), where its gilt crest is the BUTTON that expands
+//                `collapse="closed"`), where its gilt crest is the BUTTON that expands
 //                the top-left ruled section-menu SHEET — crest→ruled-sheet, NEVER a
 //                bottom/horizontal fork. One Dock, one orientation, re-collapsed responsively.
 //   `filter`   — the right live-behind filter Drawer (C3.3 fills; a peer at --z-panel).
@@ -54,10 +54,10 @@ const ctx = inject(DASHBOARD_KEY);
 // no PlatformShell) keeps the `:root` rest. Theme-aware for free — the values are
 // `var(--viz-*)`/`var(--rainbow-*)` references, so a light/dark flip retunes them.
 // The SAME bind carries the theme's ATMOSPHERE render half (W-ATMOS): `--versal-ink` (the rung a
-// section opener's flank watermark wears) + `--glass-opacity-dock` (the dock plate's matched half of
-// the aurora ceiling pair). Both are pure functions of the declared `atmosphere.intensity`, and the
-// shell is the exact element wrapping BOTH the dock and the essay — so one element authors both, and
-// the ladder cannot drift between the field and the chrome that floats over it.
+// section opener's flank watermark wears), a pure function of the declared `atmosphere.intensity`;
+// the shell is the exact element wrapping BOTH the dock and the essay, so the ladder cannot drift
+// between the field and the chrome that floats over it. (The dock plate's half of the aurora pair,
+// `--glass-opacity-dock`, retired with glass 8's opacity alphas; glass's dock legibility owns it.)
 const routeThemeStyle = computed<Record<string, string>>(() => {
     if (!ctx) return {};
     const theme = ctx.theme ?? AMERICA;
@@ -223,7 +223,7 @@ useDismissArbiter(dismissArbiter).claim(() =>
    env(safe-area-inset-bottom) is 0 on every non-notched surface. */
 @media (--phone) {
     .platform-shell__main {
-        /* the dock rests COLLAPSED at the phone register (Dock.vue `:start-collapsed="isPhone"`)
+        /* the dock rests COLLAPSED at the phone register (Dock.vue `collapse="closed"`)
            — it floats over the page margin as the tab sliver, so the phone re-bases the reserve
            to the collapsed-tab footprint and the prose reclaims the phone width (j0-dock-reserve
            holds). */

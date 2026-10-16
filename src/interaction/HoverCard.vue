@@ -296,7 +296,7 @@ watch(
             v-if="transientOpen && readout"
             :ref="(el) => setCardRef(el)"
             tier="floating"
-            class="hover-card-readout z-hovercard pointer-events-auto max-w-xs px-3 py-2.5 transition-opacity duration-100"
+            class="hover-card-readout z-(--z-hovercard) pointer-events-auto max-w-xs px-3 py-2.5 transition-opacity duration-100"
             :style="style"
             role="tooltip"
             data-testid="hover-card"

@@ -37,17 +37,21 @@ export interface AtmosphereEnvelope {
     elongation: readonly [number, number];
 }
 
-/** ONE PRESET — the whole ladder rung, deposition AND surface, in a single row. The dock opacity
-    rides HERE beside the page-glow ceiling because the two are a MATCHED PAIR (D2 §d.3: the
-    0.10/0.12 → 0.30/0.36 ceiling lift shipped with the dock raise 0.74 → 0.90); splitting them is
-    how the pair drifts. `shader` is the preset's LEG of the three-way arm gate — never the arm
-    itself (see `armShader`). */
+/** ONE PRESET — the whole ladder rung, deposition AND surface, in a single row. `shader` is the
+    preset's LEG of the three-way arm gate — never the arm itself (see `armShader`).
+
+    THE DOCK HALF OF THE d.3 PAIR IS RETIRED (glass 10.1 adopt). The `dockOpacity` column wrote
+    `--glass-opacity-dock`, the interim floor that kept the aurora's warm centre from bleeding
+    through the dock plate until glass-ui shipped a backdrop-attenuation lever. glass 8 deleted the
+    `--glass-opacity-*` alphas for the one veil ladder, so at glass 10.1.0 nothing reads the token,
+    and the lever atlas was waiting for is glass's own: the dock plate lifts its veil rung with the
+    measured backdrop luminance (`--glass-backdrop-luma`) and inks its foreground with
+    `contrast-color(var(--card))` (glass `dock/styles/adaptive-legibility.css`). The ceiling stays
+    here; the plate's legibility over it is glass's. */
 export interface AtmospherePreset {
     envelope: AtmosphereEnvelope;
     /** The page-glow opacity ceiling, per stock. */
     opacityCeiling: { light: number; dark: number };
-    /** The dock glass opacity that moves in lockstep with the ceiling (the matched pair). */
-    dockOpacity: number;
     /** The ground's chroma clamp. `quiet`/`data` hold PAPER_WASH's recessive 0.92 floor — the
         ground spends no chroma budget, the pops live in the icons. `hero` is the ONE rung that
         lifts it: the W-70 CHROMA hero is a saturation move, not a brightness one, which is why a
@@ -73,8 +77,7 @@ export interface AtmospherePreset {
     breathDepth stays under glass-ui's 0.15 ceiling; saturation holds the 0.92 recessive floor
     EXCEPT at a declared `hero` beat (ONE loud move, never a global lift).
 
-    THE RENDER HALF IS BOUND (W-ATMOS): `opacityCeiling` + `dockOpacity` ride out through
-    `atmosphereCssVars`/`useAuroraConfig` as the MATCHED PAIR the d.3 dock law names, and
+    THE RENDER HALF IS BOUND (W-ATMOS): `opacityCeiling` rides out through `useAuroraConfig`, and
     `versalInk` is the rung a section OPENER's flank watermark wears. `grain` is the ONE column
     still inert — CD-17's grain-raise half is dial-gated (the ratification: "the aurora-down half
     lands; the grain is NOT raised — re-judged by eye after the wash dims"), so the values sit
@@ -92,7 +95,6 @@ export const ATMOSPHERE_PRESETS: Readonly<
             elongation: [1.0, 1.5],
         },
         opacityCeiling: { light: 0.16, dark: 0.2 },
-        dockOpacity: 0.9,
         saturation: 0.92,
         grain: 0.01,
         versalInk: "var(--attn-atmosphere)",
@@ -106,7 +108,6 @@ export const ATMOSPHERE_PRESETS: Readonly<
             elongation: [1.0, 1.5],
         },
         opacityCeiling: { light: 0.22, dark: 0.28 },
-        dockOpacity: 0.9,
         saturation: 0.92,
         grain: 0.02,
         versalInk: "var(--attn-versal)",
@@ -120,7 +121,6 @@ export const ATMOSPHERE_PRESETS: Readonly<
             elongation: [1.0, 1.5],
         },
         opacityCeiling: { light: 0.38, dark: 0.46 },
-        dockOpacity: 0.94,
         saturation: 1,
         grain: 0.03,
         versalInk: "var(--attn-versal)",
@@ -131,12 +131,10 @@ export const ATMOSPHERE_PRESETS: Readonly<
 /** The register an undeclared route wears (`Theme.atmosphere.intensity` is optional). */
 export const DEFAULT_INTENSITY: AtmosphereIntensity = "data";
 
-/** THE PRESET'S CSS RENDER HALF (W-ATMOS) — the two custom properties a route's intensity publishes
-    on its own subtree, written ONCE by the platform shell beside `themeCssVars` (one binder, one
-    author). `--versal-ink` is the rung a section OPENER's flank watermark wears; `--glass-opacity-dock`
-    is the dock plate's MATCHED half of the ceiling pair (d.3: the ceiling and the dock move in
-    lockstep or the aurora's warm centre bleeds through the plate — the exact Bug-1 trade the prior
-    single clamp existed to dodge). The ceiling itself is NOT here: it is stock-dependent
+/** THE PRESET'S CSS RENDER HALF (W-ATMOS) — the custom property a route's intensity publishes on its
+    own subtree, written ONCE by the platform shell beside `themeCssVars` (one binder, one author).
+    `--versal-ink` is the rung a section OPENER's flank watermark wears. The dock plate's half of the
+    d.3 pair is glass's adaptive legibility now (see `AtmospherePreset`). The ceiling itself is NOT here: it is stock-dependent
     (light/dark) and rides the JS `opacityCeiling` into glass-ui's own `--aurora-opacity-ceiling`.
     `grain` is deliberately absent — CD-17's raise is dial-gated. */
 export function atmosphereCssVars(
@@ -145,7 +143,6 @@ export function atmosphereCssVars(
     const preset = ATMOSPHERE_PRESETS[intensity];
     return {
         "--versal-ink": preset.versalInk,
-        "--glass-opacity-dock": String(preset.dockOpacity),
     };
 }
 

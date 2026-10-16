@@ -8,7 +8,7 @@
 // not a crest-boxed square (OF-21.1) — this is a PURE crest again. It holds the gold budget (D7.b):
 // the gilt dome
 // geometry + the ONE gold focus-ring (the four-voice law — gold is the transient state, so
-// BrandMark's inherited red focus outline is nulled on the gilt crest).
+// BrandMark's inherited red focus outline is re-inked gold on the crest).
 //
 // M.W1 D2 · N.WG1 Arm B — THE PHONE CREST-BUTTON. At the phone register the crest is the
 // SECTION-MENU trigger (the I-MOBILE law: collapse-into-the-TIL-logo → tap → the ruled sheet):
@@ -65,7 +65,7 @@ defineExpose({ focusCrest });
             :aria-expanded="props.asButton ? String(props.expanded) : undefined"
             :aria-controls="props.asButton ? 'dock-sheet' : undefined"
             data-testid="dock-brand"
-            class="usf-dock__crest glass-material glass-gilt focus-ring focus-ring-gold"
+            class="usf-dock__crest glass-specular-track"
             @focusin="props.asButton && $event.stopPropagation()"
             @click="props.asButton && emit('toggle')"
         />
@@ -84,20 +84,18 @@ defineExpose({ focusCrest });
 }
 
 /* ── THE GILT CREST (D7.b · M3+M12) — the dome geometry + the ONE gold focus ────────
-   The `glass-floating glass-gilt` classes (glass-ui 3.10) paint the frosted dome + the
-   tooled gold edge + the gold-tinted hover specular; here we seat the raster INSIDE the
-   dome with a hair of breathing room (the gilt edge needs a ring of glass to tool) and
-   resolve the ONE focus conflict: BrandMark's own `:focus-visible` paints a RED outline
-   (the structural-identity ring); on the gilt crest the FOCUS voice is GOLD (the medal,
-   transient state), so we null that inherited red outline and let `focus-ring-gold`'s
-   box-shadow ring carry the focus alone. The resting RED anomaly node is untouched —
-   red stays the identity (a noun), gold is the focus distinction (an adjective). */
+   `glass-specular-track` is glass's material-less hover specular (the `::before` glint),
+   the successor of the `.glass-material` base class glass 10 deleted. The gilt classes the
+   crest once wore (`glass-gilt`, `focus-ring-gold`) were not shipped by glass 7 either, so
+   the gold focus is atlas-owned here: BrandMark's own `:focus-visible` paints the RED
+   identity outline; on the crest the FOCUS voice is GOLD (the medal, transient state), so
+   the outline below re-inks it gold at glass's ring width. The resting RED anomaly node is
+   untouched — red stays the identity (a noun), gold is the focus distinction (an adjective). */
 .usf-dock__crest {
     /* a hair of inset so the 1px gold rim tools a ring of glass around the raster,
        not flush to its edge (a tooled edge needs a margin to read as tooled). */
     padding: 0.1875rem;
-    /* the floating tier's blur/bg already lift the dome; keep the pill radius so the
-       gilt rim follows the crest's own round (the `.glass-gilt` box-shadow inherits it). */
+    /* keep the pill radius so the specular glint and the focus ring follow the crest's round. */
     border-radius: var(--radius-pill);
 }
 /* The raster scales to fill the inset dome — object-fit:contain keeps its proportion. */
@@ -107,10 +105,10 @@ defineExpose({ focusCrest });
     max-inline-size: 100%;
     max-block-size: 100%;
 }
-/* Null BrandMark's inherited red focus outline ON THE GILT CREST ONLY — the gold
-   focus-ring box-shadow is the crest's focus mark (the four-voice law: gold is the
+/* Re-ink BrandMark's focus outline GOLD ON THE CREST ONLY (the four-voice law: gold is the
    transient state). Other BrandMark consumers (future colophon) keep their red outline. */
 .usf-dock__crest:focus-visible {
-    outline: none;
+    outline: var(--focus-ring-width) solid var(--gold);
+    outline-offset: 2px;
 }
 </style>

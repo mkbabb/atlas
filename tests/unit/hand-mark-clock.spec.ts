@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { clockAnimation } from "../../src/motion/useHandMarkClock";
+import { clockDraws } from "../../src/motion/useHandMarkClock";
 
+// glass-ui 9.0.0's `<HandMark>` has one draw switch (`draw`); the atlas clock reduces to whether the
+// library draws the mark on. The `draw-then-boil` living line retired with the brush continuum.
 describe("hand-mark clock", () => {
-    it("boils only a live load-clock mark", () => {
-        expect(clockAnimation("load", true)).toBe("draw-then-boil");
-        expect(clockAnimation("load", false)).toBe("draw-on");
-        expect(clockAnimation("scroll", true)).toBe("none");
-        expect(clockAnimation("static", true)).toBe("none");
+    it("draws on only on the load clock", () => {
+        expect(clockDraws("load")).toBe(true);
+        expect(clockDraws("scroll")).toBe(false);
+        expect(clockDraws("static")).toBe(false);
     });
 });

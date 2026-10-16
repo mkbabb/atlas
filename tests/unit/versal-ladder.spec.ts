@@ -82,22 +82,21 @@ describe("the recession ladder (the preset's versal ink)", () => {
     });
 });
 
-describe("the dock pair (d.3 — the two levers move in lockstep)", () => {
-    it("publishes both halves of the intensity's render config", () => {
+describe("the atmosphere render half (d.3 — the dock half retired at the glass 10.1 adopt)", () => {
+    it("publishes the intensity's render config and no dead dock-opacity write", () => {
+        // `--glass-opacity-dock` has no reader at glass 10.1.0 (glass 8 deleted the opacity alphas).
         expect(atmosphereCssVars("hero")).toEqual({
             "--versal-ink": ATMOSPHERE_PRESETS.hero.versalInk,
-            "--glass-opacity-dock": String(ATMOSPHERE_PRESETS.hero.dockOpacity),
         });
         expect(atmosphereCssVars()).toEqual(atmosphereCssVars(DEFAULT_INTENSITY));
     });
 
-    it("never lifts a ceiling without lifting its dock plate", () => {
+    it("orders the ceilings by intensity", () => {
         const order = ["quiet", "data", "hero"] as const;
         for (let i = 1; i < order.length; i++) {
             const lo = ATMOSPHERE_PRESETS[order[i - 1]];
             const hi = ATMOSPHERE_PRESETS[order[i]];
             expect(hi.opacityCeiling.light).toBeGreaterThan(lo.opacityCeiling.light);
-            expect(hi.dockOpacity).toBeGreaterThanOrEqual(lo.dockOpacity);
         }
     });
 

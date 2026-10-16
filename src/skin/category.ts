@@ -1,4 +1,4 @@
-import type { CompletionSealShape } from "@mkbabb/glass-ui/completion-seal";
+import type { CompletionSealShape } from "../editorial/CompletionSeal.vue";
 import type { DashboardCategory } from "../contract/index.js";
 
 // The CATEGORY SKIN — the gallery's per-family PRESENTATION identity, and nothing more. Route

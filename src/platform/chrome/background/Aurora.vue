@@ -32,9 +32,9 @@
 // `opacityCeiling` is the OUTER compositing envelope glass-ui applies uniformly to the canvas AND
 // the CSS placeholder (via `--aurora-opacity-ceiling`): the maximum opacity the whole aurora
 // surface ever composites at. The PRIOR 0.10/0.12 clamp read as fully invisible at rest (the
-// owner's O-DIR-4 complaint); lifted 3× to 0.30 light / 0.36 dark, paired with the ARM 4 dock
-// opacity raise so the SAME dock-plate bleed the prior clamp guarded against stays closed at the
-// new, brighter envelope (the two levers move together — see Dock.css `--glass-opacity-dock`).
+// owner's O-DIR-4 complaint); lifted 3× to 0.30 light / 0.36 dark. The dock-plate bleed the prior
+// clamp guarded against is closed by glass's adaptive dock legibility since the glass 10.1 adopt
+// (the retired `--glass-opacity-dock` floor; see `AtmospherePreset` in composables/atmosphere.ts).
 //
 // THE O-F2 CSS-BAKED DEFAULT (idle-burn fix 1 of 3; motion-arch §2.1 MOVE 1 · §2.4 · §4.2). The field
 // no longer runs a per-frame WebGPU program to paint a subliminal wash. `render-mode` DEFAULTS to

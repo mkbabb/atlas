@@ -27,10 +27,11 @@
     /* THE RAIL WIDTH — one fixed column width (the Roman rungs + the foot controls at their
        label-bearing room). */
     inline-size: var(--cp-dock-w, 4.5rem);
-    /* THE LEFT-MARGIN ANCHOR · CLEAR glass-ui's bottom-centre placement. A fixed GlassDock emits
-       `bottom-(--dock-pos) inset-x-0 mx-auto`; a LEFT vertical rail instead pins top + left to the
-       inset and RELEASES bottom + right to `auto` (both block insets pinned would over-constrain
-       `height:auto` into a top↔bottom stretch). */
+    /* THE LEFT-MARGIN ANCHOR. glass 9 folded GlassDock's `position` prop onto the consumer's own
+       classes, so the rail fixes ITSELF: it pins top + left to the inset and RELEASES bottom + right
+       to `auto` (both block insets pinned would over-constrain `height:auto` into a top↔bottom
+       stretch). */
+    position: fixed;
     inset-block-start: var(--cp-inset, 1.25rem);
     inset-block-end: auto;
     inset-inline-start: var(--cp-inset, 1.25rem);
@@ -69,19 +70,11 @@
 .usf-dock {
     /* the stable morph scalar — 1 (the expanded surface). */
     --dock-morph-t: 1;
-    /* THE EVEN-PLATE FLOOR is NOT declared here (W-ATMOS · the d.3 dock-pair law). It used to be a
-       hard 0.90 pin on this plate — which SILENTLY WON over the route cascade, so the ARM 2 aurora
-       ceiling could rise while the plate that guards against its bleed stayed put. That is the exact
-       drift the "matched pair" language was written to prevent, and a plate-local constant can never
-       honour it. The floor now rides `ATMOSPHERE_PRESETS[intensity].dockOpacity` and is bound ONCE by
-       the platform shell beside the ceiling it is paired with, so the two levers cannot separate.
-       Every dock in the app mounts inside that shell (PlatformShell's `dock` slot is its only site),
-       so there is no un-bound dock to default for.
-       INTERIM (WG-E backdrop-attenuation seam): the ROOT lever is glass-ui's — a dedicated backdrop
-       ATTENUATION control (surface tint strength / backdrop luminance clamp, distinct from blur/
-       saturate) so high-chroma content behind ANY glass panel can never paint a hard seam through it
-       (the glass-ui packet, O-DIR-4 owner directive doc). The opacity floor is the atlas-side interim
-       until that primitive lands. */
+    /* NO PLATE FLOOR (W-ATMOS d.3, closed at the glass 10.1 adopt). The atlas-side interim floor
+       (`--glass-opacity-dock`, bound per intensity by the shell) waited on glass-ui's backdrop-
+       attenuation lever (WG-E). glass 8 deleted the opacity alphas, and glass 10's dock plate lifts
+       its own veil rung with the measured backdrop luminance and inks with `contrast-color(--card)`
+       (glass `dock/styles/adaptive-legibility.css`): the root lever landed, so the interim is gone. */
     /* THE PLATE-BG — the liquid glass plate, lifted by the morph scalar so the surface reads as a
        single material membrane. The sub-component rungs read this below (cascaded). */
     --dock-plate-bg: color-mix(
@@ -93,28 +86,31 @@
     --dock-rim-strength: calc(0.5 + 0.5 * var(--dock-morph-t));
 }
 
-/* ── THE PROGRESS RIM — THE PILL IS THE RING AT REST (OF-21.1 · supersedes PA-3 cure #3) ────────
+/* ── THE PROGRESS RIM — THE PILL CARRIES THE TRACK AT REST (OF-21.1 · supersedes PA-3 cure #3) ────────
    The `ScrollProgressRim` is DOCK-BOX chrome (orchestrator-owned), re-seated out of the crest.
    Mounted in the #persistent slot as a sibling of the crest, its `position:absolute; inset:1px`
    resolves to the GlassDock ROOT (`.dock-persistent` is static; `.glass-dock` is position:relative
    + `contain:layout` — the containing block), so the conic ring fills the DOCK's own border box and
    traces the pill's rounded-rect edge — never the inner 2.75rem square around the crest raster
-   (the OF-21.1 cure; PA-3 D2). We pin `--scroll-progress-rim-radius` to the pill radius because
-   glass's `inherit` default resolves to the static parent's 0 (the square's SECOND cause); at the
-   collapsed rest pole the dock's OWN border-radius is exactly `--radius-pill` (shape-card LERP at
-   `--dock-expand-t` 0), so the ring path IS the resting pill's outline.
+   (the OF-21.1 cure; PA-3 D2).
+
+   GLASS 10 RE-CUT THE RIM (glass 10.1 adopt). The glass ≤7 rim was a conic ring on the host's
+   border (`--scroll-progress-rim-radius`, `data-coverage`); glass 10's is a fill-pill TRACK, a
+   3px recessed well inset along one edge (`orientation`), with no perimeter mode and no radius
+   knob. The rail takes `orientation="vertical"` (Dock.vue): the track runs down the pill's
+   inline-end edge in the document's own direction, rounded at both ends. The perimeter ring is
+   not rebuilt in atlas; it would come back only as a glass-ui capability.
 
    DESIGN — the OF-21.1 adjudication (recorded): whole-document progress lives on the collapsed rim
    and NOWHERE else (the "never a second rail" grain DockStepperRender already carries — its spine is
-   dashboard IDENTITY, not scroll). So the rim is the ring AT REST and YIELDS when the dock expands:
+   dashboard IDENTITY, not scroll). So the rim is the track AT REST and YIELDS when the dock expands:
    the expanded rail is the stepper's nav/identity instrument, and at rest-expanded (at-top, ~0
-   progress) or the phone sheet (active navigation) a border ring would only double-encode or compete
+   progress) or the phone sheet (active navigation) a progress track would only double-encode or compete
    with the stepper's own "step N of M" wayfinding. The fade ties to glass's own `.collapsed` posture
    class — the SAME machine `useDockCollapse` drives — so it needs no new atlas state. The phone
    register uses this identical seat: `.usf-dock--phone.collapsed` also carries `.collapsed`, so the
-   ring traces the phone pill and yields to the ruled sheet by the same rule. */
+   track rides the phone pill and yields to the ruled sheet by the same rule. */
 .usf-dock__progress-rim {
-    --scroll-progress-rim-radius: var(--radius-pill);
     opacity: 0;
     transition: opacity var(--duration-normal) var(--ease-standard);
 }
@@ -289,8 +285,8 @@
        restarts). Scoped keyframes — DockNavItem's rail-mount rise is a different clock. */
     @media (prefers-reduced-motion: no-preference) {
         .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step) {
-            animation: usf-dock-sheet-row-rise var(--spring-snappy-duration, 0.4s)
-                var(--spring-snappy, ease) both;
+            animation: usf-dock-sheet-row-rise var(--spring-dock-duration)
+                var(--spring-dock) both;
             animation-delay: calc(var(--rivet-i, 0) * 40ms);
         }
     }

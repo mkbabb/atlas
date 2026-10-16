@@ -363,7 +363,6 @@ function titleCase(value: string): string {
                 <ToggleGroup
                     :model-value="String(activeIndex)"
                     type="single"
-                    register="glass"
                     :aria-labelledby="grainControlName"
                     class="flex flex-wrap gap-1"
                     @update:model-value="onGrainChange"
@@ -373,7 +372,7 @@ function titleCase(value: string): string {
                         :key="optionKey(option, index)"
                         :value="String(index)"
                         :aria-label="labelOf(option)"
-                        class="min-h-[44px] text-xs"
+                        class="min-h-[44px] text-(length:--type-caption)"
                     >
                         {{ labelOf(option) }}
                     </ToggleGroupItem>
@@ -389,9 +388,9 @@ function titleCase(value: string): string {
                     v-for="format in exportFormats"
                     :key="format"
                     type="button"
-                    variant="glass"
+                    emphasis="secondary"
                     size="sm"
-                    class="min-h-[44px] text-xs"
+                    class="min-h-[44px] text-(length:--type-caption)"
                     @click="serialize(format)"
                 >
                     {{ format.toUpperCase() }}
@@ -444,9 +443,6 @@ function titleCase(value: string): string {
                 }"
                 :columns="tableColumns"
                 :rows="tableRows"
-                :total="rows.length"
-                :page="1"
-                :page-size="Math.max(1, tableRows.length)"
                 role="grid"
                 :aria-label="`${ariaLabel ?? 'Source data'} rows`"
                 :aria-col-count="columns.length"
@@ -456,7 +452,6 @@ function titleCase(value: string): string {
                 :row-ref="setTableRow"
                 :tabbable-row-id="focusedKey"
                 :responsive="false"
-                infinite
             >
                 <template #empty>No rows match this view.</template>
             </DataTable>
