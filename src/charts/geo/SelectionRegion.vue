@@ -72,8 +72,11 @@ const activeKey = computed<string>(() => props.keys[cursor.value] ?? "");
 // Surface the active key upward so the plate can ring it (the `data-kbd-active` channel) — through
 // the focus gate, so only a reader act reaches the consumer.
 const gate = createReaderIntentGate();
+let sent: string | null = null;
 function send(e: IntentEmission): void {
-    if (e) emit("active-change", e.key);
+    if (!e || e.key === sent) return; // one emission per distinct key: focus re-seats the cursor
+    sent = e.key;
+    emit("active-change", e.key);
 }
 watch(activeKey, (k) => send(gate.move(k === "" ? null : k)));
 
@@ -119,10 +122,19 @@ function onKeydown(e: KeyboardEvent): void {
     }
 }
 
-// Focus raises the cursor's key; blur clears it (the cursor is virtual, so on blur the plate must not
-// keep a phantom ring lit). Unmounting while focused releases the key too: the blur event does not
-// fire for a node that leaves the tree.
+// KEYBOARD ENTRY SHOWS THE CURSOR (U RULINGS §J J-4, the WAI-ARIA APG listbox entry rule). When the
+// region receives focus, the active descendant is the first SELECTED option in key order, or the first
+// option when nothing is selected, and that key is raised at once so the plate rings it; the region's
+// own focus ring (below) is visible on keyboard entry whatever the plate draws. Focus is a reader act,
+// so this keeps §H M-5: nothing at rest, nothing on mount. Blur clears (the cursor is virtual, so on
+// blur the plate must not keep a phantom ring lit). Unmounting while focused releases the key too:
+// the blur event does not fire for a node that leaves the tree.
+function entryIndex(): number {
+    const i = props.keys.findIndex((k) => props.selectedKeys.has(k));
+    return i >= 0 ? i : 0;
+}
 function onFocus(): void {
+    cursor.value = entryIndex();
     send(gate.focus(activeKey.value === "" ? null : activeKey.value));
 }
 function onBlur(): void {
@@ -183,10 +195,14 @@ onBeforeUnmount(() => send(gate.blur()));
        not steal pointer events from the live plate behind it. */
     pointer-events: none;
 }
+/* The keyboard-entry ring (J-4). Drawn INSIDE the region (a negative offset), so a plate that clips
+   its overflow can never hide it, and rounded to the plate's own corner so it reads as the plate taking
+   focus rather than a box laid over it. `:focus-visible` only: the region takes no pointer, and nothing
+   shows at rest. */
 .selection-region:focus-visible {
-    outline: 2px solid var(--focus-ring-color);
-    outline-offset: 2px;
-    border-radius: var(--radius, 0.5rem);
+    outline: 2px solid var(--focus-ring-color, oklch(0.6 0.15 250));
+    outline-offset: -2px;
+    border-radius: var(--radius-plate, 0.75rem);
 }
 /* The single active option carries the accessible label for the screen reader; it is not a
    visible list (the map IS the visual), so it reads offscreen — present in the a11y tree, out
