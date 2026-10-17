@@ -28,7 +28,7 @@
 // so the thresholds below are PAGE FRACTIONS (e.g. 2% down = a committed down-scroll), the honest
 // consequence of reading the single clock rather than a second `scrollY` writer.
 //
-// THE MOUNT-LATCH CURE (dock-chrome L16). The dock's `:start-collapsed` is a mount-ONLY latch — read
+// THE MOUNT-LATCH CURE (dock-chrome L16). The dock's `:collapse` is a mount-ONLY latch — read
 // once, never reactive, so a desktop→narrow resize strands the dock expanded. A consumer that binds a
 // `watch` on THIS hook's live edge re-collapses on any post-mount scroll/resize; a read-once latch
 // cannot. O-D1/O-D2 build the fuller reactive register bridge atop this witness.

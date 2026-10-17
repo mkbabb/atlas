@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from "vue";
 import {
-    Drawer,
-    DrawerContent,
-    DrawerDescription,
-    DrawerHeader,
-    DrawerTitle,
-} from "@mkbabb/glass-ui/drawer";
+    Dialog,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@mkbabb/glass-ui/dialog";
+import { SheetContent } from "@mkbabb/glass-ui/sheet";
 import { Button } from "@mkbabb/glass-ui/button";
 import { useMobileRegister } from "../composables/useMobileRegister.js";
 import {
@@ -73,9 +73,10 @@ const drawerOpen = computed({
 });
 
 function onControl(): void {
-    // Glass 7 removed DrawerTrigger; the drawer's open state is the v-model
-    // `drawerOpen` (bound to `state === "full"`). On phone the control opens the
-    // drawer through that model; inline it toggles the in-flow detent.
+    // The sheet's open state is the Dialog v-model `drawerOpen` (bound to
+    // `state === "full"`). On phone the control opens the sheet through that model;
+    // inline it toggles the in-flow detent. (glass 8 folded `Drawer` whole into
+    // `Dialog` + `SheetContent`.)
     if (isPhone.value) drawerOpen.value = true;
     else apply("toggle");
 }
@@ -89,7 +90,7 @@ defineExpose({
 
 <template>
     <section class="appendix-dock" :data-detent="state" data-appendix-dock>
-        <Drawer v-model:open="drawerOpen" direction="bottom" mode="modal">
+        <Dialog v-model:open="drawerOpen">
             <!-- THE FOOT WHISPER — the source names itself, then two doors of DIFFERENT shapes:
                  a capsule that discloses the written record, and the one LINK that opens the table.
                  The salience order is the point (spec-data §c.2): the eye must land on the door. -->
@@ -97,7 +98,7 @@ defineExpose({
                 <Button
                     class="appendix-dock__control"
                     type="button"
-                    variant="glass"
+                    emphasis="secondary"
                     :aria-expanded="state === 'full'"
                     :aria-controls="paneId"
                     @click="onControl"
@@ -137,23 +138,30 @@ defineExpose({
             </div>
 
             <component
-                :is="isPhone ? DrawerContent : 'div'"
+                :is="isPhone ? SheetContent : 'div'"
                 :id="paneId"
                 class="appendix-dock__pane"
                 :hidden="isPhone ? undefined : state !== 'full'"
                 :role="isPhone ? undefined : 'region'"
                 :aria-labelledby="headingId"
-                :show-overlay="isPhone ? true : undefined"
+                :side="isPhone ? 'bottom' : undefined"
                 :surface="isPhone ? 'opaque' : undefined"
             >
-                <component :is="isPhone ? DrawerHeader : 'div'" class="appendix-dock__pane-head">
-                    <component :is="isPhone ? DrawerTitle : 'h2'" :id="headingId">
+                <component :is="isPhone ? DialogHeader : 'div'" class="appendix-dock__pane-head">
+                    <component :is="isPhone ? DialogTitle : 'h2'" :id="headingId">
                         {{ label }}
                     </component>
-                    <DrawerDescription v-if="isPhone" class="sr-only">
+                    <DialogDescription v-if="isPhone" class="sr-only">
                         Source, method, and provenance detail for this figure.
-                    </DrawerDescription>
-                    <Button type="button" variant="ghost" size="sm" @click="apply('close')">
+                    </DialogDescription>
+                    <!-- On the phone the sheet's own ✕ (glass SheetContent) is the close. -->
+                    <Button
+                        v-if="!isPhone"
+                        type="button"
+                        emphasis="quiet"
+                        size="sm"
+                        @click="apply('close')"
+                    >
                         Close
                     </Button>
                 </component>
@@ -161,7 +169,7 @@ defineExpose({
                     <slot />
                 </div>
             </component>
-        </Drawer>
+        </Dialog>
     </section>
 </template>
 
@@ -302,7 +310,7 @@ defineExpose({
         inline-size: 100%;
     }
 
-    :global(.appendix-dock__pane[data-glass-drawer]) {
+    :global(.appendix-dock__pane[data-slot="sheet-content"]) {
         max-block-size: min(82dvh, 44rem);
         overflow: auto;
     }
@@ -325,7 +333,7 @@ defineExpose({
     }
 
     .appendix-dock__pane,
-    :global(.appendix-dock__pane[data-glass-drawer]) {
+    :global(.appendix-dock__pane[data-slot="sheet-content"]) {
         position: static;
         display: block;
         max-block-size: none;
@@ -339,7 +347,7 @@ defineExpose({
         display: block;
     }
 
-    :global([data-stage-scrim]) {
+    :global(.bg-overlay-scrim) {
         display: none !important;
     }
 }

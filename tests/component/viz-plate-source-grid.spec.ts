@@ -112,8 +112,9 @@ const inert = vi.hoisted(() => async () => {
 });
 vi.mock("@mkbabb/glass-ui/dock", inert);
 vi.mock("@mkbabb/glass-ui/badge", inert);
-vi.mock("@mkbabb/glass-ui/dropdown-menu", inert);
-vi.mock("@mkbabb/glass-ui/drawer", inert);
+vi.mock("@mkbabb/glass-ui/menu", inert);
+vi.mock("@mkbabb/glass-ui/dialog", inert);
+vi.mock("@mkbabb/glass-ui/sheet", inert);
 vi.mock("@mkbabb/glass-ui/button", inert);
 
 import VizPlate from "../../src/charts/frame/VizPlate.vue";

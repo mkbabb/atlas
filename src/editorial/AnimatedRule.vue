@@ -3,19 +3,21 @@
 // design-interstitial-system §3.5 · f6-hero-interstitials §2.B-⑤.
 //
 // THE SUBSUMPTION (the R-SUBSUME decision): `<AnimatedRule variant="rule">` IS today's
-// `<SectionDivider>` — the static drawn `HandMark` (`animation="none"`), the same thin-consumer of
-// `@mkbabb/glass-ui/handmark` (the atlas authors NO stroke cubic; the brush, the wobble, the
-// seeded-static grain are ALL library-rendered). It carries SectionDivider's `full`/`short` weight
+// `<SectionDivider>` — a static hand-drawn rule inked with glass-ui's own pen (the atlas authors NO
+// stroke cubic: the centreline is glass's `handLine`, the nib its `strokeRibbon`, via `InkStroke`).
+// glass 9 re-cut `<HandMark>` into a pen that marks SLOTTED TEXT and retired the free-standing
+// `strikethrough` rule and the brush continuum, so a wordless rule inks through `InkStroke`.
+// It carries SectionDivider's `full`/`short` weight
 // tiers + a `hero` tier (the page-cover rule below `<DashboardHero>`). The variants escalate
 // expression, restraint-first (most junctions stay the static `rule`):
-//   · rule    — the static drawn HandMark (today's default; boil FORBIDDEN — the frame-guard).
-//   · draw    — the HandMark draws-on on scroll-entry, un-draws on scroll-up (the bidirectional
+//   · rule    — the static drawn hand rule (today's default; boil FORBIDDEN — the frame-guard).
+//   · draw    — the rule draws-on on scroll-entry, un-draws on scroll-up (the bidirectional
 //               view() draw the underlines already use; clock="scroll" semantics).
 //
 // (The actual file MOVE — SectionDivider → editorial/, the call-site re-points — is a phase-2
 // integration edit OUTSIDE this lane's write-bound; SPEC'd in the lane's blockers. AnimatedRule
-// composes the SAME HandMark primitive here, so the subsumption is real, not a fork: one divider
-// component, escalating variants, the `<HandMark clock>` precedent — two divider components
+// composes the SAME glass pen here, so the subsumption is real, not a fork: one divider
+// component, escalating variants, the `clock` precedent — two divider components
 // would be a seam that drifts.)
 //
 // THE RUNG — ④ chrome (rule/draw). The ink is the
@@ -29,7 +31,7 @@
 // (today's SectionDivider semantics); `aria-hidden` on the ink (the mark is decorative — the
 // chapter SEMANTICS live in the `<h2>` headings, not the rule).
 import { computed } from "vue";
-import { HandMark } from "@mkbabb/glass-ui/handmark";
+import InkStroke from "../charts/glyph/InkStroke.vue";
 import type { RuleVariant } from "./rule-register.js";
 
 const props = withDefaults(
@@ -40,7 +42,7 @@ const props = withDefaults(
         /** The demarcation tier — `full` (chapter rule) · `short` (figure rule) · `hero`
             (the page-cover rule below the DashboardHero). */
         weight?: "full" | "short" | "hero" | "seam";
-        /** The HandMark grain determinism (the SectionDivider seed law — pixel-identical reloads). */
+        /** The hand's seed (the SectionDivider seed law — pixel-identical reloads). */
         seed?: number;
     }>(),
     { variant: "rule", weight: "full", seed: 1 },
@@ -48,12 +50,10 @@ const props = withDefaults(
 
 const isShort = computed(() => props.weight === "short");
 const isSeam = computed(() => props.weight === "seam");
-// Every divider is a HAIRLINE: chapter/hero use the clean pen stroke; figure uses the pencil
-// whisper. Both Glass presets are stroke ribbons, so a separator can never become a filled almond.
-const brush = computed<"pen" | "pencil">(() =>
-    isShort.value ? "pencil" : "pen",
-);
-const HAIRLINE_BRUSH = { weight: 1 } as const;
+// Every divider is a HAIRLINE ribbon (a stroke, never a filled almond): chapter/hero ink at glass's
+// pen nib (weight 1), the figure rule at a lighter 0.7 nib, the whisper the retired `pencil` brush
+// carried.
+const nib = computed<number>(() => (isShort.value ? 0.7 : 1));
 // The ink: the chapter/hero rule in the page ink, the figure rule in the faint engrave hairline.
 // THE SILVER RULE FINISH (H.W4.b · §SILVER) — the FIGURE rule (the short pencil whisper, the
 // structural section divider) wears the brushed-metal finish: --silver-rule mixes a faint cool-
@@ -66,21 +66,15 @@ const ink = computed<string>(() =>
         : "var(--foreground)",
 );
 
-// THE DRAW CLOCK — `rule` is static (drawn-but-still, `animation="none"`, `appear="mount"`); `draw`
-// fires the bidirectional scroll draw (the underlines' Clock B — `animation="draw-on"` on the
-// library's view-timeline arm via the `data-rule-clock="scroll"` binding below). PRM collapses the
-// draw arm to static (the library snaps the draw).
-const animation = computed<"none" | "draw-on">(() =>
-    props.variant === "draw" ? "draw-on" : "none",
-);
-const appear = computed<"mount" | "visible">(() =>
-    props.variant === "draw" ? "visible" : "mount",
-);
+// THE DRAW CLOCK — `rule` is static (drawn, still); `draw` scrubs the ink on under the rule's own
+// `view()` timeline, bidirectionally (InkStroke's `scroll` clock, the atlas `crayon-wipe`). PRM
+// collapses the draw arm to static (the wipe never attaches).
+const clock = computed<"static" | "scroll">(() => (props.variant === "draw" ? "scroll" : "static"));
 </script>
 
 <template>
     <!-- The host keeps the `<hr>`-EQUIVALENT a11y semantics — role="separator" IS the ARIA role an
-         `<hr>` maps to, on a `<div>` so it can hold the HandMark child. It binds --attn-chrome (the
+         `<hr>` maps to, on a `<div>` so it can hold the ink child. It binds --attn-chrome (the
          SUFFUSION rung). The `data-weight` is the tier probe (full/short/hero). -->
     <div
         class="animated-rule"
@@ -95,27 +89,24 @@ const appear = computed<"mount" | "visible">(() =>
         <!-- A StoryCard seam is literal chrome, irrespective of the authored chapter variant. -->
         <span v-if="isSeam" class="animated-rule__seam" />
 
-        <!-- variant="rule" | "draw" — the drawn HandMark rule. STATIC for `rule` (drawn-but-still,
+        <!-- variant="rule" | "draw" — the drawn hand rule. STATIC for `rule` (drawn-but-still,
              no boil — the frame-guard); the bidirectional scroll draw for `draw` (Clock B, the
-             view() draw the underlines use). The brush, grain, and clip-path wipe are ALL
-             library-rendered (the thin-consumer contract; no atlas stroke cubic). -->
-        <HandMark
+             view() draw the word marks use). The centreline and the nib are glass's pen (no atlas
+             stroke cubic). -->
+        <InkStroke
             v-else
             class="animated-rule__ink"
-            shape="strikethrough"
-            :brush="brush"
-            :overrides="HAIRLINE_BRUSH"
+            kind="line"
+            :weight="nib"
             :color="ink"
             :seed="seed"
-            :animation="animation"
-            :appear="appear"
-            :data-rule-clock="variant === 'draw' ? 'scroll' : 'static'"
+            :clock="clock"
         />
     </div>
 </template>
 
 <style scoped>
-/* Every non-seam rule is one recessive HandMark hairline. The weight tiers retain only their
+/* Every non-seam rule is one recessive hand-drawn hairline. The weight tiers retain only their
    editorial breathing rhythm; the shared story/figure track owns inline proportion. */
 .animated-rule {
     width: 100%;
@@ -132,15 +123,11 @@ const appear = computed<"mount" | "visible">(() =>
 .animated-rule:not(.animated-rule--seam) {
     block-size: 1px;
 }
-/* The HandMark `.hm` root is inline-block (the library's scoped default); the rule host needs it
-   to STRETCH the full measure. The descendant selector (two classes) out-specifies the library's
-   `.hm[data-v]` (one class + one attribute), so the block override wins deterministically. We only
-   restyle the BOX (display/size) — the library still owns the stroke markup (the thin-consumer
-   contract; no CSS touches the rendered path). */
+/* The ink spans the full measure; InkStroke fits glass's centreline to this box and lets the
+   wobble overflow the 1px host (the stroke is never stretched taller). The scroll draw window is
+   the rule's own: it settles over `cover 40%`, later than a word mark. */
 .animated-rule .animated-rule__ink {
-    display: block;
-    width: 100%;
-    height: 100%;
+    --ink-scrub-range: entry 0% cover 40%;
 }
 
 /* TIER ① the CHAPTER rule — the confident drawn `pen` line between beats (the wide margin parts
@@ -159,7 +146,7 @@ const appear = computed<"mount" | "visible">(() =>
     margin-block-end: clamp(3rem, 7vw, 6rem);
 }
 /* StoryCard's literal one-pixel silver seam: the existing divider owns separator semantics,
-   while this bounded weight deliberately skips the tapered HandMark. */
+   while this bounded weight deliberately skips the tapered hand rule. */
 .animated-rule--seam {
     block-size: 1px;
     margin-block: 1rem;
@@ -172,23 +159,4 @@ const appear = computed<"mount" | "visible">(() =>
     background: var(--silver-rule, var(--border));
 }
 
-/* THE SCRUBBED DRAW-ON (variant="draw") — the rule draws/un-draws BIDIRECTIONALLY under real
-   scroll, binding the `crayon-wipe` @keyframes (the clip-path inset wipe) to the mark's OWN view()
-   timeline — the SAME mechanism the HandMark scroll arm uses. The `@keyframes crayon-wipe` is
-   DEFINED in the atlas-owned, index-imported `platform/design/map-draw.css` (`@keyframes` are
-   document-global; it is NOT a glass-ui global — 4.2.0 has a `crayon` brush KIND, no `crayon-wipe`
-   @keyframes). The fences are the standard scroll-mark pair: the
-   OUTER `prefers-reduced-motion: no-preference` + the INNER `@supports (animation-timeline: view())`
-   so under PRM (or a non-supporting engine) the wipe NEVER attaches and the rule rests at its
-   terminal DRAWN state (token-register eases only — no bespoke transition; the boil stays
-   forbidden). */
-@media (prefers-reduced-motion: no-preference) {
-    @supports ((animation-timeline: view()) and (animation-range: entry)) {
-        .animated-rule[data-variant="draw"] :deep(.hm__svg) {
-            animation: crayon-wipe auto linear both;
-            animation-timeline: view(block);
-            animation-range: entry 0% cover 40%;
-        }
-    }
-}
 </style>

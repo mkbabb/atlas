@@ -39,7 +39,7 @@
 // run are `aria-hidden`), so a screen reader reads the title as ONE phrase, never mid-type.
 //
 // ── PRM ────────────────────────────────────────────────────────────────────────────────────────
-// `respect-reduced-motion="true"` passthrough — glass-ui's own `useTypewriter` renders the FULL
+// Always on in glass (the `respect-reduced-motion` prop left at glass 7) — glass-ui's own `useTypewriter` renders the FULL
 // text immediately under PRM (no type-in), matching every other title factory's PRM behavior
 // (information parity, no separate check needed here).
 import { ref } from "vue";
@@ -78,7 +78,6 @@ const { stop } = useIntersectionObserver(
         <TypewriterText
             v-if="armed"
             :text="props.text"
-            :respect-reduced-motion="true"
             :cursor-visible="false"
             aria-hidden="true"
         />

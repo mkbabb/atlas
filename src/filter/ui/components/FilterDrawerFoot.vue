@@ -47,7 +47,7 @@ const emit = defineEmits<{
         <div class="cp-drawer__save" data-testid="save-view">
             <Button
                 v-if="!saveOpen"
-                variant="glass-wash"
+                emphasis="secondary"
                 size="sm"
                 data-testid="save-view-open"
                 @click="emit('openSave')"
@@ -78,7 +78,7 @@ const emit = defineEmits<{
                     @keydown.esc="emit('cancelSave')"
                 />
                 <Button
-                    variant="accent"
+                    emphasis="primary"
                     size="sm"
                     type="submit"
                     data-testid="save-view-confirm"
@@ -86,7 +86,7 @@ const emit = defineEmits<{
                     Save
                 </Button>
                 <Button
-                    variant="ghost"
+                    emphasis="quiet"
                     size="sm"
                     aria-label="Cancel saving view"
                     @click="emit('cancelSave')"

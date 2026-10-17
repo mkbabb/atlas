@@ -59,7 +59,7 @@ const visible = computed<boolean>(
     <Transition name="lozenge">
         <div
             v-if="visible"
-            class="membrane-lozenge glass-material"
+            class="membrane-lozenge"
             :data-membrane-facet="TITLE_FACET"
             data-title-lozenge
             data-testid="membrane-title-lozenge"

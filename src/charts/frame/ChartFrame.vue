@@ -456,17 +456,12 @@ watch(open, (value) => {
                  every existing chart renders byte-identically at rest (the trigger is quiet —
                  opacity 0 — until the plate is hovered/focused). -->
             <div class="frame-expand relative">
-                <!-- EXPAND-AS-MORPH (D7.c M7a / ds2-motion-field M7). `view-transition-name="chart"`
-                 opts the plate↔fullscreen swap into the glass-ui `gl-expand` shared-element morph
-                 (the 3.10.0 prop): the inline plate and the teleported fullscreen surface share ONE
-                 view-transition-name (the library suffixes it with `useId()` so two plates on a page
-                 never collide their groups), and the open/close toggle is wrapped in
-                 `startViewTransition` INSIDE the primitive — so the plate's rect MORPHS to the
-                 fullscreen rect (and Esc morphs it back) instead of jump-cutting. The library owns
-                 the wrap + the PRM/unsupported instant fallback (the open/close ALWAYS runs —
-                 information parity); the morph LOOK rides view-transition.css's `.gl-expand` recipe.
-                 NO `view-transition-name` is placed on a `<canvas>` (the anti-move): the name lands
-                 on the primitive's own plate/surface DIVs, never the chart canvas inside the slot. -->
+                <!-- NO EXPAND MORPH. The 3.10.0 `view-transition-name` prop (the `gl-expand`
+                 shared-element morph) is gone from ExpandableContainer: glass 10.1.0 declares
+                 `buttonPosition`, `expandLabel`, `collapseLabel`, `surface` and `open` only, and
+                 its dist calls no `startViewTransition`, so the attribute fell through as an inert
+                 HTML attribute (it already did at glass 7). The plate↔fullscreen swap is a cut; a
+                 morph comes back only as a glass-ui capability (relayed), never an atlas wrap. -->
                 <!-- NOTE: no `@settle` binding — the installed 4.0.1 ExpandableContainer emits
                      NO `settle` event (`emits:["update:open"]` only, dist-verified). The settle
                      beat is synthesized from the `open` flip (the `watch(open)` interim above,
@@ -475,7 +470,6 @@ watch(open, (value) => {
                 <ExpandableContainer
                     v-model:open="open"
                     :data-subject="figId"
-                    view-transition-name="chart"
                     :expand-label="`Expand ${ariaLabel}`"
                     :collapse-label="`Collapse ${ariaLabel}`"
                 >

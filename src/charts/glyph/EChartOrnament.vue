@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import HandMark from "./HandMark.vue";
+import InkStroke from "./InkStroke.vue";
+import { RED_INK } from "../../motion/useHandMarkClock.js";
 import type { EChartReadiness } from "../composables/useEChart.js";
 import { useEChartOrnament } from "../composables/useEChartOrnament.js";
+
+/** The ornament ring around the anchored mark. glass 9 re-cut `<HandMark>` into a pen that marks
+    SLOTTED TEXT, so a wordless ring inks through `InkStroke` over glass's exported `handRing`. The
+    retired `variant="pencil"` read as a lighter red hand; the editorial red at a 0.7 nib keeps that
+    whisper, lifted per theme with glass's own `light-dark()` idiom. */
+const ink = `light-dark(${RED_INK.light}, ${RED_INK.dark})`;
 
 /** `echart`: the host chart's readiness handle (`chart`, `settled`, `frame` from its useEChart). */
 const props = defineProps<{ echart: EChartReadiness; markKey: string | null }>();
@@ -14,15 +21,14 @@ const position = computed(() => anchor.value
 </script>
 
 <template>
-    <HandMark
+    <InkStroke
         v-if="anchor"
         class="echart-ornament"
-        variant="pencil"
-        shape="circle"
-        clock="static"
+        kind="ring"
+        :weight="0.7"
+        :color="ink"
         :seed="3"
         :style="position"
-        aria-hidden="true"
     />
 </template>
 

@@ -14,14 +14,15 @@
 //       – no bracket        → <EssayTitleCascade> whole-glyph cascade (role="img" + whole label).
 //
 // POSITION-DERIVED, NOT DECLARED (no `clock`/`seed`/`boil` field — the spec's title-law): the host
-// hands `lead` (the first masthead beat) + a grain `seed`. The lead beat inks on the `load`
-// one-shot clock and earns the route's ONE hero boil; interior beats scrub the `scroll` clock
-// (bidirectional, free); the seed is a wobble constant, not data.
+// hands `lead` (the first masthead beat) + a hand `seed`. The lead beat inks on the `load`
+// one-shot clock (glass draws it on at mount); interior beats scrub the `scroll` clock
+// (bidirectional, free); the seed is a wobble constant, not data. The hero boil (the one living
+// line) retired with glass 9's HandMark re-cut: there is no boil to earn.
 //
 // marginalia (dial 10, owner-ruled — the typed prop-bag stands, un-folded to `ornament`): the
 // inline post-title device (the earned dagger) renders after the title on ANY arm; its glyph is the
 // component's own default, the bag carries the per-title `label` + `reveal`.
-import { computed, onMounted, ref } from "vue";
+import { computed } from "vue";
 import TypewriterTitle from "./TypewriterTitle.vue";
 import EssayTitleCascade from "./EssayTitleCascade.vue";
 import HandMark from "../charts/glyph/HandMark.vue";
@@ -31,11 +32,10 @@ const props = withDefaults(
     defineProps<{
         /** The resolved title facet (the 3-arm register). */
         facet: TitleFacet;
-        /** The LEAD masthead beat — inks on the `load` one-shot clock + earns the route's one hero
-            boil. Interior beats (false) scrub the bidirectional `scroll` clock. */
+        /** The LEAD masthead beat — inks on the `load` one-shot clock. Interior beats (false) scrub
+            the bidirectional `scroll` clock. */
         lead?: boolean;
-        /** The HandMark grain seed — a host constant (position-rotated); wobble determinism, not
-            data. */
+        /** The hand's seed — a host constant (position-rotated); wobble determinism, not data. */
         seed?: number;
     }>(),
     { lead: false, seed: 3 },
@@ -63,16 +63,6 @@ const marginalia = computed(() => props.facet.marginalia);
 /** The load one-shot for the lead hero, the bidirectional scroll scrub for interiors (HandMark's
     own view()-timeline clock drives scroll — no JS scalar). */
 const clock = computed<"load" | "scroll">(() => (props.lead ? "load" : "scroll"));
-/** The route's ONE hero boil — the lead beat's living line (HandMark gates boil to the load clock,
-    so an interior scroll mark never boils). */
-const boil = computed(() => props.lead);
-
-// The load clock resolves `appear:"manual"` (useHandMarkClock) — glass-ui never auto-fires it, so
-// the register fires the one-shot on mount exactly as the retired masthead carriers did.
-const ink = ref<{ play: () => Promise<void> } | null>(null);
-onMounted(() => {
-    if (clock.value === "load") void ink.value?.play();
-});
 </script>
 
 <template>
@@ -82,12 +72,9 @@ onMounted(() => {
         <!-- lettering · picked word — the clause is plain text (aria name whole); only the [bracket]
              run wears the hand mark. -->
         <template v-else-if="treatment === 'lettering' && picked"
-            >{{ picked?.pre }}<HandMark
-                ref="ink"
-                :clock="clock"
-                :seed="seed"
-                :boil="boil"
-                >{{ picked?.marked }}</HandMark
+            >{{ picked?.pre }}<HandMark :clock="clock" :seed="seed">{{
+                picked?.marked
+            }}</HandMark
             >{{ picked?.post }}</template
         >
 

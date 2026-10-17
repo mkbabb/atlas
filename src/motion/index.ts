@@ -16,7 +16,7 @@
 //     taxonomy); lands GREEN once activeViz lands. **Its >500-LOC split stays O-B18.**
 //   · `useScrollTimeline` (523) + `useCoverProgress` — same activeViz edge (O-B4R). useScrollTimeline's
 //     split is the named successor **O-B18**.
-//   · `useMarkMorphology` (→ charts `mark-tokens`, O-B4R) · `useHandMarkClock` (→ `useThemeKey`,
+//   · `useHandMarkClock` (→ `useThemeKey`,
 //     the global composable residue, O-B9).
 // The monorepo import flip to this home is O-B11.
 
@@ -56,15 +56,12 @@ export * from "./motion-director.js";
 export * from "./useCoverProgress.js";
 export * from "./usePinProgress.js";
 export * from "./useScrollTimeline.js";
-export * from "./useMarkMorphology.js";
 // useHandMarkClock's `MarkAnimation` string-union clashes by NAME with buildMarkAnimation's handle
 // interface (two distinct concepts); the union is deep-imported where needed, so the barrel omits it.
 export {
     type MarkClock,
-    type MarkAppear,
     type DarkLiftPair,
     RED_INK,
-    clockAppear,
-    clockAnimation,
+    clockDraws,
     useHandMarkClock,
 } from "./useHandMarkClock.js";

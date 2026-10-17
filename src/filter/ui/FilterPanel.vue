@@ -1,6 +1,7 @@
 <script setup lang="ts">
-// FilterPanel — the ONE right-edge filter surface (C.W3.3, W-L4). One Glass
-// `Drawer mode="live-behind"` owns the material, geometry, drag, and motion from
+// FilterPanel — the ONE right-edge filter surface (C.W3.3, W-L4). One Glass non-modal
+// `<Dialog :modal="false">` + `<SheetContent side="right" :detents>` (glass 8 folded the
+// `Drawer mode="live-behind"` whole into Sheet) owns the material, geometry, drag, and motion from
 // PIP through LEDGER to DRAWER. It overlays one full-width live stage without the
 // retired rail, content gutter, or a second page-level trigger.
 //
@@ -9,14 +10,10 @@
 // by the consumer as the `body` prop — inside it. The reset/apply affordances belong
 // to the body; the shell never reaches into the body's logic.
 import { computed, inject, nextTick, onBeforeUnmount, ref, watch, type Component } from "vue";
-import {
-    Drawer,
-    DrawerContent,
-    DrawerTitle,
-    DrawerDescription,
-} from "@mkbabb/glass-ui/drawer";
+import { Dialog, DialogTitle, DialogDescription } from "@mkbabb/glass-ui/dialog";
+import { SheetContent } from "@mkbabb/glass-ui/sheet";
 import { Button } from "@mkbabb/glass-ui/button";
-import { Filter, SlidersHorizontal, X } from "@lucide/vue";
+import { Filter, SlidersHorizontal } from "@lucide/vue";
 import { DASHBOARD_KEY, useDashboardRegistry } from "../../contract/index.js";
 import { useFilterPane } from "../composables/useFilterPane.js";
 import { useFilterPanel } from "../composables/useFilterPanel.js";
@@ -41,7 +38,7 @@ import {
 // The consumer (DashboardView) mounts this shell in PlatformShell's `filter` slot and
 // passes the active dashboard's filter BODY as `body`. The shell owns only the chrome
 // (header, freshness, cross-links); the body owns its own controls + membership
-// machinery. This is the ONE filter for every viewport — the live-behind Drawer is
+// machinery. This is the ONE filter for every viewport — the live-behind sheet is
 // the same primitive at every register, dissolving the old desktop/mobile fork.
 const props = defineProps<{ body?: Component }>();
 const ctx = inject(DASHBOARD_KEY);
@@ -57,17 +54,17 @@ const hasFilter = computed(() => Boolean(filterBody.value));
 const { label: freshnessLabel } = useFreshness();
 
 // The shared flag requests the full register. Its false state leaves this same
-// physical Drawer at the non-occluding PIP detent.
+// physical sheet at the non-occluding PIP detent.
 const { open } = useFilterPane();
 const { clearPin } = useFilterPanel();
 const { appliedCount } = useFilterLedger();
 
-// W-L4 — the Drawer is the continuum. Its one Glass snap scalar moves one physical side lens
+// W-L4 — the sheet is the continuum. Its one Glass detent scalar moves one physical side lens
 // between the PIP tab (at rest) and the full DRAWER (on pull); the shared `open` flag is only the
 // public request for the full register, never a second geometry or presence authority. There is NO
 // third detent (OF-23/28): the intermediary ledger is gone from the ladder, so no gesture or drag
 // can land the drawer on a mostly-empty half-open sheet.
-const activeSnapPoint = ref<number | string | null>(
+const activeSnapPoint = ref<number | null>(
     open.value ? FILTER_SNAP.drawer : FILTER_SNAP.pip,
 );
 const snapPoints = computed<number[]>(() => [...filterSnapPoints()]);
@@ -78,6 +75,15 @@ const doorLabel = computed(() =>
         ? "Close filters"
         : `Open filters${appliedCount.value ? `, ${appliedCount.value} applied` : ""}`,
 );
+
+/** The Dialog open model. The continuum never unmounts (PIP at rest), so `get` is constant; a close
+    request (glass's own sheet ✕, or a dismissal) retracts to the PIP exactly like the door. */
+const sheetOpen = computed<boolean>({
+    get: () => true,
+    set: (next) => {
+        if (!next) open.value = false;
+    },
+});
 
 let writingOpenFromSnap = false;
 
@@ -244,8 +250,8 @@ watch(open, (isOpen, was) => {
 
 // ── THE NONMODAL NAMED EXIT (S4 · §3.2) ──────────────────────────────────────────────────────────
 // Nonmodal means the drawer is NOT trapped — but a Tab off its focusable boundary must not sink to
-// BODY. The drawer surface is the whole teleported DrawerContent (`[data-testid=filter-panel]`), which
-// INCLUDES Glass's leading `role="slider"` "Drawer position" handle emitted BEFORE the body. At the
+// BODY. The drawer surface is the whole teleported SheetContent (`[data-testid=filter-panel]`), which
+// INCLUDES Glass's leading close and `role="slider"` "Sheet position" handle emitted BEFORE the body. At the
 // first (Shift+Tab) or last (Tab) focusable we redirect to the NAMED receiver (the invoker, else the
 // crest) — a real, visible, named control — and normal tabbing continues from there. An EXIT to a
 // named receiver, never a wrap-around trap and never BODY.
@@ -399,16 +405,14 @@ function cancelSave(): void {
 </script>
 
 <template>
-    <Drawer
-        v-if="hasFilter"
-        :open="true"
-        mode="live-behind"
-        direction="right"
-        :snap-points="snapPoints"
-        v-model:active-snap-point="activeSnapPoint"
-    >
-        <DrawerContent
-            :show-overlay="false"
+    <!-- The sheet is ALWAYS mounted (PIP at rest); glass's own close (SheetContent renders an
+         unconditional `[data-slot="dialog-close"]`) is routed through `sheetOpen`, whose close
+         request retracts the continuum to the PIP, the same act as the door. -->
+    <Dialog v-if="hasFilter" v-model:open="sheetOpen" :modal="false">
+        <SheetContent
+            side="right"
+            :detents="snapPoints"
+            v-model:detent="activeSnapPoint"
             class="cp-drawer"
             :data-register="register"
             data-filter-continuum
@@ -420,7 +424,7 @@ function cancelSave(): void {
         >
             <Button
                 type="button"
-                variant="glass"
+                emphasis="secondary"
                 class="cp-continuum__door"
                 :aria-expanded="drawerActive"
                 :aria-label="doorLabel"
@@ -445,24 +449,16 @@ function cancelSave(): void {
                 class="cp-continuum__drawer"
                 tabindex="-1"
             >
-                <DrawerTitle class="cp-drawer__title">
+                <DialogTitle class="cp-drawer__title">
                     <SlidersHorizontal class="h-4 w-4" aria-hidden="true" />
                     Filters
-                </DrawerTitle>
-                <DrawerDescription class="sr-only">
+                </DialogTitle>
+                <DialogDescription class="sr-only">
                     Filter and scope the active dashboard. The visualization stays live
                     behind this panel.
-                </DrawerDescription>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    class="cp-drawer__close"
-                    aria-label="Close filters"
-                    data-testid="filter-close"
-                    @click="open = false"
-                >
-                    <X class="h-4 w-4" aria-hidden="true" />
-                </Button>
+                </DialogDescription>
+                <!-- No atlas close button: glass SheetContent's own ✕ is the one close (a second
+                     would double it); `sheetOpen` maps it onto `open = false`. -->
 
                 <YearScrubber
                     v-if="hasScrubber"
@@ -496,8 +492,8 @@ function cancelSave(): void {
                     @cancel-save="cancelSave"
                 />
             </div>
-        </DrawerContent>
-    </Drawer>
+        </SheetContent>
+    </Dialog>
 </template>
 
 <style scoped>
@@ -519,10 +515,10 @@ function cancelSave(): void {
     inline-size: 1.15rem;
     block-size: 1.15rem;
 }
-/* OF-23 — at REST the surface is a PULL TAB, nothing else: the DrawerContent's own glass material
+/* OF-23 — at REST the surface is a PULL TAB, nothing else: the SheetContent's own glass material
    collapses at the pip register so only the door tab (funnel glyph, left-rounded grab lip) paints;
    the invisible side lens is click-through and the figure reads live behind it, nonmodal — zero
-   full-height chrome. Glass renders the DrawerContent through Reka's DialogPortal (teleported to
+   full-height chrome. Glass renders the SheetContent through Reka's DialogPortal (teleported to
    <body>), so this SFC's scope hash NEVER reaches its root — the R2 scoped override silently missed
    and the full-height paper rail kept painting. We bind the rest-state override through the stable
    `data-filter-continuum` marker with `:global` (the VizAppendixDock idiom for teleported glass), at
@@ -582,11 +578,6 @@ function cancelSave(): void {
     color: var(--foreground);
     font-family: var(--font-display);
     font-size: 1rem;
-}
-.cp-drawer__close {
-    position: absolute;
-    inset-block-start: 3.25rem;
-    inset-inline-end: 0.75rem;
 }
 .cp-drawer__body {
     flex: 1 1 auto;

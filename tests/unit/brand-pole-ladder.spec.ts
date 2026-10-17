@@ -115,18 +115,12 @@ describe("CD-17 · the aurora-down half", () => {
         expect(opacityCeiling.dark).toBeLessThan(SHIPPED_BEFORE.dark);
     });
 
-    it("holds the dock plate at or above its guard as the ceiling dims (the d.3 pair law)", () => {
-        // The pair moves in lockstep in ONE direction only: a ceiling may not rise past the plate
-        // that guards its bleed. A DIMMER ceiling under the same plate is strictly safer, so the
-        // law is an inequality, and it is the ceiling ORDER that must track the dock order.
+    it("carries no dock-plate floor — glass 10's adaptive dock legibility owns the d.3 bleed", () => {
+        // The retired `dockOpacity` column wrote `--glass-opacity-dock`, which glass 8 deleted: at
+        // glass 10.1.0 nothing reads it, so a preset column for it is a dead knob.
         for (const key of ["quiet", "data", "hero"] as const) {
-            const preset = ATMOSPHERE_PRESETS[key];
-            expect(preset.dockOpacity).toBeGreaterThanOrEqual(0.9);
-            expect(preset.opacityCeiling.dark).toBeLessThan(preset.dockOpacity);
+            expect(ATMOSPHERE_PRESETS[key]).not.toHaveProperty("dockOpacity");
         }
-        expect(ATMOSPHERE_PRESETS.hero.dockOpacity).toBeGreaterThanOrEqual(
-            ATMOSPHERE_PRESETS.data.dockOpacity,
-        );
     });
 
     it("raises NO grain — the dial-gated half did not ship", () => {

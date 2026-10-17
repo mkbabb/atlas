@@ -433,7 +433,7 @@
    surface that wears the overlay class calms to the felt floor. Authored once, at the source:
    0.038 light arm (≤ the 0.05 kitsch line, the felt plate tooth) / 0.028 dark arm (keeps the
    rendered plate ΔL < 0.03, the atmosphere-gate band, so the espresso plate reads AS its --card
-   ground). The page-wide PaperBackdrop underpaint keeps the loud public default untouched. */
+   ground). The page-wide `paper-underpaint` grain keeps the loud public default untouched. */
 .paper-grain-overlay {
     --paper-grain-opacity: 0.038; /* light arm — felt plate tooth, ≤ the 0.05 kitsch line */
 }

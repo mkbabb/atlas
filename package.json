@@ -109,7 +109,7 @@
         "release": "bash scripts/release.sh"
     },
     "peerDependencies": {
-        "@mkbabb/glass-ui": "^7.0.0",
+        "@mkbabb/glass-ui": "^10.1.0",
         "@mkbabb/keyframes.js": "^6.0.0",
         "@mkbabb/pencil-boil": "^0.9.2",
         "@mkbabb/value.js": "^4.0.0",
@@ -138,7 +138,7 @@
         "vue-echarts": "^8"
     },
     "devDependencies": {
-        "@mkbabb/glass-ui": "7.0.0",
+        "@mkbabb/glass-ui": "10.1.0",
         "@mkbabb/keyframes.js": "6.0.0",
         "@mkbabb/pencil-boil": "0.9.2",
         "@mkbabb/value.js": "4.0.0",

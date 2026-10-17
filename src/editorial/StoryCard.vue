@@ -79,7 +79,6 @@ const secondSeam = computed(
                 :surface="surface"
                 :tier="facet.tier ?? 'quiet'"
                 :shadow="false"
-                :grain="false"
                 class="story-card"
                 :class="{ 'story-card--keyline': facet.frame === 'keyline' }"
                 :data-card-mode="facet.mode ?? 'plate'"
@@ -118,25 +117,31 @@ const secondSeam = computed(
 </template>
 
 <style scoped>
+/* The editorial plate's air reads glass's SPACE SERIES, not `--card-pad`. glass 8 retired the
+   √φ card-pad generator (`--card-pad-inline/-block/-section-gap/-title-gap/-footer`) for ONE
+   control-density pad (`--card-pad` = `--space-body`, 12px), which would halve a story plate's air.
+   The rungs below are the series members nearest the retired values (block 1.9rem → section 2rem,
+   inline 1.5rem → family 1.25rem, title gap 0.57rem → body 0.75rem, footer 1.18rem → family 1.25rem),
+   and they step down with the series at the phone breakpoint as the card-pad cohort did. */
 .story-card {
     display: grid;
-    padding: var(--card-pad-block) var(--card-pad-inline);
+    padding: var(--space-section) var(--space-family);
 }
 .story-card[data-card-mode="stage"] {
     overflow: clip;
 }
 .story-card > * + * {
-    margin-block-start: var(--card-pad-section-gap);
+    margin-block-start: var(--space-section);
 }
 .story-card > :deep(.animated-rule--seam) {
-    margin-block: var(--card-pad-section-gap) 0;
+    margin-block: var(--space-section) 0;
 }
 .story-card--keyline {
     border: 1px solid var(--silver-rule, var(--border));
 }
 .story-card__title-band > .atlas-title-align {
     display: grid;
-    gap: var(--card-pad-title-gap);
+    gap: var(--space-body);
 }
 .story-card__sector {
     /* every sector fills its grid column; the measure-clamped sectors below cap + centre
@@ -164,7 +169,7 @@ const secondSeam = computed(
     max-inline-size: none;
 }
 .story-card > .story-card__appendix {
-    margin-block-start: var(--card-pad-footer);
+    margin-block-start: var(--space-family);
 }
 /* A-11 · THE NUMERALS POLE (K-EXPRESS D2) — the aggregate band leads the card on the `top` pole and
    settles beneath the marks on `bottom` (the zebra rhythm down the beat ladder). The swap is GRID
@@ -175,6 +180,6 @@ const secondSeam = computed(
    bottom. `bottom` is the auto-placed default and stays byte-identical. */
 .story-card[data-numbers="top"] .story-card__stats {
     grid-row: 1;
-    margin-block: 0 var(--card-pad-section-gap);
+    margin-block: 0 var(--space-section);
 }
 </style>
