@@ -219,9 +219,12 @@ describe("nonmodal focus return — the invoker is the receiver, crest the fallb
         expect(filterPanel).toMatch(/["']Tab["']/);
     });
 
-    it("export keeps its invoker actionable through close/focus-restore, releasing only after (S3)", () => {
-        // the export claimOpen carries a close transaction restoring focus to the download trigger
-        // before the dock pin releases — so the collapsing rail never strands focus at BODY.
-        expect(vizPlate).toMatch(/exportMenuOpen[\s\S]{0,200}restoreFocus/);
+    it("export's invoker lives on the plate, so its close returns focus to a trigger that never unmounts (A-39)", () => {
+        // A-39 (the plate): the download is an act in the plate's own act row, not a dock door. The
+        // dock-rail close transaction (S3) had to seat focus before a collapsing rail unmounted the
+        // trigger; on the plate the trigger stays mounted, so the menu's own close returns focus to it
+        // and the receiver is deleted with the dock door (no alias).
+        expect(vizPlate).not.toMatch(/exportMenuOpen|restoreExportFocus/);
+        expect(vizPlate).toMatch(/<PlateAct[\s\S]{0,200}:export-csv="onExportCsv"/);
     });
 });

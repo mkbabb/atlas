@@ -406,12 +406,10 @@ const showAppliedSummary = computed(
     () => !filterDockOpen.value && activeFilterCount.value > 0,
 );
 
-// ── (3) THE ENLARGE — the `?fig=` expand seam ChartFrame owns, driven from the cluster ───────────
-// The enlarge DockControl toggles the URL-backed `?fig=` state ChartFrame reads (it CONSUMES the
-// expand state — it does NOT re-own the `?fig=`/`open` codec). A plate is fullscreen iff `?fig=`
-// names its id, so the button reflects + flips that one document state. It reads/writes off the ONE
-// shared `useViewParams` bag (the `?fig` one-bag fold, K-ANIM A1·§3.C) — never a private
-// per-component URL-state bag that would whole-query-clobber `?year`/`?sel` on an enlarge.
+// ── (3) THE EXPANSION READ — the `?fig=` state ChartFrame owns ─────────────────────────────────
+// The Enlarge act lives in the plate's act row and opens THIS frame through ChartFrame's own `open`
+// arm (A-39, the plate). The host only READS the expansion off the ONE shared `useViewParams` bag
+// (the `?fig` one-bag fold, K-ANIM A1·§3.C) to report it to the hub below.
 const view = useViewParams();
 view.registerKeys(["browse", "grain"]);
 const isFullscreen = computed(() => view.figId === props.contract.id);
@@ -481,10 +479,6 @@ function closeSourceData(): void {
     full, reachable data (SC 1.1.1); at rest the reachable "Browse source data" control is the path.
     A per-contract slug so two plates on a page never collide their grid regions. */
 const sourceDataRegionId = computed(() => `viz-source-data-${props.contract.id}`);
-function toggleEnlarge(): void {
-    if (isFullscreen.value) view.closeFig(props.contract.id);
-    else view.openFig(props.contract.id);
-}
 
 // N.WD1 §4.D1.1 — REPORT the `?fig=` expansion UP to the hub (the SOLE expansion writer; read DOWN
 // via `viz.isExpanded`). VizPlate composes ChartFrame internally AND owns the `?fig=` read, so it is
@@ -552,7 +546,8 @@ watchEffect(() => {
         openSourceData,
         closeSourceData,
         isFullscreen,
-        toggleEnlarge,
+        hasOptions,
+        optionsController,
         ariaLabel,
         size,
         frameRef,

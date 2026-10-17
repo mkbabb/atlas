@@ -353,3 +353,53 @@
    #actions) is the ONE expand affordance. The former quiet-on-hover reveal choreography for that
    in-viz corner trigger is retired with it (nothing to reveal); the FULLSCREEN collapse button is a
    separate slot, teleported to <body> outside `.plate`, and was never governed by these rules. */
+
+/* ── THE ACT ROW (A-39, the plate · RULINGS §I) ──────────────────────────────────────────────────
+   The figure's last child, so its sticky containing block is the plate: pinned to the viewport foot
+   while any of the plate is on screen, released with it. It bleeds to the plate's inner edge and sits
+   on the plate's own paper (`--card`), closed off from the data by the plate's engraved hairline, so a
+   stuck row reads as the plate's own foot, never a floating bar. The plate's bottom corners round it.
+   `--plate-pad` mirrors the template's padding utilities (p-4 / sm:p-5; hero p-6 / sm:p-8) so the
+   bleed is exact at every register. */
+.plate {
+    --plate-pad: 1rem;
+}
+@media (min-width: 640px) {
+    .plate {
+        --plate-pad: 1.25rem;
+    }
+}
+.plate--hero {
+    --plate-pad: 1.5rem;
+}
+@media (min-width: 640px) {
+    .plate--hero {
+        --plate-pad: 2rem;
+    }
+}
+.plate-act {
+    position: sticky;
+    inset-block-end: 0;
+    z-index: 2;
+    margin-block-start: 0.75rem;
+    margin-inline: calc(-1 * var(--plate-pad));
+    margin-block-end: calc(-1 * var(--plate-pad));
+    padding: 0.5rem var(--plate-pad);
+    background: var(--card);
+    border-block-start: 1px solid color-mix(in oklab, var(--engrave), transparent 40%);
+    border-end-start-radius: inherit;
+    border-end-end-radius: inherit;
+}
+/* Placed in a focal scene's act seat: the seat wears the paper and the hairline. */
+.plate-act--seated {
+    position: static;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+}
+@media print {
+    .plate-act {
+        display: none;
+    }
+}

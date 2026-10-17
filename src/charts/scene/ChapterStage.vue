@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from "vue";
-import { Download } from "@lucide/vue";
-import { DockControl } from "@mkbabb/glass-ui/dock";
+import { computed, nextTick, provide, ref, watch } from "vue";
 import StickyScene from "./StickyScene.vue";
+import SceneAct from "./SceneAct.vue";
 import FootAnatomy from "../frame/FootAnatomy.vue";
+import PlateAct from "../frame/PlateAct.vue";
 import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
-import { useMembraneProvenanceSource } from "../../platform/provenance/useMembraneProvenance.js";
 import {
     createStageMorphDriver,
     STAGE_MORPH_KEY,
@@ -29,7 +28,6 @@ import {
     stageEventsFromHub,
 } from "../contract/scene-contract.js";
 import type { AppendixDetent } from "../../platform/provenance/appendix.js";
-import { useVizRegistry, type VizToken } from "../composables/useVizRegistry.js";
 import { stageControlsOf } from "./stage-viz-adapter.js";
 
 const props = defineProps<{
@@ -97,24 +95,16 @@ const sourcePanelProps = {
     vizId: props.stage.id,
 } satisfies SourcePanelProps;
 
-// ── S-20 — THE ChapterStage ANATOMY ADAPTER (spec-chrome §e.3) ───────────────────────────────────
-// A composed stage does NOT render through VizPlate, so it never self-registers — under the A-39 fold
-// the facet-5 zone (which projects the active viz's controls off the registry) would have no source
-// for THIS stage's scene-aware gear controls. The adapter registers the stage's `anatomy.gear.controls`
-// into the DEDICATED stage-anatomy seam (token-guarded, deregister on leave) so the fold projects the
-// stage's controls WITHOUT rendering ChapterStage through VizPlate. It never touches the graphic's own
-// plate entry under the same id (that stays the graphic's), so the fold-1 tree renders byte-faithful.
-const vizRegistry = useVizRegistry();
-let stageControlsToken: VizToken | null = null;
-onMounted(() => {
-    const controls = stageControlsOf(props.stage);
-    if (controls)
-        stageControlsToken = vizRegistry.registerStageControls(props.stage.id, controls);
-});
-onUnmounted(() => {
-    if (stageControlsToken)
-        vizRegistry.deregisterStageControls(props.stage.id, stageControlsToken);
-});
+// ── THE STAGE'S OWN ACTS (A-39, the plate · RULINGS §I) ─────────────────────────────────────────
+// A composed stage does not render through VizPlate (its graphic's VizPlate suppresses its foot under
+// `STAGE_ANATOMY_KEY`), so the STAGE owns the figure's act row: its scene-aware controls are its
+// options, its declared source pane is its download, and Enlarge opens its graphic's frame. Nothing is
+// registered for page chrome to project; the dock carries none of these acts.
+const stageControls = stageControlsOf(props.stage);
+/** Enlarge the stage's graphic: its frame is addressed by the stage id (the graphic's contract id). */
+function enlargeStage(): void {
+    view.openFig(props.stage.id);
+}
 
 function emitActiveViz(index = activeSceneIndex.value): void {
     const option = props.stage.scenes[index];
@@ -182,14 +172,6 @@ const sceneReadout = computed(
 function openSourceData(): void {
     props.stage.anatomy.export.open(scope);
 }
-
-// W-MEMBRANE (A-39 · STRAND A) — the stage's source-data BROWSE re-homes into the membrane's facet-6
-// provenance detent, the ChapterStage analog of VizPlate's export teleport. The stage does NOT render
-// through VizPlate (no header export seat), so once its per-plate `VizGearDock` is deleted the browse
-// would strand — this teleport gives it the SAME facet-6 home, firing only when the stage is the dial
-// viz (`useMembraneProvenanceSource`, the ONE dial-viz truth).
-const { teleport: stageChromeTeleport, targetSelector: membraneProvenanceSlot } =
-    useMembraneProvenanceSource(() => props.stage.id);
 
 function closeSourceData(): void {
     if (view.param("browse") === props.stage.id) view.setParam("browse", undefined);
@@ -259,30 +241,6 @@ watch(sourceDataOpen, (open) => {
                             v-if="stage.anatomy.legend"
                         />
                     </template>
-                    <template #gear>
-                        <!-- W-MEMBRANE (A-39) — the stage's scene-aware controls project into the
-                             membrane's facet-5 zone via the S-20 adapter (`registerStageControls`),
-                             so they no longer render in this foot seat (the fold's de-duplication).
-                             Only the source-data BROWSE survives, and only as a TELEPORT into facet-6
-                             when the stage is the dial viz — nothing strands when the per-plate
-                             `VizGearDock` is deleted. -->
-                        <Teleport
-                            v-if="stageChromeTeleport"
-                            :to="membraneProvenanceSlot"
-                        >
-                            <DockControl
-                                compact
-                                :aria-label="`Browse source data — ${stage.anatomy.gear.label}`"
-                                :aria-expanded="sourceDataOpen"
-                                :title="`Source data · ${stage.anatomy.foot.title}`"
-                                :data-testid="`stage-source-data-${stage.id}`"
-                                data-viz-dock-download
-                                @click="openSourceData"
-                            >
-                                <Download aria-hidden="true" />
-                            </DockControl>
-                        </Teleport>
-                    </template>
                     <template #readout>
                         <component
                             :is="stage.anatomy.readout"
@@ -310,6 +268,31 @@ watch(sourceDataOpen, (open) => {
                         </VizAppendixDock>
                     </template>
                 </FootAnatomy>
+                <!-- THE STAGE'S ACT ROW (A-39, the plate): options, source data and
+                     Enlarge, all of this stage. In a focal scene it is placed in the scene's
+                     act seat, above the narrated chips. -->
+                <SceneAct v-slot="{ inSeat }">
+                    <div
+                        class="chapter-stage__act"
+                        :class="{ 'chapter-stage__act--seated': inSeat }"
+                        data-plate-act
+                        :data-subject="stage.id"
+                    >
+                        <PlateAct
+                            :id="stage.id"
+                            :title="stage.anatomy.foot.title"
+                            :enlarge="enlargeStage"
+                            :browse="openSourceData"
+                        >
+                            <template v-if="stageControls" #options>
+                                <component
+                                    :is="stageControls.component"
+                                    v-bind="stageControls.props"
+                                />
+                            </template>
+                        </PlateAct>
+                    </div>
+                </SceneAct>
                 <aside
                     v-if="sourceDataOpen"
                     class="chapter-stage__source-data"
@@ -364,6 +347,20 @@ watch(sourceDataOpen, (open) => {
     padding: clamp(0.75rem, 2vw, 1.25rem);
     border-block: 1px solid color-mix(in srgb, currentColor 18%, transparent);
     background: var(--background);
+}
+
+/* The stage's act row: the graphic's foot, closed off by the plate's engraved hairline. Placed in a
+   focal scene's act seat, the seat wears the hairline and the paper instead. */
+.chapter-stage__act {
+    inline-size: 100%;
+    margin-block-start: 0.75rem;
+    padding-block-start: 0.5rem;
+    border-block-start: 1px solid color-mix(in oklab, var(--engrave), transparent 40%);
+}
+.chapter-stage__act--seated {
+    margin: 0;
+    padding: 0;
+    border: 0;
 }
 
 .chapter-stage__source-close {

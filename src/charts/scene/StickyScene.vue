@@ -14,7 +14,7 @@
 // and the rim still tracks; only the CSS opacity/rim EASE between steps is removed (the graded-PRM
 // "scale-down don't delete" law). There is no motion clock to freeze.
 import {
-    computed, onBeforeUnmount, onMounted, provide, ref,
+    computed, onBeforeUnmount, onMounted, provide, ref, useId,
     type Component, type VNodeChild,
 } from "vue";
 import { useViewParams } from "../../platform/stores/useViewParams.js";
@@ -26,6 +26,7 @@ import { onNarrativeRestoreSettled } from "../../motion/narrative-restore.js";
 import { onActiveScrubHostChange } from "../composables/activeViz.js";
 import { useStageDeck } from "../../stage/useStageDeck.js";
 import VizPlate from "../frame/VizPlate.vue";
+import { SCENE_ACT_SEAT } from "../frame/plate-act.js";
 import { isVizContract } from "../contract/viz-contract.js"; // the ONE promoted guard (S6)
 import type { VizContract } from "../contract/viz-contract.js";
 import {
@@ -52,6 +53,12 @@ const emit = defineEmits<{
     ];
     "active-change": [active: boolean];
 }>();
+
+// THE ACT SEAT (A-39, the plate · D3-C N-C17). A FOCAL scene's narrated chips overlay its pinned
+// graphic, so the graphic's act row is placed in this scene's own act seat, a chrome layer above the
+// chips (the seat element below). A non-focal scene has none: the row stays inside its figure.
+const actSeatId = `scene-act-${useId()}`;
+if (props.scene.focal) provide(SCENE_ACT_SEAT, `[data-scene-act-seat="${actSeatId}"]`);
 
 const view = useViewParams();
 const active = useActiveDashboard();
@@ -350,6 +357,13 @@ function Prose(p: { prose: SceneProse }): VNodeChild {
                 </div>
             </li>
         </ol>
+
+        <!-- THE ACT SEAT (focal scenes): the chrome layer above the chips, sticky to the stage foot. -->
+        <div
+            v-if="scene.focal"
+            class="sticky-scene__act"
+            :data-scene-act-seat="actSeatId"
+        />
     </div>
 </template>
 
@@ -501,6 +515,27 @@ function Prose(p: { prose: SceneProse }): VNodeChild {
         pointer-events: none; /* the map beneath stays interactive; the active chip re-enables below */
     }
 }
+/* THE ACT SEAT (A-39, the plate · D3-C N-C17) — a focal scene's chrome layer: the same grid cell as
+   the graphic and the steps, ABOVE the steps (z 2), sticky to the viewport foot at the pin inset while
+   the scene is on screen, so the figure's act row stays on screen and hit-testable whichever chip is
+   passing. It wears the plate's own act paper: the card ground under the engraved hairline. */
+.sticky-scene--focal .sticky-scene__act {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: end;
+    position: sticky;
+    inset-block-end: var(--scene-pin-top);
+    z-index: 2;
+    padding: 0.5rem 1rem;
+    background: var(--card);
+    border-block-start: 1px solid color-mix(in oklab, var(--engrave), transparent 40%);
+    border-end-start-radius: var(--radius-plate);
+    border-end-end-radius: var(--radius-plate);
+}
+.sticky-scene--focal .sticky-scene__act:empty {
+    display: none;
+}
+
 /* THE SCRIM-CHIP (both viewports). The `<li>` step stays a TALL, TRANSPARENT scroll block (it keeps
    its scroll height so the IO still fires the active-step crossing — no JS pin-spacer) and merely
    CENTRES its chip; the visible card is the inner `.sticky-scene__chip`. The step's own dim/rim

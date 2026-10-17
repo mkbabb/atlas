@@ -1,32 +1,18 @@
 <script setup lang="ts">
-// MembraneVizContext.vue — FACET 5, THE VIZ-CONTEXT ZONE (spec-chrome §c.1 facet 5 · the A-39 fold ·
-// W-55 one-zone). ONE registry-projected detent replaces the N per-plate `VizGearDock` capsules: the
-// ACTIVE viz's controls, projected `facetsFor([activeVizId])` SINGULAR (never 25 pre-rendered forks —
-// the §c.2 within-facet-forking cure). Two projection paths off the ONE active id, precedence-ordered:
+// MembraneVizContext.vue — FACET 5, THE VIZ-CONTEXT ZONE (spec-chrome §c.1 facet 5), now the seat of
+// the route's FILTER TRIGGER only (facet 7).
 //
-//   · PATH A — a composed `ChapterStage` → its scene-aware `anatomy.gear.controls` via the S-20 seam
-//     `stageControlsFor` (fold-1). PRECEDENCE, so /sci's scatter controls survive the fold (§e.3 —
-//     "without which /sci is exactly the route the fold breaks"); the graphic registers a raw plate
-//     `optionsController` under the SAME stage id, and path B would lose the stage's scene filtering.
-//   · PATH B — a plain plate → its registered E2 `optionsController` via <VizOptionsBand> (the dials
-//     the retired inline dock hosted, re-homed into the ONE zone).
-//
-// Plus the ENLARGE — the `?fig=` seam driven by the ACTIVE id (§c.1 facet 5 = "options + enlarge"),
-// so every active viz has viz chrome here even when it declares no options. `dialVizId` tracks the
-// PINNED viz first, else the centre-grain singleton (the β-LOW-3 not-tracking wrinkle, cured here).
-//
-// The zone SELF-GATES on a live active id (nothing centred ⇒ no node). It reads the registry — it
-// owns NO viz state (the controllers are `useVizOptions`'s, URL-backed; the id is the store's).
+// A-39, THE PLATE (RULINGS §I): a figure's own actions (Enlarge, export, options) live AT the figure,
+// in its act row (`charts/frame/PlateAct.vue`). The dock carries no per-figure action: the zone's
+// options band (the stage-controls and plate-options projections) and its Enlarge are deleted, with no
+// alias. What stays is the route-level filter drawer's trigger, which acts on the route's filters.
 import { computed, inject } from "vue";
-import { Maximize2, Minimize2, SlidersHorizontal } from "@lucide/vue";
+import { SlidersHorizontal } from "@lucide/vue";
 import { DockControl } from "@mkbabb/glass-ui/dock";
-import VizOptionsBand from "../../../filter/ui/VizOptionsBand.vue";
 import { DASHBOARD_KEY } from "../../../contract/index.js";
-import { useVizRegistry } from "../../../charts/composables/useVizRegistry.js";
 import { useFilterPanel } from "../../../filter/composables/useFilterPanel.js";
 import { useFilterPane } from "../../../filter/composables/useFilterPane.js";
 import { useFilterLedger } from "../../../filter/composables/useFilterLedger.js";
-import { useViewParams } from "../../stores/useViewParams.js";
 import { useDialVizId } from "../../provenance/useMembraneProvenance.js";
 import { facetBand, type MembraneFacet } from "./membrane-facet.js";
 
@@ -40,19 +26,12 @@ const FACET: MembraneFacet = "viz-context";
 // error); the drawer/relay it opens ALREADY EXISTS (FilterPanel + useFilterPanel) — this is the seat.
 const FILTER_FACET: MembraneFacet = "filter-trigger";
 
-const { registry, stageControlsFor } = useVizRegistry();
 const { pinnedVizId, pin } = useFilterPanel();
 const { open: filterOpen } = useFilterPane();
 const { appliedCount } = useFilterLedger();
-const view = useViewParams();
 
-// THE ONE DIAL-VIZ TRUTH (β-LOW-3 + the STRAND B primary fallback) — the pinned viz wins, else the
-// centre-grain singleton, else the no-scrub route's primary viz. Canonicalized in
-// `useMembraneProvenance` so this facet-5/7 zone, the facet-6 provenance detent, and the
-// export/provenance teleport gate all resolve ONE truth (they cannot drift). It is FILTER-AGNOSTIC:
-// the zone paints its options/enlarge for any dial viz — the A-19 phantom-filter guard rides only the
-// facet-7 trigger's own `routeHasFilter` gate below, so a filterless route (vft, speedtest) paints
-// its enlarge/export chrome but grows NO empty-drawer trigger.
+// THE ONE DIAL-VIZ TRUTH (canonicalized in `useMembraneProvenance`): the pinned viz, else the
+// centre-grain singleton, else the no-scrub route's primary viz. The zone paints only while it is set.
 const dialVizId = useDialVizId();
 
 // A-19 ROUTE-GATE — the facet-7 filter TRIGGER paints iff THIS route declares a filter body
@@ -61,27 +40,6 @@ const dialVizId = useDialVizId();
 // provider (the membrane is its descendant).
 const ctx = inject(DASHBOARD_KEY, null);
 const routeHasFilter = computed(() => Boolean(ctx?.filterBody));
-
-// PATH A — a composed stage's scene-aware controls (the S-20 seam), precedence over the raw plate.
-const stageControls = computed(() =>
-    dialVizId.value ? stageControlsFor(dialVizId.value) : undefined,
-);
-// PATH B — a plain plate's E2 options controller (only when no stage owns the id).
-const optionsController = computed(() =>
-    !stageControls.value && dialVizId.value
-        ? (registry.value.get(dialVizId.value)?.optionsController ?? null)
-        : null,
-);
-
-// THE ENLARGE — the `?fig=` expand seam, driven by the ACTIVE id (never a private URL-state bag).
-const isFullscreen = computed(
-    () => dialVizId.value !== "" && view.figId === dialVizId.value,
-);
-function toggleEnlarge(): void {
-    if (!dialVizId.value) return;
-    if (isFullscreen.value) view.closeFig(dialVizId.value);
-    else view.openFig(dialVizId.value);
-}
 
 // FACET 7 — THE FILTER TRIGGER. Reads EXPANDED iff the shared drawer is open AND pinned to THIS
 // active viz (mirrors the retired per-plate `useVizPlate.filterDockOpen` — the relocation is
@@ -127,26 +85,13 @@ const filterName = computed(() =>
         :data-active-viz="dialVizId"
         data-viz-context-zone
     >
-        <!-- PATH A — the composed stage's scene-aware controls (precedence). -->
-        <component
-            :is="stageControls.component"
-            v-if="stageControls"
-            v-bind="stageControls.props"
-        />
-        <!-- PATH B — the plain plate's E2 options band. -->
-        <VizOptionsBand
-            v-else-if="optionsController"
-            :viz-id="dialVizId"
-            :controller="optionsController"
-        />
-
         <!-- FACET 7 — THE FILTER TRIGGER (spec-chrome §c.1 facet 7 · W-57 · the W-05 GEAR-ONLY
              erratum). The ONE relocated filter affordance: pins the ACTIVE viz + opens the shared
              drawer (the relay). Names the active viz (aria/title) + de-occludes; the applied-count
              pip rides it so ≥1 active dial reads at rest. The `filter-trigger` facet is stamped as a
              shipped DOM fact (the closed-union member, inspectable) — the seat, not a new drawer.
              A-19: gated on `routeHasFilter` so a filterless route (vft, speedtest) grows no
-             empty-drawer trigger even though the zone paints its enlarge/export chrome. -->
+             empty-drawer trigger. -->
         <span v-if="routeHasFilter" class="membrane-viz-context__filter-slot">
             <DockControl
                 compact
@@ -175,21 +120,6 @@ const filterName = computed(() =>
             </span>
         </span>
 
-        <!-- THE ENLARGE — the `?fig=` seam (§c.1 facet 5 = "options + enlarge"); present for every
-             active viz so the zone always carries viz chrome. -->
-        <DockControl
-            compact
-            class="membrane-viz-context__enlarge"
-            :aria-pressed="isFullscreen"
-            :aria-label="isFullscreen ? 'Collapse the figure' : 'Enlarge the figure'"
-            :title="isFullscreen ? 'Collapse' : 'Enlarge'"
-            :data-testid="`viz-context-enlarge-${dialVizId}`"
-            data-viz-context-enlarge
-            @click="toggleEnlarge"
-        >
-            <Minimize2 v-if="isFullscreen" aria-hidden="true" />
-            <Maximize2 v-else aria-hidden="true" />
-        </DockControl>
     </div>
 </template>
 
@@ -201,9 +131,6 @@ const filterName = computed(() =>
     gap: 0.5rem;
     inline-size: 100%;
     padding-block: 0.4rem;
-}
-.membrane-viz-context__enlarge {
-    align-self: center;
 }
 .membrane-viz-context__filter-slot {
     position: relative;

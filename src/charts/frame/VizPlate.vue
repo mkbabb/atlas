@@ -15,24 +15,16 @@
 //
 // THE PRIMITIVES IT COMPOSES (never absorbs — DESIGN §6.4 COMPOSE-not-absorb):
 //   • ChartFrame      — the frame / expand / error-boundary / straddle / legend-dock.
-//   • DockControl/DockTrigger/Badge — the J-VIZDOCK per-viz controls cluster (the
-//     filter-toggle + folded download + enlarge + applied-filters summary, from the dock register).
-//   • useVizOptions + VizFilterDock — the URL-backed options engine + the inline per-viz filter dock
-//     the filter-toggle raises (E2 options + J-FRAME's filterDimensions facet; the VizOptions POPOVER
-//     is RETIRED — its dials re-homed into the inline dock, a TOGGLE not a transient popover).
+//   • PlateAct        — the plate's own act row (A-39): options, download, Enlarge, one subject.
+//   • useVizOptions + VizOptionsBand — the URL-backed options engine; its dials open from the act row.
 //   • ChartLegend     — the compact top-right / stepped / rail legend (E5).
 //   • ChartDataTable  — the a11y rows that ARE the export payload (E3, off the contract).
 //   • VizDescription / VizKeyStats / PlateVoid — the new furniture rungs (E1 / B4 / E8).
 //   • vizExport       — the getDataURL / DOM-snapshot / CSV serializers (E3, ZERO heavy dep).
-import { defineAsyncComponent, inject, onBeforeUnmount, ref, watch } from "vue";
-import { Download } from "@lucide/vue";
-import { DockControl, DockTrigger } from "@mkbabb/glass-ui/dock";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-} from "@mkbabb/glass-ui/dropdown-menu";
+import { defineAsyncComponent, inject, onBeforeUnmount, watch } from "vue";
 import ChartFrame from "./ChartFrame.vue";
+import PlateAct from "./PlateAct.vue";
+import VizOptionsBand from "../../filter/ui/VizOptionsBand.vue";
 import VizDescription from "../legend/VizDescription.vue";
 import VizKeyStats from "../legend/VizKeyStats.vue";
 import ChartLegend from "../legend/ChartLegend.vue";
@@ -40,8 +32,6 @@ import ChartDataTable from "../legend/ChartDataTable.vue";
 import PlateVoid from "./PlateVoid.vue";
 import PlateSkeleton from "./PlateSkeleton.vue";
 import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
-import { useMembraneProvenanceSource } from "../../platform/provenance/useMembraneProvenance.js";
-import { useDockPortals } from "../../platform/chrome/dock/composables/useDockPortals.js";
 import { STORY_CARD_KEY } from "./story-card-context.js";
 import { useVizPlate, type VizPlateProps } from "./useVizPlate.js";
 import { STAGE_ANATOMY_KEY } from "../contract/scene-contract.js";
@@ -85,6 +75,8 @@ const {
     ariaLabel,
     size,
     frameRef,
+    hasOptions,
+    optionsController,
 } = useVizPlate(props);
 
 watch(
@@ -100,83 +92,10 @@ watch(
 );
 onBeforeUnmount(() => storyCard?.clearAggregateStats(props.contract.id));
 
-// W-MEMBRANE (A-39 · STRAND A) — the FACET-6 re-home. When this plate is the dial viz and the dock's
-// facet-6 target is live, the header CSV/image export TELEPORTS into the membrane's provenance detent
-// (the dashboards' `PlateProvenance` teleports the bar beside it). Disabled ⇒ the export renders in
-// place (the pre-fold header home), so nothing is stranded until this viz is projected.
-const { teleport: teleportPlateChrome, targetSelector: membraneProvenanceSlot } =
-    useMembraneProvenanceSource(() => props.contract.id);
-
-// ── THE DOCK HOLDS (E24-ADJUDICATION §6.3 · the typed outside-interaction census · S2/§3.1) ────────
-// When this plate is the dial viz its export affordance TELEPORTS into the dock's facet-6 detent, and
-// two distinct outside-interaction surfaces can hold the rail open — each named TRUTHFULLY (the §3.1
-// strike of the old "both teleport to <body>" prose):
-//   • the export CSV/image DropdownMenu — BODY-TELEPORTED (Reka → <body>), wholly outside the rail;
-//   • the source-data browser — an INLINE <aside> in THIS plate (`viz-plate__source-data` below); only
-//     its download DOOR is relocated into the dock detent, so collapsing the rail would strand that
-//     door (stale aria-expanded) while the inline browser stays open.
-// Each claim carries the typed census payload and a spec keyed reactively by contract id: a NON-dial
-// plate (teleportPlateChrome false) claims NOTHING, and a dial-away→dial-back evicts the stale owner
-// and mints a fresh one (no resurrected hold — S6). Both auto-release on scope dispose.
-const exportMenuOpen = ref(false);
-const { claimOpen } = useDockPortals();
-
-// THE EXPORT CLOSE RECEIVER (§3.2 · S3) — the export menu is body-teleported, so on close Reka returns
-// focus to its DockTrigger. But if the dock pin releases FIRST the collapsing rail unmounts that
-// trigger and focus falls to BODY. The close transaction keeps the pin held through `closing` and
-// seats focus on the download trigger (the exact invoker, still rendered) BEFORE the pin releases —
-// reclaiming ONLY when focus is stranded (inside the closing menu, or fell to BODY), never yanking a
-// focus the user deliberately moved.
-function restoreExportFocus(): void {
-    if (typeof document === "undefined") return;
-    const active = document.activeElement;
-    const strayed =
-        active === document.body ||
-        active === null ||
-        (active instanceof Element && Boolean(active.closest('[role="menu"]')));
-    if (!strayed) return;
-    const trigger = document.querySelector<HTMLElement>(
-        `[data-testid='viz-dock-download-${props.contract.id}']`,
-    );
-    if (!trigger) return;
-    const target = trigger.matches("button, [tabindex]")
-        ? trigger
-        : (trigger.querySelector<HTMLElement>("button, [tabindex]") ?? trigger);
-    target.focus({ preventScroll: true });
-}
-
-claimOpen(
-    () =>
-        teleportPlateChrome.value
-            ? {
-                  key: `export-menu-${props.contract.id}`,
-                  trigger: "facet-6-export-door",
-                  surface: "body-teleport",
-                  reason: "teleported-surface-fires-dock-leave",
-              }
-            : null,
-    exportMenuOpen,
-    // close → focus → release (S3): keep the download trigger actionable through focus-restore, release after.
-    { restoreFocus: restoreExportFocus },
-);
-claimOpen(
-    () =>
-        teleportPlateChrome.value
-            ? {
-                  key: `source-data-${props.contract.id}`,
-                  trigger: "facet-6-source-door",
-                  surface: "inline-aside",
-                  reason: "door-in-dock-surface-outside",
-              }
-            : null,
-    sourceDataOpen,
-);
-// S6 — clear the controlled export-open flag when this plate leaves the facet-6 detent, so a
-// dial-away/dial-back cannot remount the `v-model:open` DropdownMenu subtree already-open and
-// resurrect a stale hold (the phase model evicts the claim; this evicts the controlled state it read).
-watch(teleportPlateChrome, (onDial) => {
-    if (!onDial) exportMenuOpen.value = false;
-});
+// A-39, THE PLATE (RULINGS §I). This plate's export, options and Enlarge are its OWN acts, in its act
+// row (`#act` below, the frame's sticky foot seat). The facet-6 export teleport into the dock, its two
+// dock-portal holds and the export focus receiver are deleted with it: no page surface carries a
+// figure's actions, so nothing has to guess which figure the reader means.
 
 defineExpose({ archetype });
 </script>
@@ -229,61 +148,28 @@ defineExpose({ archetype });
             </slot>
         </template>
 
-        <!-- THE #actions RUNG — W-MEMBRANE (A-39) FOLD. The per-plate `VizGearDock` capsule is GONE:
-             the filter-TOGGLE re-homed to the membrane's facet-7 trigger (`MembraneVizContext`), the
-             ENLARGE to the facet-5 zone, and the applied-filters summary to facet-7's pip — all
-             projected off the ONE dial viz, so exactly one filter+enlarge affordance paints per route
-             (the membrane), never one per plate. Only the CSV/image EXPORT survives in this host, and
-             only as a TELEPORT into the facet-6 provenance detent — and only when THIS plate is the
-             dial viz (`teleportPlateChrome`), so the export lands in the membrane, never in the header
-             seat (no in-place fallback, no per-plate duplicate). -->
-        <template v-if="!suppressFoot" #actions>
+        <!-- THE #actions RUNG — a consumer's own header controls only (the stable top-right seat). -->
+        <template v-if="!suppressFoot && slots.actions" #actions>
             <slot name="actions" />
-            <!-- THE FOLDED DOWNLOAD — ONE control, the CSV/image choice behind a DockTrigger (the two
-                 export handlers `onExportCsv`/`onExportImage` re-homed onto the menu, never
-                 re-authored). W-MEMBRANE (A-39 · STRAND A): rendered ONLY when this plate is the dial
-                 viz and TELEPORTED into the membrane's facet-6 provenance detent — the live vnode
-                 relocates, no cross-repo import, no duplicate, no header-seat render. -->
-            <Teleport v-if="teleportPlateChrome" :to="membraneProvenanceSlot">
-                <DockControl
-                    v-if="sourceData"
-                    compact
-                    :aria-label="`Browse source data — ${contract.title}`"
-                    :aria-expanded="sourceDataOpen"
-                    :title="`Source data · ${contract.title}`"
-                    :data-testid="`viz-dock-download-${contract.id}`"
-                    data-viz-dock-download
-                    @click="openSourceData"
-                >
-                    <Download class="viz-dock__glyph" aria-hidden="true" />
-                </DockControl>
-                <DropdownMenu v-else v-model:open="exportMenuOpen">
-                    <DockTrigger
-                        for="dropdown"
-                        :aria-label="`Download ${contract.title} — CSV or image`"
-                        :title="`Download · ${contract.title}`"
-                        :data-testid="`viz-dock-download-${contract.id}`"
-                        data-viz-dock-download
-                    >
-                        <Download class="viz-dock__glyph" aria-hidden="true" />
-                        <span class="sr-only">Download · CSV or image</span>
-                    </DockTrigger>
-                    <DropdownMenuContent align="end" :side-offset="6">
-                        <DropdownMenuItem
-                            :data-testid="`viz-export-csv-${contract.id}`"
-                            @select="onExportCsv"
-                        >
-                            Download CSV
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            :data-testid="`viz-export-image-${contract.id}`"
-                            @select="onExportImage"
-                        >
-                            Download image
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </Teleport>
+        </template>
+
+        <!-- THE ACT ROW (A-39, the plate). The CSV/image export (or the declared source data), the
+             figure's own options and Enlarge live ON this plate, in ChartFrame's sticky `#act` seat,
+             bound to it by construction. Inside a composed stage (`suppressFoot`) the STAGE owns the
+             figure's act row (ChapterStage), so the graphic grows no second one. -->
+        <template v-if="!suppressFoot" #act="{ enlarge }">
+            <PlateAct
+                :id="contract.id"
+                :title="contract.title"
+                :enlarge="enlarge"
+                :export-csv="onExportCsv"
+                :export-image="onExportImage"
+                :browse="sourceData ? openSourceData : null"
+            >
+                <template v-if="hasOptions" #options>
+                    <VizOptionsBand :viz-id="contract.id" :controller="optionsController" />
+                </template>
+            </PlateAct>
         </template>
 
         <!-- A7 (A-39) · THE PER-VIZ FILTER-DIMENSIONS HOST-READ SEAT IS STRUCK. A `#filter-dimensions`

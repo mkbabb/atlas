@@ -2,8 +2,9 @@
 // MembraneProvenanceDetent.vue — FACET 6, THE PROVENANCE DETENT (spec-chrome §c.1 facet 6 · the
 // A-39 fold · STRAND A). The active viz's PROVENANCE + its CSV/image EXPORT, re-homed into the
 // membrane. It renders NO viz content itself: it is the TELEPORT TARGET — ONE container the active
-// plate's own `PlateProvenance` (dashboards) + header export control (`VizPlate`) relocate their
-// live nodes into (`useMembraneProvenance`). The plate keeps OWNING its provenance/export; atlas
+// plate's own `PlateProvenance` (dashboards) relocates its live node into (`useMembraneProvenance`).
+// A figure's CSV/image export is NOT here: it is the figure's own act, in its act row (A-39, the
+// plate). The plate keeps OWNING its provenance; atlas
 // never imports dashboards. `detent:"shut"` — the teleported `ProvenanceBar` grows its OWN
 // source-&-method handle (rendered un-`hosted` when projected), so the record opens on ask.
 //
@@ -35,7 +36,7 @@ const dialVizId = useDialVizId();
         data-membrane-provenance-detent
     >
         <!-- FACET 6 TARGET — always in the DOM so a SOURCE teleport always lands; painted (v-show)
-             only when a dial viz is live. The active plate's provenance + export teleport HERE. -->
+             only when a dial viz is live. The active plate's provenance teleports HERE. -->
         <div
             v-show="dialVizId"
             :id="targetId"

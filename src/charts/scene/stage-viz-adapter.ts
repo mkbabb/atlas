@@ -1,26 +1,27 @@
-// charts/scene/stage-viz-adapter.ts — THE S-20 ChapterStage ANATOMY ADAPTER (spec-chrome §e.3).
+// charts/scene/stage-viz-adapter.ts — THE ChapterStage CONTROLS ADAPTER (S-20, re-homed by A-39).
 //
-// A composed `ChapterStage` does NOT render through `VizPlate`, so it never self-registers a plate
-// facet (`ChapterStage.vue` `useVizRegistry` was 0). Yet under the A-39 membrane fold the facet-5
-// viz-context zone projects the ACTIVE viz's controls off the registry — and for a composed stage
-// those controls are the stage's OWN scene-aware `anatomy.gear.controls` (e.g. the /sci scatter
-// `Controls.vue`), NOT the raw plate `optionsController` the stage's graphic happens to register
-// under the SAME id (found this lane: `Graphic.vue :viz-id="SCI_SCATTER_STAGE_ID"` → the SciScatter
-// VizPlate registers the plate facet under the stage id, and `Controls.vue` reads it back). This PURE
-// mapper adapts a `ChapterStage` → the controls projection the stage registers into the DEDICATED
-// stage-anatomy seam (`registerStageControls`), decoupled from that volatile plate entry so the two
-// never race for one key. The fold renders the stage's controls WITHOUT rendering ChapterStage
-// through VizPlate (the §e.3 ruling — the smaller, honest diff). TOTAL + fixture-testable (the
-// pure-core pattern, mirroring `buildActiveVizEvent`).
+// A composed `ChapterStage` does not render through `VizPlate`, and its controls are its OWN
+// scene-aware `anatomy.gear.controls` (the /sci scatter `Controls.vue`), not the raw options the
+// stage's graphic registers under the same id. Under A-39 (the plate, RULINGS §I) those controls are
+// the stage's per-figure options, so they render in the stage's own act row (ChapterStage), never in
+// page chrome: the facet-5 projection seam they used to register into is deleted. This pure mapper
+// stays the one place the stage's declared gear becomes the act row's options component + props.
 
+import type { Component } from "vue";
 import type { ChapterStage } from "../contract/scene-contract.js";
-import type { RegisteredStageControls } from "../composables/useVizRegistry.js";
 
-/** Map a stage's declared gear anatomy → the registry's controls projection, or `null` when the
-    stage declares no controls (nothing to project). The `props` are the ones the controls need when
-    the facet-5 zone renders them OUTSIDE ChapterStage's own template (`stageId` + `eventHub` — the
-    exact pair `ChapterStage.vue` binds on the `#gear` slot today). */
-export function stageControlsOf(stage: ChapterStage): RegisteredStageControls | null {
+/** A stage's options as its act row renders them: the controls component and the props it needs. */
+export interface StageControls {
+    /** The gear cluster's label (`stage.anatomy.gear.label`). */
+    readonly label: string;
+    /** The stage's bespoke controls Component (`stage.anatomy.gear.controls`). */
+    readonly component: Component;
+    /** The props the controls need (`stageId` + `eventHub`). */
+    readonly props: Record<string, unknown>;
+}
+
+/** Map a stage's declared gear anatomy to its act-row options, or `null` when it declares none. */
+export function stageControlsOf(stage: ChapterStage): StageControls | null {
     const controls = stage.anatomy.gear.controls;
     if (!controls) return null;
     return {
