@@ -138,10 +138,9 @@ describe("the consumer's Lightning CSS pass loses no atlas declaration", () => {
 const NOT_UTILITIES: Record<string, string> = {
     "text-anchor": "SVG attribute", "stroke-width": "SVG attribute / CSS property", "font-variation": "CSS property stem",
     "cursor-visible": "state key", "fill-policy": "option key", "opacity-ceiling": "option key", "stroke-on-hover": "option key",
-    "top-N": "prose", "inline-aside": "story block kind", "right-gutter": "placement key",
+    "top-N": "prose", "right-gutter": "placement key",
     "row-header": "ARIA role", "row-name": "data key", "row-ref": "data key",
-    "start-collapsed": "Vue prop (GlassDock :start-collapsed)",
-    "filter-aggregate-header": "test hook", "filter-close": "test hook", "filter-drawer": "test hook", "filter-drawer-body": "test hook",
+    "filter-aggregate-header": "test hook", "filter-drawer": "test hook", "filter-drawer-body": "test hook",
     "filter-minimap": "test hook", "filter-panel": "test hook", "filter-response": "test hook", "filter-section": "test hook",
     "filter-section-open": "test hook", "filter-state": "test hook", "filter-trigger": "test hook", "filter-view": "test hook",
 };

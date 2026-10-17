@@ -12,10 +12,10 @@
 //                           image, or "Source data" when the plate declares a scope) and Enlarge, as
 //                           quiet stadium buttons. Options opens a glass Popover with the dials.
 //   narrow (plate < 30rem)  one 44 px "Take this figure" button that opens a bottom sheet holding the
-//                           same acts at touch size. The sheet is the STOCK glass `DialogContent
-//                           placement="bottom"`. Glass-ui 7.0.0 renders it in document flow (F-1: the
-//                           side-sheet `:where(...){position:fixed}` loses to `.glass-floating
-//                           {position:relative}`); the defect is glass's and is relayed, never patched here.
+//                           same acts at touch size. The sheet is the STOCK glass 10 `<Dialog>` +
+//                           `<SheetContent side="bottom">` (glass 8 moved edge placement off
+//                           `DialogContent`, which is centred only). Any sheet-in-page-flow defect is
+//                           glass's (relay R-1, §J H-A1) and is never patched here.
 //
 // An act chosen inside the sheet runs AFTER the sheet has closed: the sheet and the enlarged figure
 // each hold a body scroll lock, and opening the figure under a still-held sheet lock left the body
@@ -29,15 +29,10 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@mkbabb/glass-ui/dropdown-menu";
+} from "@mkbabb/glass-ui/menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@mkbabb/glass-ui/popover";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogTitle,
-    DialogTrigger,
-} from "@mkbabb/glass-ui/dialog";
+import { Dialog, DialogDescription, DialogTitle, DialogTrigger } from "@mkbabb/glass-ui/dialog";
+import { SheetContent } from "@mkbabb/glass-ui/sheet";
 
 const props = defineProps<{
     /** The plate's id: the one subject every act in this row acts on. */
@@ -163,8 +158,8 @@ function onSheetClosed(): void {
                         Take this figure
                     </Button>
                 </DialogTrigger>
-                <DialogContent
-                    placement="bottom"
+                <SheetContent
+                    side="bottom"
                     surface="opaque"
                     :data-plate-sheet="id"
                     :data-subject="id"
@@ -218,7 +213,7 @@ function onSheetClosed(): void {
                             Enlarge
                         </Button>
                     </div>
-                </DialogContent>
+                </SheetContent>
             </Dialog>
         </div>
     </div>
