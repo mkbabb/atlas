@@ -69,6 +69,18 @@ projecting components.
 | `registerStageControls`, `deregisterStageControls`, `stageControlsFor`, `RegisteredStageControls` | `StageControls` from the stage adapter; `ChapterStage` renders the stage's act row |
 | the facet-6 export teleport and the stage source-data teleport (and their dock holds) | none; the provenance teleport stays. A composed stage's graphic uses the stage id as its contract id (`?fig=<stage id>`) |
 
+## 5a · U-F60 clause 4 and the plate's dismissal (U · §K K-1, K-2, K-4)
+
+| Change | Consumer edit |
+|---|---|
+| dials no longer write `viz.<id>.<dial>`; a deep link still seeds them | a store that read the dial with `view.param("viz.<id>.<dial>")` builds its own `useVizOptions(<id>, specs)` and reads `values` (sci's band-cake store already does) |
+| `useViewParams.setSel` deleted; the selection is not mirrored to `?sel` | delete any `?sel` write; read the seed with `view.selKeys` |
+| `useViewParams.setFocus` deleted | re-aim with `useSelection().focus(key)`; read `?focus` with `focusKey`/`focusForGrain` |
+| `openFig` pushes; `closeFig` goes Back | none for `ChartFrame`/`VizPlate`; a consumer that opens `?browse=` calls `view.pushParam("browse", id)` (sci `04-scatter/stage.ts:141` writes it with `setParam` today) |
+| `?drawer` is read once by `ChapterStage` and never written | delete any `drawer` write and its `registerKeys`; open the appendix with `useOptionalStageCommands()?.openProvenance(detent)` |
+| `PortalSurface` / `PortalHoldReason` narrowed | a claim spec uses `"body-teleport"` / `"teleported-surface-fires-dock-leave"` |
+| `PlateAct` layers claim Escape at priority 110 | none; a page claim that needs to outrank a plate layer must claim above 110 |
+
 ## 6 · glass-ui 10.1.0
 
 Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.

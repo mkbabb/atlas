@@ -52,6 +52,25 @@
   (`useMembraneProvenanceSource`), which carries the record, not an action. A composed stage's
   graphic must use the stage id as its contract id: the stage's Enlarge opens `?fig=<stage id>`.
 
+- **U-F60 clause 4, the atlas half (U · §K K-2).** A plate dial (`viz.<id>.<dial>`) is read on
+  load and never written: `useVizOptions` holds the value in the view store's dial memory
+  (`dialParam`, `setDial`, `registerDials`), shared by every reader of the dial, and `set`/`reset`
+  and `resetParams` never write a dial key. A `global` dial still writes its filter's own key.
+  `useSelection` no longer mirrors the selection to `?sel` (the seed-once read stays) and
+  `useViewParams.setSel` is deleted. `ReadoutDrill`'s [focus] re-aims in memory only and
+  `useViewParams.setFocus` is deleted (`focusKey`/`focusForGrain` still read `?focus`). `openFig`
+  and the source-data doors now push a history entry (`pushParam`), and closing is Back
+  (`popParam`; a deep-linked overlay clears in place). `ChapterStage` no longer registers or watches
+  `?drawer`; it reads it once and honours it through the stage's open-at-detent command.
+- **The dock-hold census narrows (U · §K K-4).** `PortalSurface` is `"body-teleport"` only and
+  `PortalHoldReason` is `"teleported-surface-fires-dock-leave"` only; `"inline-aside"` and
+  `"door-in-dock-surface-outside"` are deleted with no alias.
+- **The plate's layers claim Escape (U · §K K-1).** `PlateAct`'s Options popover, Download menu and
+  phone sheet each hold a dismiss-arbiter claim while open (`plateLayerClaim`,
+  `PLATE_LAYER_PRIORITY` 110, above the enlarged figure's 100). One Escape closes the topmost plate
+  layer, even with a selection held, and focus returns to the control that opened it.
+  `FilterPanel`'s dock `topmost` gate is deleted: its claim (priority 30) always takes Escape and
+  outside pointer, and a plate layer over it outranks it.
 - The `@mkbabb/glass-ui` peer moves `^7.0.0` → `^10.1.0` (dev pin `10.1.0`).
 - `HandMark` follows glass 9's one-pen re-cut. Props are `shape`, `color`, `weight`, `clock`,
   `seed`; `variant`, `path`, `drawMs`, `boil` and `progress` are removed. Free paths, rings and
@@ -67,6 +86,15 @@
   reading `--glass-opacity-*`; the glass 10 dock owns its own legibility over the ground.
 
 ### Added
+
+- `useViewParams` gains `pushParam(key, value)` and `popParam(key, value?)` (the overlay push
+  verb), and `dialParam`, `setDial`, `registerDials` (the dial memory) (§K K-2).
+- The stage's commands: `StageCommands { openProvenance(detent) }`, provided as
+  `STAGE_COMMANDS_KEY` and read with `useOptionalStageCommands()`; `createStageProvenance` and
+  `linkedDetent` back it (§K K-2).
+- `plateLayerClaim`, `PLATE_LAYER_PRIORITY`, `PLATE_LAYER_ATTR` and `PlateLayer` from the plate's
+  act contract (§K K-1).
+- The engine lane's `emulateMotion` command, so a spec runs under both motion settings.
 
 - `Treemap` emits `layout` (`TreemapBoxLayout[]`: key, x, y, width, height) after each settled
   render, once per distinct layout (J-2). Consumers size labels from it instead of polling
