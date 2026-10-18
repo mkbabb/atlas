@@ -23,6 +23,11 @@ import { describe, expect, it } from "vitest";
 import { effectScope, nextTick, ref } from "vue";
 import { createDismissArbiter } from "../../src/platform/interaction/dismiss-arbiter";
 import {
+    FIGURE_ESCAPE_PRIORITY,
+    PLATE_LAYER_PRIORITY,
+    plateLayerClaim,
+} from "../../src/charts/frame/plate-act";
+import {
     createDockPortalRegistry,
     type PortalClaimSpec,
 } from "../../src/platform/chrome/dock/composables/useDockPortals";
@@ -201,11 +206,24 @@ describe("nonmodal focus return — the invoker is the receiver, crest the fallb
         expect(filterPanel).toMatch(/claimOpen\([\s\S]*restoreFocus/);
     });
 
-    it("the filter yields dismissal authority when it is not the topmost surface (U6)", () => {
-        // escape/outsidePointer gate on the filter being topmost, so an export menu ON TOP is
-        // dismissed alone by Reka and the filter survives the first Escape.
-        expect(filterPanel).toContain("topmost");
-        expect(filterPanel).toMatch(/topmost[\s\S]{0,400}filter-drawer/);
+    it("a plate layer over the drawer takes the first Escape; the drawer the next (U6, K-1)", () => {
+        // The arbiter's priority order is the topmost law: the drawer claims at 30, a plate layer at
+        // PLATE_LAYER_PRIORITY, so the layer closes alone and the drawer survives the first Escape.
+        expect(filterPanel).toMatch(/id: "filter-drawer",\s*priority: 30,\s*outsidePointer: true,\s*escape: true,/);
+        const doc = new EventTarget() as unknown as Document;
+        const arbiter = createDismissArbiter(doc);
+        const fired: string[] = [];
+        const offDrawer = arbiter.claim({ id: "filter-drawer", priority: 30, escape: true, onDismiss: () => fired.push("drawer") });
+        const offLayer = arbiter.claim(plateLayerClaim("usf-fund-ledger", "download", () => fired.push("layer")));
+        const esc = () => doc.dispatchEvent(Object.assign(new Event("keydown", { cancelable: true }), { key: "Escape" }));
+        esc();
+        expect(fired).toEqual(["layer"]);
+        offLayer();
+        esc();
+        expect(fired).toEqual(["layer", "drawer"]);
+        offDrawer();
+        arbiter.destroy();
+        expect(PLATE_LAYER_PRIORITY).toBeGreaterThan(FIGURE_ESCAPE_PRIORITY);
     });
 
     it("FilterPanel stays NONMODAL — no aria-modal, no inert page, no hard trap", () => {

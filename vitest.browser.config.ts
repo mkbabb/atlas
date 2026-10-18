@@ -18,6 +18,13 @@ export default defineConfig({
             api: { port: Number(process.env.PORT ?? 63315), strictPort: true },
             provider: playwright(),
             instances: [{ browser: engine }],
+            // `prefers-reduced-motion` per spec (K-1): a plate layer's dismissal is exercised with
+            // motion on and off, so a defect that appears only under one setting cannot hide.
+            commands: {
+                emulateMotion: async ({ page }, reducedMotion: "reduce" | "no-preference") => {
+                    await page.emulateMedia({ reducedMotion });
+                },
+            },
         },
     },
 });

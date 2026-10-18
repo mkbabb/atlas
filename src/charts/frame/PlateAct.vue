@@ -17,11 +17,24 @@
 //                           `DialogContent`, which is centred only). Any sheet-in-page-flow defect is
 //                           glass's (relay R-1, §J H-A1) and is never patched here.
 //
+// DISMISSAL (U RULINGS §K K-1). Each layer the row opens (the Options popover, the Download menu,
+// the phone sheet) holds a claim on the page's dismiss arbiter while it is open, above every page
+// claim and above an enlarged figure (`plateLayerClaim`, priority 110). One Escape therefore closes
+// the topmost plate layer and nothing else: a held selection (priority 0) used to take that Escape
+// in the capture phase, `preventDefault` it, and leave the layer open. Focus returns to the control
+// that opened the layer. Reka returns it for the popover and the menu. The sheet returns it here:
+// with motion on, glass 10.1.0's SheetContent marks the closing sheet `inert` for its exit spring,
+// and its own synchronous return to the trigger runs while Reka's focus trap is still armed (the
+// trap's `trapped` prop follows `open` only at the next render), so the trap pulls focus back into
+// the sheet and `inert` then drops it to BODY for the whole spring (B4-LAND F-1; relayed to
+// glass-ui). The plate's contract is the act row's own, so the row restores focus to "Take this
+// figure" once the sheet has closed, whatever closed it.
+//
 // An act chosen inside the sheet runs AFTER the sheet has closed: the sheet and the enlarged figure
 // each hold a body scroll lock, and opening the figure under a still-held sheet lock left the body
 // locked once both closed (P2 R2.4 residue 1). Close first, then act; the sheet has already returned
 // focus to "Take this figure", so Enlarge hands focus back to it when the figure closes.
-import { ref, useSlots } from "vue";
+import { nextTick, ref, useSlots, watch } from "vue";
 import { Download, Maximize2, SlidersHorizontal } from "@lucide/vue";
 import { Button } from "@mkbabb/glass-ui/button";
 import {
@@ -33,6 +46,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@mkbabb/glass-ui/popover";
 import { Dialog, DialogDescription, DialogTitle, DialogTrigger } from "@mkbabb/glass-ui/dialog";
 import { SheetContent } from "@mkbabb/glass-ui/sheet";
+import { useDismissArbiter } from "../../platform/interaction/useDismissArbiter.js";
+import { PLATE_LAYER_ATTR, plateLayerClaim, type PlateLayer } from "./plate-act.js";
 
 const props = defineProps<{
     /** The plate's id: the one subject every act in this row acts on. */
@@ -54,7 +69,38 @@ const slots = useSlots();
 const subjectId = `${props.id}-act-subject`;
 const hasExports = () => Boolean(props.exportCsv && props.exportImage);
 
+const optionsOpen = ref(false);
+const downloadOpen = ref(false);
 const sheetOpen = ref(false);
+const layerAttr = (layer: PlateLayer) => ({ [PLATE_LAYER_ATTR]: `${props.id}:${layer}` });
+
+const arbiter = useDismissArbiter();
+for (const [layer, open] of [
+    ["options", optionsOpen],
+    ["download", downloadOpen],
+    ["sheet", sheetOpen],
+] as const)
+    arbiter.claim(() =>
+        open.value
+            ? plateLayerClaim(props.id, layer, () => {
+                  open.value = false;
+              })
+            : null,
+    );
+
+// The sheet's focus return (see DISMISSAL above): once the close has rendered, the trap is released
+// and the sheet is inert, so focus lands on "Take this figure" and stays there through the spring.
+const takeRow = ref<HTMLElement | null>(null);
+watch(sheetOpen, (open) => {
+    if (open) return;
+    void nextTick(() => {
+        const take = takeRow.value?.querySelector<HTMLElement>('[data-action="take"]');
+        const active = document.activeElement;
+        const lost = !active || active === document.body || Boolean(active.closest("[data-plate-sheet]"));
+        if (take && lost) take.focus({ preventScroll: true });
+    });
+});
+
 let afterClose: (() => void) | null = null;
 function fromSheet(run: (() => void) | undefined): void {
     if (!run) return;
@@ -74,7 +120,7 @@ function onSheetClosed(): void {
     <div class="plate-act__box" :data-act-of="id">
         <div class="plate-act__row plate-act__row--wide">
             <p :id="subjectId" class="plate-act__subject">{{ title }}</p>
-            <Popover v-if="slots.options">
+            <Popover v-if="slots.options" v-model:open="optionsOpen">
                 <PopoverTrigger as-child>
                     <Button
                         emphasis="quiet"
@@ -91,6 +137,7 @@ function onSheetClosed(): void {
                     align="end"
                     :side-offset="6"
                     class="plate-act__options"
+                    v-bind="layerAttr('options')"
                     :data-subject="id"
                     :aria-label="`Options for ${title}`"
                 >
@@ -109,7 +156,7 @@ function onSheetClosed(): void {
                 <Download aria-hidden="true" />
                 Source data
             </Button>
-            <DropdownMenu v-else-if="hasExports()">
+            <DropdownMenu v-else-if="hasExports()" v-model:open="downloadOpen">
                 <DropdownMenuTrigger as-child>
                     <Button
                         emphasis="quiet"
@@ -122,7 +169,12 @@ function onSheetClosed(): void {
                         Download
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" :side-offset="6" :data-subject="id">
+                <DropdownMenuContent
+                    align="end"
+                    :side-offset="6"
+                    v-bind="layerAttr('download')"
+                    :data-subject="id"
+                >
                     <DropdownMenuItem :data-subject="id" data-action="csv" @select="exportCsv?.()">
                         Download CSV
                     </DropdownMenuItem>
@@ -144,7 +196,7 @@ function onSheetClosed(): void {
             </Button>
         </div>
 
-        <div class="plate-act__row plate-act__row--narrow">
+        <div ref="takeRow" class="plate-act__row plate-act__row--narrow">
             <Dialog v-model:open="sheetOpen">
                 <DialogTrigger as-child>
                     <Button
@@ -162,6 +214,7 @@ function onSheetClosed(): void {
                     side="bottom"
                     surface="opaque"
                     :data-plate-sheet="id"
+                    v-bind="layerAttr('sheet')"
                     :data-subject="id"
                     @close-auto-focus="onSheetClosed"
                 >

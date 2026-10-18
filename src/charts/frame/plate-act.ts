@@ -20,6 +20,17 @@ export type PlateActKind = (typeof PLATE_ACTS)[number];
 /** The enlarged figure's dismiss priority: above every page claim (the highest today is 40). */
 export const FIGURE_ESCAPE_PRIORITY = 100;
 
+/** A plate layer's dismiss priority (the act row's Options popover, Download menu and phone sheet).
+    A layer opens from the act row, which an enlarged figure also shows, so a layer outranks the
+    figure: one Escape closes the topmost layer and leaves the figure open (U RULINGS §K K-1). */
+export const PLATE_LAYER_PRIORITY = 110;
+
+/** The act row's layers. */
+export type PlateLayer = "options" | "download" | "sheet";
+
+/** The attribute every plate layer's surface carries (`<subject>:<layer>`). */
+export const PLATE_LAYER_ATTR = "data-plate-layer";
+
 /** The dismiss claim an enlarged figure holds: Escape only (an outside pointer on a fullscreen
     surface is the surface itself), at {@link FIGURE_ESCAPE_PRIORITY}. */
 export function figureEscapeClaim(subject: string, close: () => void): DismissClaim {
@@ -27,6 +38,30 @@ export function figureEscapeClaim(subject: string, close: () => void): DismissCl
         id: `figure:${subject}`,
         priority: FIGURE_ESCAPE_PRIORITY,
         escape: true,
+        onDismiss: close,
+    };
+}
+
+/** The dismiss claim an open plate layer holds (K-1): Escape and an outside pointer, at
+    {@link PLATE_LAYER_PRIORITY}. A pointer inside the layer's surface or on its trigger is not
+    outside, for this claim or any lower one, so a click in an open popover never closes the filter
+    drawer beneath it. */
+export function plateLayerClaim(subject: string, layer: PlateLayer, close: () => void): DismissClaim {
+    const own = `${subject}:${layer}`;
+    const trigger = layer === "sheet" ? "take" : layer;
+    return {
+        id: `plate:${own}`,
+        priority: PLATE_LAYER_PRIORITY,
+        escape: true,
+        outsidePointer: true,
+        within: (path) =>
+            path.some(
+                (node) =>
+                    node instanceof Element &&
+                    (node.getAttribute(PLATE_LAYER_ATTR) === own ||
+                        (node.getAttribute("data-subject") === subject &&
+                            node.getAttribute("data-action") === trigger)),
+            ),
         onDismiss: close,
     };
 }

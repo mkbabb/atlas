@@ -137,30 +137,20 @@ watch(
 );
 onBeforeUnmount(teardown);
 
-// The ONE dock/app-scoped registry (provided by PlatformShell) — reached ONCE so the filter and the
-// per-plate export claims share the SAME `topmost` stack (two `useDockPortals()` calls without a
-// provider would mint two isolated registries).
-const { claimOpen, topmost } = useDockPortals();
+// The ONE dock/app-scoped registry (provided by PlatformShell), for the drawer's dock hold.
+const { claimOpen } = useDockPortals();
 
-// TOPMOST SINGLE-SURFACE DISMISSAL (U6) — the filter is the dismissal owner ONLY while it is the
-// topmost held surface. When a per-plate export MENU opens over the drawer that menu becomes topmost,
-// so the filter YIELDS its escape / outside-pointer authority — Reka dismisses the menu alone on the
-// first event, and the filter (and its dock pin) survive. Once the menu closes the filter is topmost
-// again and re-claims, so the next Escape dismisses the filter. Null topmost ⇒ the filter is the only
-// surface, so it owns dismissal.
-const filterTopmost = computed(() => {
-    const top = topmost.value;
-    return !top || top.key === "filter-drawer";
-});
-
+// TOPMOST SINGLE-SURFACE DISMISSAL (U6) — the arbiter's priority order is the topmost law. A plate
+// layer opened over the drawer (an act row's Options popover, Download menu or phone sheet) claims
+// at priority 110 (`plateLayerClaim`, U RULINGS §K K-1), so the first Escape or outside pointer
+// closes that layer alone and the drawer (and its dock pin) survive; the next one closes the drawer.
 useDismissArbiter().claim(() =>
     open.value
         ? {
               id: "filter-drawer",
               priority: 30,
-              // Gated on the filter being topmost (U6) — a higher export menu dismisses alone.
-              outsidePointer: filterTopmost.value,
-              escape: filterTopmost.value,
+              outsidePointer: true,
+              escape: true,
               // The OUTSIDE-POINTER exemption (F8 cure) — the filter's own surface AND the co-located
               // dock membrane (`[data-membrane-band]`, which the facet-6 provenance detent carries): a
               // facet-6 / membrane-facet pointer click is NOT "outside", so the two co-located
