@@ -2,24 +2,25 @@
 // D4.a · ds-per-viz-options §3.1). The companion of <VizOptions> (the chrome), split
 // exactly like useYearScope/FilterPanel (state engine vs chrome shell). Each plate
 // declares its option VOCABULARY (the surveyed dials — measure, grain, sizeBy, scale,
-// topN); this composable binds every key to the URL through `useViewParams` so a copied
-// URL reconstructs every plate's lens on reload (the INV-5 URL-as-document floor).
+// topN); this composable holds each dial's value in the view store's dial memory.
 //
-// THE ONE GRAMMAR: every option key serializes as `?viz.<vizId>.<optKey>=<value>` (dots
-// are legal, unescaped query-key characters the `useUrlSearchParams('history')` bag
-// carries as-is). The keys flow through `registerKeys` (NOT a raw `useUrlState`), so the
-// view-level `resetParams` sweeps them — one reset resets the whole document.
+// READ ON LOAD, NEVER WRITTEN (U-F60 cl. 4 · RULINGS §I, §K K-2): a deep link may carry
+// `?viz.<vizId>.<optKey>=<value>`, and that value seeds the dial. No dial act writes the
+// URL: `set` and `reset` change the in-memory value only. The dials register through
+// `registerDials` (not `registerKeys`), so the view-level `resetParams` returns every
+// dial to its default without writing a dial key.
 //
-// THE DEFAULT-ELISION RULE (ds §5): a default is NEVER serialized. `set(key, default)`
-// clears the param, so a pristine view's URL stays pristine — opening/closing a popover
-// at default writes nothing. Reads fall back to each spec's default when the param is
-// absent. Out-of-vocabulary URL values fall back to the default at the ONE read site
-// (the `isScaleMode` guard idiom).
+// DEFAULTS: `set(key, default)` (or an out-of-vocabulary value) returns the dial to its
+// default. Reads fall back to each spec's default when neither the reader nor the load URL
+// gave a value, and an out-of-vocabulary URL value falls back to the default at the ONE
+// read site (the `isScaleMode` guard idiom).
 //
 // ONE SOURCE OF TRUTH, TWO READERS: where a derivation lives in a Pinia store (the
-// band-cake's `tierCountsByYear` reading the `measure` dial), the store consumes the
-// SAME `?viz.*` param this composable writes — the proven `perCapitaScale` pattern. No
-// event plumbing: the URL is the single source, chrome + derivation both read it.
+// band-cake's `tierCountsByYear` reading the `measure` dial), the store builds its own
+// `useVizOptions` over the SAME vizId and specs, and both read the one dial memory.
+//
+// A `global` dial is the exception: it is a second surface on a global filter (the year
+// scope), whose bare key the filter itself writes in answer to the reader's act.
 
 import { computed, reactive, type ComputedRef } from "vue";
 import { useViewParams } from "../../platform/stores/useViewParams.js";
@@ -63,14 +64,15 @@ export interface UseVizOptions {
     vizId: string;
     /** The declarative specs the <VizOptions> chrome renders. */
     specs: VizOptionSpec[];
-    /** Reactive, URL-backed values — `values.measure`, `values.grain`, … Reads fall
-        back to each spec's default when the param is absent (default-elision). */
+    /** Reactive values — `values.measure`, `values.grain`, … Reads fall back to each
+        spec's default when neither the reader nor the load URL gave a value. */
     values: Record<string, string | boolean>;
     /** True iff every option sits at its default (drives the dirty dot + the Reset row). */
     isDefault: ComputedRef<boolean>;
-    /** Set one option; writing the default CLEARS the param (default-elision). */
+    /** Set one option in memory; the default (or an out-of-vocabulary value) returns it to the
+        default. A local dial never writes the URL. */
     set(key: string, value: string | boolean): void;
-    /** Clear this plate's `viz.<vizId>.*` params from the URL (back to defaults). */
+    /** Return this plate's local dials to their defaults (in memory; the URL is not written). */
     reset(): void;
 }
 
@@ -87,24 +89,38 @@ function paramKeyOf(vizId: string, spec: VizOptionSpec): string {
 }
 
 /**
- * Bind a plate's surveyed option set to the URL. `vizId` is the plate's one slug (the
- * same one passed to `<ChartFrame :fig-id>`); `specs` are the declarative dials. Returns
- * a reactive `values` bag (read in the plate's derivations) + the chrome controls.
+ * Bind a plate's surveyed option set. `vizId` is the plate's one slug (the same one
+ * passed to `<ChartFrame :fig-id>`); `specs` are the declarative dials. Returns a
+ * reactive `values` bag (read in the plate's derivations) + the chrome controls.
  */
 export function useVizOptions(vizId: string, specs: VizOptionSpec[]): UseVizOptions {
     const view = useViewParams();
 
-    // Register every LOCAL key so the view-level `resetParams` sweeps them (the ds §5 reset
-    // contract — one document reset clears every plate's dials). GLOBAL keys are NOT registered:
-    // a plate reset (or a per-plate sweep) must never clear a global filter — the global scope
-    // owns its own round-trip (the year-scope), and this dial only MIRRORS it. Idempotent.
-    view.registerKeys(specs.filter((s) => !isGlobal(s)).map((s) => paramKeyOf(vizId, s)));
+    // Register every LOCAL dial so the view-level `resetParams` returns it to its default (one
+    // document reset resets every plate's dials). GLOBAL keys are NOT registered: a reset must
+    // never clear a global filter — the global scope owns its own round-trip (the year-scope),
+    // and this dial only MIRRORS it. Idempotent.
+    view.registerDials(specs.filter((s) => !isGlobal(s)).map((s) => paramKeyOf(vizId, s)));
 
     const specByKey = new Map(specs.map((s) => [s.key, s] as const));
 
+    /** A local dial's wire value comes from the dial memory (seeded from the load URL); a global
+        dial's from the global filter's own key. */
+    function wireOf(spec: VizOptionSpec): string | undefined {
+        const pk = paramKeyOf(vizId, spec);
+        return isGlobal(spec) ? view.param(pk) : view.dialParam(pk);
+    }
+    /** Write a wire value: a global dial writes its global filter's key (the reader's act on that
+        filter); a local dial writes memory only. */
+    function writeOf(spec: VizOptionSpec, wire: string | undefined): void {
+        const pk = paramKeyOf(vizId, spec);
+        if (isGlobal(spec)) view.setParam(pk, wire);
+        else view.setDial(pk, wire);
+    }
+
     /** Read one option, validated against its vocabulary, falling back to the default. */
     function read(spec: VizOptionSpec): string | boolean {
-        const raw = view.param(paramKeyOf(vizId, spec));
+        const raw = wireOf(spec);
         if (spec.kind === "switch") {
             // A switch serializes only its NON-default state (the default is elided): the
             // param present at all means "flipped from default."
@@ -117,7 +133,7 @@ export function useVizOptions(vizId: string, specs: VizOptionSpec[]): UseVizOpti
     }
 
     // The reactive values bag — `values.measure`, `values.grain`, … recomputed off the
-    // shared reactive URL query (a scrub/flip re-runs every reader's computeds). A plain
+    // shared dial memory (a flip re-runs every reader's computeds). A plain
     // `reactive` of computeds: `reactive` auto-UNWRAPS the nested `ComputedRef`s, so a
     // reader gets `values.measure` as the bare string/boolean (the `.value` is stripped).
     const values = reactive(
@@ -127,28 +143,22 @@ export function useVizOptions(vizId: string, specs: VizOptionSpec[]): UseVizOpti
     function set(key: string, value: string | boolean): void {
         const spec = specByKey.get(key);
         if (!spec) return;
-        const pk = paramKeyOf(vizId, spec);
         if (spec.kind === "switch") {
-            // Default-elision: writing the default clears the param; the non-default
-            // serializes as `1`/`0` (the shortest honest wire form).
-            if (value === spec.default) view.setParam(pk, undefined);
-            else view.setParam(pk, value ? "1" : "0");
+            // The default is held as "no value"; the non-default as `1`/`0`.
+            writeOf(spec, value === spec.default ? undefined : value ? "1" : "0");
             return;
         }
         const str = String(value);
-        // Default-elision: a default-valued (or out-of-vocab) write clears the param.
-        if (str === spec.default || !spec.choices.some((c) => c.value === str)) {
-            view.setParam(pk, undefined);
-        } else {
-            view.setParam(pk, str);
-        }
+        // A default-valued (or out-of-vocab) set returns the dial to its default.
+        const isDefaultOrForeign = str === spec.default || !spec.choices.some((c) => c.value === str);
+        writeOf(spec, isDefaultOrForeign ? undefined : str);
     }
 
     function reset(): void {
-        // Reset clears only LOCAL dials (the plate's own lens). A global-scoped dial mirrors a
-        // global filter; resetting the plate must never clear the year scope (the one-source-of-
-        // truth contract — the global filter has its own Reset).
-        for (const s of specs) if (!isGlobal(s)) view.setParam(paramKeyOf(vizId, s), undefined);
+        // Reset returns only LOCAL dials (the plate's own lens) to their defaults. A global-scoped
+        // dial mirrors a global filter; resetting the plate must never clear the year scope (the
+        // one-source-of-truth contract — the global filter has its own Reset).
+        for (const s of specs) if (!isGlobal(s)) view.setDial(paramKeyOf(vizId, s), undefined);
     }
 
     // The dirty-dot/Reset reflect only LOCAL dials: a global dial sitting off its plate-default

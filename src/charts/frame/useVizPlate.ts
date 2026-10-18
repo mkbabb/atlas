@@ -465,12 +465,13 @@ const sourceDataOpen = computed(
     performs — there is no second projection here, only the grain this opening asks for. */
 function openSourceData(): void {
     if (!sourceData.value) return;
-    view.setParam("browse", props.contract.id);
+    // `browse` is pushed (U-F60 cl. 4), so Back closes the viewer; `grain` rides the same entry.
+    view.pushParam("browse", props.contract.id);
     view.setParam("grain", selection.selectedKeys.size > 0 ? "selection" : undefined);
 }
 function closeSourceData(): void {
-    if (view.param("browse") === props.contract.id) view.setParam("browse", undefined);
-    view.setParam("grain", undefined);
+    // Back restores the entry below, grain included; a viewer opened by a deep link clears in place.
+    if (view.popParam("browse", props.contract.id) === "cleared") view.setParam("grain", undefined);
 }
 /** CD-09 (PA-9) — the STABLE region id of this plate's source-data grid (the SourceDataBrowser
     aside). The figure binds `aria-details` to this id ONLY while the grid is OPEN (`sourceDataOpen`) —

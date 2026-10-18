@@ -19,8 +19,8 @@
 //                 routes through (the ONE multi-select seam, byte-unchanged — I5's law).
 //   • [focus]   — `selection.focus(key)` — RE-AIM the route to this entity (set `primaryKey` WITHOUT
 //                 mutating the set; the route's STORYTELLING SUBJECT). The additive `focus(key)` verb
-//                 the I-UX.a model froze; it ALSO carries the focus into the URL via `setFocus(key)`
-//                 so the focused subject travels across routes (the `?focus` through-line, UX-S3).
+//                 the I-UX.a model froze. It re-aims in memory only: `?focus` is read on load and
+//                 never written (U-F60 cl. 4).
 //
 // THE GLASS BUTTON, READ-ONLY (ZERO new glass-ui ask). The three controls are the SHIPPED glass
 // `Button` (the filter drawer's register — `variant`/`size`/icon-slot), consumed read-only: the
@@ -36,7 +36,6 @@ import { computed } from "vue";
 import { Button } from "@mkbabb/glass-ui/button";
 import { Pin, GitCompareArrows, Crosshair } from "@lucide/vue";
 import { useSelection } from "../platform/stores/useSelection.js";
-import { useViewParams } from "../platform/stores/useViewParams.js";
 
 const props = defineProps<{
     /** The composite `{kind}:{id}` selection key this card is pinned under — the verbs all act on it
@@ -45,7 +44,6 @@ const props = defineProps<{
 }>();
 
 const selection = useSelection();
-const view = useViewParams();
 
 // The live treatment of this card's key — drives the pressed/lit state of the rung controls. We read
 // the store directly (NOT a fourth registry): `isSelected` is the pin state, `primaryKey` the focus.
@@ -67,10 +65,9 @@ function onCompare(): void {
 }
 
 /** [focus] — RE-AIM the route to this entity: set `primaryKey` (the additive `focus` verb, the set
-    untouched) AND carry it into the URL (`?focus`) so the focused subject travels across routes. */
+    untouched). In memory only; the URL is not written. */
 function onFocus(): void {
     selection.focus(props.selectionKey);
-    view.setFocus(props.selectionKey);
 }
 </script>
 

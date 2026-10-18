@@ -99,6 +99,13 @@ export interface StageEvents {
     onProvenanceOpen(cb: (detent: AppendixDetent) => void): StageOff;
 }
 
+/** The stage's commands (U-F60 cl. 4 · RULINGS §K K-2). `openProvenance` moves the stage's
+    provenance appendix to a detent; the stage itself calls it once on load to honour `?drawer`, which
+    is read-only and never written. Each move is announced through `onProvenanceOpen`. */
+export interface StageCommands {
+    openProvenance(detent: AppendixDetent): void;
+}
+
 /** Adapt the shared typed hub into the exact stage event surface without adding a writer. */
 export function stageEventsFromHub(
     hub: AtlasEventContract,
@@ -258,6 +265,8 @@ export interface SceneContext {
 export const SCENE_KEY: InjectionKey<SceneContext | null> = Symbol("sticky-scene");
 export const STAGE_EVENTS_KEY: InjectionKey<StageEvents | null> =
     Symbol("stage-events");
+export const STAGE_COMMANDS_KEY: InjectionKey<StageCommands | null> =
+    Symbol("stage-commands");
 export interface StageEventContext {
     readonly hub: AtlasEventContract;
     readonly scope: { readonly grain: "stage"; readonly stageId: string };
@@ -277,6 +286,11 @@ export function useOptionalSceneContext(): SceneContext | null {
 /** Read the stage's four-event consumer surface from persistent anatomy descendants. */
 export function useOptionalStageEvents(): StageEvents | null {
     return inject(STAGE_EVENTS_KEY, null);
+}
+
+/** Read the stage's commands from a stage descendant, or `null` outside a stage. */
+export function useOptionalStageCommands(): StageCommands | null {
+    return inject(STAGE_COMMANDS_KEY, null);
 }
 
 /** Read the one per-instance event context from an always-mounted stage graphic. */

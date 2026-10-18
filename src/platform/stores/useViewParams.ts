@@ -37,10 +37,10 @@ import { leaToCountyFips } from "../../data/leaJoin.js";
 
 // ── THE `?focus` CROSS-ROUTE CODEC (I-UX.a · UX-S3 · the entity through-line) ──────────────────
 //
-// The focused entity TRAVELS across routes as `?focus=<grain>:<key>` — the SAME composite
-// `{kind}:{id}` wire form I5 froze (selection-contract `encodeSelKey`/`parseSelKey`), now URL-
-// persisted, twinning the shipped `?year`/`?yearMode` round-trip. A reader who focuses Wake on /sci
-// opens /ecf with Wake pre-focused; the gallery cards READ it (the gallery readback FOLDS into I14).
+// A deep link carries the focused entity as `?focus=<grain>:<key>` — the SAME composite `{kind}:{id}`
+// wire form I5 froze (selection-contract `encodeSelKey`/`parseSelKey`). It is read on load and never
+// written (U-F60 cl. 4): a link to /ecf with `?focus=district:370480` opens with Wake focused, and the
+// gallery cards READ it.
 //
 // THE WIRE FORM. A `SelectionKey.key` is ALREADY `"<kind>:<id>"` — so serialize is "write the
 // composite `key` verbatim" and parse is "run `parseSelKey`". No second codec: the param value IS
@@ -202,15 +202,92 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         url.setList(key, values);
     }
 
-    /** Clear every registered param from the URL (a view reset; year-scope untouched). */
+    /** Clear every registered param from the URL and return every dial to its default (a view
+        reset; year-scope untouched). */
     function resetParams(): void {
         for (const k of registeredKeys.value) url.set(k, undefined);
+        const next = new Map(dials.value);
+        for (const k of dialKeys) next.set(k, null);
+        dials.value = next;
     }
 
-    // ── THE `?focus` ROUND-TRIP (UX-S3 · twins `?year`/`?yearMode`) ─────────────────────────────
-    // The focused entity, URL-persisted as `?focus=<grain>:<key>`. Like the year-scope, it rides the
-    // SAME shared `url` bag but owns its own key (not in `registeredKeys` — a platform through-line,
-    // not a dashboard's vocab), so a copied URL reconstructs the focused subject across routes.
+    // ── THE DIALS: READ ON LOAD, NEVER WRITTEN (U-F60 cl. 4 · RULINGS §I, §K K-2) ──────────────────
+    // A plate dial (`viz.<id>.<dial>`) is read-only on load: a deep link may carry one, and it seeds the
+    // dial, but no dial act ever writes the URL. The reader's value lives here, in memory, keyed by the
+    // same wire key, so every reader of one dial (the popover's controller and the host's derivation)
+    // shares one value without the URL as the go-between. `null` records a reader's return to the
+    // default, which outranks the load seed.
+    const dials = shallowRef<ReadonlyMap<string, string | null>>(new Map());
+    const dialKeys = new Set<string>();
+
+    /** Declare dial keys so a view reset returns them to their defaults. Idempotent. */
+    function registerDials(keys: readonly string[]): void {
+        for (const k of keys) dialKeys.add(k);
+    }
+
+    /** A dial's current wire value: the reader's in-memory value, else the URL's value on load. */
+    function dialParam(key: string): string | undefined {
+        const held = dials.value.get(key);
+        if (held !== undefined) return held ?? undefined;
+        return url.get(key);
+    }
+
+    /** Set a dial in memory. `undefined` returns it to its default. Never writes the URL. */
+    function setDial(key: string, value: string | undefined): void {
+        const next = new Map(dials.value);
+        next.set(key, value ?? null);
+        dials.value = next;
+    }
+
+    // ── THE PUSH VERB (U-F60 cl. 4: `browse` and `fig` are pushed, as overlays) ───────────────────
+    // A reader-opened overlay gets its own history entry, so Back closes it. `pushParam` first copies
+    // the current entry (stamped with the overlay key), then sets the key through the shared bag,
+    // which replaces that new top entry; the entry below keeps the pre-overlay query. `popParam`
+    // closes the overlay with Back when this session pushed the entry, and otherwise (a deep link
+    // that loaded with the overlay open) clears the key in place.
+    const OVERLAY_STATE = "atlas:overlay";
+    let backPending: string | null = null;
+    if (typeof window !== "undefined")
+        window.addEventListener("popstate", () => {
+            backPending = null;
+        });
+
+    function overlayEntryOf(): string | undefined {
+        if (typeof window === "undefined") return undefined;
+        const state = window.history.state as Record<string, unknown> | null;
+        const key = state?.[OVERLAY_STATE];
+        return typeof key === "string" ? key : undefined;
+    }
+
+    /** Open a reader overlay: push a history entry carrying `key=value`. Idempotent. */
+    function pushParam(key: string, value: string): void {
+        if (url.get(key) === value) return;
+        if (typeof window !== "undefined") {
+            const state = (window.history.state as Record<string, unknown> | null) ?? {};
+            window.history.pushState({ ...state, [OVERLAY_STATE]: key }, "", window.location.href);
+        }
+        url.set(key, value);
+    }
+
+    /** Close a reader overlay. Returns `"back"` when it went Back to the entry below (which restores
+        that entry's whole query), `"cleared"` when it cleared the key in place, and `"none"` when
+        `key` does not hold `value` (another overlay owns it, or it is already closed). */
+    function popParam(key: string, value?: string): "back" | "cleared" | "none" {
+        const current = url.get(key);
+        if (current === undefined || (value !== undefined && current !== value)) return "none";
+        if (backPending === key) return "back";
+        if (overlayEntryOf() === key) {
+            backPending = key;
+            window.history.back();
+            return "back";
+        }
+        url.set(key, undefined);
+        return "cleared";
+    }
+
+    // ── `?focus`: READ ON LOAD, NEVER WRITTEN (UX-S3 · U-F60 cl. 4) ──────────────────────────────
+    // A deep link may carry `?focus=<grain>:<key>`, and the routes read it to resolve the focused
+    // subject. No act writes it: the [focus] verb re-aims in memory (`useSelection.focus`).
     const FOCUS_KEY = "focus";
 
     /** The parsed focused key off `?focus`, or null when absent. Reactive: it re-reads the one
@@ -219,17 +296,6 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         const raw = url.get(FOCUS_KEY);
         return raw ? parseSelKey(raw) : null;
     });
-
-    /**
-     * Serialize a focused key to `?focus` — write the composite `key` verbatim (it IS the wire
-     * form). `null` clears the param (the focus through-line ends). A `SelectionKey` or a bare
-     * composite string are both accepted (the producer may pass either the parsed item or its key).
-     */
-    function setFocus(key: SelectionKey | string | null): void {
-        const wire = key === null ? undefined : typeof key === "string" ? key : key.key;
-        if (wire !== undefined) parseSelKey(wire);
-        url.set(FOCUS_KEY, wire);
-    }
 
     /**
      * The focused key RESOLVED to a target grain (UX-S3 cross-grain) — a focused LEA resolved to
@@ -241,21 +307,13 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         return f ? resolveFocusToGrain(f, target) : null;
     }
 
-    // ── THE `?sel` SELECTION-SET ROUND-TRIP ─────────────────────────────────────────────
+    // ── `?sel`: READ ON LOAD, NEVER WRITTEN (U-F60 cl. 4) ────────────────────────────────
     const SEL_KEY = "sel";
 
-    /** Canonical composite keys restored from `?sel`. */
+    /** Canonical composite keys a deep link carries in `?sel`; `useSelection` seeds from them once. */
     const selKeys: ComputedRef<SelectionKey[]> = computed(() =>
         url.getList(SEL_KEY).map(parseSelKey),
     );
-
-    /** Write the selection set to `?sel` (comma-joined composite keys); an empty set CLEARS the param.
-        The list codec left VERBATIM — each token is already the Set member (`SelectionKey.key`). */
-    function setSel(keys: Iterable<string>): void {
-        const wire = [...keys];
-        wire.forEach(parseSelKey);
-        url.setList(SEL_KEY, wire);
-    }
 
     // ── THE DRILL-AND-FILTER PROMOTION ─────────────────────────────────────────────────────
     const FILTO_KEY = "filto";
@@ -350,19 +408,17 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         by the dock's restore (the co-deep-linked `?fig` defers the `?at` scroll to the fig-close edge). */
     const figId: ComputedRef<string | undefined> = computed(() => url.get(FIG_KEY));
 
-    /** Open a plate's `?fig` expand. Idempotent — re-opening the same id is a no-op (no redundant
-        replaceState). */
+    /** Open a plate's `?fig` expand through the push verb, so Back closes it (U-F60 cl. 4).
+        Idempotent — re-opening the same id is a no-op. */
     function openFig(id: string): void {
-        if (figId.value === id) return;
-        url.set(FIG_KEY, id);
+        pushParam(FIG_KEY, id);
     }
 
     /** Close a plate's `?fig` expand — the OWN-PARAM GUARD (the `ChartFrame.vue` guard folded to ONE
-        home both consumers share): only clear when THIS plate owns the param (never stomp a sibling
-        that re-claimed `?fig` in the same tick). */
+        home both consumers share): only close when THIS plate owns the param (never stomp a sibling
+        that re-claimed `?fig` in the same tick). A pushed expand closes with Back. */
     function closeFig(id: string): void {
-        if (figId.value !== id) return;
-        url.set(FIG_KEY, undefined);
+        popParam(FIG_KEY, id);
     }
 
     // The year-scope, attached once the active feed has loaded. Its codec keys
@@ -396,13 +452,17 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         listParam,
         setListParam,
         resetParams,
-        // UX-S3 — the `?focus` cross-route through-line (parse / serialize / cross-grain resolve).
+        // U-F60 cl. 4 — the dials (read on load, held in memory) and the overlay push verb.
+        registerDials,
+        dialParam,
+        setDial,
+        pushParam,
+        popParam,
+        // UX-S3 — the `?focus` cross-route through-line (read on load; cross-grain resolve).
         focusKey,
-        setFocus,
         focusForGrain,
-        // O-A11 — the `?sel` selection-set round-trip (parse-guarded read + the single-writer setter).
+        // O-A11 — the `?sel` deep-link seed (read on load).
         selKeys,
-        setSel,
         // O-A11 · [ANSWERS Q-45] — the DRILL-AND-FILTER promotion (`?filto`): the persistent co-filter the
         // panel's `[Filter to these ▸]` writes + the `[✕ un-filter]` reverses (the first-class un-filter seam).
         promotedFilterKeys,

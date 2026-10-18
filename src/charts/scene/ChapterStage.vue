@@ -22,6 +22,7 @@ import type {
 } from "../contract/scene-contract.js";
 import type { SourcePanelProps } from "../contract/viz-contract.js";
 import {
+    STAGE_COMMANDS_KEY,
     STAGE_EVENTS_KEY,
     STAGE_EVENT_HUB_KEY,
     STAGE_ANATOMY_KEY,
@@ -29,6 +30,7 @@ import {
 } from "../contract/scene-contract.js";
 import type { AppendixDetent } from "../../platform/provenance/appendix.js";
 import { stageControlsOf } from "./stage-viz-adapter.js";
+import { createStageProvenance } from "./stage-provenance.js";
 
 const props = defineProps<{
     stage: ChapterStageContract;
@@ -59,7 +61,7 @@ const scene: Readonly<ChapterScene> = Object.freeze({
 });
 
 const view = useViewParams();
-view.registerKeys(["browse", "drawer", "grain"]);
+view.registerKeys(["browse", "grain"]);
 const initialSceneId = view.sceneId;
 const initialAnchor = view.narrativeAt;
 const sceneAnchor = resolveSceneAnchor(
@@ -74,21 +76,19 @@ const events = props.stage.events;
 const stageEvents = stageEventsFromHub(events, props.stage.id);
 const scope = { grain: "stage" as const, stageId: props.stage.id };
 const activeSceneIndex = ref(0);
-const linkedDrawer = view.param("drawer");
-const appendixDetent = ref<AppendixDetent>(
-    linkedDrawer === "peek" || linkedDrawer === "full"
-        ? linkedDrawer
-        : (props.stage.anatomy.provenance.detent ?? "shut"),
-);
+// The appendix detent and its open command (U-F60 cl. 4): `?drawer` is read once, here, and honoured
+// through the command; nothing writes it.
+const provenance = createStageProvenance({
+    hub: events,
+    scope,
+    authored: props.stage.anatomy.provenance.detent,
+    linked: view.param("drawer"),
+});
+const appendixDetent = provenance.detent;
 provide(STAGE_EVENTS_KEY, stageEvents);
+provide(STAGE_COMMANDS_KEY, { openProvenance: provenance.openProvenance });
 provide(STAGE_EVENT_HUB_KEY, { hub: events, scope });
 provide(STAGE_ANATOMY_KEY, true);
-watch(
-    () => view.param("drawer"),
-    (detent) => {
-        appendixDetent.value = detent === "peek" || detent === "full" ? detent : "shut";
-    },
-);
 const sourcePanelProps = {
     eventHub: events,
     eventScope: scope,
@@ -156,13 +156,8 @@ function onActiveChange(active: boolean): void {
     if (active) emitActiveViz();
 }
 
-function onProvenanceOpen(detent: "shut" | "peek" | "full"): void {
-    appendixDetent.value = detent;
-    events.emit({
-        type: "provenance-drawer",
-        scope,
-        detent,
-    });
+function onProvenanceOpen(detent: AppendixDetent): void {
+    provenance.openProvenance(detent);
 }
 
 const sceneReadout = computed(
@@ -174,8 +169,9 @@ function openSourceData(): void {
 }
 
 function closeSourceData(): void {
-    if (view.param("browse") === props.stage.id) view.setParam("browse", undefined);
-    view.setParam("grain", undefined);
+    // The viewer was opened with the push verb, so Back closes it (U-F60 cl. 4); a viewer opened by a
+    // deep link clears in place.
+    if (view.popParam("browse", props.stage.id) === "cleared") view.setParam("grain", undefined);
 }
 
 const sourceDataOpen = computed(
