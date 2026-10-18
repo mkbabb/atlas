@@ -1,10 +1,21 @@
-// StickyScene in a real engine: U-F60 clause 3 (U RULINGS §K K-3). A scene's `apply` writes the
-// URL (the /sci map writes the global year), and nothing writes a vocabulary key on load. A step
-// crossed by a program scroll (load, layout, the `?at` restore) is shown, but its world effect waits
-// for the reader: the reader's first trusted act applies the step the scene is showing.
+// StickyScene in a real engine. Two contracts share this file (merged at U/B5 land):
+//
+// (1) U-F60 clause 3 (U RULINGS §K K-3). A scene's `apply` writes the URL (the /sci map writes the
+// global year), and nothing writes a vocabulary key on load. A step crossed by a program scroll
+// (load, layout, the `?at` restore) is shown, but its world effect waits for the reader: the
+// reader's first trusted act applies the step the scene is showing.
+//
+// (2) U RULINGS §K K-5 (3): the pinned graphic holds its grid track and is never sized by its
+// content. ECharts writes its painter root as a fixed-px box; after an Enlarge closes, that box
+// still carries the expanded width until the host's ResizeObserver runs `resize()`. The graphic is
+// a grid item, and `overflow: clip` does not make it a scroll container, so without
+// `min-inline-size: 0` its automatic minimum is that stale min-content width: the whole chain from
+// the figure to the ECharts host stays wide, `resize()` collapses it inside the observer callback,
+// and the engine reports "ResizeObserver loop completed with undelivered notifications" (WebKit
+// raises it as a page error on /sci at 1440; Chromium dispatches it as a window error event).
 import { afterEach, describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
-import { createApp, defineComponent, h } from "vue";
+import { createApp, defineComponent, h, nextTick } from "vue";
 import { createPinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
 import StickyScene from "./StickyScene.vue";
@@ -56,4 +67,60 @@ describe("a scene's world effect waits for a reader act (K-3)", () => {
         await wait(100);
         expect(applied).toEqual(["s-2014"]);
     });
+});
+
+// ── K-5 (3): the graphic holds its track ──
+
+const TRACK = 640;
+const STALE = TRACK + 140; // the expanded width a not-yet-resized painter root still carries
+
+// A stand-in for the ECharts host: a block host whose only child is a fixed-px painter root.
+const Graphic = defineComponent({
+    setup: () => () =>
+        h("div", { class: "probe-host", style: { width: "100%" } }, [
+            h("div", { class: "probe-painter", style: { width: `${STALE}px`, height: "120px" } }),
+        ]),
+});
+
+function mountTrack(focal: boolean) {
+    const host = document.createElement("div");
+    host.style.width = `${TRACK}px`;
+    document.body.appendChild(host);
+    const scene: ChapterScene = {
+        kind: "scene",
+        graphic: Graphic,
+        focal,
+        side: "left",
+        steps: [
+            { id: "a", prose: "First step", state: {} },
+            { id: "b", prose: "Second step", state: {} },
+        ],
+    };
+    const app = createApp(defineComponent({ setup: () => () => h(StickyScene, { scene, index: 0 }) }));
+    app.use(createPinia());
+    app.use(createRouter({ history: createMemoryHistory(), routes: [{ path: "/", component: { render: () => null } }] }));
+    installDashboardRegistry(app, { getDashboards: () => [], findDashboard: () => undefined });
+    app.mount(host);
+    return { host, done: () => (app.unmount(), host.remove()) };
+}
+const width = (root: Element, sel: string) => root.querySelector(sel)!.getBoundingClientRect().width;
+
+describe("StickyScene graphic track (K-5 (3))", () => {
+    for (const focal of [true, false]) {
+        it(`${focal ? "focal" : "split"}: a wider painter root never widens the graphic or its host`, async () => {
+            const m = mountTrack(focal);
+            try {
+                await nextTick();
+                const scene = width(m.host, ".sticky-scene");
+                const graphic = width(m.host, ".sticky-scene__graphic");
+                // The graphic stays inside the scene's own box (its track), whatever its content says.
+                expect(graphic).toBeLessThanOrEqual(scene + 0.5);
+                expect(graphic).toBeLessThan(STALE);
+                // So the ECharts host reads the track width, and `resize()` has nothing to collapse.
+                expect(width(m.host, ".probe-host")).toBeCloseTo(graphic, 0);
+            } finally {
+                m.done();
+            }
+        });
+    }
 });
