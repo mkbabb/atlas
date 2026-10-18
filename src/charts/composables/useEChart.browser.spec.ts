@@ -415,8 +415,13 @@ import ScatterPlate, { SETTLE_BOUND_MS as SCATTER_PLATE } from "../marks/Scatter
 
 type Props = Record<string, unknown>;
 
-/** Mount `comp`, time mount → settled, then apply `next` and time that act → settled. */
-function settleTimes(comp: Component, first: Props, next: Props): Promise<{ first: number; update: number }> {
+/** Mount `comp`, time mount → settled, then apply `next` (or `act`) and time that act → settled. */
+function settleTimes(
+    comp: Component,
+    first: Props,
+    next: Props,
+    act?: () => void,
+): Promise<{ first: number; update: number }> {
     return new Promise((resolve, reject) => {
         const style = document.createElement("style");
         style.textContent = ".chart-h-lg{height:320px}.chart-h-md{height:280px}.w-full{width:100%}";
@@ -454,7 +459,8 @@ function settleTimes(comp: Component, first: Props, next: Props): Promise<{ firs
                 if (firstMs < 0) {
                     firstMs = performance.now() - t0;
                     tAct = performance.now();
-                    props.value = next; // the reader's data act
+                    if (act) act(); // the reader's act (a view change)
+                    else props.value = next; // the reader's data act
                     return;
                 }
                 if (closed) {
@@ -525,6 +531,62 @@ describe("each atlas figure settles within its stated bound", () => {
             expect(t.update).toBeLessThanOrEqual(bound);
         });
     }
+});
+
+// ScatterPlate's stated bound is the staged view-change morph (`armMorphPush`, 760 ms): the data act
+// above is an ordinary paint and never runs it. Here the act is the reader's view change, timed from
+// `activeView` moving to `settled` reopening. The floor proves the morph actually ran (U B5 K-7).
+const morphView = (view: string) => () => ({
+    animation: false,
+    xAxis: { type: "value" as const, min: 0, max: 40 },
+    yAxis: { type: "value" as const, min: 0, max: 40 },
+    series: [
+        {
+            type: "scatter" as const,
+            data: Array.from({ length: 24 }, (_, i) => ({
+                id: `m${i}`,
+                value: view === "a" ? [i, (i * 7) % 11] : [(i * 3) % 40, i],
+            })),
+        },
+    ],
+});
+
+function morphSettle(mode: "staged" | "blend"): Promise<{ first: number; update: number }> {
+    const active = shallowRef("a");
+    const contract = {
+        id: "morph-probe",
+        title: "Morph probe",
+        viewSet: {
+            views: [
+                { id: "a", label: "A", option: morphView("a") },
+                { id: "b", label: "B", option: morphView("b") },
+            ],
+            identity: { field: "id" },
+            transition: { mode, reduced: false },
+        },
+    };
+    const Host = defineComponent({
+        setup: () => () =>
+            h(ScatterPlate as Component, {
+                ...scatterProps(24),
+                contract,
+                option: () => morphView(active.value)(),
+                activeView: active.value,
+            }),
+    });
+    return settleTimes(Host, {}, {}, () => {
+        active.value = "b";
+    });
+}
+
+describe("ScatterPlate: the view-change morph push settles within its stated bound", () => {
+    for (const [mode, ms] of [["staged", 760], ["blend", 520]] as const)
+        it(`${mode} (${ms} ms) settles within ${SCATTER_PLATE} ms and actually animates`, async ({ annotate }) => {
+            const t = await morphSettle(mode);
+            await annotate(`morph ${mode} bound=${SCATTER_PLATE} update=${Math.round(t.update)}`);
+            expect(t.update).toBeGreaterThanOrEqual(ms * 0.9);
+            expect(t.update).toBeLessThanOrEqual(SCATTER_PLATE);
+        });
 });
 
 // ── CX-5 (atlas half): the overlays ride the primitive. The paint windows on a real engine: the first
