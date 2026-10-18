@@ -2,14 +2,14 @@
 // E24-STATE-INTEGRITY-CRIT-C2 S1/S2/S6 · the E24-TRIUMVIRATE-ADJUDICATION-C2 §6.3 bounded redress).
 //
 // ── WHY A HOLD EXISTS ─────────────────────────────────────────────────────────────────────────────
-// A dock-spawned surface (the filter DRAWER, the export MENU) opens from a control that lives INSIDE
-// the dock, but its interactive surface lands OUTSIDE the dock `$el` — either body-teleported (Reka
-// DialogPortal / DropdownMenu → <body>) or an inline `<aside>` in the host whose trigger DOOR is the
-// only thing relocated into the dock. Either way a pointer/focus move into that outside region fires
-// the dock's own `pointerleave` / `focusout`; under the transient hover-bloom the rail re-collapses
-// mid-interaction, the trigger vanishes (stale aria-expanded), and focus drops. While such a surface
-// HOLDS the dock, the dock yields collapse-authority to it (the `portal:false` intent above the bloom)
-// and does not auto-collapse until the hold is RELEASED.
+// A dock-spawned surface (the filter DRAWER) opens from a control that lives INSIDE the dock, but its
+// interactive surface is body-teleported (Reka DialogPortal → <body>), OUTSIDE the dock `$el`. A
+// pointer/focus move into that outside region fires the dock's own `pointerleave` / `focusout`; under
+// the transient hover-bloom the rail re-collapses mid-interaction, the trigger vanishes (stale
+// aria-expanded), and focus drops. While such a surface HOLDS the dock, the dock yields
+// collapse-authority to it (the `portal:false` intent above the bloom) and does not auto-collapse until
+// the hold is RELEASED. A figure's own acts (export, source data) live in its act row (A-39, the
+// plate), so no per-figure surface holds the dock.
 //
 // ── WHAT THIS REPLACES (the state-integrity critic S1/S2/S6) ──────────────────────────────────────
 // The prior model was a module-global `Set<string>`: process-wide (two app roots / HMR scopes / test
@@ -53,22 +53,17 @@ export type PortalPhase =
     | "released";
 
 /** Where the interactive surface ACTUALLY lands (not where its door/trigger lives) — the §3.1 truth
-    the old label-driven census got wrong. `body-teleport`: a Reka DialogPortal / DropdownMenu mounted
-    to <body>, wholly outside the dock. `inline-aside`: an in-place `<aside>` in the host; only its
-    DOOR is relocated into the dock detent. */
-export type PortalSurface = "body-teleport" | "inline-aside";
+    the old label-driven census got wrong. `body-teleport`: a Reka DialogPortal mounted to <body>,
+    wholly outside the dock. */
+export type PortalSurface = "body-teleport";
 
-/** The concrete contract a lost dock hold would violate — the census's "why a hold is required". */
-export type PortalHoldReason =
-    // the surface is body-teleported outside the rail, so moving into it fires the dock's own
-    // pointerleave/focusout and re-collapses the rail mid-interaction.
-    | "teleported-surface-fires-dock-leave"
-    // the surface is inline in the host but its TRIGGER door lives in the dock detent; collapsing the
-    // rail strands that door (stale aria-expanded, unreachable toggle) while the surface stays open.
-    | "door-in-dock-surface-outside";
+/** The concrete contract a lost dock hold would violate — the census's "why a hold is required":
+    the surface is body-teleported outside the rail, so moving into it fires the dock's own
+    pointerleave/focusout and re-collapses the rail mid-interaction. */
+export type PortalHoldReason = "teleported-surface-fires-dock-leave";
 
-/** A claim's descriptor. `key` identifies the outside-interaction FAMILY (filter-drawer,
-    export-menu-<id>, source-data-<id>); the rest is the typed census payload. */
+/** A claim's descriptor. `key` identifies the outside-interaction FAMILY (`filter-drawer`); the rest
+    is the typed census payload. */
 export interface PortalClaimSpec {
     key: string;
     trigger: string;

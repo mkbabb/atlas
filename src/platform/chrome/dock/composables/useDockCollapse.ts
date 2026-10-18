@@ -29,7 +29,7 @@ import { computed, ref, type ComputedRef } from "vue";
 
 export type DockCollapseSource = "portal" | "bloom" | "manual" | "register" | "scroll";
 // `portal` is the PINNED-OPEN intent (ADJUDICATION-R4-REOPEN · the child-portal ownership model): while
-// ANY facet portal the dock spawned is OPEN (the filter drawer, the export menu — `useDockPortals`), the
+// ANY facet portal the dock spawned is OPEN (the filter drawer — `useDockPortals`), the
 // dock is pinned expanded (`portal:false`) and does NOT auto-collapse on pointer/focus departure. It
 // sits ABOVE `bloom` and is NON-RELEASING for the portal's lifetime, so a pointer/focus move INTO the
 // teleported portal (which fires the dock's own pointerleave/focusout, releasing the bloom) can no

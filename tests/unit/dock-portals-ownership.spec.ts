@@ -23,17 +23,19 @@ const DRAWER: PortalClaimSpec = {
     surface: "body-teleport",
     reason: "teleported-surface-fires-dock-leave",
 };
+// Two further claim families for the registry mechanics. Since A-39 (the plate) only the filter
+// drawer holds the dock in the shipped tree; the registry stays generic over families.
 const EXPORT_A: PortalClaimSpec = {
-    key: "export-menu-a",
-    trigger: "facet-6-export-door",
+    key: "surface-a",
+    trigger: "dock-trigger-a",
     surface: "body-teleport",
     reason: "teleported-surface-fires-dock-leave",
 };
 const SOURCE_A: PortalClaimSpec = {
-    key: "source-data-a",
-    trigger: "facet-6-source-door",
-    surface: "inline-aside",
-    reason: "door-in-dock-surface-outside",
+    key: "surface-b",
+    trigger: "dock-trigger-b",
+    surface: "body-teleport",
+    reason: "teleported-surface-fires-dock-leave",
 };
 
 describe("dock-portal ownership — claim-handle identity, not a Set<string> (S1)", () => {
@@ -62,7 +64,7 @@ describe("dock-portal ownership — claim-handle identity, not a Set<string> (S1
         b.setPhase("open");
         a.release();
         a.release(); // idempotent — a second release must not evict b
-        expect(reg.census.value.map((e) => e.key)).toEqual(["source-data-a"]);
+        expect(reg.census.value.map((e) => e.key)).toEqual(["surface-b"]);
         expect(reg.anyHeld.value).toBe(true);
         b.release();
         expect(reg.census.value).toHaveLength(0);
@@ -101,7 +103,7 @@ describe("dock-portal lifecycle phases — held until released, topmost is a sta
         const b = reg.claim(EXPORT_A);
         a.setPhase("open");
         b.setPhase("open");
-        expect(reg.topmost.value?.key).toBe("export-menu-a"); // last opened wins
+        expect(reg.topmost.value?.key).toBe("surface-a"); // last opened wins
         b.setPhase("released");
         expect(reg.topmost.value?.key).toBe("filter-drawer"); // dismiss the top → the next is topmost
     });
@@ -115,15 +117,15 @@ describe("dock-portal reactive identity — evict A, register B; no dial-back re
         const open = ref(true);
         scope.run(() => {
             reg.claimOpen(
-                () => ({ ...EXPORT_A, key: `export-menu-${contractId.value}` }),
+                () => ({ ...EXPORT_A, key: `surface-${contractId.value}` }),
                 open,
             );
         });
-        expect(reg.heldKeys.value).toEqual(["export-menu-a"]);
+        expect(reg.heldKeys.value).toEqual(["surface-a"]);
         const ownerA = reg.census.value[0]?.owner;
         contractId.value = "b"; // the one instance is re-keyed A→B without remount
         await nextTick();
-        expect(reg.heldKeys.value).toEqual(["export-menu-b"]); // identity followed B
+        expect(reg.heldKeys.value).toEqual(["surface-b"]); // identity followed B
         const ownerB = reg.census.value[0]?.owner;
         expect(ownerB).not.toBe(ownerA); // A was evicted, B is a fresh owner — no carried identity
         scope.stop();
@@ -168,23 +170,28 @@ describe("dock-portal deterministic teardown — scope dispose evicts every clai
 });
 
 describe("dock-portal outside-interaction census — truthful surface destinations (S2/§3.1)", () => {
-    it("the census records the ACTUAL surface: body-teleport vs inline-aside", () => {
+    it("the census records each held family's surface and the reason it holds the dock", () => {
         const reg = createDockPortalRegistry();
         const drawer = reg.claim(DRAWER);
-        const exp = reg.claim(EXPORT_A);
-        const source = reg.claim(SOURCE_A);
         drawer.setPhase("open");
-        exp.setPhase("open");
-        source.setPhase("open");
-        const bySurface = Object.fromEntries(
-            reg.census.value.map((e) => [e.key, e.surface] as const),
-        );
-        expect(bySurface["filter-drawer"]).toBe("body-teleport");
-        expect(bySurface["export-menu-a"]).toBe("body-teleport");
-        // the source-data browser is an INLINE aside — only its DOOR relocates into the dock (§3.1).
-        expect(bySurface["source-data-a"]).toBe("inline-aside");
-        // every held family names the concrete reason a dock hold is required.
-        for (const entry of reg.census.value) expect(entry.reason).toBeTruthy();
+        expect(reg.census.value.map((e) => [e.key, e.surface, e.reason])).toEqual([
+            ["filter-drawer", "body-teleport", "teleported-surface-fires-dock-leave"],
+        ]);
+    });
+
+    it("the dead census members and their stale comments are deleted (U RULINGS §K K-4)", () => {
+        // A-39 moved the export menu and the inline source aside out of the dock, so no claim can
+        // carry `inline-aside` or `door-in-dock-surface-outside` (clean break: no alias).
+        const portals = src("platform/chrome/dock/composables/useDockPortals.ts");
+        expect(portals).not.toMatch(/"inline-aside"|"door-in-dock-surface-outside"/);
+        expect(portals).toMatch(/export type PortalSurface = "body-teleport";/);
+        expect(portals).toMatch(/export type PortalHoldReason = "teleported-surface-fires-dock-leave";/);
+        // The comments that still described a dock-held export menu or a re-homed CSV/image export.
+        expect(portals).not.toMatch(/the export MENU/);
+        expect(src("platform/chrome/dock/composables/useDockCollapse.ts")).not.toMatch(/the export menu/);
+        expect(src("platform/chrome/dock/Dock.vue")).not.toMatch(/the export MENU/);
+        expect(src("platform/chrome/dock/MembraneProvenanceDetent.vue")).not.toMatch(/its CSV\/image EXPORT, re-homed/);
+        expect(src("platform/provenance/index.ts")).not.toMatch(/provenance \+ CSV\/image export into the dock/);
     });
 
     it("VizPlate claims NO dock hold: its export and source acts live on the plate (A-39)", () => {

@@ -160,8 +160,8 @@ watch(
 );
 
 // ── THE PORTAL-OPEN PIN (ADJUDICATION-R4-REOPEN · the child-portal ownership model) ──────────────
-// While ANY facet portal the dock spawned is OPEN — the filter DRAWER or the export MENU, both of
-// which TELEPORT to <body> outside this rail's `$el` — the dock yields collapse-authority to that
+// While ANY facet portal the dock spawned is OPEN — the filter DRAWER, which TELEPORTS to <body>
+// outside this rail's `$el` — the dock yields collapse-authority to that
 // portal and stays PINNED expanded (the `portal` intent, priority ABOVE bloom, non-releasing). This is
 // the ONE cure for C1/C2/F9/G1: a pointer/focus move into the teleported portal still fires the dock's
 // pointerleave/focusout (releasing the bloom below), but the pin outranks it so the rail never

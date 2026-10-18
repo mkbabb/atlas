@@ -1,11 +1,10 @@
 <script setup lang="ts">
 // MembraneProvenanceDetent.vue — FACET 6, THE PROVENANCE DETENT (spec-chrome §c.1 facet 6 · the
-// A-39 fold · STRAND A). The active viz's PROVENANCE + its CSV/image EXPORT, re-homed into the
-// membrane. It renders NO viz content itself: it is the TELEPORT TARGET — ONE container the active
-// plate's own `PlateProvenance` (dashboards) relocates its live node into (`useMembraneProvenance`).
-// A figure's CSV/image export is NOT here: it is the figure's own act, in its act row (A-39, the
-// plate). The plate keeps OWNING its provenance; atlas
-// never imports dashboards. `detent:"shut"` — the teleported `ProvenanceBar` grows its OWN
+// A-39 fold · STRAND A). The active viz's PROVENANCE, re-homed into the membrane. It renders NO viz
+// content itself: it is the TELEPORT TARGET — ONE container the active plate's own `PlateProvenance`
+// (dashboards) relocates its live node into (`useMembraneProvenance`). A figure's CSV/image export is
+// its own act, in its act row (A-39, the plate). The plate keeps OWNING its provenance; atlas never
+// imports dashboards. `detent:"shut"` — the teleported `ProvenanceBar` grows its OWN
 // source-&-method handle (rendered un-`hosted` when projected), so the record opens on ask.
 //
 // The target is ALWAYS mounted (v-show, never v-if) so a source teleport always locates it; it only
