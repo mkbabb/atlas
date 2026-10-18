@@ -412,6 +412,12 @@ function Prose(p: { prose: SceneProse }): VNodeChild {
     max-block-size: calc(100svh - 2 * var(--scene-pin-top));
     overflow: clip; /* `clip` caps the axis WITHOUT establishing a scroll container (the SCROLL-ENGINE
                        ban idiom — never `overflow:hidden/auto`, which would re-misbind the scroll) */
+    /* U §K K-5 (3) — the graphic HOLDS its track. A grid item that is not a scroll container (`clip`
+       is not one) keeps `min-inline-size: auto`, i.e. its min-content: an ECharts painter root still
+       carrying its pre-resize px width (the close of an Enlarge) held the whole figure chain open, and
+       the host's ResizeObserver `resize()` then collapsed it inside its own callback — the engine's
+       "ResizeObserver loop completed with undelivered notifications". 0 lets the track decide. */
+    min-inline-size: 0;
 }
 .sticky-scene__steps {
     list-style: none;
