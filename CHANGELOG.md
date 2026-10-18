@@ -161,6 +161,10 @@
   glass class atlas names that the installed glass-ui no longer has.
 - The dock crest has a visible gold focus ring; the `focus-ring-gold` class it relied on was never
   shipped by glass.
+- `SourceDataBrowser`'s control row is a labelled `role="group"`, not `role="toolbar"` (§K H-A1′).
+  Its seats are containers (the grain ToggleGroup roves its own stop; the export group holds four
+  buttons) and it keeps a plain Tab order, so it no longer claims the one-stop arrow contract of a
+  toolbar. The `.source-browser__toolbar` class and the "Source data controls" label are unchanged.
 
 ## 6.0.1 — 2026-07-16
 

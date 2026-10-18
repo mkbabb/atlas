@@ -351,9 +351,12 @@ function titleCase(value: string): string {
         :data-viz-id="resolvedVizId"
         :data-filter-active="eventState.filter.value.active || undefined"
     >
+        <!-- A labelled group, not a toolbar (RULINGS §K H-A1′): its seats are containers (the grain
+             ToggleGroup roves its own stop; the export group holds four buttons), so the row keeps a
+             plain Tab order and claims no one-stop arrow contract it does not implement. -->
         <div
             class="source-browser__toolbar"
-            role="toolbar"
+            role="group"
             aria-label="Source data controls"
         >
             <div class="source-browser__grains-field">
