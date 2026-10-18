@@ -165,6 +165,18 @@
   Its seats are containers (the grain ToggleGroup roves its own stop; the export group holds four
   buttons) and it keeps a plain Tab order, so it no longer claims the one-stop arrow contract of a
   toolbar. The `.source-browser__toolbar` class and the "Source data controls" label are unchanged.
+- Nothing writes the URL on load (U-F60 clause 3, §K K-3). `useUrlState` owns its bag (the
+  `@vueuse` `useUrlSearchParams` dependency of this composable is gone): it is seeded from
+  `location.search` before its write-back watch exists, has one `replaceState` sink, and re-reads
+  on popstate without writing. The dock writes `?at` only after a reader act and a 300 ms scroll
+  settle, and its restore no longer writes; `StickyScene` holds a step's `apply` until the first
+  reader act; `ChapterStage` keeps a `?scene` link's anchor in memory (`linkSceneAnchor`) and
+  writes `?scene` only after a reader act. A reader act is a trusted `pointerdown`, `keydown`,
+  `wheel` or `touchstart` (`platform/composables/reader-act.ts`).
+- `StickyScene`'s pinned graphic holds its grid track (`min-inline-size: 0`, §K K-5 (3)). A
+  painter root still carrying its pre-resize width after an Enlarge closed held the figure chain
+  open, and the host's `resize()` collapsed it inside its own ResizeObserver callback ("ResizeObserver
+  loop completed with undelivered notifications", WebKit /sci at 1440).
 
 ## 6.0.1 — 2026-07-16
 
