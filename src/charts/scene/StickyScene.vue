@@ -24,6 +24,7 @@ import { useReducedMotion } from "../../motion/useReducedMotion.js";
 import { useScrollTimeline } from "../../motion/useScrollTimeline.js";
 import { onNarrativeRestoreSettled } from "../../motion/narrative-restore.js";
 import { onActiveScrubHostChange } from "../composables/activeViz.js";
+import { onFirstReaderAct, readerHasActed } from "../../platform/composables/reader-act.js";
 import { useStageDeck } from "../../stage/useStageDeck.js";
 import VizPlate from "../frame/VizPlate.vue";
 import { SCENE_ACT_SEAT } from "../frame/plate-act.js";
@@ -130,17 +131,36 @@ let appliedIndex = -1; // the last step `apply` ran for — the BOUNDARY dedupe.
 const enteredScope = ref<YearScope | null>(null);
 let scopeCaptured = false;
 
-function applyStep(i: number): void {
-    if (i === appliedIndex) return; // re-entering the SAME step on a wobble → no re-apply
+// ── U-F60 CLAUSE 3 (§K K-3): the world effect waits for a reader act. `apply` writes the URL (the
+// global year), and nothing writes a vocabulary key on load. A crossing made by load, layout, the
+// `?at` restore or a program scroll moves the step (the prose, the chip, `scene-change`) but holds
+// the world effect; the reader's first act then applies the step the scene is showing, if the scene
+// is still on screen. Every later crossing follows a reader scroll and applies at once. ──
+let stopWorldDefer: (() => void) | null = null;
+
+function applyWorld(i: number): void {
+    if (!props.scene.apply) return;
+    if (!readerHasActed()) {
+        stopWorldDefer ??= onFirstReaderAct(() => {
+            stopWorldDefer = null;
+            if (sceneActive && appliedIndex >= 0) applyWorld(appliedIndex);
+        });
+        return;
+    }
     // Snapshot the reader's scope ONCE, the instant before the FIRST apply writes the dial (the feed
     // is loaded by now — a step is crossing — so `?year` IS a live scope, not the null mount window).
-    if (!scopeCaptured && props.scene.apply) {
+    if (!scopeCaptured) {
         enteredScope.value = view.yearScope?.scope.value ?? null;
         scopeCaptured = true;
     }
+    props.scene.apply(steps[i]!, runtime); // the DISCRETE step → world effect, GENUINE crossing only
+}
+
+function applyStep(i: number): void {
+    if (i === appliedIndex) return; // re-entering the SAME step on a wobble → no re-apply
     const from = appliedIndex;
     appliedIndex = i;
-    props.scene.apply?.(steps[i]!, runtime); // the DISCRETE step → world effect, GENUINE crossing only
+    applyWorld(i);
     const previous = from < 0 ? 0 : from;
     if (previous !== i)
         emit("scene-change", {
@@ -286,6 +306,7 @@ onBeforeUnmount(() => {
     sceneIo?.disconnect();
     stopStageConductor?.();
     stopNarrativeRestore?.();
+    stopWorldDefer?.();
     if (sceneActive) emit("active-change", false);
     restoreReaderScope(); // route-away / unmount → hand the dial back to the reader
 });

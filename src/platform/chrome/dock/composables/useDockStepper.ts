@@ -35,6 +35,7 @@ import { useViewParams } from "../../../stores/useViewParams.js";
 import type { NarrativeAnchor } from "../../../stores/useViewParams.js";
 import { toRoman } from "../../../composables/useRomanNumeral.js";
 import { scrollToSection } from "../scroll-anchor.js";
+import { readerHasActed } from "../../../composables/reader-act.js";
 import type { DashboardContext } from "../../../../contract/index.js";
 
 /** The stepper's reactive surface — the dock composes this into its template. */
@@ -149,8 +150,8 @@ export function useDockStepper(
     // law: `?at` backs the COARSE beat the reader is at (passively, via replaceState — no Back-swamp);
     // the rim/`activeVizId`/scene-step RE-DERIVE from where the reader lands (never URL-backed).
     const RESTORE_SETTLE_MS = 700;
-    /** True while a restore `scrollIntoView` is settling — suppresses the writer so the restore OWNS
-        the initial `?at` (it must not immediately re-write the beat it just seeded). */
+    /** True while a restore `scrollIntoView` is settling — suppresses the writer so the beats the
+        restore scrolls past are never written over the linked `?at`. */
     let restoring = false;
     let restoreAborted = false;
     let stopRestoreAbort: (() => void) | null = null;
@@ -161,14 +162,19 @@ export function useDockStepper(
     let restoreSettled = false;
     let layoutStopped = false;
 
-    /** Track the reader's place into `?at` (debounced) — a replaceState write, no history swamp. NOT
-        `immediate` (the dock SEEDS `activeBeatId` on setup + the restore seeds it; neither should
-        WRITE — the restore owns the initial `?at`). Suppressed while restoring + on an empty id. */
-    const writeAnchor = useDebounceFn((id: string) => {
-        if (restoring || !id) return;
+    /** Track the reader's place into `?at` — a replaceState write, no history swamp. U-F60 clause 3
+        (§K K-3): `?at` is written only after a READER scroll settles, never on load. The dock seeds
+        `activeBeatId` on setup and the observer re-fires as the body lays out; the restore scrolls
+        to a linked anchor; a program scroll moves the page. None of those is a reader act, so none
+        writes: the writer waits for the reader-act latch, then for 300 ms without a scroll event or
+        a beat change (the settle), and writes only a beat that differs from the URL's. */
+    const settleAnchor = useDebounceFn(() => {
+        const id = activeBeatId.value;
+        if (restoring || !id || !readerHasActed()) return;
+        if (view.narrativeAt?.beatId === id) return;
         view.setNarrativeAt(id);
     }, 300);
-    watch(activeBeatId, (id) => writeAnchor(id));
+    watch(activeBeatId, () => settleAnchor());
 
     function anchorElement(anchor: NarrativeAnchor): HTMLElement | null {
         const beat = document.getElementById(anchor.beatId);
@@ -204,9 +210,11 @@ export function useDockStepper(
         stopRestoreAbort = null;
         restoring = false;
         if (!restoreAborted) return;
+        // The reader broke the restore with a wheel, touch or key: that is a reader act, so the
+        // place the reader scrolled to is written once the scroll settles.
         if (anchor.stepId != null && view.sceneId === anchor.stepId)
             view.setSceneId(undefined);
-        writeAnchor(activeBeatId.value);
+        settleAnchor();
     }
 
     /** Drive and settle the one semantic restore on the dock's existing timer. */
@@ -217,13 +225,13 @@ export function useDockStepper(
         activeBeatId.value = anchor.beatId;
         bindRestoreAbort();
         const block: ScrollLogicalPosition = anchor.stepId ? "center" : "start";
-        let restoredStep: string | undefined;
+        // The restore reads the link and never writes it (§K K-3): the URL already names the
+        // anchor, and a step the page cannot place is left in the URL as the link gave it.
         layoutHeal = watchNarrativeAnchorLayout({
             target: el,
             root: document.body,
             reanchor: () => {
                 el.scrollIntoView({ behavior: "auto", block });
-                view.setNarrativeAt(anchor.beatId, restoredStep);
             },
             onStop: () => {
                 layoutStopped = true;
@@ -235,24 +243,13 @@ export function useDockStepper(
         settleTimer = setTimeout(
             () => {
                 const aborted = restoreAborted;
-                const sceneRestore =
-                    anchor.stepId != null && view.sceneId === anchor.stepId;
                 const stepConsumed = settleNarrativeRestore(anchor, { aborted });
-                if (!aborted) {
-                    if (!stepConsumed) {
-                        document.getElementById(anchor.beatId)?.scrollIntoView({
-                            behavior: "auto",
-                            block: "start",
-                        });
-                    }
-                    view.setNarrativeAt(
-                        anchor.beatId,
-                        stepConsumed ? anchor.stepId : undefined,
-                    );
-                    if (sceneRestore)
-                        view.setSceneId(stepConsumed ? anchor.stepId : undefined);
+                if (!aborted && !stepConsumed) {
+                    document.getElementById(anchor.beatId)?.scrollIntoView({
+                        behavior: "auto",
+                        block: "start",
+                    });
                 }
-                restoredStep = stepConsumed ? anchor.stepId : undefined;
                 restoreSettled = true;
                 layoutHeal?.settle();
                 finishRestore(anchor);
@@ -357,6 +354,10 @@ export function useDockStepper(
     }
 
     onMounted(setupBeatObserver);
+    // The `?at` settle: every scroll event restarts the 300 ms wait, so the anchor is written once
+    // the reader's scroll comes to rest, not at each beat it passes on the way.
+    const onScroll = (): void => void settleAnchor();
+    onMounted(() => window.addEventListener("scroll", onScroll, { passive: true }));
 
     // ── THE DOCUMENT-END SNAP (N5 design consult — the short-terminal-beat law) ─────────────
     // A SHORT terminal beat can never climb into the upper-third reading band: the document runs
@@ -394,6 +395,7 @@ export function useDockStepper(
     });
 
     onBeforeUnmount(() => {
+        window.removeEventListener("scroll", onScroll);
         cancelSectionScroll?.();
         observer?.disconnect();
         observer = null;

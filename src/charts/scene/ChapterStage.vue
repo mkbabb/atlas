@@ -10,6 +10,7 @@ import {
     STAGE_MORPH_KEY,
 } from "./stage-morph.js";
 import { createStageScrollRestore } from "./stage-scroll-restore.js";
+import { readerHasActed } from "../../platform/composables/reader-act.js";
 import {
     resolveSceneAnchor,
     useViewParams,
@@ -70,8 +71,8 @@ const sceneAnchor = resolveSceneAnchor(
     props.stage.scenes.map((scene) => scene.id),
     initialAnchor,
 );
-if (sceneAnchor && sceneAnchor !== initialAnchor)
-    view.setNarrativeAt(sceneAnchor.beatId, sceneAnchor.stepId);
+// §K K-3: a promoted `?scene` link is held as the restore anchor, never written on load.
+if (sceneAnchor && sceneAnchor !== initialAnchor) view.linkSceneAnchor(sceneAnchor);
 const events = props.stage.events;
 const stageEvents = stageEventsFromHub(events, props.stage.id);
 const scope = { grain: "stage" as const, stageId: props.stage.id };
@@ -129,7 +130,9 @@ function onSceneChange(event: {
     activeSceneIndex.value = event.index;
     const option = props.stage.scenes[event.index];
     if (option) morph.applyScene(option, { dir: event.dir });
-    view.setSceneId(event.to);
+    // §K K-3: `?scene` is written only in answer to a reader act. A crossing made by load, layout or
+    // the `?at` restore morphs the stage and leaves the URL as the link gave it.
+    if (readerHasActed()) view.setSceneId(event.to);
     events.emit({
         type: "scene-change",
         scope,
@@ -145,6 +148,7 @@ function onSceneChange(event: {
 function onActiveChange(active: boolean): void {
     if (
         !active &&
+        readerHasActed() &&
         props.stage.scenes.some((scene) => scene.id === view.sceneId)
     )
         view.setSceneId(undefined);
