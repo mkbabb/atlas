@@ -322,21 +322,32 @@ export const useViewParams = defineStore("platform:viewParams", () => {
     const SCENE_KEY = "scene";
     const FIG_KEY = "fig";
 
-    /** The PARSED narrative anchor off `?at`, or null when absent / malformed. Reactive — a reload /
-        route change re-reads the one URL bag (the `?focus` twin). */
-    const narrativeAt: ComputedRef<NarrativeAnchor | null> = computed(() =>
-        parseAt(url.get(AT_KEY)),
+    /** A `?scene` link promoted onto its beat's anchor (`resolveSceneAnchor`), held in memory. U-F60
+        clause 3 (§K K-3): nothing writes the URL on load, so the promotion is read, never written.
+        The reader's first settled scroll writes `?at` and retires it. */
+    const linkedSceneAnchor = shallowRef<NarrativeAnchor | null>(null);
+
+    /** The narrative anchor the page restores to: a promoted `?scene` link, else the PARSED `?at`, or
+        null when absent / malformed. Reactive — a reload / route change re-reads the one URL bag. */
+    const narrativeAt: ComputedRef<NarrativeAnchor | null> = computed(
+        () => linkedSceneAnchor.value ?? parseAt(url.get(AT_KEY)),
     );
 
-    /** Write `?at=<beatId>[.<stepId>]` (a passive replaceState). `undefined` beat clears it. The
-        dock tracks the coarse beat; ChapterStage may promote that same anchor to an authored scene
-        step during restore. Neither path writes the per-frame `activeVizId`. */
+    /** Write `?at=<beatId>[.<stepId>]` (a passive replaceState). `undefined` beat clears it. Its one
+        caller is the dock, after a reader scroll settles; it never writes the per-frame
+        `activeVizId`. */
     function setNarrativeAt(beatId: string | undefined, stepId?: string): void {
+        linkedSceneAnchor.value = null;
         url.set(AT_KEY, beatId ? encodeAt({ beatId, stepId }) : undefined);
     }
 
-    /** The authored stage-scene deep link. ChapterStage resolves it to its owning beat and promotes
-        the existing `?at` anchor; scene boundaries remain its sole live writer. */
+    /** Hold a `?scene` link's promoted anchor for the restore, without writing the URL. */
+    function linkSceneAnchor(anchor: NarrativeAnchor): void {
+        linkedSceneAnchor.value = anchor;
+    }
+
+    /** The authored stage-scene deep link. ChapterStage resolves it to its owning beat and links it
+        as the restore anchor; a scene boundary crossed after a reader act is its sole live writer. */
     const sceneId: ComputedRef<string | undefined> = computed(() =>
         url.get(SCENE_KEY),
     );
@@ -413,6 +424,7 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         // K-ANIM A1 / W-STAGE — narrative anchors + the `?fig` one-bag fold.
         narrativeAt,
         setNarrativeAt,
+        linkSceneAnchor,
         sceneId,
         setSceneId,
         figId,

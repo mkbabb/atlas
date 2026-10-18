@@ -1,16 +1,21 @@
 // platform/composables/useUrlState.ts — the URL-as-document primitive (INV-5).
 // Every deep-linkable param a dashboard owns lives in the query string, so a copied
 // URL reconstructs the view on reload; nothing meaningful hides in component-local
-// state. This is a thin, typed wrapper over @vueuse `useUrlSearchParams('history')`
-// — the same door `useYearScope` already binds the year-scope through — exposing a
-// single reactive bag of `string` params plus typed get/set helpers so a caller
-// reads numbers and lists without re-implementing the parse each time.
+// state. This owns the ONE reactive bag of `string` params (the door `useYearScope`
+// binds the year-scope through) plus typed get/set helpers, so a caller reads
+// numbers and lists without re-implementing the parse each time.
 //
 // String is the wire form (the query string is text); the typed accessors are the
 // only place a param is coerced, so the round-trip (`set` → URL → reload → `get`) is
 // one codec, not scattered `Number(params.x)` reads.
+//
+// U-F60 clause 3 (U RULINGS §K K-3): nothing writes the URL on load. The bag is seeded from
+// `location.search` BEFORE its write-back watch exists, so reading the link never writes it.
+// (@vueuse `useUrlSearchParams` armed its deep watch first and then seeded the state, so every
+// load with a query wrote it straight back, re-encoded: `?sel=state:06` became `state%3A06`.)
+// Back and Forward re-read the bag and never write.
 
-import { useUrlSearchParams } from "@vueuse/core";
+import { onScopeDispose, reactive, watch } from "vue";
 
 /** A reactive param bag — every value is the URL's text form (or absent). */
 export type UrlState<Keys extends string> = Record<Keys, string | undefined>;
@@ -34,19 +39,54 @@ export interface UseUrlState<Keys extends string> {
 }
 
 /**
- * Bind a typed set of param keys to the URL query. `'history'` mode keeps the
- * params in the path's `?…` (not the hash), so saved-view links and the browser's
- * back/forward both carry the full document state. The keys are advisory typing —
- * @vueuse stores whatever is written — so a dashboard declares its own param vocab
+ * Bind a typed set of param keys to the URL query. The params live in the path's
+ * `?…` (not the hash), so saved-view links and the browser's back/forward both carry
+ * the full document state. A write is a `replaceState`. The keys are advisory typing —
+ * the bag stores whatever is written — so a dashboard declares its own param vocab
  * and the helpers narrow the reads.
  */
 export function useUrlState<Keys extends string>(): UseUrlState<Keys> {
-    // @vueuse returns a reactive object already proxying writes back to
-    // `window.location`; we keep that instance as the live params bag.
-    const params = useUrlSearchParams<Record<Keys, string | undefined>>(
-        "history",
-    ) as UrlState<Keys>;
+    const params = reactive({}) as UrlState<Keys>;
+    if (typeof window === "undefined") return helpers(params);
 
+    const bag = params as Record<string, string | undefined>;
+    /** Mirror `location.search` into the bag (a key repeated in the query keeps its last value). */
+    function read(): void {
+        const next = new URLSearchParams(window.location.search);
+        for (const key of Object.keys(bag)) if (!next.has(key)) delete bag[key];
+        for (const [key, value] of next) bag[key] = value;
+    }
+    read(); // seeded before the watch below exists: the load is read, never written
+
+    let reading = false;
+    watch(
+        params,
+        () => {
+            if (reading) return;
+            const query = new URLSearchParams();
+            for (const [key, value] of Object.entries(bag))
+                if (value != null && value !== "") query.set(key, value);
+            const q = query.toString();
+            const { pathname, hash } = window.location;
+            const url = `${pathname}${q ? `?${q}` : ""}${hash}`;
+            window.history.replaceState(window.history.state, "", url);
+        },
+        { deep: true, flush: "sync" },
+    );
+
+    const onPopState = (): void => {
+        reading = true;
+        read();
+        reading = false;
+    };
+    window.addEventListener("popstate", onPopState);
+    onScopeDispose(() => window.removeEventListener("popstate", onPopState), true);
+
+    return helpers(params);
+}
+
+/** The typed read/write helpers over one bag. */
+function helpers<Keys extends string>(params: UrlState<Keys>): UseUrlState<Keys> {
     function get(key: Keys, fallback?: string): string | undefined {
         const v = params[key];
         return v == null || v === "" ? fallback : v;
