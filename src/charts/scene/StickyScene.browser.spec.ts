@@ -20,6 +20,7 @@ import { createPinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
 import StickyScene from "./StickyScene.vue";
 import { installDashboardRegistry } from "../../contract/registry-inject.js";
+import { useViewParams } from "../../platform/stores/useViewParams.js";
 import type { ChapterScene, SceneStep } from "../contract/scene-contract.js";
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -66,6 +67,55 @@ describe("a scene's world effect waits for a reader act (K-3)", () => {
         await userEvent.keyboard("{Shift}"); // a trusted key that does not move the page
         await wait(100);
         expect(applied).toEqual(["s-2014"]);
+    });
+});
+
+// ── U §L 6(f): a scene's year is HELD in memory, never written ──
+// The /sci map scene's `apply` drives `runtime.setYear`. Under 6(f) the scroll write of the year is
+// deleted: the step holds the year scope (`useYearScope.hold`), the URL is not written, and leaving
+// the scene releases the hold. A recording stand-in for the year scope counts each verb.
+describe("a scene's year is held, never written (§L 6(f))", () => {
+    it("setYear holds the step's year, writes nothing, and releases on unmount", async () => {
+        const calls: string[] = [];
+        const scene: ChapterScene = {
+            kind: "scene",
+            graphic: defineComponent({ render: () => h("div", { style: "height:300px" }, "graphic") }),
+            steps: [2014, 2018].map((year) => ({ id: `s-${year}`, state: { year }, prose: `y${year}` })),
+            apply: (step: SceneStep, rt) => rt.setYear((step.state as { year: number }).year),
+        };
+        const host = document.createElement("div");
+        host.innerHTML = `<div style="height:1600px"></div><div id="scene-host"></div><div style="height:2400px"></div>`;
+        document.body.appendChild(host);
+        const pinia = createPinia();
+        const app = createApp(defineComponent({ render: () => h(StickyScene, { scene, beatId: "map" }) }));
+        installDashboardRegistry(app, { getDashboards: () => [], findDashboard: () => undefined });
+        app.use(createRouter({ history: createMemoryHistory(), routes: [{ path: "/:slug?", component: { render: () => null } }] }));
+        app.use(pinia);
+        app.mount(host.querySelector("#scene-host")!);
+        const view = useViewParams(pinia);
+        (view as unknown as { yearScope: unknown }).yearScope = {
+            hold: (s: { year: number }) => {
+                calls.push(`hold ${s.year}`);
+                return () => calls.push(`release ${s.year}`);
+            },
+            setSingle: (y: number) => calls.push(`setSingle ${y}`),
+            setPeriod: () => calls.push("setPeriod"),
+        };
+        done = () => {
+            app.unmount();
+            host.remove();
+        };
+        const urlBefore = location.href;
+        await wait(300);
+        document.querySelector<HTMLElement>('[data-scene-step-id="s-2014"]')!.scrollIntoView({ block: "center" });
+        await wait(600);
+        await userEvent.keyboard("{Shift}");
+        await wait(100);
+        expect(calls).toEqual(["hold 2014"]);
+        expect(location.href).toBe(urlBefore);
+        done();
+        done = null;
+        expect(calls).toEqual(["hold 2014", "release 2014"]);
     });
 });
 

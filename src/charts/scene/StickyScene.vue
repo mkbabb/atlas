@@ -19,7 +19,6 @@ import {
 } from "vue";
 import { useViewParams } from "../../platform/stores/useViewParams.js";
 import { useActiveDashboard } from "../../platform/stores/useActiveDashboard.js";
-import type { YearScope } from "../../data/useYearScope.js";
 import { useReducedMotion } from "../../motion/useReducedMotion.js";
 import { useScrollTimeline } from "../../motion/useScrollTimeline.js";
 import { onNarrativeRestoreSettled } from "../../motion/narrative-restore.js";
@@ -94,10 +93,18 @@ const side = computed<"left" | "right">(() => {
     return (props.index ?? 0) % 2 === 0 ? "left" : "right";
 });
 
-// ── THE RUNTIME the consumer's `apply` drives (the platform stores the scene writes). `setYear` is a
-// no-op before the active feed loads (`yearScope` null → the optional-chain guard). ──
+// ── THE RUNTIME the consumer's `apply` drives. `setYear` HOLDS the scene's year in memory over the
+// reader's period (U §L 6(f): the scroll write of `yearMode`/`year` is deleted); it never writes the
+// URL. A new step's hold replaces the last; leaving the scene releases it, so the reader's own period
+// (their link or their last pick) shows again untouched. A no-op before the active feed loads. ──
+let releaseHold: (() => void) | null = null;
 const runtime: SceneRuntime = {
-    setYear: (year) => view.yearScope?.setSingle(year),
+    setYear: (year) => {
+        const ys = view.yearScope;
+        if (!ys) return;
+        releaseHold?.();
+        releaseHold = ys.hold({ mode: "single", year });
+    },
     view,
     active,
 };
@@ -115,24 +122,8 @@ const ANCHOR_BAND: Record<SceneAnchor, string> = {
 let appliedIndex = -1; // the last step `apply` ran for — the BOUNDARY dedupe. -1 ⇒ never applied (so
 //                       the FIRST genuine crossing applies even on step 0). NEVER mount-fired.
 
-// ── THE READER's YEAR — the SNAPSHOT/RESTORE guard (the year-hijack fix). A scene's `apply` writes
-// the GLOBAL year dial on every crossing, so a reader who deep-linked `?year=2022` would have it
-// hijacked (→ frozen at the scene's last step). We snapshot the reader's scope the MOMENT BEFORE the
-// scene's FIRST `apply` writes it, and RESTORE it whenever the scene fully leaves the viewport (BOTH
-// directions) and onBeforeUnmount — so the dial is the scene's only WHILE the scene is on-screen, the
-// reader's again the moment it is not.
-//
-// THE SNAPSHOT IS LAZY — taken at the first crossing, NOT at mount. The scene mounts below the fold
-// during route hydration, BEFORE the feed has loaded (`yearScope` is still null then — `?year` is not
-// yet folded into a live scope), so a mount-time snapshot captured null and the restore was a no-op.
-// At the first genuine crossing the feed is loaded and the URL year IS the live scope, so the capture
-// is the reader's true pre-hijack intent. The full discriminated scope is captured (mode + years), so
-// a reader in range/aggregate is restored faithfully, not flattened to single. ──
-const enteredScope = ref<YearScope | null>(null);
-let scopeCaptured = false;
-
-// ── U-F60 CLAUSE 3 (§K K-3): the world effect waits for a reader act. `apply` writes the URL (the
-// global year), and nothing writes a vocabulary key on load. A crossing made by load, layout, the
+// ── U-F60 CLAUSE 3 (§K K-3): the world effect waits for a reader act. `apply` moves the world (the
+// held year), and nothing moves it on load. A crossing made by load, layout, the
 // `?at` restore or a program scroll moves the step (the prose, the chip, `scene-change`) but holds
 // the world effect; the reader's first act then applies the step the scene is showing, if the scene
 // is still on screen. Every later crossing follows a reader scroll and applies at once. ──
@@ -146,12 +137,6 @@ function applyWorld(i: number): void {
             if (sceneActive && appliedIndex >= 0) applyWorld(appliedIndex);
         });
         return;
-    }
-    // Snapshot the reader's scope ONCE, the instant before the FIRST apply writes the dial (the feed
-    // is loaded by now — a step is crossing — so `?year` IS a live scope, not the null mount window).
-    if (!scopeCaptured) {
-        enteredScope.value = view.yearScope?.scope.value ?? null;
-        scopeCaptured = true;
     }
     props.scene.apply(steps[i]!, runtime); // the DISCRETE step → world effect, GENUINE crossing only
 }
@@ -199,13 +184,11 @@ function settleStep(event: TransitionEvent): void {
     stage.settle();
 }
 
+/** Hand the period back to the reader: release the scene's hold (nothing is written). */
 function restoreReaderScope(): void {
-    const s = enteredScope.value;
-    const ys = view.yearScope;
-    if (!s || !ys) return;
-    if (s.mode === "single") ys.setSingle(s.year);
-    else if (s.mode === "range") ys.setRange(s.years);
-    else ys.setAggregate(s.years);
+    if (!releaseHold) return;
+    releaseHold();
+    releaseHold = null;
     appliedIndex = -1; // a re-entry from a restored state re-applies step 0 (no stale dedupe)
 }
 

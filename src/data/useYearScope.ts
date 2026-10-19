@@ -5,13 +5,17 @@
 // this; no viz manages its own year state.
 //
 // MODE NAMING (the adjudicated grammar, G7 §16 — binding for this wave): the enum is
-// `single | range | aggregate`. P4's spelling wins because it ships the URL contract
-// (`?yearMode=…`); G7's "compare" is demoted to the human name for what range mode
+// `single | range | aggregate`. G7's "compare" is the human name for what range mode
 // *renders* (small-multiples / overlay), not a fourth enum value. So range keeps the
 // years distinct (`many` frames); aggregate collapses them (`agg`); single is one slice.
 //
 // STATE SHAPE (the reconciled union, G7 §17): one discriminated union, smaller than
 // either a bare scalar or a `Set + flag`, so the mode and the period-list cannot drift.
+//
+// ONE KEY, SET-VALUED (U · §L 6(f), X-5′): the mode and the set ride one URL key through the one
+// codec in `period.ts` (`?sy=2014-15..2025-26` pools; `?sy=range:…` compares; gaps are kept).
+// The atlas 7 keys `yearMode`/`years` (and `year` on a school-year feed) are legacy: read once
+// on load with a notice, never written.
 //
 // ONE URL-STATE SOURCE (B4 scrubber fix): the year-scope does NOT mint its own
 // `useUrlSearchParams` instance — it reads/writes the SAME reactive bag the view-params
@@ -19,7 +23,7 @@
 // query from only their own keys per write and only resync state←URL on `popstate`
 // (which `replaceState` never fires), so a year write through a second instance never
 // re-runs the first instance's computeds — the scrubber wrote the URL but the active year
-// stayed frozen. Sharing the one bag makes `?year=` a live, reactive read for every
+// stayed frozen. Sharing the one bag makes the period key a live, reactive read for every
 // consumer (the thumb, the freshness chip, the barometer, the morph trigger).
 import { computed, shallowRef, type ComputedRef, type Ref } from "vue";
 import type { UseUrlState } from "../platform/composables/useUrlState.js";
@@ -30,18 +34,22 @@ import {
     sliceYear,
     type TrajectoryPoint,
 } from "./multiYear.js";
-
-/** The three year-scope query keys the scrubber owns on the shared URL bag. */
-type YearScopeKey = "yearMode" | "year" | "years";
+import {
+    periodCodecFor,
+    periodKeys,
+    restatePeriod,
+    scopeText,
+    type PeriodCodec,
+    type PeriodNoun,
+    type PeriodNotice,
+    type PeriodScope,
+} from "./period.js";
 
 /** The three viewing modes (G7 §16, adjudicated). */
 export type YearMode = "single" | "range" | "aggregate";
 
-/** The selection: a scalar year for `single`, a year list for the multi modes. */
-export type YearScope =
-    | { mode: "single"; year: number }
-    | { mode: "range"; years: number[] }
-    | { mode: "aggregate"; years: number[] };
+/** The selection: a scalar year for `single`, a set of years for the multi modes (gaps kept). */
+export type YearScope = PeriodScope;
 
 /**
  * The scoped result the vizes branch on by `kind` (never by `mode`, G7 §17):
@@ -55,46 +63,28 @@ export type YearScopeResult =
     | { kind: "many"; frames: Map<number, Map<string, FeedRow>> }
     | { kind: "agg"; frame: Map<string, FeedRow> };
 
-/** Parse the `?years=` token: contiguous runs as `a-b`, gaps comma-separated. */
-function parseYears(raw: string | undefined): number[] {
-    if (!raw) return [];
-    const out = new Set<number>();
-    for (const part of raw.split(",")) {
-        const span = part.split("-").map((s) => Number(s.trim()));
-        if (span.length === 2 && Number.isFinite(span[0]) && Number.isFinite(span[1])) {
-            const [lo, hi] = span[0] <= span[1] ? span : [span[1], span[0]];
-            for (let y = lo; y <= hi; y++) out.add(y);
-        } else if (span.length === 1 && Number.isFinite(span[0])) {
-            out.add(span[0]);
-        }
-    }
-    return [...out].sort((a, b) => a - b);
-}
-
-/** Serialize a year list, packing contiguous runs as `a-b` (the inverse of parse). */
-function serializeYears(years: number[]): string {
-    const sorted = [...new Set(years)].sort((a, b) => a - b);
-    const parts: string[] = [];
-    let i = 0;
-    while (i < sorted.length) {
-        let j = i;
-        while (j + 1 < sorted.length && sorted[j + 1] === sorted[j] + 1) j++;
-        parts.push(i === j ? `${sorted[i]}` : `${sorted[i]}-${sorted[j]}`);
-        i = j + 1;
-    }
-    return parts.join(",");
-}
-
 /** The composable's reactive surface. */
 export interface UseYearScope {
     /** The current discriminated scope (reactive read). */
     scope: ComputedRef<YearScope>;
-    /** The active mode (`?yearMode=`). */
+    /** The active mode. */
     mode: ComputedRef<YearMode>;
     /** The feed's full sorted year list — the scrubber's track domain. */
     years: number[];
     /** The newest year — the scrubber's default thumb position. */
     latestYear: number;
+    /** The ONE period noun of this feed's axis (X-11′): "school year" + "2024–25", or "year". */
+    noun: PeriodNoun;
+    /** The ONE codec of this feed's axis: its URL key (`sy` / `year`), parse and format. */
+    codec: PeriodCodec;
+    /** The reader-facing text of the scope: "2024–25", "2014–15 to 2025–26", "2014–15, 2025–26". */
+    text: ComputedRef<string>;
+    /**
+     * The load-time restatement's disclosure (a legacy `?year=`/`?years=` link, a period the feed
+     * does not carry, a clipped set, an unreadable value), or `null`. It belongs to the load and
+     * closes on the reader's first period write; nothing else closes or reopens it.
+     */
+    notice: ComputedRef<PeriodNotice | null>;
     /**
      * The single most-representative active year — the scrubber thumb + the
      * value the dock barometer and the freshness chip re-weight to. In `single`
@@ -107,59 +97,76 @@ export interface UseYearScope {
      * are the SAME `activeYear` signal (one clock, two faces), never a second store.
      */
     activeYear: ComputedRef<number>;
-    /** Switch to single-year mode at `year`. */
+    /**
+     * THE READER'S WRITE (§L 6(f), §K K-3): the one write path. Writes the scope through the
+     * codec to the axis key and deletes the legacy keys in the same act. Call it only in answer
+     * to a reader act. Throws on a key the feed does not carry (the controls offer only carried
+     * keys, so that is a consumer defect, never a silent refusal). Releases any program hold.
+     */
+    setPeriod: (scope: YearScope) => void;
+    /** `setPeriod({ mode: "single", year })`. */
     setSingle: (year: number) => void;
-    /** Switch to range (compare) mode over `years`. */
+    /** `setPeriod({ mode: "range", years })`. */
     setRange: (years: number[]) => void;
-    /** Switch to aggregate mode over `years`. */
+    /** `setPeriod({ mode: "aggregate", years })`. */
     setAggregate: (years: number[]) => void;
+    /**
+     * A PROGRAM's period (a scene step): held in memory over the reader's period, never written
+     * to the URL (§L 6(f): the scroll write is deleted). A new hold replaces the last; the
+     * returned release hands the period back to the reader. A reader write releases it too.
+     */
+    hold: (scope: YearScope) => () => void;
     /**
      * THE SCROLL FACE OF THE CLOCK (H.W11.a — one clock, many faces; the CUT-2 lesson).
      * Register a temporal viz's scroll-year source as a SECOND READER of THIS one scope —
      * NOT a second year store. The source is a reactive `number | null`: a whole year while
      * the viz is being scrubbed (the scroll-timeline's year facet resolved a year), or `null`
      * when the viz is not the active scroll subject (then `activeYear` falls back to the
-     * URL-derived year — the dock's "Compare years" face). The binding REPLACES any prior
+     * scope's year — the dock's "Compare years" face). The binding REPLACES any prior
      * source (one scroll face at a time — the active temporal viz), so this stays a single
      * input to the one `activeYear` computed, never an N-clock fan. Returns an `unbind` to
-     * release the face on the viz's unmount (the year falls back to the URL face).
+     * release the face on the viz's unmount (the year falls back to the scope face).
      */
     bindScrollYear: (source: Ref<number | null>) => () => void;
 }
 
 /**
- * The year-scope composable. Binds `{mode, year, years[]}` to the URL query
- * (`?yearMode=&year=&years=`) through the SHARED `useUrlState` bag the view-params store
- * owns — NOT a freshly-minted `useUrlSearchParams` instance — so a scrub re-runs every
- * reader's computeds off the one reactive query (the B4 scrubber fix). Defaults to single
- * mode at `latestYear` so any reader shows the newest year (the rung-2 v1 guard, G6 §9
- * R1). The default year list, when a mode needs one and none is in the URL, is the feed's
- * full `meta.years`.
+ * The year-scope composable (U · §L 6(f), X-5′). Binds the feed's period to ONE URL key, the
+ * axis key of `periodCodecFor(feed.meta)` (`?sy=` on a school-year feed, else `?year=`), through
+ * the SHARED `useUrlState` bag the view-params store owns, so every reader's computeds re-run off
+ * the one reactive query (the B4 scrubber fix).
  *
- * The caller passes the store's shared url-state in (the view-params store builds it once
- * via `useUrlState` and folds the year-scope onto it); the codec keys (`yearMode/year/
- * years`) ride that same bag alongside the dashboard's other params.
+ * READ. The axis key is read live (Back and Forward re-read it) and restated against the feed's
+ * carried years by `restatePeriod`. The legacy integer keys (`yearMode`, `years`, and `year` on a
+ * school-year feed) are read ONCE, here at construction, restated element-wise with a notice, and
+ * never written. With neither, the scope is the latest year.
+ *
+ * WRITE. Nothing is written on load. `setPeriod` (and its three mode verbs) is the reader's write;
+ * `hold` is a program's in-memory period; neither writes anything else.
  */
-export function useYearScope(feed: Feed, url: UseUrlState<YearScopeKey>): UseYearScope {
+export function useYearScope(feed: Feed, url: UseUrlState<string>): UseYearScope {
     const params = url.params;
-
     const latestYear = feed.meta.latestYear;
     const allYears = feed.meta.years;
+    const codec = periodCodecFor(feed.meta);
+    const noun = codec.noun;
 
-    const mode = computed<YearMode>(() => {
-        const m = params.yearMode;
-        return m === "range" || m === "aggregate" ? m : "single";
-    });
+    // The load-time query, read ONCE: the legacy keys and the load notice belong to it.
+    const load = Object.fromEntries(periodKeys(codec).map((k) => [k, params[k]]));
+    const atLoad = restatePeriod(load, allYears, codec);
 
-    const scope = computed<YearScope>(() => {
-        if (mode.value === "single") {
-            const year = Number(params.year);
-            return { mode: "single", year: Number.isFinite(year) ? year : latestYear };
-        }
-        const years = parseYears(params.years);
-        const selected = years.length > 0 ? years : allYears;
-        return { mode: mode.value, years: selected };
+    // The reader has written a period since load (closes the notice, retires the legacy read).
+    const written = shallowRef(false);
+    const held = shallowRef<YearScope | null>(null);
+
+    const readerScope = computed<YearScope>(() => {
+        if (!written.value && params[codec.param] == null) return atLoad.scope;
+        return restatePeriod({ [codec.param]: params[codec.param] }, allYears, codec).scope;
     });
+    const scope = computed<YearScope>(() => held.value ?? readerScope.value);
+    const mode = computed<YearMode>(() => scope.value.mode);
+    const text = computed(() => scopeText(scope.value, noun));
+    const notice = computed<PeriodNotice | null>(() => (written.value ? null : atLoad.notice));
 
     // ── THE SCROLL FACE (H.W11.a) ─────────────────────────────────────────────────────────
     // ONE optional reader-source: a temporal viz's scroll-resolved year (or null when no viz
@@ -168,27 +175,19 @@ export function useYearScope(feed: Feed, url: UseUrlState<YearScopeKey>): UseYea
     // it inside the `scrollYear` computed establishes the dependency THROUGH the source ref
     // (reactive without storing a ref-of-ref). It is a single source — NOT a second year
     // store; binding a viz REPLACES it (one active scroll face), so `activeYear` always has
-    // exactly one scroll input alongside the URL face.
+    // exactly one scroll input alongside the scope face.
     const scrollYearGetter = shallowRef<(() => number | null) | null>(null);
-    const scrollYear = computed<number | null>(
-        () => scrollYearGetter.value?.() ?? null,
-    );
+    const scrollYear = computed<number | null>(() => scrollYearGetter.value?.() ?? null);
 
-    // The single representative active year (the scrubber thumb + the barometer/
-    // freshness re-weight): the SCROLL face when a viz is actively scrubbing, else the URL
-    // face — the chosen year in single mode, else the latest of the selected years (the same
-    // collapse the single-value vizes take, store.ts). The scroll face is clamped to the
-    // feed's real domain so a stray source never reports a year outside the data.
     const activeYear = computed<number>(() => {
         const scrolled = scrollYear.value;
         if (scrolled != null && allYears.length > 0) {
-            const first = allYears[0];
-            const last = allYears[allYears.length - 1];
+            const first = allYears[0]!;
+            const last = allYears[allYears.length - 1]!;
             return scrolled < first ? first : scrolled > last ? last : scrolled;
         }
         const s = scope.value;
-        if (s.mode === "single") return s.year;
-        return s.years.length > 0 ? Math.max(...s.years) : latestYear;
+        return s.mode === "single" ? s.year : Math.max(...s.years);
     });
 
     function bindScrollYear(source: Ref<number | null>): () => void {
@@ -200,20 +199,30 @@ export function useYearScope(feed: Feed, url: UseUrlState<YearScopeKey>): UseYea
         };
     }
 
-    function setSingle(year: number): void {
-        url.set("yearMode", "single");
-        // Single mode writes ONLY `?year=` (the round-trip contract, FD6 §6.3);
-        // the multi-mode `?years=` token is cleared so the URL carries one source.
-        url.set("year", String(year));
-        url.set("years", undefined);
+    function carriedOrThrow(s: YearScope): void {
+        const keys = s.mode === "single" ? [s.year] : s.years;
+        const foreign = keys.filter((k) => !allYears.includes(k));
+        if (keys.length === 0 || foreign.length > 0) {
+            throw new Error(
+                `useYearScope(${feed.meta.dataset}): ${noun.plural} ${foreign.join(", ") || "(none)"} are not carried by this feed`,
+            );
+        }
     }
-    function setRange(years: number[]): void {
-        url.set("yearMode", "range");
-        url.set("years", serializeYears(years));
+
+    function setPeriod(next: YearScope): void {
+        carriedOrThrow(next);
+        held.value = null;
+        written.value = true;
+        url.set(codec.param, codec.format(next));
+        for (const key of codec.legacyParams) url.set(key, undefined);
     }
-    function setAggregate(years: number[]): void {
-        url.set("yearMode", "aggregate");
-        url.set("years", serializeYears(years));
+
+    function hold(next: YearScope): () => void {
+        carriedOrThrow(next);
+        held.value = next;
+        return () => {
+            if (held.value === next) held.value = null;
+        };
     }
 
     return {
@@ -221,10 +230,16 @@ export function useYearScope(feed: Feed, url: UseUrlState<YearScopeKey>): UseYea
         mode,
         years: allYears,
         latestYear,
+        noun,
+        codec,
+        text,
+        notice,
         activeYear,
-        setSingle,
-        setRange,
-        setAggregate,
+        setPeriod,
+        setSingle: (year) => setPeriod({ mode: "single", year }),
+        setRange: (years) => setPeriod({ mode: "range", years }),
+        setAggregate: (years) => setPeriod({ mode: "aggregate", years }),
+        hold,
         bindScrollYear,
     };
 }

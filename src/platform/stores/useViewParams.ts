@@ -432,8 +432,8 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         popParam(FIG_KEY, id);
     }
 
-    // The year-scope, attached once the active feed has loaded. Its codec keys
-    // (`?yearMode=&year=&years=`) ride the SAME shared `url` bag the params do (so a scrub
+    // The year-scope, attached once the active feed has loaded. Its one period key (`?sy=` on a
+    // school-year feed, else `?year=`; `data/period.ts`) rides the SAME shared `url` bag the params do (so a scrub
     // re-runs every reader's computeds off the one reactive query, B4 scrubber fix), but
     // they do not flow through `registeredKeys` — the year-scope owns its own round-trip.
     //

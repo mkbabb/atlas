@@ -88,6 +88,10 @@ projecting components.
 | `loadFeed` reads only `/data/<slug>.snapshot.json`; the `/api/<slug>` live arm, its fallback and `apiUrl` are deleted (H9 (a)) | delete any `apiUrl` import and any `/api/<slug>` Pages Function that served a feed; a missing or malformed snapshot now surfaces as the store's `error`, so ship the snapshot with the build |
 | `aggregateRows` admits a unit only on its row in the latest selected period; closed units leave; `latest` measures no longer fall back to an older value; attributes ride on the reduced row (horn 8 (ii)) | update pooled counts (sci 2014–2025: 322 → 302 units); delete any client re-join of attributes onto the pooled frame; a `latest` cell can now be `null` where the unit's latest-period value is null |
 | `trajectory()` throws on a `latest` measure over a multi-row period | declare `sum`/`mean`/`weightedAvg`/`ratio` for a cross-entity series, or pass a `trajectoryFeed` (one row per period) |
+| the year scope writes one key: `?sy=` on a feed declaring `meta.period.axis: "school-year"`, else `?year=`, spelled by `data/period.ts` (pool `a..b`, gaps `a,b`, compare `range:`); `yearMode`/`years` (and `year` on a school-year feed) are read once with a notice and never written (6(f)) | delete any reader of `?yearMode`/`?years` and any own `?sy` parser (sci `edition/period.ts`, `useSyOverride`, `legacyNotice`): read `view.yearScope.scope`, `.text`, `.noun` and `.notice`; render `.notice` at the period readout |
+| `setSingle`/`setRange`/`setAggregate` throw on a year the feed does not carry | offer only `yearScope.years` in the control |
+| `SceneRuntime.setYear` holds in memory; a scene no longer writes the year | none; a consumer that read the scene's year from the URL reads `view.yearScope.scope` |
+| a `global` dial keyed `year`/`years`/`yearMode`/`sy` throws | declare it `scope: "period"` (sci `SchoolMap.vue:138`) |
 
 ## 6 · glass-ui 10.1.0
 

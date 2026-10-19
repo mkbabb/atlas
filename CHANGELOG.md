@@ -98,6 +98,26 @@
   period. On the sci 2014–2025 snapshot the pooled frame goes from 322 to 302 units and
   `flag=CHARTER` admits 187 (was 0, F-D4S-1). `trajectory()` now throws when a `latest` measure
   meets more than one row in a period (it used to return an arbitrary entity's value).
+- **One set-valued period key (U · §L 6(f), X-5′, X-11′).** The year scope reads and writes ONE
+  URL key through one codec (`data/period.ts`): `?sy=` on a feed that declares
+  `meta.period = {axis: "school-year", param: "sy"}`, else `?year=`. Single `sy=2024-25`; a pool
+  `sy=2014-15..2025-26`; a gapped pool `sy=2014-15,2016-17..2018-19` (gaps kept, never a hull);
+  compare `sy=range:2014-15..2016-17`. `yearMode` and integer `years` (and `year` on a
+  school-year feed) are read once on load by `restatePeriod`, restated element-wise with a notice
+  (`useYearScope().notice`), and never written. Reader writes go through `setPeriod` (and
+  `setSingle`/`setRange`/`setAggregate`, which call it); each writes the axis key, deletes the
+  legacy keys, closes the notice, and throws on a year the feed does not carry. Nothing is
+  written on load. New: `useYearScope().hold(scope)` (a program's in-memory period), `noun`
+  (the one `PeriodNoun`), `codec`, `text`, `notice`; `FeedMeta.period` / `FeedPeriodAxis`
+  (validated: an unknown axis fails `isFeed`). `YearScope` is now `PeriodScope`.
+- **A scene's year is held, never written (§L 6(f)).** `SceneRuntime.setYear` holds the scope in
+  memory while the scene is on screen and releases it when the scene leaves; the snapshot/restore
+  of the reader's scope through URL writes is deleted.
+- **Period dials (`VizOptionScope "period"`).** A plate dial on the year scope declares
+  `scope: "period"` and writes through `setSingle`. A `global` dial keyed `year`, `years`,
+  `yearMode` or `sy` throws. `data-viz-scope` names the dial's scope (`global` or `period`).
+- FilterPanel's freshness chip names the period with the feed's noun ("2024–25", or the pooled set)
+  instead of "FY{year}" / "all years".
 
 ### Added
 

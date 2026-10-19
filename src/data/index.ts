@@ -35,4 +35,5 @@ export * from "./multiYear.js";
 
 // — the year-scope reader (URL-driven year cursor) + the route dataset-universe resolver (O-B9) —
 export * from "./useYearScope.js";
+export * from "./period.js";
 export * from "./routeUniverse.js";

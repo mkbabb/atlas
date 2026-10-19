@@ -308,7 +308,7 @@ const dimYears = computed<ReadonlySet<number> | readonly number[]>(
     () => ctx?.dimYears?.() ?? [],
 );
 
-/** Select a single year — writes `?year=` (the round-trip), the default mode. */
+/** Select a single year (a reader act) — written through the year scope's one codec. */
 function pickYear(year: number): void {
     yearScope.value?.setSingle(year);
 }
@@ -322,14 +322,16 @@ function toggleAggregate(): void {
     else ys.setAggregate(scrubberYears.value);
 }
 
-// The freshness chip RE-WEIGHTS to the selected year (B4 §3, G10 §8.3): the vintage
-// label folds in the active scope, so a filtering user reads "data as of … · FY{year}"
-// (or "· all years" in aggregate).
+// The freshness chip RE-WEIGHTS to the selected period (B4 §3, G10 §8.3): the vintage
+// label folds in the active scope, named by the feed's one PeriodNoun (X-11′): "2024–25" on a
+// school-year feed, "2024" on a plain-year one, and the pooled set itself ("2014–15, 2025–26",
+// gaps kept) in a multi-year mode. The former "FY{year}" named every axis a funding year.
 const scopedFreshness = computed<string>(() => {
     const base = freshnessLabel.value;
-    if (!hasScrubber.value) return base;
+    const ys = yearScope.value;
+    if (!hasScrubber.value || !ys) return base;
     const scope =
-        yearMode.value === "aggregate" ? "all years" : `FY${activeYear.value}`;
+        yearMode.value === "single" ? ys.noun.label(activeYear.value) : ys.text.value;
     return base ? `${base} · ${scope}` : scope;
 });
 

@@ -185,8 +185,9 @@ export type StageTransition = Pick<MorphTransition, "mode">;
 
 /** The runtime the host hands a scene's `apply` effect — the platform stores the scene drives. */
 export interface SceneRuntime {
-    /** Drive the GLOBAL year scope (the map's choropleth re-slices off `?year`). A no-op before the
-        active feed has loaded (`yearScope` is null then — the optional-chain is the guard). */
+    /** Hold the year scope at `year` while the scene is on screen (`useYearScope.hold`: in memory,
+        never written to the URL; released when the scene leaves). A no-op before the active feed
+        has loaded. */
     setYear: (year: number) => void;
     /** The view-params store (the escape hatch for a scene that drives a non-year dim). */
     view: ReturnType<typeof useViewParams>;
