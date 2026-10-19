@@ -84,6 +84,12 @@
   `CompletionSealProps` and `CompletionSealShape`.
 - `AtmospherePreset.dockOpacity` and the `--glass-opacity-dock` write are removed. Glass 8 stopped
   reading `--glass-opacity-*`; the glass 10 dock owns its own legibility over the ground.
+- **The stamped snapshot is the only feed source (U · §L H9 (a)).** `loadFeed(slug)` reads
+  `/data/<slug>.snapshot.json` and nothing else. The live arm (`/api/<slug>`, which served an
+  unstamped Sheet read under Pages) and its silent catch-and-fall-to-snapshot are deleted, with
+  `apiUrl` (no alias). A failed fetch or malformed body rejects; `snapshotUrl` throws on anything
+  that is not a bare lowercase slug, so a URL or path is refused before any fetch. `loadFeed` no
+  longer reads `prefersReducedData()` (there is one transport).
 
 ### Added
 

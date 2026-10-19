@@ -81,6 +81,12 @@ projecting components.
 | `PortalSurface` / `PortalHoldReason` narrowed | a claim spec uses `"body-teleport"` / `"teleported-surface-fires-dock-leave"` |
 | `PlateAct` layers claim Escape at priority 110 | none; a page claim that needs to outrank a plate layer must claim above 110 |
 
+## 5b · The data plane (U · §L H9, horn 8 (ii), 6(f))
+
+| Change | Consumer edit |
+|---|---|
+| `loadFeed` reads only `/data/<slug>.snapshot.json`; the `/api/<slug>` live arm, its fallback and `apiUrl` are deleted (H9 (a)) | delete any `apiUrl` import and any `/api/<slug>` Pages Function that served a feed; a missing or malformed snapshot now surfaces as the store's `error`, so ship the snapshot with the build |
+
 ## 6 · glass-ui 10.1.0
 
 Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.
