@@ -13,7 +13,8 @@ export type EntityGrain = "state" | "district" | "school" | "entity" | "year";
  * four-type taxonomy). No viz computes its own aggregate; `multiYear` reads this.
  *
  * - `sum` — magnitude: add across the selected years (dollars, counts).
- * - `latest` — carry the newest year's value (stable attributes: area, lat/lon).
+ * - `latest` — the unit's value in the latest selected period; no fall-back to an older
+ *   period (U §L horn 8 (ii)). Pooled membership is decided on that period's row.
  * - `mean` — simple average (a rate with uniform weight).
  * - `{ weightedAvg }` — a rate averaged weighted by another measure key.
  * - `{ ratio }` — recompute from the summed `[numerator, denominator]` measures.

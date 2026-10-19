@@ -86,6 +86,8 @@ projecting components.
 | Change | Consumer edit |
 |---|---|
 | `loadFeed` reads only `/data/<slug>.snapshot.json`; the `/api/<slug>` live arm, its fallback and `apiUrl` are deleted (H9 (a)) | delete any `apiUrl` import and any `/api/<slug>` Pages Function that served a feed; a missing or malformed snapshot now surfaces as the store's `error`, so ship the snapshot with the build |
+| `aggregateRows` admits a unit only on its row in the latest selected period; closed units leave; `latest` measures no longer fall back to an older value; attributes ride on the reduced row (horn 8 (ii)) | update pooled counts (sci 2014–2025: 322 → 302 units); delete any client re-join of attributes onto the pooled frame; a `latest` cell can now be `null` where the unit's latest-period value is null |
+| `trajectory()` throws on a `latest` measure over a multi-row period | declare `sum`/`mean`/`weightedAvg`/`ratio` for a cross-entity series, or pass a `trajectoryFeed` (one row per period) |
 
 ## 6 · glass-ui 10.1.0
 

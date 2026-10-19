@@ -6,7 +6,8 @@
 //
 // The taxonomy (the contract's `AggregateRule`, INV-4's four-type spec):
 //   - `sum`      — magnitude: add the values across years (dollars, counts).
-//   - `latest`   — carry the newest selected year's value (vintage-y stocks).
+//   - `latest`   — the unit's value in the latest selected period, with no fall-back to an
+//                  older period (U §L horn 8 (ii)).
 //   - `mean`     — simple average (a rate with uniform weight).
 //   - `{weightedAvg}` — Σ(vᵢ·wᵢ)/Σwᵢ, the rate weighted by another measure.
 //   - `{ratio}`  — recompute from the summed [numerator, denominator] measures.
@@ -15,22 +16,17 @@
 // from the reduced row, never silently summed. Summing a rate across years is wrong;
 // only `aggregable` makes the fold right, so an undeclared column is dropped fail-loud
 // rather than guessed.
+//
+// POOLED MEMBERSHIP (U §L horn 8 (ii), the F-D4S-8 rule): a unit is admitted to the pooled
+// frame on its row in the scope's latest selected period. A unit with no row there has closed
+// and leaves. Filters test that row (its attributes ride on the reduced row), and a `latest`
+// measure reads that row: a null there stays null. The former newest-non-null-per-field fold
+// ("entitynn") filtered a unit on an older contract; it was a masking fallback and is deleted.
 import type { AggregateRule, Feed, FeedMeta, FeedRow } from "./contract.js";
 
 /** Coerce a row cell to a finite number, or `null` for missing / non-numeric. */
 function num(v: string | number | null | undefined): number | null {
     return typeof v === "number" && Number.isFinite(v) ? v : null;
-}
-
-/** The latest-year value for a measure across a key's rows (the newest non-null). */
-function latest(rows: FeedRow[], measure: string): number | null {
-    let best: { year: number; value: number } | null = null;
-    for (const r of rows) {
-        const v = num(r[measure]);
-        if (v == null) continue;
-        if (best == null || r.year > best.year) best = { year: r.year, value: v };
-    }
-    return best?.value ?? null;
 }
 
 /** Σ of a measure across a key's rows (nulls contribute nothing). */
@@ -81,14 +77,18 @@ function ratio(rows: FeedRow[], numerator: string, denominator: string): number 
     return n / d;
 }
 
-/** Fold one measure over a key's rows per its declared `AggregateRule`. */
+/**
+ * Fold one measure over a key's rows per its declared `AggregateRule`. `current` is the
+ * unit's row in the latest selected period: `latest` reads it and nothing older.
+ */
 function foldMeasure(
     rows: FeedRow[],
     measure: string,
     rule: AggregateRule,
+    current: FeedRow | undefined,
 ): number | null {
     if (rule === "sum") return sum(rows, measure);
-    if (rule === "latest") return latest(rows, measure);
+    if (rule === "latest") return current ? num(current[measure]) : null;
     if (rule === "mean") return mean(rows, measure);
     if ("weightedAvg" in rule) return weightedAvg(rows, measure, rule.weightedAvg);
     return ratio(rows, rule.ratio[0], rule.ratio[1]);
@@ -108,10 +108,14 @@ function groupByKey(rows: FeedRow[], keyField: string): Map<string, FeedRow[]> {
 
 /**
  * The AGGREGATE REDUCER. Given a feed, a set of selected years, and the feed's
- * `aggregable` spec, return one reduced row per key — the year dimension collapsed,
- * each measure folded by its rule. Only measures present in `aggregable` survive
- * (the refuse-to-default rule); the key column and `year` (set to the latest selected)
- * are carried so the reduced row stays a valid `FeedRow`.
+ * `aggregable` spec, return one reduced row per unit admitted to the pooled frame — the
+ * year dimension collapsed, each measure folded by its rule.
+ *
+ * Membership (U §L horn 8 (ii)): a unit is admitted only if it has a row in the latest
+ * selected period present in the scope; a unit absent there has closed and leaves. The
+ * reduced row starts from that row, so attributes (flag, names, bins) ride and a route
+ * filter tests the unit as it stands in that period. Declared measures (`meta.measures`)
+ * absent from `aggregable` are dropped (refuse-to-default); `year` is that period.
  */
 export function aggregateRows(
     feed: Feed,
@@ -126,12 +130,14 @@ export function aggregateRows(
 
     const reduced = new Map<string, FeedRow>();
     for (const [key, rows] of groups) {
-        const row: FeedRow = {
-            [keyField]: key,
-            year: Number.isFinite(latestSelected) ? latestSelected : 0,
-        };
+        const current = rows.find((r) => r.year === latestSelected);
+        if (!current) continue;
+        const row: FeedRow = { ...current, [keyField]: key };
+        for (const measure of feed.meta.measures) {
+            if (!(measure in aggregable)) delete row[measure];
+        }
         for (const measure of Object.keys(aggregable)) {
-            row[measure] = foldMeasure(rows, measure, aggregable[measure]);
+            row[measure] = foldMeasure(rows, measure, aggregable[measure], current);
         }
         reduced.set(key, row);
     }
@@ -237,7 +243,15 @@ export function trajectory(
         const values: Record<string, number | null> = {};
         for (const m of measures) {
             // foldMeasure over an empty/all-null group → null (the soft-start gap).
-            values[m] = foldMeasure(rows, m, aggregable[m]);
+            // `latest` is defined on one row per period (a `trajectoryFeed` singleton); over a
+            // cross-entity year group it would pick an arbitrary entity, so it refuses.
+            if (aggregable[m] === "latest" && rows.length > 1) {
+                throw new Error(
+                    `trajectory(): measure "${m}" is declared latest over ${rows.length} rows in ` +
+                        `${year}; latest is defined on one row per period. Declare a pooling rule.`,
+                );
+            }
+            values[m] = foldMeasure(rows, m, aggregable[m], rows[0]);
         }
         return { year, values };
     });

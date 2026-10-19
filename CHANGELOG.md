@@ -90,6 +90,14 @@
   `apiUrl` (no alias). A failed fetch or malformed body rejects; `snapshotUrl` throws on anything
   that is not a bare lowercase slug, so a URL or path is refused before any fetch. `loadFeed` no
   longer reads `prefersReducedData()` (there is one transport).
+- **Pooled membership is the latest period (U · §L horn 8 (ii), F-D4S-8).** `aggregateRows(feed,
+  years)` admits a unit only if it has a row in the latest selected period, and reduces from that
+  row: closed units leave the pooled frame, attributes (flag, names) ride so a route filter tests
+  the unit as it stands in that period, and a `latest` measure reads that row with no fall-back to
+  an older non-null value (the "entitynn" helper is deleted). The reduced row's `year` is that
+  period. On the sci 2014–2025 snapshot the pooled frame goes from 322 to 302 units and
+  `flag=CHARTER` admits 187 (was 0, F-D4S-1). `trajectory()` now throws when a `latest` measure
+  meets more than one row in a period (it used to return an arbitrary entity's value).
 
 ### Added
 
