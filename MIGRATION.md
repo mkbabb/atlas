@@ -81,6 +81,18 @@ projecting components.
 | `PortalSurface` / `PortalHoldReason` narrowed | a claim spec uses `"body-teleport"` / `"teleported-surface-fires-dock-leave"` |
 | `PlateAct` layers claim Escape at priority 110 | none; a page claim that needs to outrank a plate layer must claim above 110 |
 
+## 5b · The dock re-seat: no figure subject, one seat in the toolbar run (U · §L D3-1, §M M-4)
+
+| Change | Consumer edit |
+|---|---|
+| `useMembraneProvenanceSource`, `useMembraneProvenanceHost`, `useDialVizId`, `MEMBRANE_PROVENANCE_TARGET_ID` and `MEMBRANE_PROVENANCE_TARGET_SELECTOR` deleted from `./provenance`; the dock hosts no figure's record | a plate's provenance renders in place: drop the `<Teleport>` and the `useMembraneProvenanceSource` call and render `ProvenanceBar`/`ProvenanceChip` directly with the passed `hosted` (sci `dashboards/PlateProvenance.vue`) |
+| the dock's filter trigger is route-level: `data-testid="dock-filter-trigger"` (was `membrane-filter-trigger-<vizId>`), no `data-active-viz`, no pin; it paints whenever the route declares a `filterBody` | a selector on the old test id moves to `dock-filter-trigger`; `[data-membrane-filter-trigger]` is unchanged |
+| the dock's foot (Filters, Compare years, Save this view, theme, Collapse; the gear on the phone) is glass's `#persistent-end` band, outside the toolbar run | none; a selector on `.glass-dock [role=toolbar] [data-testid=dock-persistent-foot]` drops the toolbar step |
+| the toolbar run's seats are the chapter rungs (`.usf-dock__step`), its direct children; glass roves them (one Tab stop, the current chapter; ArrowUp/Down/Home/End between chapters). The wrappers `.usf-dock__viewport`, `.usf-dock__scroll` (`dock-scroll-middle`) and `.usf-dock__stepper` are gone | a selector through a removed wrapper selects `.glass-dock [role=toolbar] > .usf-dock__step` |
+| `ControlPlaneSpine` deleted from `./chrome`; the dock's spine is the run's background | a consumer that drew its own spine draws it locally (a `linear-gradient` bar) |
+| the "step N of M" live readout is teleported to `<body>` (`data-testid="dock-step-readout"`) | none |
+| `MembraneFacet` drops `"viz-context"` and `"provenance-detent"`; `MembraneBand` drops `"context"` | a total switch over either union drops those arms |
+
 ## 6 · glass-ui 10.1.0
 
 Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.

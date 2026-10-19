@@ -166,7 +166,8 @@ describe("close → focus → release transaction — focus restored BEFORE the 
 });
 
 describe("truthful filter ARIA — dialog popup, aria-controls, human name, not the slug (U9)", () => {
-    const membrane = src("platform/chrome/dock/MembraneVizContext.vue");
+    // B6 (§L D3-1): the route-level trigger in the dock's foot; the facet-5 zone is deleted.
+    const membrane = src("platform/chrome/dock/components/DockFilterTrigger.vue");
 
     it("declares dialog popup semantics, not the menu value aria-haspopup=true", () => {
         expect(membrane).not.toContain('aria-haspopup="true"');

@@ -8,13 +8,13 @@
 // (the year-range + ⤓-save controls). The collapse posture stays the ORCHESTRATOR's (it binds the
 // `<GlassDock ref>`), threaded in as `collapsed` + emitted back as `toggle-collapse`.
 //
-// R-FOOT-2 (the idiomatic end-anchor, NOT an interim workaround). OQ-1 proved the singular
-// `#persistent` slot CANNOT serve the foot — it is already consumed by the crest and is hard-anchored
-// to the block-START by glass-ui's `.dock-persistent + .dock-layers` adjacency combinator, with no
-// `persistentSide`/`anchor`/`order` prop in 4.1.0 OR 4.2.0 to flip it. So the atlas's
-// `position:sticky bottom:0` foot is the idiomatic block-END anchor (it self-serves on sticky, ZERO
-// glass-ui dependency); a future `#persistent-end` re-host is an OPTIONAL 4.3.0 simplification
-// (R-FOOT-1, off the K critical path), never a K-H dependency. The sticky CSS rides VERBATIM below.
+// THE FOOT IS GLASS'S `#persistent-end` BAND (B6 · RULINGS §M M-4, R-FOOT-1 realised). glass 10.1.0
+// ships the block-end persistent slot the old sticky foot waited for, and seating the foot there takes
+// it OUT of the toolbar run glass claims on `#default`. Inside that run each control after the first
+// of a seat was written `tabindex=-1` and dropped from the Tab order (the B5 seat census: the year
+// range, the dark toggle and the phone gear on 8 of 8 routes). Here every control is its own Tab
+// stop: Filters, Compare years, Save this view, the theme toggle and Collapse (the gear on the
+// phone). The collapsed rail hides this band with the deck (Dock.css), so it never shows on the disc.
 //
 // Vue 3.5 reactive-props convention (atlas/CLAUDE.md §Vue 3.5 reactive-props) — a NEW component. The
 // destructured `ctx` is handed to `useDockDataState` exactly as the orchestrator's injected ctx was;
@@ -26,7 +26,9 @@ import {
     GitCompareArrows,
     PanelLeftClose,
 } from "@lucide/vue";
+import { computed } from "vue";
 import DockSettings from "../DockSettings.vue";
+import DockFilterTrigger from "./DockFilterTrigger.vue";
 import { useDockGear } from "../composables/useDockGear.js";
 import { useDockDataState } from "../composables/useDockDataState.js";
 import type { DashboardContext } from "../../../../contract/index.js";
@@ -61,50 +63,43 @@ const { gearOpen, isPhone } = useDockGear();
 // year-scope and `platform:views` shelf they already shared (no second shelf, no second scope).
 const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
     useDockDataState(ctx);
+
+// The route-control group (Filters · Compare years · Save this view) paints only when the route
+// declares that content, and the hairlines that fence it paint with it (W-22≡W-74: no phantom rule).
+const routeHasFilter = computed(() => Boolean(ctx?.filterBody));
+const hasRouteControls = computed(() => routeHasFilter.value || hasYearScope.value);
 </script>
 
 <template>
-    <!-- ══ BAND 3 — THE STICKY FOOT (the idiomatic block-END anchor · R-FOOT-2) ════════════════
-         The foot is `position:sticky`-pinned to the rail's block-end so the gear + controls +
-         dark-toggle do NOT scroll away when the stepper overflows. The leading DockSeparator fences
-         it off the scroll middle above. The `#persistent-end` re-host is an OPTIONAL future 4.3.0
-         simplification (R-FOOT-1, off the K critical path), never a K-H dependency. -->
+    <!-- ══ THE FOOT (glass `#persistent-end`) ══════════════════════════════════════════════════
+         Two groups, top to bottom: the ROUTE controls (Filters, Compare years, Save this view),
+         then, below a hairline, the CHROME controls (theme, Collapse). Each control is one Tab
+         stop. On the phone the route group keeps Filters and the rest folds behind the gear. -->
     <div class="usf-dock__persistent-foot" data-testid="dock-persistent-foot">
-        <!-- W-22≡W-74 · FACET-8 FOOT GATING — the leading separator fences the DATA-STATE register
-             (year-range · save) off the scroll middle. It paints ONLY on a route that DECLARES that
-             content (`hasYearScope`), so vft AND speedtest (no multi-year scope, §c.3) render no
-             phantom hairline; on phone it fences the DockSettings gear sheet, so it stays. -->
-        <DockSeparator v-if="isPhone || hasYearScope" />
+        <DockSeparator v-if="isPhone || hasRouteControls" />
 
-        <!-- ⓪ THE SELECTION CHIP → the FilterView OPENER (C24 · J-FEEDBACK-4 §2/§9). Mounts ONLY
-             when a selection is live (`v-if="showChip"`) — at count 0 the node is ABSENT. When shown
-             it is the FilterView OPENER: a `<button>` `N selected` pip that RAISES J-FILTER's
-             filter-view facility. The StatusDot carries the non-color ON signal; `aria-live="polite"`
-             announces the count when the chip mounts on the first select. -->
-        <!-- ① THE MOBILE GEAR (@media(--phone), C23) — the four secondary controls collapse behind
-             ONE `Settings` glyph opening the `DockSettings` controls sheet. The desktop register is
-             BYTE-UNCHANGED: above `--phone` the four controls stay inline below. -->
-        <DockSettings
-            v-if="isPhone"
-            v-model:open="gearOpen"
-            :has-year-scope="hasYearScope"
-            :year-mode-now="yearModeNow"
-            :save-flash="saveFlash"
-            :disable-transitions="disableTransitions"
-            @toggle-range="toggleRange"
-            @save-view="saveCurrentView"
-        />
+        <template v-if="isPhone">
+            <DockFilterTrigger />
+            <!-- THE MOBILE GEAR (@media(--phone), C23): Compare years, Save this view and the theme
+                 toggle fold behind one Settings glyph opening the DockSettings sheet. -->
+            <DockSettings
+                v-model:open="gearOpen"
+                :has-year-scope="hasYearScope"
+                :year-mode-now="yearModeNow"
+                :save-flash="saveFlash"
+                :disable-transitions="disableTransitions"
+                @toggle-range="toggleRange"
+                @save-view="saveCurrentView"
+            />
+        </template>
 
-        <!-- ② THE INLINE SECONDARY CONTROLS (above --phone) — the year-range toggle, the ⤓-save
-             door, the filter pull-out, and the dark-toggle, inline on the rail at the desktop
-             register. Each keeps its rail `data-testid` so the gate finds them as direct rail
-             children above --phone. -->
-        <template v-if="!isPhone">
-            <!-- ③ The data-state register — the year-range toggle + the ⤓-save door. -->
-            <div v-if="hasYearScope" class="usf-dock__foot-controls">
-                <!-- The year-scrubber RANGE-mode control — the `GitCompareArrows` glyph + the
-                     pressed `--on` pill (the active range mode). -->
+        <template v-else>
+            <!-- The ROUTE controls: what the reader is looking at (filters, years) and keeping it. -->
+            <div v-if="hasRouteControls" class="usf-dock__foot-controls">
+                <DockFilterTrigger />
+                <!-- The year-scrubber RANGE-mode control: the pressed accent pill is range mode. -->
                 <button
+                    v-if="hasYearScope"
                     type="button"
                     class="usf-dock__ctl"
                     :class="{ 'usf-dock__ctl--on': yearModeNow === 'range' }"
@@ -114,15 +109,11 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
                     data-testid="dock-year-range"
                     @click="toggleRange"
                 >
-                    <GitCompareArrows
-                        class="usf-dock__ctl-glyph"
-                        aria-hidden="true"
-                    />
+                    <GitCompareArrows class="usf-dock__ctl-glyph" aria-hidden="true" />
                 </button>
-
-                <!-- The ⤓-save door (PL-5) — quick-save the current full URL state onto the shared
-                     platform:views shelf. -->
+                <!-- The ⤓-save door (PL-5): the current URL state onto the platform:views shelf. -->
                 <button
+                    v-if="hasYearScope"
                     type="button"
                     class="usf-dock__ctl"
                     :class="{ 'usf-dock__ctl--flash': saveFlash }"
@@ -138,26 +129,12 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
                 </button>
             </div>
 
-            <!-- ④ The A4 dock pull-out — the filter affordance summoning the floating right
-                 live-behind Drawer; it drives the SAME `useFilterPane().open` the FilterPanel
-                 trigger flips (ONE open truth). -->
-            <!-- The DARK-TOGGLE DIVIDER (H.W9 §D) — the DockSeparator fencing the dark toggle into
-                 its own compartment, a visually separate register from the controls. W-22≡W-74 ·
-                 FACET-8 GATING: it divides the theme zone from the data-state controls ABOVE it, so it
-                 paints ONLY when those controls exist (`hasYearScope`) — on vft/speedtest there is
-                 nothing above to fence off, so the phantom hairline dies (the second of the two). -->
-            <DockSeparator v-if="hasYearScope" />
+            <DockSeparator v-if="hasRouteControls" />
 
-            <!-- ⑤ The dark-mode toggle + the collapse toggle. `size="dock"` routes the theme toggle through the
-                 dock-control register; `:disable-transitions` wires the INSTANT theme re-print. Beside
-                 it, the GEAR-TOGGLED COLLAPSE control (C26) toggling the re-enabled collapse posture
-                 (the orchestrator drives the GlassDock `expand()`/`collapse()`). Fenced into its own
-                 zone below the divider. -->
+            <!-- The CHROME controls: the theme toggle (`size="dock"`, the instant re-print) and the
+                 collapse toggle driving the orchestrator's collapse machine. -->
             <div class="usf-dock__foot">
-                <DarkModeToggle
-                    size="dock"
-                    :disable-transitions="disableTransitions"
-                />
+                <DarkModeToggle size="dock" :disable-transitions="disableTransitions" />
                 <button
                     type="button"
                     class="usf-dock__ctl"
@@ -168,10 +145,7 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
                     data-testid="dock-collapse-toggle"
                     @click="emit('toggle-collapse')"
                 >
-                    <PanelLeftClose
-                        class="usf-dock__ctl-glyph"
-                        aria-hidden="true"
-                    />
+                    <PanelLeftClose class="usf-dock__ctl-glyph" aria-hidden="true" />
                 </button>
             </div>
         </template>
@@ -179,22 +153,15 @@ const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
 </template>
 
 <style scoped>
-/* ── BAND 3 · THE STICKY FOOT (the idiomatic block-END anchor · J-DOCK §approach-3 · R-FOOT-2) ──
-   The foot is `position:sticky`-pinned to the rail's block-end so the gear + controls + dark-toggle
-   do NOT scroll away when the stepper overflows. It carries the dock's column rhythm; its `bottom:0`
-   sticky anchor pins it under the scroll-middle. (The CSS rides VERBATIM with the band — R-FOOT-2.) */
+/* ── THE FOOT BAND (glass `#persistent-end`) ──────────────────────────────────────────────────────
+   glass seats this band after the deck at the rail's block-end, outside the scrolling run, so it
+   needs no sticky anchor: the rail scrolls, the foot stays. It carries the dock's column rhythm. */
 .usf-dock__persistent-foot {
-    position: sticky;
-    bottom: 0;
-    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
     inline-size: 100%;
-    /* a hair of background-matched padding so a scrolled-under stepper rung does not bleed through
-       the sticky foot's leading edge (the foot reads as a fenced band, not a gap). */
-    padding-block-start: 0.25rem;
 }
 
 /* The data-state register — the range toggle + the ⤓-save door, stacked above the theme toggle in

@@ -62,33 +62,41 @@ describe("A-39 · the dock carries no per-figure action", () => {
             expect(readFileSync(join(SRC, file), "utf8")).not.toContain("useMembraneProvenanceSource");
     });
 
-    it("the membrane's viz-context zone renders no Enlarge and no options for the dial viz", async () => {
+    it("the dock's filter trigger is route-level: no figure id, no pin, no Enlarge (B6 · §L D3-1)", async () => {
         const { DASHBOARD_KEY } = await import("../../src/contract/index");
         const { useVizRegistry } = await import("../../src/charts/composables/useVizRegistry");
-        const { useFilterPanel } = await import("../../src/filter/composables/useFilterPanel");
-        const MembraneVizContext = (await import("../../src/platform/chrome/dock/MembraneVizContext.vue")).default;
+        const { useActiveBeat } = await import("../../src/platform/stores/useActiveBeat");
+        const DockFilterTrigger = (await import("../../src/platform/chrome/dock/components/DockFilterTrigger.vue")).default;
         const pinia = createPinia();
         setActivePinia(pinia);
         const registry = useVizRegistry();
         registry.__resetRegistry();
-        registry.register({
-            vizId: "usf-net-retention",
-            dims: [],
-            filterResponse: "responsive",
-            optionsController: { specs: [], values: {}, isDefault: { value: true } } as never,
-        });
-        useFilterPanel().pin("usf-net-retention");
+        registry.register({ vizId: "usf-net-retention", dims: [], filterResponse: "responsive" } as never);
+        // A figure is centred: the retired zone stamped and pinned exactly this id (D3-B N4, CX-K2).
+        useActiveBeat().$patch({ activeVizId: "usf-net-retention" } as never);
         const Host = defineComponent({
             setup() {
                 provide(DASHBOARD_KEY, { title: "USF", filterBody: {} } as never);
-                return () => h(MembraneVizContext);
+                return () => h(DockFilterTrigger);
             },
         });
         const html = await renderApp(Host, pinia);
-        expect(html).toContain('data-active-viz="usf-net-retention"'); // the zone is live for the dial viz
         expect(html).toContain("data-membrane-filter-trigger"); // the route filter trigger stays
+        expect(html).toContain('data-testid="dock-filter-trigger"');
+        expect(html).not.toContain("usf-net-retention"); // no figure subject anywhere on the control
+        expect(html).not.toMatch(/data-active-viz/);
         expect(html).not.toMatch(/Enlarge|Collapse the figure|data-viz-context-enlarge/);
         expect(html).not.toMatch(/data-action=|viz-options/);
+        // The trigger never pins a figure: the panel's pin has no dock writer.
+        const trigger = readFileSync(join(SRC, "platform/chrome/dock/components/DockFilterTrigger.vue"), "utf8");
+        expect(trigger).not.toMatch(/useFilterPanel|\bpin\(|useDialVizId/);
         registry.__resetRegistry();
+    });
+
+    it("the dock hosts no figure's provenance: the facet-6 teleport seam is deleted (B6 · §L D3-1)", () => {
+        const dock = readFileSync(join(SRC, "platform/chrome/dock/Dock.vue"), "utf8");
+        expect(dock).not.toMatch(/MembraneProvenanceDetent|MembraneVizContext/);
+        const provenance = readFileSync(join(SRC, "platform/provenance/index.ts"), "utf8");
+        expect(provenance).not.toContain("useMembraneProvenance");
     });
 });
