@@ -10,10 +10,10 @@
 //   • band 1 — `DockCrest`           (the #persistent TIL crest — a PURE crest; the progress rim
 //                                     re-seated UP to this orchestrator at the dock-box level, so
 //                                     its ring resolves to the DOCK PILL, not a crest square — OF-21.1)
-//   • band 2 — `DockStepperRender`   (the FadingScroll Roman stepper; owns `useDockStepper` — the
-//                                     dock's ONE IntersectionObserver relocates here, never a second)
+//   • band 2 — `DockStepperRender`   (the Roman rungs, a fragment rendered straight into glass's
+//                                     run; owns `useDockStepper` — the dock's ONE IntersectionObserver)
 //   •          `DockNavItem`         (the repeating beat/view rung the stepper v-fors)
-//   • band 3 — `DockFoot`            (the sticky foot; owns `useDockGear`/`useFilterPane`/
+//   • band 3 — `DockFoot`            (the #persistent-end foot; owns `useDockGear`/`useFilterPane`/
 //                                     `useDockDataState` + the foot's sticky CSS, verbatim)
 // This SFC is now the thin `<GlassDock>` shell that mounts the four and keeps ONLY what the
 // orchestrator itself binds: the `ctx` inject, the `useDockCollapse` `<GlassDock ref>` bind, the
@@ -28,29 +28,25 @@
 // THREE-BAND persistent instrument, NOT a single scroller (J-DOCK §approach-3, the keystone):
 //   • band 1 — the sticky CREST (#persistent slot, top): rendered OUTSIDE the collapsed↔expanded
 //     crossfade (the library anchors #persistent above the deck).
-//   • band 2 — the scrollable MIDDLE (#default slot, FadingScroll-wrapped): the Roman stepper ONLY
-//     (the one growing region; it fades at its scroll edges).
-//   • band 3 — the sticky FOOT (a CSS position:sticky foot inside #default): the IDIOMATIC block-END
-//     anchor — OQ-1 (R-FOOT-2) proved the singular `#persistent` slot CANNOT serve the foot (it is
-//     already consumed by the crest and is hard-anchored to the block-START by glass-ui's
-//     `.dock-persistent + .dock-layers` adjacency combinator, with no side/anchor/order prop in
-//     4.1.0 OR 4.2.0 to flip it), so the `position:sticky bottom:0` foot self-serves with ZERO
-//     glass-ui dependency. The `#persistent-end` re-host is an OPTIONAL future 4.3.0 simplification
-//     (R-FOOT-1, off the K critical path), never a dependency.
+//   • band 2 — the scrollable MIDDLE (#default slot): glass's toolbar run, whose seats are the Roman
+//     rungs themselves (B6 · §M M-4); the run scrolls, and the identity spine is its paint.
+//   • band 3 — the FOOT (#persistent-end slot, block-end): glass 10.1.0 ships the block-end persistent
+//     band, so the foot leaves the scrolling run (R-FOOT-1). Outside the run each control is its own
+//     Tab stop; inside it, glass's toolbar roving dropped all but one control of the old foot seat
+//     (B6 · RULINGS §M M-4, the B5 seat census).
 // The collapse machine glass SHIPS (`collapse="closed"|"open"` + `expand()`/`collapse()`/`expanded`)
 // is RE-ENABLED here via `useDockCollapse`. The posture is gear-TOGGLED + collapse-on-phone, NOT
 // forced-collapsed-everywhere; the desktop register may still rest expanded (a register OPTION,
 // J-PATH §8 Decision 2). The `:always-expanded` true-literal opt-OUT is DELETED.
 import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
-import { GlassDock } from "@mkbabb/glass-ui/dock";
+import { DockSeparator, GlassDock } from "@mkbabb/glass-ui/dock";
 import { ScrollProgressRim } from "@mkbabb/glass-ui/scroll-progress-rim";
 import DockCrest from "./components/DockCrest.vue";
 import DockStepperRender from "./components/DockStepperRender.vue";
 import DockFoot from "./components/DockFoot.vue";
-import MembraneVizContext from "./MembraneVizContext.vue";
-import MembraneProvenanceDetent from "./MembraneProvenanceDetent.vue";
 import MembraneTitleLozenge from "./MembraneTitleLozenge.vue";
 import { MEMBRANE_FACETS } from "./membrane-facet.js";
+import { spineFill } from "./spine-fill.js";
 import {
     useDockCollapse,
     type DockExposed,
@@ -104,6 +100,13 @@ const ROUTE_TRITONE = [
 const identityRamp = computed<readonly string[]>(
     () => props.ramp ?? ctx?.theme?.barometerRamp ?? ROUTE_TRITONE,
 );
+
+// THE SPINE IS THE RUN'S PAINT (B6 · §M M-4). The chapter rungs are the toolbar run's own seats, so
+// the identity spine cannot be an element beside them; it is the run's background (Dock.css), fed by
+// this one custom property on the dock root. The year cross-fade (`useDockStepper`, handed up by the
+// rail) dips `--spine-o` on the root, so only the spine fades.
+const spineStyle = computed(() => ({ "--spine-fill": spineFill(identityRamp.value) }));
+const yearFading = ref(false);
 
 // ── ONE responsive Dock (the atlas-unified-register law) ──────────────────────
 // The SAME vertical `GlassDock` rail at EVERY viewport — no phone fork, no bottom/horizontal
@@ -365,12 +368,14 @@ useDismissArbiter().claim(() =>
 
     <GlassDock
         v-if="ctx"
+        id="dock-sheet"
         ref="dockRef"
         orientation="vertical"
         shape="card"
         collapse="closed"
         class="usf-dock"
-        :class="{ 'usf-dock--phone': isPhone }"
+        :class="{ 'usf-dock--phone': isPhone, 'usf-dock--year-fade': yearFading }"
+        :style="spineStyle"
         aria-label="Section navigation"
         data-testid="dock"
         :data-membrane-facets="membraneFacets"
@@ -401,36 +406,33 @@ useDismissArbiter().claim(() =>
                 :morph-stage="collapsed ? 'seed' : 'full'"
                 @toggle="onCrestToggle"
             />
+            <!-- The crest's rule: home above, the chapters below. Expanded only — the collapsed disc
+                 is the crest alone. -->
+            <DockSeparator v-if="!collapsed" class="usf-dock__crest-rule" />
         </template>
 
-        <!-- band 2 + band 3 — THE 3-BAND BODY (#default slot). The crest is band 1 (#persistent
-             above). Here: band 2 is the `FadingScroll`-wrapped SCROLLING MIDDLE (the Roman stepper —
-             the one growing region) and band 3 is the STICKY FOOT (the gear / controls + dark-toggle
-             + the selection-chip opener), CSS `position:sticky`-pinned to the rail's block-end so it
-             does NOT scroll away (the idiomatic block-END anchor — R-FOOT-2). On the phone the SAME
-             two bands render inside the SHEET register (D2) — labeled ruled rows + the foot. -->
+        <!-- band 2 — THE RUN (#default slot). glass 10.1.0 claims `role="toolbar"` on the element that
+             holds this slot and roves its direct children as seats (`useDockRun`). Every seat is one
+             chapter rung (DockStepperRender renders a fragment of single controls), so glass's own
+             roving IS the chapter rail's: one Tab stop, ArrowUp/Down/Home/End between chapters, the
+             reach-scroll and the status line. No container seat sits in the run (B6 · RULINGS §M
+             M-4). Every other dock control is a single control in the foot, outside the run. The
+             dock carries no figure subject (§L D3-1): a figure's provenance, options and exports
+             are its own, in its plate. -->
         <template #default>
-            <!-- band 2 — THE STEPPER (the TOC view-mode toggle RETIRED, O-DIR-4 ARM 3 — see the
-                 script-block note above). -->
-            <div class="usf-dock__viewport">
-                <DockStepperRender
-                    :ctx="ctx"
-                    :ramp="identityRamp"
-                    :progress="scrollProgress"
-                    :sheet="sheetOpen"
-                    @close="closeSheet"
-                />
-            </div>
-            <!-- FACET 5 — THE VIZ-CONTEXT ZONE: the route filter drawer's trigger only. A-39 (the
-                 plate): a figure's options, export and Enlarge live in its own act row; the dock
-                 carries no per-figure action. -->
-            <MembraneVizContext />
-            <!-- FACET 6 — THE PROVENANCE DETENT (spec-chrome §c.1 · the A-39 fold · STRAND A). The
-                 ONE teleport target the active plate's provenance record relocates into (no export:
-                 a figure's download is its own act, A-39)
-                 (`useMembraneProvenance`); atlas never imports the dashboards' PlateProvenance. Self-
-                 gates on the SAME dial viz the facet-5 zone tracks; `detent:"shut"`. -->
-            <MembraneProvenanceDetent />
+            <DockStepperRender
+                :ctx="ctx"
+                :progress="scrollProgress"
+                :sheet="sheetOpen"
+                @close="closeSheet"
+                @year-fade="yearFading = $event"
+            />
+        </template>
+
+        <!-- band 3 — THE FOOT (#persistent-end slot): the route controls (Filters, Compare years, Save
+             this view) and the chrome controls (theme, Collapse), outside the run, below the rail.
+             On the phone the same band renders inside the SHEET register (D2): Filters + the gear. -->
+        <template #persistent-end>
             <DockFoot
                 :ctx="ctx"
                 :disable-transitions="props.disableTransitions"

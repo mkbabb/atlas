@@ -48,9 +48,26 @@
   the stage source-data teleport from `ChapterStage` (and their dock-portal holds); the options band
   in `UnifiedFilterPanel`; `useVizPlate().toggleEnlarge`; and the registry's stage-controls seam
   (`registerStageControls`, `deregisterStageControls`, `stageControlsFor`, `RegisteredStageControls`,
-  now `StageControls` from the stage adapter). The facet-6 detent keeps the provenance teleport
-  (`useMembraneProvenanceSource`), which carries the record, not an action. A composed stage's
+  now `StageControls` from the stage adapter). The facet-6 provenance teleport
+  (`useMembraneProvenanceSource`) is deleted too, by the dock re-seat below. A composed stage's
   graphic must use the stage id as its contract id: the stage's Enlarge opens `?fig=<stage id>`.
+
+- **The dock re-seat (U · §L D3-1, §M M-4).** The dock keeps no figure subject and puts no
+  container seat in glass's toolbar run. The run (GlassDock `#default`, which glass 10.1.0 marks
+  `role="toolbar"` and roves) now holds the chapter rungs themselves, one control per seat, so glass's
+  own roving is the chapter rail: one Tab stop (the current chapter), ArrowUp/Down/Home/End between
+  chapters, glass's reach-scroll and status line. The rail's wrapper, its `FadingScroll` port and its
+  spine element leave the run: the identity spine is the run's background (`spine-fill.ts`, the year
+  cross-fade on a registered `--spine-o`), the "step N of M" readout is teleported to `<body>`, and
+  the crest rule sits under the crest in `#persistent`. `ControlPlaneSpine` is deleted from
+  `./chrome` with no alias. The foot (Filters, Compare years, Save this view,
+  theme, Collapse; the gear on the phone) moves to GlassDock's `#persistent-end`, so each control is
+  its own Tab stop; it hides with the deck when the rail collapses. The filter trigger is
+  route-level (`DockFilterTrigger`, test id `dock-filter-trigger`): it pins no figure and carries no
+  figure id. Deleted with no alias: the facet-5 viz-context zone (`MembraneVizContext`), the facet-6
+  provenance detent (`MembraneProvenanceDetent`) and its teleport seam (`useMembraneProvenanceSource`,
+  `useMembraneProvenanceHost`, `useDialVizId`, `MEMBRANE_PROVENANCE_TARGET_*`), and the
+  `"viz-context"`/`"provenance-detent"` facets and the `"context"` band. See MIGRATION.md §5c.
 
 - **U-F60 clause 4, the atlas half (U · §K K-2).** A plate dial (`viz.<id>.<dial>`) is read on
   load and never written: `useVizOptions` holds the value in the view store's dial memory

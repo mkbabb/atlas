@@ -129,7 +129,9 @@
    expanded height) so the pill's block-size is crest + the padding canon — no tall empty void below
    the dome (the OF-27 capture). The R4 progress rim then traces the HUGGED pill's true collapsed
    extent (the resting `--radius-pill` disc). The phone crest→sheet already hugged this way; the
-   desktop rail now shares the SAME rule, so the collapsed medal reads identically at every register. */
+   desktop rail now shares the SAME rule, so the collapsed medal reads identically at every register.
+   The foot (glass `#persistent-end`, B6) is part of the deck in atlas's register: it yields with it,
+   the same `display:none` (so it also leaves the Tab order and the accessibility tree with it). */
 .usf-dock.collapsed {
     padding-block: 0.5rem;
     gap: 0;
@@ -139,38 +141,75 @@
        glass owns the collapse morph clock; animating inline-size desyncs the rim/grain corner (O-D1). */
     inline-size: var(--cp-dock-collapsed-w, 2.75rem);
 }
-.usf-dock.collapsed :deep(.dock-layers) {
+.usf-dock.collapsed :deep(.dock-layers),
+.usf-dock.collapsed :deep(.dock-persistent-end) {
     display: none;
 }
 
-/* THE #default LAYER IS A 3-BAND COLUMN (J-DOCK §approach-3). glass-ui wraps the #default slot in
-   `.dock-layer--full` and lays it out as a ROW by default — the atlas body is a vertical STACK of
-   TWO bands: the `DockStepperRender` SCROLL-MIDDLE (flex-grow) and the `DockFoot` STICKY FOOT. We
-   re-seat the full layer as a column flex with a fixed block-extent so the middle can scroll and the
-   foot can stick to its block-end. The layer fills the rail's available height between the crest
-   (band 1, #persistent) and the rail base. */
+/* THE RUN (#default · glass `.dock-layer--full`, `role="toolbar"`). Its seats are the chapter rungs
+   themselves (B6 · RULINGS §M M-4), so glass's own vertical run carries the rail: it scrolls on the
+   block axis with seat snapping, roves the rungs, and reach-scrolls the focused one into view. We
+   give it the rail's measure and its pitch through glass's own run tokens (a 2rem rung on a 0.75rem
+   gap; one pitch for the active seat, since the raised rung marks itself by scale, not by a longer
+   seat), centre the rungs on the dock axis, and leave a block pad so the raised rung's scale and
+   shadow are never clipped by the run's scroll box. */
+.usf-dock {
+    --dock-seat: 2rem;
+    --dock-run-gap: 0.75rem;
+    --dock-open-pitches: 1;
+}
 :deep(.dock-layer--full) {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: 0.5rem;
     inline-size: 100%;
-    /* the layer fills the rail's content box so the scroll-middle has a height to scroll within and
-       the sticky foot has a block-end to pin to. */
     flex: 1 1 auto;
     min-block-size: 0;
+    padding-block: 0.5rem;
+    /* THE SPINE — the identity ramp as a 3px bar down the dock axis, behind the rungs (spine-fill.ts).
+       `local` attaches it to the run's scrolled content, so it runs the rail's full length and
+       scrolls with the rungs rather than standing still in the run's window. */
+    background-image: var(--spine-fill);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: var(--cp-rail-w, 3px) 100%;
+    background-attachment: local;
+    background-origin: content-box;
+    background-clip: content-box;
 }
 
-/* THE SCROLL-MIDDLE VIEWPORT — the stepper's band. Fills the band (flex-grow, min-block 0 so the
-   inner FadingScroll scrolls). */
-.usf-dock__viewport {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+/* THE YEAR CROSS-FADE (B4 §4): on a year scrub the spine dips and recovers, a patient settle on the
+   same 0.6s curve the accent re-tint uses. Once per change; never loops; cut under PRM. */
+@property --spine-o {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 1;
+}
+.usf-dock--year-fade {
+    animation: dock-year-fade 0.6s var(--ease-engrave);
+}
+@keyframes dock-year-fade {
+    0% {
+        --spine-o: 1;
+    }
+    35% {
+        --spine-o: 0.35;
+    }
+    100% {
+        --spine-o: 1;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .usf-dock--year-fade {
+        animation: none;
+    }
+}
+
+/* THE FOOT BAND (glass `#persistent-end`) spans the rail's measure, so its controls centre on the
+   dock axis at the rail and its rows run full width in the phone sheet. */
+:deep(.dock-persistent-end) {
     inline-size: 100%;
-    flex: 1 1 auto;
-    min-block-size: 0;
 }
 
 /* ══ THE PHONE REGISTER (M.W1 D2, ratified · N.WG1 Arm B — the I-MOBILE law) ══════════════════
@@ -199,21 +238,17 @@
         align-items: stretch;
     }
 
-    /* the sheet's stepper column — full-measure ruled rows, top-aligned (a MENU, not a centred
-       rail); the vertical spine is RAIL furniture (the identity ramp) — the sheet is ruled by
-       its rows, so the spine rests. */
-    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__stepper) {
+    /* the sheet's run — full-measure ruled rows, top-aligned (a MENU, not a centred rail), on the
+       row pitch (2.75rem rows, no gap) so glass's reach-scroll lands whole rows. The spine is RAIL
+       furniture (the identity ramp); the sheet is ruled by its rows, so the spine rests. */
+    .usf-dock--phone:not(.collapsed) {
+        --dock-seat: 2.75rem;
+        --dock-run-gap: 0rem;
+    }
+    .usf-dock--phone:not(.collapsed) :deep(.dock-layer--full) {
         align-items: stretch;
-        justify-content: flex-start;
-        inline-size: 100%;
-        gap: 0;
         padding-block: 0.25rem;
-    }
-    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__spine) {
-        display: none;
-    }
-    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__scroll) {
-        align-items: stretch;
+        background-image: none;
     }
 
     /* A RULED ROW — the same rung, re-registered: full width, the Roman (or the home glyph) as

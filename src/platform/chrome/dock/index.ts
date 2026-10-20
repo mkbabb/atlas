@@ -11,5 +11,4 @@
 // band sub-components stay deep-import-only (internal to the instrument).
 export { default as Dock } from "./Dock.vue";
 export { default as DockSettings } from "./DockSettings.vue";
-export { default as ControlPlaneSpine } from "./ControlPlaneSpine.vue";
 export * from "./composables/index.js";

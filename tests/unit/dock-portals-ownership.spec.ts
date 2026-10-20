@@ -190,7 +190,6 @@ describe("dock-portal outside-interaction census — truthful surface destinatio
         expect(portals).not.toMatch(/the export MENU/);
         expect(src("platform/chrome/dock/composables/useDockCollapse.ts")).not.toMatch(/the export menu/);
         expect(src("platform/chrome/dock/Dock.vue")).not.toMatch(/the export MENU/);
-        expect(src("platform/chrome/dock/MembraneProvenanceDetent.vue")).not.toMatch(/its CSV\/image EXPORT, re-homed/);
         expect(src("platform/provenance/index.ts")).not.toMatch(/provenance \+ CSV\/image export into the dock/);
     });
 
