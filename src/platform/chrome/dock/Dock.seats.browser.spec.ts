@@ -12,7 +12,7 @@
 //      theme toggle and Collapse at the desk; the rail's stop, Filters and the gear on the phone;
 //   4. the dock carries no figure subject: no control in it names or pins a figure id.
 import { afterEach, describe, expect, it } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { page, server, userEvent } from "vitest/browser";
 import { createApp, defineComponent, h, nextTick, provide } from "vue";
 import { createPinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
@@ -97,10 +97,16 @@ async function openDock(phone: boolean): Promise<void> {
 }
 
 /** Tab from the crest until focus leaves the dock; the dock's focus stops, in order. */
+// WebKit on macOS keeps a plain <button> out of the Tab sequence unless the reader asks for every
+// control (Safari's "Press Tab to highlight each item", or Option-Tab). That is the platform's
+// default, not the dock's: atlas must not force tabindex=0 onto buttons to defeat it. So the walk
+// presses the key a WebKit reader uses to reach every control; Chromium and Firefox press Tab.
+const walkKey = server.browser === "webkit" ? "{Alt>}{Tab}{/Alt}" : "{Tab}";
+
 async function tabWalk(): Promise<HTMLElement[]> {
     const stops: HTMLElement[] = [];
     for (let i = 0; i < 24; i++) {
-        await userEvent.tab();
+        await userEvent.keyboard(walkKey);
         const a = document.activeElement as HTMLElement | null;
         if (!a || !dockEl().contains(a)) break;
         stops.push(a);
