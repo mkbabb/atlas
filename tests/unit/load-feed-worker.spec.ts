@@ -74,7 +74,7 @@ afterEach(() => {
 
 describe("loadFeed worker resilience", () => {
     it("parses the fetched body when worker construction fails", async () => {
-        const fetch = fetchBodies({ "/api/sci": JSON.stringify(feed) });
+        const fetch = fetchBodies({ "/data/sci.snapshot.json": JSON.stringify(feed) });
         vi.stubGlobal("Worker", class {
             constructor() {
                 throw new Error("chunk unavailable");
@@ -89,7 +89,7 @@ describe("loadFeed worker resilience", () => {
     it.each(["postMessage", "error", "messageerror"] as const)(
         "retires a worker after a %s infrastructure failure and parses its fetched body",
         async (failure) => {
-            const fetch = fetchBodies({ "/api/sci": JSON.stringify(feed) });
+            const fetch = fetchBodies({ "/data/sci.snapshot.json": JSON.stringify(feed) });
             const Worker = failingWorker(failure);
 
             const { loadFeed } = await loader();
@@ -107,8 +107,8 @@ describe("loadFeed worker resilience", () => {
             meta: { ...feed.meta, dataset: "sci-schools" },
         } satisfies Feed;
         const fetch = fetchBodies({
-            "/api/sci": JSON.stringify(feed),
-            "/api/sci-schools": JSON.stringify(schoolFeed),
+            "/data/sci.snapshot.json": JSON.stringify(feed),
+            "/data/sci-schools.snapshot.json": JSON.stringify(schoolFeed),
         });
         let posted = 0;
         class ConcurrentWorker {
@@ -136,40 +136,8 @@ describe("loadFeed worker resilience", () => {
         expect(fetch).toHaveBeenCalledTimes(2);
     });
 
-    it("keeps a data failure request-local and falls from malformed live data to the snapshot", async () => {
-        const fetch = fetchBodies({
-            "/api/sci": "{}",
-            "/data/sci.snapshot.json": JSON.stringify(feed),
-        });
-        class DataWorker {
-            onmessage: ((event: MessageEvent<FeedParseReply>) => void) | null = null;
-            onerror = null;
-            onmessageerror = null;
-            terminated = false;
-
-            postMessage(request: FeedParseRequest): void {
-                const data: FeedParseReply = request.url.startsWith("/api/")
-                    ? { id: request.id, ok: false, error: "not a Feed envelope" }
-                    : { id: request.id, ok: true, envelope: feed };
-                queueMicrotask(() => this.onmessage?.({ data } as MessageEvent<FeedParseReply>));
-            }
-
-            terminate(): void {
-                this.terminated = true;
-            }
-        }
-        vi.stubGlobal("Worker", DataWorker);
-
-        const { loadFeed } = await loader();
-        await expect(loadFeed("sci")).resolves.toEqual(feed);
-        expect(fetch.mock.calls.map(([url]) => url)).toEqual([
-            "/api/sci",
-            "/data/sci.snapshot.json",
-        ]);
-    });
-
-    it("rejects when both the live body and snapshot are malformed", async () => {
-        fetchBodies({ "/api/sci": "{}", "/data/sci.snapshot.json": "{}" });
+    it("rejects a malformed snapshot loudly, with one request and no second transport", async () => {
+        const fetch = fetchBodies({ "/data/sci.snapshot.json": "{}" });
         class RejectingWorker {
             onmessage: ((event: MessageEvent<FeedParseReply>) => void) | null = null;
             onerror = null;
@@ -186,24 +154,19 @@ describe("loadFeed worker resilience", () => {
 
         const { loadFeed } = await loader();
         await expect(loadFeed("sci")).rejects.toThrow("not a Feed envelope");
+        expect(fetch.mock.calls.map(([url]) => url)).toEqual(["/data/sci.snapshot.json"]);
     });
 
-    it("uses the shared body parser for a light feed and its snapshot floor", async () => {
-        const fetch = fetchBodies({
-            "/api/usf": "{}",
-            "/data/usf.snapshot.json": JSON.stringify(feed),
-        });
+    it("uses the shared body parser for a light feed read from its stamped snapshot", async () => {
+        const fetch = fetchBodies({ "/data/usf.snapshot.json": JSON.stringify(feed) });
 
         const { loadFeed } = await loader();
         await expect(loadFeed("usf")).resolves.toEqual(feed);
-        expect(fetch.mock.calls.map(([url]) => url)).toEqual([
-            "/api/usf",
-            "/data/usf.snapshot.json",
-        ]);
+        expect(fetch.mock.calls.map(([url]) => url)).toEqual(["/data/usf.snapshot.json"]);
     });
 
     it("returns the same feed through worker and synchronous parsing", async () => {
-        fetchBodies({ "/api/sci": JSON.stringify(feed) });
+        fetchBodies({ "/data/sci.snapshot.json": JSON.stringify(feed) });
         class ParsingWorker {
             onmessage: ((event: MessageEvent<FeedParseReply>) => void) | null = null;
             onerror = null;
@@ -226,5 +189,60 @@ describe("loadFeed worker resilience", () => {
         vi.stubGlobal("Worker", undefined);
         const synchronousResult = await (await loader()).loadFeed("sci");
         expect(workerResult).toEqual(synchronousResult);
+    });
+});
+
+// U §L H9 (a): the build's stamped snapshot is the only source. The deleted live arm read
+// `/api/<slug>` first and fell back silently; every case below failed against it.
+describe("loadFeed reads only the stamped snapshot (H9 (a))", () => {
+    it.each(["sci", "usf"])("never requests the live /api/%s arm, even when it would answer", async (slug) => {
+        const fetch = fetchBodies({
+            [`/api/${slug}`]: JSON.stringify(feed),
+            [`/data/${slug}.snapshot.json`]: JSON.stringify(feed),
+        });
+        vi.stubGlobal("Worker", undefined);
+
+        const { loadFeed } = await loader();
+        await expect(loadFeed(slug)).resolves.toEqual(feed);
+        expect(fetch.mock.calls.map(([url]) => url)).toEqual([`/data/${slug}.snapshot.json`]);
+    });
+
+    it.each(["sci", "usf"])("refuses loudly when the %s snapshot fetch fails, with no fallback", async (slug) => {
+        // Only the live arm answers: the old loader would have served it (or fallen back);
+        // the stamped loader rejects with the snapshot's own failure.
+        const fetch = fetchBodies({ [`/api/${slug}`]: JSON.stringify(feed) });
+        vi.stubGlobal("Worker", undefined);
+
+        const { loadFeed } = await loader();
+        await expect(loadFeed(slug)).rejects.toThrow(`/data/${slug}.snapshot.json → HTTP 404`);
+        expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("refuses loudly when the network itself fails", async () => {
+        const fetch = vi.fn(async () => {
+            throw new TypeError("Failed to fetch");
+        });
+        vi.stubGlobal("fetch", fetch);
+        vi.stubGlobal("Worker", undefined);
+
+        const { loadFeed } = await loader();
+        await expect(loadFeed("usf")).rejects.toThrow("Failed to fetch");
+        expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(["/api/sci", "https://example.org/api/sci", "../sci", "sci/../api", "SCI", ""])(
+        "refuses a live URL or path %j before any fetch",
+        async (slug) => {
+            const fetch = fetchBodies({ "/api/sci": JSON.stringify(feed) });
+
+            const { loadFeed } = await loader();
+            await expect(loadFeed(slug)).rejects.toThrow("is not a dataset slug");
+            expect(fetch).not.toHaveBeenCalled();
+        },
+    );
+
+    it("exports no live-route builder", async () => {
+        const mod: Record<string, unknown> = await loader();
+        expect(mod.apiUrl).toBeUndefined();
     });
 });

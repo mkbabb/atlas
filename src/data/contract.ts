@@ -13,7 +13,8 @@ export type EntityGrain = "state" | "district" | "school" | "entity" | "year";
  * four-type taxonomy). No viz computes its own aggregate; `multiYear` reads this.
  *
  * - `sum` — magnitude: add across the selected years (dollars, counts).
- * - `latest` — carry the newest year's value (stable attributes: area, lat/lon).
+ * - `latest` — the unit's value in the latest selected period; no fall-back to an older
+ *   period (U §L horn 8 (ii)). Pooled membership is decided on that period's row.
  * - `mean` — simple average (a rate with uniform weight).
  * - `{ weightedAvg }` — a rate averaged weighted by another measure key.
  * - `{ ratio }` — recompute from the summed `[numerator, denominator]` measures.
@@ -63,6 +64,18 @@ export interface FeedMeta {
     fidelity?: string;
     /** The origin path recorded when `fidelity` is `"degraded"`. */
     sourcePath?: string | null;
+    /** The declared period axis (U · §L 6(f), X-11′). Absent: `years` are plain years, written
+        to `?year=`. A school-year feed declares `{axis: "school-year", param: "sy"}`, and its
+        period codec, URL key and `PeriodNoun` follow from it (`data/period.ts`). */
+    period?: FeedPeriodAxis;
+}
+
+/** A feed's declared period axis. Producer fields beyond these ride untyped. */
+export interface FeedPeriodAxis {
+    axis: "school-year";
+    /** The one URL key the period is written to (`sy`). */
+    param: string;
+    [field: string]: unknown;
 }
 
 /** A tidy-long row: at minimum its year; the key field + measures are dataset-specific. */
@@ -121,6 +134,14 @@ function isFeedMeta(value: unknown): value is FeedMeta {
         value.years.length === 0 ||
         !Array.isArray(value.measures) ||
         !isRecord(value.aggregable)
+    ) {
+        return false;
+    }
+    if (
+        "period" in value &&
+        (!isRecord(value.period) ||
+            value.period.axis !== "school-year" ||
+            !isNonEmptyString(value.period.param))
     ) {
         return false;
     }

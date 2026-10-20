@@ -7,7 +7,7 @@
 // The saved-views shelf stays the ONE `platform:views` shelf the filter drawer's
 // named-save also writes (no second shelf — both call `save({url: currentUrl()})`, the
 // dedup-by-url composable keeps it one set). The year-range state layer already ships
-// end-to-end (`useYearScope.setRange`, `?yearMode=range&years=`); this owns only the
+// end-to-end (`useYearScope.setRange`, the one period codec); this owns only the
 // CONTROL that enters it. ZERO behavior change — a content-MOVE from Dock.vue.
 import { computed, onBeforeUnmount, ref, type ComputedRef, type Ref } from "vue";
 import { useViewParams } from "../../../stores/useViewParams.js";
@@ -65,7 +65,7 @@ export function useDockDataState(
 
     // ── The year-scrubber RANGE-mode UI control ──────────────────────────────────
     // The state layer already ships `range` end-to-end (`useYearScope.setRange`,
-    // `?yearMode=range&years=`, `resolveScope`→`many` frames) — the only thing absent was a
+    // `?sy=range:…` through the one period codec, `resolveScope`→`many` frames) — the only thing absent was a
     // CONTROL to ENTER it. Without it a range-scope saved-view could not round-trip (PL-5's
     // stated dependency). This is the named, grep-checked build: a dock control that toggles
     // range mode over the full span (the small-multiple/compare register), mirroring the

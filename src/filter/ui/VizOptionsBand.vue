@@ -67,7 +67,7 @@ function resetOptions(): void {
                     :aria-labelledby="labelledBy"
                     class="flex flex-wrap gap-1"
                     :data-testid="`viz-opt-${vizId}-${spec.key}`"
-                    :data-viz-scope="spec.scope === 'global' ? 'global' : undefined"
+                    :data-viz-scope="spec.scope === 'local' ? undefined : spec.scope"
                     @update:model-value="(v) => setStr(spec, v as string | string[])"
                 >
                     <ToggleGroupItem
@@ -93,7 +93,7 @@ function resetOptions(): void {
                         :aria-labelledby="labelledBy"
                         class="viz-options-band__select min-h-[44px] text-(length:--type-caption)"
                         :data-testid="`viz-opt-${vizId}-${spec.key}`"
-                        :data-viz-scope="spec.scope === 'global' ? 'global' : undefined"
+                        :data-viz-scope="spec.scope === 'local' ? undefined : spec.scope"
                     >
                         <SelectValue />
                     </SelectTrigger>
@@ -115,7 +115,7 @@ function resetOptions(): void {
                     :model-value="boolModel(spec)"
                     :aria-labelledby="labelledBy"
                     :data-testid="`viz-opt-${vizId}-${spec.key}`"
-                    :data-viz-scope="spec.scope === 'global' ? 'global' : undefined"
+                    :data-viz-scope="spec.scope === 'local' ? undefined : spec.scope"
                     @update:model-value="(v) => setBool(spec, v as boolean)"
                 />
             </LabeledField>

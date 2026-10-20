@@ -1,9 +1,13 @@
 // platform/data/loadFeed.ts — the ONE client loader every dashboard reads through
 // (INV-3). It generalizes the USF-bound `src/data/usf.ts`: instead of the hardcoded
-// `/api/usf` → `/data/usf.snapshot.json` pair, it takes a `slug` and derives both
-// URLs from it, so USF, SCI, and ECF all load through the same door. The live CF
-// Function is tried first with a 4s timeout; on any non-200, parse error, or
-// timeout it falls back to the build-time snapshot — the resilience floor (G6 §6).
+// `/api/usf` → `/data/usf.snapshot.json` pair, it takes a `slug` and derives the snapshot
+// URL from it, so USF, SCI, and ECF all load through the same door.
+//
+// THE STAMPED SOURCE (U §L H9 (a)): the build's stamped snapshot is the ONLY source. The
+// former live arm (`/api/<slug>`, a Pages Function that read the Sheet whenever a credential
+// was bound) and its silent catch-and-fall-to-snapshot are deleted: the stamp names every byte
+// the product serves, and a failed fetch or a malformed body rejects loudly. A slug that is
+// not a bare dataset name (a URL, a path, `/api/...`) is refused before any fetch.
 //
 // The shape is validated with `isFeed` from the shared contract (do not redefine
 // it here), and the key column is coerced per `meta.keyField`: a state-grain feed's
@@ -34,9 +38,6 @@ import {
 } from "./contract.js";
 import type { FeedParseReply, FeedParseRequest } from "./feedParse.worker.js";
 import { parseFeedBody } from "./feedParse.js";
-import { prefersReducedData } from "./dataSaver.js";
-
-const TIMEOUT_MS = 4000;
 
 /**
  * The heavy slugs whose 3.1 MB parse MUST run off the main thread (fb-perf P-3).
@@ -45,13 +46,19 @@ const TIMEOUT_MS = 4000;
  */
 const HEAVY_SLUGS = new Set(["sci", "sci-schools"]);
 
-/** The live CF Pages Function route for a dashboard slug (e.g. `/api/usf`). */
-export function apiUrl(slug: string): string {
-    return `/api/${slug}`;
-}
+/** A dataset slug is a bare lowercase name (`sci`, `sci-schools`, `usf`): never a URL or path. */
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-/** The committed build-time snapshot for a slug (the fallback floor). */
+/**
+ * The build's stamped snapshot for a slug: the one source every feed is read from (H9 (a)).
+ * Throws on anything that is not a bare slug, so no caller can route a feed to a live URL.
+ */
 export function snapshotUrl(slug: string): string {
+    if (!SLUG.test(slug)) {
+        throw new Error(
+            `loadFeed: "${slug}" is not a dataset slug; feeds are read only from the build's stamped /data/<slug>.snapshot.json`,
+        );
+    }
     return `/data/${slug}.snapshot.json`;
 }
 
@@ -167,11 +174,8 @@ function parseInWorker<Row extends FeedRow>(
  * If Worker is absent, or its constructor/message channel fails, parse the already-fetched body
  * synchronously so infrastructure failure does not force a second network request.
  */
-async function fetchHeavy<Row extends FeedRow>(
-    url: string,
-    signal?: AbortSignal,
-): Promise<Feed<Row>> {
-    const res = await fetch(url, { signal, headers: { accept: "application/json" } });
+async function fetchHeavy<Row extends FeedRow>(url: string): Promise<Feed<Row>> {
+    const res = await fetch(url, { headers: { accept: "application/json" } });
     if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
     const text = await res.text();
     // The ordinary browser path parses off-thread. No-Worker environments parse here; worker
@@ -191,45 +195,22 @@ function materializeValidated<Row extends FeedRow>(
     return normalize(feed as Feed<Row>);
 }
 
-async function fetchFeed<Row extends FeedRow>(
-    slug: string,
-    url: string,
-    signal?: AbortSignal,
-): Promise<Feed<Row>> {
+async function fetchFeed<Row extends FeedRow>(slug: string, url: string): Promise<Feed<Row>> {
     // Heavy slugs route the shared parser through the worker; light slugs run that same parser
     // synchronously because the worker round-trip is not worth its postMessage clone.
-    if (HEAVY_SLUGS.has(slug)) return fetchHeavy<Row>(url, signal);
-    const res = await fetch(url, { signal, headers: { accept: "application/json" } });
+    if (HEAVY_SLUGS.has(slug)) return fetchHeavy<Row>(url);
+    const res = await fetch(url, { headers: { accept: "application/json" } });
     if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
     return materializeValidated<Row>(parseFeedBody(await res.text(), url));
 }
 
 /**
- * Load a dashboard's feed by slug. The live Function first, the snapshot as the
- * fallback floor; always resolves with a key-normalized `Feed`, or rejects only if
- * both transports fail. Generic over the dashboard's concrete row type.
+ * Load a dashboard's feed by slug from the build's stamped snapshot. Resolves with a
+ * key-normalized `Feed`; rejects loudly on a non-slug, a failed fetch or a malformed body.
+ * There is no second transport and no fallback (U §L H9 (a)). Generic over the row type.
  */
 export async function loadFeed<Row extends FeedRow = FeedRow>(
     slug: string,
 ): Promise<Feed<Row>> {
-    // THE DATA-SAVER SEAM (N.WF2 · B7): under `Save-Data` / `prefers-reduced-data`, skip the
-    // speculative live round-trip (+ its 4s timeout) and load the committed snapshot directly —
-    // the leaner transport (a static, long-cache, WF1-minified asset) the user's frugality signal
-    // asks for. The snapshot is ALWAYS a valid Feed (it is the resilience floor), so this trades
-    // live-freshness for bytes without degrading correctness; a snapshot-fetch failure still
-    // surfaces as a reject exactly as the live path's would.
-    if (prefersReducedData()) {
-        return await fetchFeed<Row>(slug, snapshotUrl(slug));
-    }
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    try {
-        return await fetchFeed<Row>(slug, apiUrl(slug), controller.signal);
-    } catch {
-        // The live path is unavailable (timeout / non-200 / parse) — fall to the
-        // committed snapshot so the dashboard renders regardless (G6 §6 floor).
-        return await fetchFeed<Row>(slug, snapshotUrl(slug));
-    } finally {
-        clearTimeout(timer);
-    }
+    return await fetchFeed<Row>(slug, snapshotUrl(slug));
 }

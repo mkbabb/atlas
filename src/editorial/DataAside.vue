@@ -71,7 +71,6 @@ function setBool(v: boolean): void {
     controller.set(props.spec.key, v);
 }
 
-const isGlobal = computed(() => props.spec.scope === "global");
 </script>
 
 <template>
@@ -93,7 +92,7 @@ const isGlobal = computed(() => props.spec.scope === "global");
                 :aria-describedby="promptId"
                 class="flex flex-wrap gap-1"
                 :data-testid="`data-aside-${vizId}-${spec.key}`"
-                :data-viz-scope="isGlobal ? 'global' : undefined"
+                :data-viz-scope="spec.scope === 'local' ? undefined : spec.scope"
                 @update:model-value="(v) => setStr(v as string | string[])"
             >
                 <ToggleGroupItem
@@ -120,7 +119,7 @@ const isGlobal = computed(() => props.spec.scope === "global");
                     :aria-describedby="promptId"
                     class="data-aside__select min-h-[44px] text-(length:--type-caption)"
                     :data-testid="`data-aside-${vizId}-${spec.key}`"
-                    :data-viz-scope="isGlobal ? 'global' : undefined"
+                    :data-viz-scope="spec.scope === 'local' ? undefined : spec.scope"
                 >
                     <SelectValue />
                 </SelectTrigger>
@@ -143,7 +142,7 @@ const isGlobal = computed(() => props.spec.scope === "global");
                 :aria-label="spec.label"
                 :aria-describedby="promptId"
                 :data-testid="`data-aside-${vizId}-${spec.key}`"
-                :data-viz-scope="isGlobal ? 'global' : undefined"
+                :data-viz-scope="spec.scope === 'local' ? undefined : spec.scope"
                 @update:model-value="(v) => setBool(v as boolean)"
             />
         </div>

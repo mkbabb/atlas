@@ -84,6 +84,40 @@
   `CompletionSealProps` and `CompletionSealShape`.
 - `AtmospherePreset.dockOpacity` and the `--glass-opacity-dock` write are removed. Glass 8 stopped
   reading `--glass-opacity-*`; the glass 10 dock owns its own legibility over the ground.
+- **The stamped snapshot is the only feed source (U · §L H9 (a)).** `loadFeed(slug)` reads
+  `/data/<slug>.snapshot.json` and nothing else. The live arm (`/api/<slug>`, which served an
+  unstamped Sheet read under Pages) and its silent catch-and-fall-to-snapshot are deleted, with
+  `apiUrl` (no alias). A failed fetch or malformed body rejects; `snapshotUrl` throws on anything
+  that is not a bare lowercase slug, so a URL or path is refused before any fetch. `loadFeed` no
+  longer reads `prefersReducedData()` (there is one transport).
+- **Pooled membership is the latest period (U · §L horn 8 (ii), F-D4S-8).** `aggregateRows(feed,
+  years)` admits a unit only if it has a row in the latest selected period, and reduces from that
+  row: closed units leave the pooled frame, attributes (flag, names) ride so a route filter tests
+  the unit as it stands in that period, and a `latest` measure reads that row with no fall-back to
+  an older non-null value (the "entitynn" helper is deleted). The reduced row's `year` is that
+  period. On the sci 2014–2025 snapshot the pooled frame goes from 322 to 302 units and
+  `flag=CHARTER` admits 187 (was 0, F-D4S-1). `trajectory()` now throws when a `latest` measure
+  meets more than one row in a period (it used to return an arbitrary entity's value).
+- **One set-valued period key (U · §L 6(f), X-5′, X-11′).** The year scope reads and writes ONE
+  URL key through one codec (`data/period.ts`): `?sy=` on a feed that declares
+  `meta.period = {axis: "school-year", param: "sy"}`, else `?year=`. Single `sy=2024-25`; a pool
+  `sy=2014-15..2025-26`; a gapped pool `sy=2014-15,2016-17..2018-19` (gaps kept, never a hull);
+  compare `sy=range:2014-15..2016-17`. `yearMode` and integer `years` (and `year` on a
+  school-year feed) are read once on load by `restatePeriod`, restated element-wise with a notice
+  (`useYearScope().notice`), and never written. Reader writes go through `setPeriod` (and
+  `setSingle`/`setRange`/`setAggregate`, which call it); each writes the axis key, deletes the
+  legacy keys, closes the notice, and throws on a year the feed does not carry. Nothing is
+  written on load. New: `useYearScope().hold(scope)` (a program's in-memory period), `noun`
+  (the one `PeriodNoun`), `codec`, `text`, `notice`; `FeedMeta.period` / `FeedPeriodAxis`
+  (validated: an unknown axis fails `isFeed`). `YearScope` is now `PeriodScope`.
+- **A scene's year is held, never written (§L 6(f)).** `SceneRuntime.setYear` holds the scope in
+  memory while the scene is on screen and releases it when the scene leaves; the snapshot/restore
+  of the reader's scope through URL writes is deleted.
+- **Period dials (`VizOptionScope "period"`).** A plate dial on the year scope declares
+  `scope: "period"` and writes through `setSingle`. A `global` dial keyed `year`, `years`,
+  `yearMode` or `sy` throws. `data-viz-scope` names the dial's scope (`global` or `period`).
+- FilterPanel's freshness chip names the period with the feed's noun ("2024–25", or the pooled set)
+  instead of "FY{year}" / "all years".
 
 ### Added
 

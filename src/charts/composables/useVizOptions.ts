@@ -19,8 +19,10 @@
 // band-cake's `tierCountsByYear` reading the `measure` dial), the store builds its own
 // `useVizOptions` over the SAME vizId and specs, and both read the one dial memory.
 //
-// A `global` dial is the exception: it is a second surface on a global filter (the year
-// scope), whose bare key the filter itself writes in answer to the reader's act.
+// A `global` dial is the exception: it is a second surface on a global filter, whose bare key
+// the filter itself writes in answer to the reader's act. A `period` dial is a second surface
+// on the year scope: it reads the scope and writes through `useYearScope.setPeriod`, the one
+// period write path (U · §L 6(f)). A `global` dial may not name a period key.
 
 import { computed, reactive, type ComputedRef } from "vue";
 import { useViewParams } from "../../platform/stores/useViewParams.js";
@@ -41,12 +43,18 @@ export interface VizOptionChoice {
 /** The SCOPE of an option (f-vizoptions §3 — "effect the global filters if need be"):
     · `local`  — a plate-private lens, serialized as `?viz.<vizId>.<key>` (the default; the
       INV-5 per-plate document arm). The vast majority of dials.
-    · `global` — the dial is a SECOND SURFACE on a GLOBAL filter (e.g. the year scope). It
-      reads/writes the BARE global key (`?year`/`?yearMode`/`?years`) as a MIRROR — ONE source
-      of truth, two surfaces — so a `?viz.<id>.year=` SHADOW never exists (the B4 scrubber-drift
-      trap). Its `key` IS the global param name; it is excluded from the plate dirty-dot/Reset
-      (resetting a plate must never clear a global filter). */
-export type VizOptionScope = "local" | "global";
+    · `global` — the dial is a SECOND SURFACE on a GLOBAL filter. It reads/writes the BARE
+      global key as a MIRROR — ONE source of truth, two surfaces — so a `?viz.<id>.<key>=`
+      SHADOW never exists (the B4 scrubber-drift trap). Its `key` IS the global param name; it
+      is excluded from the plate dirty-dot/Reset (resetting a plate must never clear a global
+      filter). A period key (`year`, `years`, `yearMode`, `sy`) is refused: use `period`.
+    · `period` — the dial is a SECOND SURFACE on the YEAR SCOPE. Its choices are period keys
+      (`"2024"`); it reads the scope's single year and writes `setSingle` through the one codec
+      (U · §L 6(f)). Excluded from the plate dirty-dot/Reset, like `global`. */
+export type VizOptionScope = "local" | "global" | "period";
+
+/** URL keys that only the year scope reads or writes (every axis's period and legacy keys). */
+const PERIOD_KEYS: ReadonlySet<string> = new Set(["year", "years", "yearMode", "sy"]);
 
 /** A spec's optional scope (default `local`). A `global` spec's `key` is the bare global param
     name the dial mirrors; a `local` spec's `key` is namespaced under `viz.<vizId>.`. */
@@ -79,7 +87,7 @@ export interface UseVizOptions {
 /** A `global`-scoped spec mirrors a GLOBAL filter — its key is the BARE global param name (no
     namespace), so it is a second surface on the one source of truth, never a `?viz.*` shadow. */
 function isGlobal(spec: VizOptionSpec): boolean {
-    return spec.scope === "global";
+    return spec.scope === "global" || spec.scope === "period";
 }
 
 /** The per-spec URL param name. A `local` spec namespaces under `viz.<vizId>.<optKey>` (the ds §5
@@ -94,6 +102,13 @@ function paramKeyOf(vizId: string, spec: VizOptionSpec): string {
  * reactive `values` bag (read in the plate's derivations) + the chrome controls.
  */
 export function useVizOptions(vizId: string, specs: VizOptionSpec[]): UseVizOptions {
+    for (const spec of specs) {
+        if (spec.scope === "global" && PERIOD_KEYS.has(spec.key)) {
+            throw new Error(
+                `useVizOptions(${vizId}): the global dial "${spec.key}" names a period key; declare it scope: "period" so it writes through the year scope`,
+            );
+        }
+    }
     const view = useViewParams();
 
     // Register every LOCAL dial so the view-level `resetParams` returns it to its default (one
@@ -108,13 +123,20 @@ export function useVizOptions(vizId: string, specs: VizOptionSpec[]): UseVizOpti
         dial's from the global filter's own key. */
     function wireOf(spec: VizOptionSpec): string | undefined {
         const pk = paramKeyOf(vizId, spec);
+        if (spec.scope === "period") {
+            const scope = view.yearScope?.scope.value;
+            return scope?.mode === "single" ? String(scope.year) : undefined;
+        }
         return isGlobal(spec) ? view.param(pk) : view.dialParam(pk);
     }
-    /** Write a wire value: a global dial writes its global filter's key (the reader's act on that
-        filter); a local dial writes memory only. */
+    /** Write a wire value: a period dial writes through the year scope, a global dial writes its
+        global filter's key (the reader's act on that filter); a local dial writes memory only. */
     function writeOf(spec: VizOptionSpec, wire: string | undefined): void {
         const pk = paramKeyOf(vizId, spec);
-        if (isGlobal(spec)) view.setParam(pk, wire);
+        if (spec.scope === "period") {
+            const year = Number(wire ?? (spec.kind === "switch" ? undefined : spec.default));
+            if (Number.isInteger(year)) view.yearScope?.setSingle(year);
+        } else if (isGlobal(spec)) view.setParam(pk, wire);
         else view.setDial(pk, wire);
     }
 
