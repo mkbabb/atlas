@@ -96,13 +96,13 @@ async function openDock(phone: boolean): Promise<void> {
     await wait(400);
 }
 
-/** Tab from the crest until focus leaves the dock; the dock's focus stops, in order. */
 // WebKit on macOS keeps a plain <button> out of the Tab sequence unless the reader asks for every
 // control (Safari's "Press Tab to highlight each item", or Option-Tab). That is the platform's
 // default, not the dock's: atlas must not force tabindex=0 onto buttons to defeat it. So the walk
 // presses the key a WebKit reader uses to reach every control; Chromium and Firefox press Tab.
 const walkKey = server.browser === "webkit" ? "{Alt>}{Tab}{/Alt}" : "{Tab}";
 
+/** Tab from the crest until focus leaves the dock; the dock's focus stops, in order. */
 async function tabWalk(): Promise<HTMLElement[]> {
     const stops: HTMLElement[] = [];
     for (let i = 0; i < 24; i++) {
