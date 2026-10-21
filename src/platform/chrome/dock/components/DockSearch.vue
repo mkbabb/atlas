@@ -78,7 +78,7 @@ function go(to: string): void {
                     v-for="item in dashboards"
                     :key="item.to"
                     :value="item.to"
-                    :text-value="item.label"
+                    :textValue="item.label"
                     @select="go(item.to)"
                 >
                     {{ item.label }}
@@ -89,7 +89,7 @@ function go(to: string): void {
                     v-for="item in g.items"
                     :key="item.to"
                     :value="item.to"
-                    :text-value="item.label"
+                    :textValue="item.label"
                     @select="go(item.to)"
                 >
                     {{ item.label }}
