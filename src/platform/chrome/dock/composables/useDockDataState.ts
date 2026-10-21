@@ -9,7 +9,7 @@
 // dedup-by-url composable keeps it one set). The year-range state layer already ships
 // end-to-end (`useYearScope.setRange`, the one period codec); this owns only the
 // CONTROL that enters it. ZERO behavior change — a content-MOVE from Dock.vue.
-import { computed, onBeforeUnmount, ref, type ComputedRef, type Ref } from "vue";
+import { computed, onBeforeUnmount, ref, toValue, type ComputedRef, type MaybeRefOrGetter, type Ref } from "vue";
 import { useViewParams } from "../../../stores/useViewParams.js";
 import { useSavedViews, currentUrl } from "../../../composables/useSavedViews.js";
 import type { DashboardContext } from "../../../../contract/index.js";
@@ -35,7 +35,7 @@ export interface UseDockDataState {
  * never a fork. ZERO behavior change — a content-MOVE.
  */
 export function useDockDataState(
-    ctx: DashboardContext | undefined,
+    context: MaybeRefOrGetter<DashboardContext | undefined>,
 ): UseDockDataState {
     const view = useViewParams();
 
@@ -55,6 +55,7 @@ export function useDockDataState(
         door onto the platform:views shelf (the filter drawer's named-save is the richer
         door; this is the one-tap quick-save from anywhere in the scroll). */
     function saveCurrentView(): void {
+        const ctx = toValue(context);
         const slug = ctx?.id;
         if (!slug) return;
         savedViews.save({ name: ctx?.title ?? slug, slug, url: currentUrl() });
@@ -76,7 +77,7 @@ export function useDockDataState(
     /** Show the range control only on a multi-year dashboard whose feed (hence scope) landed. */
     const hasYearScope = computed(() =>
         Boolean(
-            ctx?.hasMultiYear &&
+            toValue(context)?.hasMultiYear &&
                 yearScopeRef.value &&
                 yearScopeYears.value.length > 1,
         ),

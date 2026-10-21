@@ -144,6 +144,13 @@
        the gate asserts, not the px. */
     --cp-dock-collapsed-w: 2.75rem; /* NET-NEW — the collapsed disc (= --dock-control-size, Dock.css:18) */
     --cp-dock-reserve: calc(var(--cp-inset) + var(--cp-dock-collapsed-w)); /* 4rem/64px — the disc + one inset */
+    /* THE DOCK BANDS (U/B7 §2.2). `--shell-head-reserve`: the top band the ≥ 768 px circle and its
+       section pager occupy; section headings take it as `scroll-margin-block-start`, so a section
+       jump lands the heading below the pager. `--dock-bar-reserve`: the bottom band the < 768 px bar
+       occupies (56 px + its 16 px inset + the safe area); the shell pads its foot by it and the
+       document scroller takes it as `scroll-padding-block-end`. */
+    --shell-head-reserve: 5rem;
+    --dock-bar-reserve: 0px;
     /* ── THE DOCK-AWARE ASYMMETRIC MEASURE (J-STORY §8 · C25 the measure half) ──────────────────
        The keystone SPACE transposition: the figure reclaims the width the prose does not need.
        Two measures, ONE grid (the route body is the column track):
@@ -211,4 +218,14 @@
        and an ivory rim at low alpha (the lit edge on dark stock, not a blown specular). */
     --cp-glass-bg: color-mix(in oklab, var(--card) 72%, transparent);
     --cp-glass-rim: oklch(0.92 0.01 70 / 0.14);
+}
+
+@media (--phone) {
+    :root {
+        --shell-head-reserve: 1rem;
+        --dock-bar-reserve: calc(3.5rem + 1rem + env(safe-area-inset-bottom));
+    }
+    html {
+        scroll-padding-block-end: var(--dock-bar-reserve);
+    }
 }

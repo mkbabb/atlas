@@ -29,29 +29,99 @@
 // transforms. On an `activeBeatId` change the label CROSS-FADES (keyed out-in). PRM hard-cuts both
 // (curve ceded to Family C). Phone is fenced: the phone register's readout is the O-03 bottom bar's
 // centre (dial-13, un-shipped) — the lozenge is desktop wayfinding only, never a second phone chrome.
-import { computed } from "vue";
-import { storeToRefs } from "pinia";
-import { useActiveBeat } from "../../stores/useActiveBeat.js";
+//
+// ── U/B7 §2.1 D-7, D-11/D-12, §2.2 (O-12) ─────────────────────────────────────────────────────────
+// The lozenge is the section pager at ≥ 768 px: ‹ [Section n of N · title] › (DockSectionSelect).
+// It shows only past the crown, with a real active section (no empty pill: D-11/D-12), and only while
+// no section heading is in or near the band the lozenge occupies (D-7: it never sits on a heading). The shell reserves the same band (`--shell-head-reserve`) as the headings' scroll margin,
+// so a section jump lands the heading below it. Below 768 px there is no lozenge: the bottom bar's
+// Sections cell carries the name.
+import { computed, onBeforeUnmount, ref, watch } from "vue";
+import DockSectionSelect from "./components/DockSectionSelect.vue";
+import type { UseDockStepper } from "./composables/useDockStepper.js";
 import type { MembraneFacet } from "./membrane-facet.js";
 
 const props = defineProps<{
-    /** True at/near the crown (`useScrollChrome.atTop`) — the lozenge rests as the bare disc there
-        (the in-content title carries wayfinding). Materialises the instant the reader leaves the top. */
+    /** True at/near the crown (`useScrollChrome.atTop`): the in-content title carries wayfinding. */
     atTop: boolean;
-    /** The phone register — the lozenge is desktop-only (the phone readout is the O-03 bar, dial-13). */
+    /** The phone register: no lozenge (the bar's Sections cell carries the name). */
     isPhone: boolean;
+    /** The dock's stepper: the active section and the section jump. */
+    stepper: UseDockStepper;
 }>();
 
 // FACET 3's closed-union member — a typo is a compile error at `membrane-facet.ts`'s total switch.
 const TITLE_FACET: MembraneFacet = "title-lozenge";
 
-// The single dock-IO scalar (single-writer; no rival clock — the seam-15 seat).
-const { activeBeatId, activeBeatLabel } = storeToRefs(useActiveBeat());
+/** The band the lozenge occupies, from the viewport top (the shell's `--shell-head-reserve`). */
+function bandPx(): number {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue("--shell-head-reserve");
+    const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const v = Number.parseFloat(raw);
+    if (!Number.isFinite(v)) return 5 * rem;
+    return raw.trim().endsWith("rem") ? v * rem : v;
+}
 
-/** The lozenge paints only past the crown, on a desktop register, with a real labelled beat. At the
-    crown / on phone / before the first labelled beat it is the bare disc (nothing). */
+/** The pager's own foot sits this far above the band's foot (the 52 px pager centred on the 44 px
+    circle at the inset), so a heading a section jump lands at the band's foot is clear of it. */
+const PAGER_CLEARANCE_PX = 8;
+
+/** True while any section heading crosses the pager's band. The pager then leaves at once (no
+    leave fade), so it is never drawn over a heading. */
+const headingInBand = ref(false);
+let headingObserver: IntersectionObserver | null = null;
+let retryFrame = 0;
+function watchHeadings(): void {
+    if (retryFrame) cancelAnimationFrame(retryFrame);
+    retryFrame = 0;
+    headingObserver?.disconnect();
+    headingObserver = null;
+    headingInBand.value = false;
+    if (props.isPhone) return;
+    const headings = props.stepper.beatItems.value.flatMap((item) => {
+        if (item.kind !== "beat") return [];
+        const h = document.getElementById(item.id)?.querySelector<HTMLElement>("h1, h2, h3");
+        return h ? [h] : [];
+    });
+    // The route body resolves async: wait for its sections, as the stepper's observer does.
+    if (!headings.length) {
+        if (props.stepper.beatItems.value.length) retryFrame = requestAnimationFrame(watchHeadings);
+        return;
+    }
+    const near = new Set<Element>();
+    const bottom = window.innerHeight - (bandPx() - PAGER_CLEARANCE_PX);
+    // The root is the pager's band: the viewport's top strip down to the pager's foot.
+    headingObserver = new IntersectionObserver(
+        (entries) => {
+            for (const e of entries) {
+                if (e.isIntersecting) near.add(e.target);
+                else near.delete(e.target);
+            }
+            headingInBand.value = near.size > 0;
+        },
+        // `root: document` so the margins apply to this document's viewport, framed or not.
+        { root: document, rootMargin: `0px 0px ${-bottom}px 0px`, threshold: 0 },
+    );
+    for (const h of headings) headingObserver.observe(h);
+}
+watch(
+    () => [props.stepper.activeBeatId.value, props.isPhone] as const,
+    () => watchHeadings(),
+    { immediate: true, flush: "post" },
+);
+onBeforeUnmount(() => {
+    if (retryFrame) cancelAnimationFrame(retryFrame);
+    headingObserver?.disconnect();
+});
+
+/** Past the crown, on a desktop register, with a real section whose heading has left the band. */
 const visible = computed<boolean>(
-    () => !props.isPhone && !props.atTop && activeBeatLabel.value !== "",
+    () =>
+        !props.isPhone &&
+        !props.atTop &&
+        props.stepper.activeStep.value > 0 &&
+        props.stepper.activeLabel.value !== "" &&
+        !headingInBand.value,
 );
 </script>
 
@@ -63,16 +133,11 @@ const visible = computed<boolean>(
             :data-membrane-facet="TITLE_FACET"
             data-title-lozenge
             data-testid="membrane-title-lozenge"
-            :data-active-beat="activeBeatId"
+            :data-active-beat="stepper.activeBeatId.value"
         >
             <!-- THE VERSAL LEFT-CAP — the route's identity tick (§a.4), aria-hidden decoration. -->
             <span class="membrane-lozenge__versal" aria-hidden="true" />
-            <!-- THE NAVLABEL — the accessible wayfinding word; cross-fades on the beat change. -->
-            <Transition name="lozenge-label" mode="out-in">
-                <span :key="activeBeatId" class="membrane-lozenge__label">{{
-                    activeBeatLabel
-                }}</span>
-            </Transition>
+            <DockSectionSelect :stepper="stepper" variant="pager" />
         </div>
     </Transition>
 </template>
@@ -86,26 +151,28 @@ const visible = computed<boolean>(
    disc so its centre-line aligns with the crest medal. */
 .membrane-lozenge {
     position: fixed;
-    inset-block-start: calc(var(--cp-inset, 1.25rem) + 0.5rem);
+    /* centred on the 44 px circle beside it (the pager is 52 px tall). */
+    inset-block-start: calc(var(--cp-inset, 1.25rem) - 0.25rem);
     inset-inline-start: calc(
         var(--cp-inset, 1.25rem) +
             var(--cp-dock-collapsed-w, var(--cp-dock-w, 4.5rem)) + 0.75rem
     );
-    z-index: var(--z-sticky, 30);
+    /* the dock's own rung: the pager is a control, so it rides above the content stage. */
+    z-index: var(--z-dock);
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    block-size: 2.75rem;
-    max-inline-size: min(22rem, calc(100vw - 8rem));
-    padding-inline: 0.875rem 1rem;
-    border-radius: var(--radius-pill, 999px);
+    block-size: 3.25rem;
+    max-inline-size: min(26rem, calc(100vw - 8rem));
+    padding-inline: 0.75rem 0.25rem;
+    /* radius scales with size (O-17): a two-line bar is not a full pill. */
+    border-radius: 0.75rem;
     /* the floating-tier glass — bg / frost / warm-saturate / lit rim, all off the ONE --cp-* register
        the dock reads, so the two surfaces are one material (the C-AESTHETIC cohesion law). */
     background: var(--cp-glass-bg, color-mix(in oklab, var(--card) 78%, transparent));
     backdrop-filter: blur(var(--cp-glass-blur, 18px)) saturate(var(--cp-glass-sat, 1.35));
     border: 1px solid var(--cp-glass-rim, oklch(1 0 0 / 0.55));
     box-shadow: 0 10px 30px -18px color-mix(in oklab, CanvasText 55%, transparent);
-    pointer-events: none; /* wayfinding readout, not a control — never intercepts a page pointer */
 }
 
 /* THE VERSAL TICK — a short identity rule in the route's own accent; decorative wayfinding cap. */
@@ -117,60 +184,31 @@ const visible = computed<boolean>(
     background: var(--route-accent, var(--cp-accent, currentColor));
 }
 
-/* THE NAVLABEL — the wayfinding kicker register (--type-kicker, ≥13px; A13's ≥12px chrome floor is
-   cleared). One line, middle/tail truncation under pressure (§a.5, until the recursion lands). */
-.membrane-lozenge__label {
-    min-inline-size: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    font-size: var(--type-kicker, 0.875rem);
-    font-weight: 550;
-    letter-spacing: 0.01em;
-    color: var(--foreground);
-}
-
-/* ── THE MATERIALISE (§a.3) — the pill grows from the disc: a left-anchored clip reveal + fade. ── */
-.lozenge-enter-active,
-.lozenge-leave-active {
+/* ── THE MATERIALISE (§a.3) — the pager grows from the disc: a left-anchored clip reveal + fade.
+   It leaves at once: a heading is arriving under it, and a leave fade would draw over that heading. */
+.lozenge-enter-active {
     transition:
         clip-path var(--duration-normal, 260ms) var(--ease-out, ease),
         opacity var(--duration-normal, 260ms) var(--ease-out, ease),
         transform var(--duration-normal, 260ms) var(--ease-out, ease);
 }
-.lozenge-enter-from,
-.lozenge-leave-to {
+.lozenge-enter-from {
     opacity: 0;
-    clip-path: inset(0 100% 0 0 round var(--radius-pill, 999px));
+    clip-path: inset(0 100% 0 0 round 0.75rem);
     transform: translateX(-0.375rem);
 }
-.lozenge-enter-to,
-.lozenge-leave-from {
+.lozenge-enter-to {
     opacity: 1;
-    clip-path: inset(0 0 0 0 round var(--radius-pill, 999px));
+    clip-path: inset(0 0 0 0 round 0.75rem);
     transform: none;
-}
-
-/* ── THE LABEL CROSS-FADE (§a.3 clause 2) — a quiet out-in swap on the beat change. ── */
-.lozenge-label-enter-active,
-.lozenge-label-leave-active {
-    transition: opacity var(--duration-fast, 160ms) var(--ease-standard, ease);
-}
-.lozenge-label-enter-from,
-.lozenge-label-leave-to {
-    opacity: 0;
 }
 
 /* PRM — both morphs hard-cut to opacity-only (the curve ceded to Family C; information parity). */
 @media (prefers-reduced-motion: reduce) {
-    .lozenge-enter-active,
-    .lozenge-leave-active,
-    .lozenge-label-enter-active,
-    .lozenge-label-leave-active {
-        transition: opacity var(--duration-fast, 120ms) linear;
+    .lozenge-enter-active {
+        transition: none;
     }
-    .lozenge-enter-from,
-    .lozenge-leave-to {
+    .lozenge-enter-from {
         clip-path: none;
         transform: none;
     }

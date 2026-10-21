@@ -22,7 +22,6 @@ import {
     type MaybeRefOrGetter,
     type Ref,
 } from "vue";
-import { useDebounceFn } from "@vueuse/core";
 import { useReducedMotion } from "../../../../motion/useReducedMotion.js";
 import {
     onNarrativeRestoreSettled,
@@ -35,7 +34,6 @@ import { useViewParams } from "../../../stores/useViewParams.js";
 import type { NarrativeAnchor } from "../../../stores/useViewParams.js";
 import { toRoman } from "../../../composables/useRomanNumeral.js";
 import { scrollToSection } from "../scroll-anchor.js";
-import { readerHasActed } from "../../../composables/reader-act.js";
 import type { DashboardContext } from "../../../../contract/index.js";
 
 /** The stepper's reactive surface — the dock composes this into its template. */
@@ -47,14 +45,21 @@ export interface UseDockStepper {
     beatItems: ComputedRef<DashboardContext["nav"]>;
     /** The active beat's index among the beats (1-based) — for the "step N of M" region. */
     activeStep: ComputedRef<number>;
+    /** The active section's label, trimmed; "" when no section is active. */
+    activeLabel: ComputedRef<string>;
     /** 1..N → I..V (and beyond) — the Roman figure-number for a 1-based rung index. */
     roman: (n: number) => string;
     /** The active year off the platform year-scope (the spine's year-fade trigger source). */
     activeYear: ComputedRef<number | null>;
     /** Cross-fade gate — true for one cycle after a year change drives the spine fade. */
     yearFading: Ref<boolean>;
-    /** Smooth-scroll the document to a beat section by id. */
+    /** Smooth-scroll the document to a beat section by id. Writes nothing to the URL. */
     scrollTo: (id: string) => void;
+    /** A section control's jump (a rung, the Sections select, ‹ ›, PageUp/PageDown): scroll to the
+        section and write `?at=` once (§2.2, R-INTERACT S-6). The only `?at=` writer. */
+    goToSection: (id: string) => void;
+    /** Jump one section back (-1) or forward (+1) from the active one. False at either end. */
+    stepSection: (delta: -1 | 1) => boolean;
     /** True when this mount began from a semantic narrative anchor. */
     deepLink: () => boolean;
     /** Subscribe to the dock's existing restore-settled edge. */
@@ -68,7 +73,7 @@ export interface UseDockStepper {
  * spine's year cross-fade trigger. The document scalar is injected from Dock.vue, its one owner.
  */
 export function useDockStepper(
-    ctx: DashboardContext | undefined,
+    ctx: MaybeRefOrGetter<DashboardContext | undefined>,
     documentProgress: MaybeRefOrGetter<number>,
 ): UseDockStepper {
     function roman(n: number): string {
@@ -105,13 +110,18 @@ export function useDockStepper(
 
     /** The active beat's index among the nav beats (1-based) — for the "step N of M" region. */
     const beatItems = computed(() =>
-        (ctx?.nav ?? []).filter((i) => i.kind === "beat"),
+        (toValue(ctx)?.nav ?? []).filter((i) => i.kind === "beat"),
     );
     const activeStep = computed(() => {
         const idx = beatItems.value.findIndex(
             (i) => i.kind === "beat" && i.id === activeBeatId.value,
         );
         return idx >= 0 ? idx + 1 : 0;
+    });
+
+    const activeLabel = computed(() => {
+        const beat = beatItems.value.find((i) => i.kind === "beat" && i.id === activeBeatId.value);
+        return beat?.kind === "beat" ? beat.label.trim() : "";
     });
 
     // ── THE SINGLE-WRITER MIRROR INTO useActiveBeat (I5 §4 · the ONE writer line, NO new observer) ──
@@ -144,14 +154,12 @@ export function useDockStepper(
         cancelSectionScroll = scrollToSection(id, reduced.value);
     }
 
-    // ── THE `?at` NARRATIVE ANCHOR — the ONE debounced writer + the restore (K-ANIM A1·§3.B) ──────
-    // The writer + the restore BOTH ride the dock's EXISTING observer (the single-scroll-scalar law —
-    // ZERO new IntersectionObserver). `view`/`reduced` are already in scope. The declared-vs-derived
-    // law: `?at` backs the COARSE beat the reader is at (passively, via replaceState — no Back-swamp);
-    // the rim/`activeVizId`/scene-step RE-DERIVE from where the reader lands (never URL-backed).
+    // ── THE `?at` NARRATIVE ANCHOR (U/B7 §2.2 · R-INTERACT S-6) ─────────────────────────────────
+    // Scrolling only scrolls: no scroll, observer delivery or restore writes the URL. `?at=` is written
+    // by a section control alone (`goToSection`: a rung, the Sections select, ‹ ›, PageUp/PageDown),
+    // so K-3 holds by construction. The restore reads a linked `?at` and leaves it as the link gave it.
     const RESTORE_SETTLE_MS = 700;
-    /** True while a restore `scrollIntoView` is settling — suppresses the writer so the beats the
-        restore scrolls past are never written over the linked `?at`. */
+    /** True while a restore `scrollIntoView` is settling (the end-zone watch stands down). */
     let restoring = false;
     let restoreAborted = false;
     let stopRestoreAbort: (() => void) | null = null;
@@ -162,19 +170,25 @@ export function useDockStepper(
     let restoreSettled = false;
     let layoutStopped = false;
 
-    /** Track the reader's place into `?at` — a replaceState write, no history swamp. U-F60 clause 3
-        (§K K-3): `?at` is written only after a READER scroll settles, never on load. The dock seeds
-        `activeBeatId` on setup and the observer re-fires as the body lays out; the restore scrolls
-        to a linked anchor; a program scroll moves the page. None of those is a reader act, so none
-        writes: the writer waits for the reader-act latch, then for 300 ms without a scroll event or
-        a beat change (the settle), and writes only a beat that differs from the URL's. */
-    const settleAnchor = useDebounceFn(() => {
-        const id = activeBeatId.value;
-        if (restoring || !id || !readerHasActed()) return;
-        if (view.narrativeAt?.beatId === id) return;
-        view.setNarrativeAt(id);
-    }, 300);
-    watch(activeBeatId, () => settleAnchor());
+    /** The beat ids in nav order. */
+    const beatIds = (): string[] =>
+        beatItems.value.flatMap((i) => (i.kind === "beat" ? [i.id] : []));
+
+    function goToSection(id: string): void {
+        if (!beatIds().includes(id)) return;
+        activeBeatId.value = id;
+        scrollTo(id);
+        if (view.narrativeAt?.beatId !== id || view.narrativeAt?.stepId) view.setNarrativeAt(id);
+    }
+
+    function stepSection(delta: -1 | 1): boolean {
+        const ids = beatIds();
+        const here = Math.max(0, ids.indexOf(activeBeatId.value));
+        const next = ids[here + delta];
+        if (!next) return false;
+        goToSection(next);
+        return true;
+    }
 
     function anchorElement(anchor: NarrativeAnchor): HTMLElement | null {
         const beat = document.getElementById(anchor.beatId);
@@ -204,17 +218,11 @@ export function useDockStepper(
         };
     }
 
-    function finishRestore(anchor: NarrativeAnchor): void {
+    function finishRestore(): void {
         if (!restoreSettled || !layoutStopped) return;
         stopRestoreAbort?.();
         stopRestoreAbort = null;
         restoring = false;
-        if (!restoreAborted) return;
-        // The reader broke the restore with a wheel, touch or key: that is a reader act, so the
-        // place the reader scrolled to is written once the scroll settles.
-        if (anchor.stepId != null && view.sceneId === anchor.stepId)
-            view.setSceneId(undefined);
-        settleAnchor();
     }
 
     /** Drive and settle the one semantic restore on the dock's existing timer. */
@@ -235,7 +243,7 @@ export function useDockStepper(
             },
             onStop: () => {
                 layoutStopped = true;
-                finishRestore(anchor);
+                finishRestore();
             },
         });
         el.scrollIntoView({ behavior: reduced.value ? "auto" : "smooth", block });
@@ -252,7 +260,7 @@ export function useDockStepper(
                 }
                 restoreSettled = true;
                 layoutHeal?.settle();
-                finishRestore(anchor);
+                finishRestore();
             },
             reduced.value ? 0 : RESTORE_SETTLE_MS,
         );
@@ -300,8 +308,11 @@ export function useDockStepper(
     // nodes exist (the dashboard body resolves async, so a synchronous getElementById at mount
     // can miss every section — the silent "observer watches nothing" trap).
     let observer: IntersectionObserver | null = null;
+    /** The pending deferred-observe frame, so a route change never leaves two retry loops. */
+    let observeFrame = 0;
 
     function setupBeatObserver(): void {
+        observeFrame = 0;
         const ids = beatItems.value.flatMap((i) =>
             i.kind === "beat" ? [i.id] : [],
         );
@@ -342,7 +353,7 @@ export function useDockStepper(
         // the dashboard body resolves async — if no section node existed yet, retry next frame
         // so the observer never silently watches nothing (the deferred-observe).
         if (observed === 0) {
-            requestAnimationFrame(setupBeatObserver);
+            observeFrame = requestAnimationFrame(setupBeatObserver);
             return;
         }
         // The section nodes have resolved — restore the `?at` narrative position ONCE (A1·§3.B). It
@@ -354,10 +365,37 @@ export function useDockStepper(
     }
 
     onMounted(setupBeatObserver);
-    // The `?at` settle: every scroll event restarts the 300 ms wait, so the anchor is written once
-    // the reader's scroll comes to rest, not at each beat it passes on the way.
-    const onScroll = (): void => void settleAnchor();
-    onMounted(() => window.addEventListener("scroll", onScroll, { passive: true }));
+
+    // THE ROUTE CHANGE (U/B7 §2.2). The dock is mounted once above the router, so the stepper
+    // outlives a route: a new context re-seeds the rail and observes the new route's sections, and
+    // its own `?at` link is restored once, as on a cold load.
+    watch(
+        () => toValue(ctx)?.id,
+        (id, was) => {
+            if (id === was) return;
+            if (observeFrame) cancelAnimationFrame(observeFrame);
+            observer?.disconnect();
+            observer = null;
+            activeBeatId.value = "";
+            restored = false;
+            if (id) observeFrame = requestAnimationFrame(setupBeatObserver);
+        },
+    );
+
+    // ── PageUp / PageDown page one section (O-12 · §2.2) ─────────────────────────────────────────
+    // The owner's "one page at a time" without scroll-jacking: the keys the reader already uses to
+    // page move one section instead of one viewport. Only a bare key on the page itself: a field, a
+    // listbox, a menu, a dialog or a scroll box of its own keeps its key. At either end the key
+    // keeps its browser default.
+    const OWN_KEYS = "input,textarea,select,[contenteditable='true'],[role='listbox'],[role='menu'],[role='dialog'],[role='slider'],[role='spinbutton']";
+    function onPageKey(e: KeyboardEvent): void {
+        if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        if (e.key !== "PageDown" && e.key !== "PageUp") return;
+        const target = e.target instanceof Element ? e.target : null;
+        if (target?.closest(OWN_KEYS)) return;
+        if (stepSection(e.key === "PageDown" ? 1 : -1)) e.preventDefault();
+    }
+    onMounted(() => window.addEventListener("keydown", onPageKey));
 
     // ── THE DOCUMENT-END SNAP (N5 design consult — the short-terminal-beat law) ─────────────
     // A SHORT terminal beat can never climb into the upper-third reading band: the document runs
@@ -395,8 +433,9 @@ export function useDockStepper(
     });
 
     onBeforeUnmount(() => {
-        window.removeEventListener("scroll", onScroll);
+        window.removeEventListener("keydown", onPageKey);
         cancelSectionScroll?.();
+        if (observeFrame) cancelAnimationFrame(observeFrame);
         observer?.disconnect();
         observer = null;
         if (yearFadeTimer) clearTimeout(yearFadeTimer);
@@ -410,10 +449,13 @@ export function useDockStepper(
         activeBeatId,
         beatItems,
         activeStep,
+        activeLabel,
         roman,
         activeYear,
         yearFading,
         scrollTo,
+        goToSection,
+        stepSection,
         deepLink: () => view.narrativeAt != null,
         onRestoreSettled: (callback) =>
             onNarrativeRestoreSettled(() => {

@@ -12,3 +12,4 @@
 export { default as Dock } from "./Dock.vue";
 export { default as DockSettings } from "./DockSettings.vue";
 export * from "./composables/index.js";
+export type { SiteSearchItem, SiteSearchSource, SiteSubject } from "./site.js";
