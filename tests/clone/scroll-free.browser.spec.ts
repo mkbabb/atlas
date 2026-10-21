@@ -132,14 +132,16 @@ describe("scrolling only scrolls (PLAN §5.1)", () => {
                 last = sy;
                 if (sy >= end - 1) break;
             }
-            // Firefox can coalesce two wheel events into one scroll: a 0 px step followed by a
-            // 600 px step is one input delivered late, not a held or jumped page.
-            c.stuck = c.stuck.filter((x, _i, all) => {
-                const next = all.find((y) => y.k === x.k + 1);
-                const prev = all.find((y) => y.k === x.k - 1);
-                const pair = (a: { moved: number }, b: { moved: number }) => a.moved === 0 && Math.abs(b.moved - 2 * STEP_PX) <= 2;
-                return !((next && pair(x, next)) || (prev && pair(prev, x)));
-            });
+            // Firefox can deliver a wheel event late: a 0 px step and a 600 px step within three
+            // steps of each other are one input arriving late (the page position catches up), not a
+            // held or jumped page. Pair each such 0 with the nearest later 600 and drop both.
+            const late = new Set<number>();
+            for (const x of c.stuck) {
+                if (x.moved !== 0 || late.has(x.k)) continue;
+                const y = c.stuck.find((z) => z.k > x.k && z.k <= x.k + 3 && !late.has(z.k) && Math.abs(z.moved - 2 * STEP_PX) <= 2);
+                if (y) late.add(x.k).add(y.k);
+            }
+            c.stuck = c.stuck.filter((x) => !late.has(x.k));
             c.missingFromInnerText = await page.evaluate(() => {
                 const inner = document.body.innerText.replace(/\s+/g, " ");
                 return [...document.querySelectorAll<HTMLElement>(".essay-beat h2")]
