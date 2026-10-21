@@ -24,7 +24,7 @@ import type { FilterResponse, VizContract } from "../contract/viz-contract.js";
 import { useVizPalette } from "../composables/useVizPalette.js";
 import { trajectory, type TrajectoryPoint } from "../../data/multiYear.js";
 import { trajectoryRivet } from "../../data/useYearScope.js";
-import { markPointRivet, markAreaBand } from "./trajectory-marks.js";
+import { markPointRivet, markAreaBand, trajectoryDescription } from "./trajectory-marks.js";
 import type { Feed } from "../../data/contract.js";
 
 const props = withDefaults(
@@ -211,6 +211,7 @@ const contract = computed<VizContract>(() => {
     const real = points.value.filter((p) => p.values[lead0] != null);
     const first = real[0];
     const last = real[real.length - 1];
+    const sentence = trajectoryDescription(first?.year, last?.year);
     return {
         id: props.figId ?? "trajectory",
         title: props.ariaLabel,
@@ -220,16 +221,16 @@ const contract = computed<VizContract>(() => {
         render: "echarts",
         archetype: "trajectory",
         description: {
-            prose: `How {lead} tracks across {span}.`,
+            prose: sentence.prose,
             axes: [
                 {
                     token: "lead",
-                    label: leadLabel.toLowerCase(),
+                    label: leadLabel,
                     // the lead measure's series colour — a CSS-var the seriesMeta carries (the
                     // colorKind/ColorScale locus), never a hardcoded hex here.
                     colorVar: "--viz-sequential-high",
                 },
-                { token: "span", label: "the year span", colorVar: "--foreground" },
+                { token: "span", label: sentence.span, colorVar: "--foreground" },
             ],
         },
         keyStats: () => {
