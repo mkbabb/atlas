@@ -66,9 +66,7 @@ describe("glass-ui component props used in atlas templates are declared by the c
     // expandOn, anchor, collapsedLabel from glass lane G1, branch u/b7-glass-shape a88999b6b). Each is
     // accepted only while the installed glass lacks it; once the planted glass declares it, the
     // "still incoming" case below fails and the entry is deleted.
-    const INCOMING_GLASS_PROPS = new Map([
-        ["GlassDock", ["expandOn", "anchor", "collapsedLabel"]],
-    ]);
+    const INCOMING_GLASS_PROPS = new Map<string, string[]>();
 
     it("every incoming glass prop is still absent from the installed glass", async () => {
         const dock: any = await import("@mkbabb/glass-ui/dock");
@@ -196,7 +194,7 @@ describe("custom properties atlas reads resolve to atlas or the installed glass-
     ]);
     // Tokens atlas reads ahead of the glass release that defines them, each with a fallback (U/B7
     // PLAN §5.7: --radius-bar from glass lane G1). Accepted only while the installed glass lacks them.
-    const INCOMING_GLASS_TOKENS = new Set(["--radius-bar"]);
+    const INCOMING_GLASS_TOKENS = new Set<string>();
     it("every incoming glass token is still absent from the installed glass", () => {
         const glass = defsIn(GLASS_TEXT);
         expect([...INCOMING_GLASS_TOKENS].filter((k) => glass.has(k))).toEqual([]);

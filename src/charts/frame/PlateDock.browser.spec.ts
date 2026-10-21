@@ -8,7 +8,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { createApp, defineComponent, h, nextTick, type App } from "vue";
 import { createPinia, setActivePinia, type Pinia } from "pinia";
-import { GlassDock } from "@mkbabb/glass-ui/dock";
 import PlateDock from "./PlateDock.vue";
 import { provideDismissArbiter } from "../../platform/interaction/useDismissArbiter";
 import { useSurfaceSeats } from "../../platform/chrome/surfaces/useSurfaceSeat";
@@ -22,7 +21,6 @@ async function until(pred: () => boolean, ms: number): Promise<boolean> {
     }
     return pred();
 }
-const GLASS_PRESS = Boolean((GlassDock as { props?: Record<string, unknown> }).props?.expandOn);
 
 let app: App | null = null;
 let host: HTMLElement | null = null;
@@ -137,7 +135,7 @@ describe("PlateDock: one handle per figure, press opens, Escape closes to the ha
         expect(await until(() => !dock.hasAttribute("data-expanded"), 1500)).toBe(true);
     });
 
-    it.runIf(GLASS_PRESS)("hovering the handle opens nothing", async () => {
+    it("hovering the handle opens nothing", async () => {
         const root = await mount();
         const dock = dockOf(root, "a");
         await userEvent.hover(handleOf(dock));

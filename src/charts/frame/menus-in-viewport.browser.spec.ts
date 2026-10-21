@@ -2,7 +2,7 @@
 // menu, its Options popover, the period Select) lies inside the viewport at 1440 and 390, leaves
 // `body` overflow `visible`, and does not move a sticky element. The route walk over a sci clone (9
 // routes × 2 widths × 2 schemes × 2 engines) is the integ half. The Select's scroll lock is glass's
-// (G1, D-2): its case runs once installed glass is 10.1.1 or later.
+// (G1, D-2), planted from u/b7-glass.
 import "../../../tests/browser/glass-root.css";
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -11,12 +11,7 @@ import { createPinia } from "pinia";
 import PlateDock from "./PlateDock.vue";
 import PeriodControl from "../scene/PeriodControl.vue";
 import { provideDismissArbiter } from "../../platform/interaction/useDismissArbiter";
-import glassPkg from "../../../node_modules/@mkbabb/glass-ui/package.json";
-import { GlassDock } from "@mkbabb/glass-ui/dock";
 
-const [maj, min, pat] = glassPkg.version.split(".").map(Number) as [number, number, number];
-const GLASS_PRESS = Boolean((GlassDock as { props?: Record<string, unknown> }).props?.expandOn);
-const GLASS_LOCK_FIXED = maj > 10 || (maj === 10 && (min > 1 || (min === 1 && pat >= 1)));
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 async function until(pred: () => boolean, ms: number): Promise<boolean> {
@@ -92,8 +87,7 @@ async function openDock(fig: HTMLElement): Promise<HTMLElement> {
     expect(await until(() => dock.hasAttribute("data-expanded"), 1500)).toBe(true);
     return dock;
 }
-/** Open a dock menu from the keyboard as soon as the dock opens. (On glass 10.1.0 a keyboard-opened
-    dock collapses on its idle timer; G1's `expandOn: "press"` pins it, and the pointer case runs then.) */
+/** Open a dock menu from the keyboard as soon as the dock opens. */
 async function openFrom(dock: HTMLElement, action: "download" | "options"): Promise<void> {
     await until(() => !dock.querySelector(`[data-action="${action}"]`)?.closest("[inert]"), 1000);
     dock.querySelector<HTMLElement>(`[data-action="${action}"]`)!.focus({ preventScroll: true });
@@ -130,7 +124,7 @@ for (const [vw, vh] of [[1440, 900], [390, 844]] as const)
             expect(sticky.getBoundingClientRect().top).toBe(s0);
         });
 
-        it.runIf(GLASS_PRESS)("a press-opened dock stays open under the pointer, and Download opens on a click", async () => {
+        it("a press-opened dock stays open under the pointer, and Download opens on a click", async () => {
             await page.viewport(vw, vh);
             const { fig } = await mount(vw);
             const dock = fig.querySelector<HTMLElement>("[data-plate-dock]")!;
@@ -153,7 +147,7 @@ for (const [vw, vh] of [[1440, 900], [390, 844]] as const)
             expect(inViewport(list), JSON.stringify(list.getBoundingClientRect())).toBe(true);
         });
 
-        it.runIf(GLASS_LOCK_FIXED)("the period Select leaves body overflow visible and the sticky head in place", async () => {
+        it("the period Select leaves body overflow visible and the sticky head in place", async () => {
             await page.viewport(vw, vh);
             const { sticky, fig } = await mount(vw);
             const s0 = sticky.getBoundingClientRect().top;

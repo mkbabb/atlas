@@ -15,13 +15,9 @@ import HoverCard from "./HoverCard.vue";
 import { useSelection } from "../platform/stores/useSelection.js";
 import { useHoverReadout } from "../platform/stores/useHoverReadout.js";
 import { useEntityDetail, type EntityDescription } from "./describe-entity.js";
-import glassPkg from "../../node_modules/@mkbabb/glass-ui/package.json";
 
-// The sheet's own position and detent size are glass's (R-INTERACT D-1: `.glass-floating` beats the
+// The sheet's own position and detent size are glass's (R-INTERACT D-1: `.glass-floating` beat the
 // sheet's `:where()` fixed rule on 10.1.0; the cure is glass `release/10.1.1` / lane G1, PLAN §5.5).
-// Those geometry checks run once the planted glass carries the cure; everything else runs now.
-const [gMaj, gMin, gPat] = glassPkg.version.split(".").map(Number) as [number, number, number];
-const GLASS_SHEET_FIXED = gMaj > 10 || (gMaj === 10 && (gMin > 1 || (gMin === 1 && gPat >= 1)));
 
 const PERIODS = ["2019–20", "2020–21", "2021–22", "2022–23", "2023–24", "2024–25", "2025–26"];
 const m = (id: string, label: string, value: number, unit: string, sm: number, pm: number, rank: number, n: number) => ({
@@ -121,7 +117,7 @@ describe("EntityDetail (O-13)", () => {
         expect(document.querySelector('[data-testid="hover-card"]'), "no hover card under the detail").toBeNull();
         const rect = sheet!.getBoundingClientRect();
         expect(Math.round(rect.width)).toBeLessThanOrEqual(26 * 16);
-        if (GLASS_SHEET_FIXED) expect(getComputedStyle(sheet!).position).toBe("fixed");
+        expect(getComputedStyle(sheet!).position).toBe("fixed");
 
         const rows = [...sheet!.querySelectorAll('[data-testid="entity-detail-measures"] tbody tr')];
         expect(rows.length).toBeGreaterThanOrEqual(6);
@@ -155,11 +151,9 @@ describe("EntityDetail (O-13)", () => {
         expect(sheet.dataset.seat).toBe("bottom");
         expect(sheet.querySelector(".entity-detail__name")?.textContent?.trim()).toBe("Pine Springs Preparatory Academy");
         expect(sheet.querySelectorAll('[data-testid="entity-detail-measures"] tbody tr').length).toBeGreaterThanOrEqual(6);
-        if (GLASS_SHEET_FIXED) {
-            const h = sheet.getBoundingClientRect().height;
-            expect(h).toBeGreaterThan(844 * 0.35);
-            expect(h).toBeLessThan(844 * 0.65);
-        }
+        const h = sheet.getBoundingClientRect().height;
+        expect(h).toBeGreaterThan(844 * 0.35);
+        expect(h).toBeLessThan(844 * 0.65);
     });
 
     it("an unnamed unit is titled by its kind, never by its code", async () => {

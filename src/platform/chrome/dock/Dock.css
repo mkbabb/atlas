@@ -131,9 +131,8 @@
    yields its layout ENTIRELY (`display:none`, not a visibility-hidden ghost that still reserves its
    expanded height) so the pill's block-size is crest + the padding canon — no tall empty void below
    the dome (the OF-27 capture). U/B7 (R-REQ-CHECK D-04): the hug is a 44 × 44 CIRCLE — no block
-   padding (padded, the pill read 44 × 60, an oval) at 50%. glass G1 adds `--radius-circle` and
-   `--radius-bar` (12 px); the I1 merge re-points this 50% and the dock's 0.75rem bar radii onto
-   them. The progress track runs on its rim.
+   padding (padded, the pill read 44 × 60, an oval) on glass's `--radius-circle`. The phone bar
+   takes glass's `--radius-bar` (12 px). The progress track runs on its rim.
    The foot (glass `#persistent-end`, B6) is part of the deck in atlas's register: it yields with it,
    the same `display:none` (so it also leaves the Tab order and the accessibility tree with it). */
 .usf-dock.collapsed {
@@ -141,7 +140,7 @@
     gap: 0;
     block-size: var(--cp-dock-collapsed-w, 2.75rem);
     aspect-ratio: 1;
-    border-radius: 50%;
+    border-radius: var(--radius-circle);
     /* THE GUTTER DEATH (W-MEMBRANE · A-39 · spec-chrome §d.1) — the collapsed rail hugs its crest to
        the TRUE disc width (`--cp-dock-collapsed-w`, 2.75rem), so its right edge lands at exactly the
        reclaimed 64px reserve (inset + disc) — zero persistent overlap. Snapped (no width transition):
@@ -282,7 +281,7 @@
     gap: 0.5rem;
     padding: 0.375rem 0.5rem;
     background: var(--card);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-bar);
     transition: translate var(--spring-dock-duration, 300ms) var(--spring-dock, ease);
 }
 .usf-dock--bar.usf-dock--out {

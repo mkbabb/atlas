@@ -182,7 +182,7 @@ defineExpose({
     min-inline-size: 0;
     block-size: 36px;
     padding-inline: 0.75rem 0.25rem;
-    border-radius: var(--radius-bar, var(--radius-panel, 12px));
+    border-radius: var(--radius-bar);
     background: color-mix(in oklab, var(--muted, currentColor) 35%, transparent);
     /* one type step above the caption (PV-03) */
     font-size: var(--type-small, 0.875rem);
