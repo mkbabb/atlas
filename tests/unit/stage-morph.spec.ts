@@ -13,6 +13,7 @@ const scene = (
     morph?: SceneOption<"district">["morph"],
 ): SceneOption<"district"> => ({
     id,
+    label: id,
     prose: id,
     state: {},
     encode: { x: "district:x", y: "district:y" },

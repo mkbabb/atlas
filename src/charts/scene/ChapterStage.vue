@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, nextTick, provide, ref, watch } from "vue";
+import { computed, nextTick, onMounted, provide, ref, watch, type VNodeChild } from "vue";
+import { SegmentedTabs } from "@mkbabb/glass-ui/tabs";
 import StickyScene from "./StickyScene.vue";
-import SceneAct from "./SceneAct.vue";
 import FootAnatomy from "../frame/FootAnatomy.vue";
 import PlateAct from "../frame/PlateAct.vue";
 import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
@@ -10,16 +10,18 @@ import {
     STAGE_MORPH_KEY,
 } from "./stage-morph.js";
 import { createStageScrollRestore } from "./stage-scroll-restore.js";
-import { readerHasActed } from "../../platform/composables/reader-act.js";
+import { useActiveDashboard } from "../../platform/stores/useActiveDashboard.js";
 import {
     resolveSceneAnchor,
     useViewParams,
 } from "../../platform/stores/useViewParams.js";
 import { useReducedMotion } from "../../motion/useReducedMotion.js";
 import { useVirtualSectionWindow } from "../../filter/composables/useVirtualSectionWindow.js";
-import type {
-    ChapterScene,
-    ChapterStage as ChapterStageContract,
+import {
+    SCENE_KEY,
+    type ChapterScene,
+    type ChapterStage as ChapterStageContract,
+    type SceneRuntime,
 } from "../contract/scene-contract.js";
 import type { SourcePanelProps } from "../contract/viz-contract.js";
 import {
@@ -48,17 +50,11 @@ const morph = createStageMorphDriver({
 });
 provide(STAGE_MORPH_KEY, morph);
 
-// Stage declarations are static for a mounted story. Preserve the authored option objects while
-// bridging the stage's scenes onto StickyScene's ordered steps.
+// The stage's figure: in flow, its scene control in the head (O-12 S-2). Scrolling changes nothing.
 const scene: Readonly<ChapterScene> = Object.freeze({
     kind: "scene",
     graphic: props.stage.instance,
-    steps: props.stage.scenes,
     focal: props.stage.focal,
-    anchor: props.stage.anchor,
-    // These steps are the stage's SceneOption objects; ChapterScene accepts a wider callback
-    // type for standalone consumers, so this is a safe narrowing at the one bridge.
-    apply: props.stage.apply as ChapterScene["apply"],
 });
 
 const view = useViewParams();
@@ -76,7 +72,22 @@ if (sceneAnchor && sceneAnchor !== initialAnchor) view.linkSceneAnchor(sceneAnch
 const events = props.stage.events;
 const stageEvents = stageEventsFromHub(events, props.stage.id);
 const scope = { grain: "stage" as const, stageId: props.stage.id };
-const activeSceneIndex = ref(0);
+const initialIndex = Math.max(
+    0,
+    props.stage.scenes.findIndex((option) => option.id === initialSceneId),
+);
+const activeSceneIndex = ref(initialIndex);
+const activeOption = computed(() => props.stage.scenes[activeSceneIndex.value]!);
+provide(SCENE_KEY, {
+    activeIndex: computed(() => activeSceneIndex.value),
+    activeStep: activeOption,
+    count: props.stage.scenes.length,
+    progress: computed(() =>
+        props.stage.scenes.length > 1 ? activeSceneIndex.value / (props.stage.scenes.length - 1) : 1,
+    ),
+});
+const runtime: SceneRuntime = { view, active: useActiveDashboard() };
+const sceneOptions = props.stage.scenes.map((option) => ({ label: option.label, value: option.id }));
 // The appendix detent and its open command (U-F60 cl. 4): `?drawer` is read once, here, and honoured
 // through the command; nothing writes it.
 const provenance = createStageProvenance({
@@ -121,37 +132,42 @@ function emitActiveViz(index = activeSceneIndex.value): void {
     });
 }
 
-function onSceneChange(event: {
-    from: string;
-    to: string;
-    dir: "forward" | "back";
-    index: number;
-}): void {
-    activeSceneIndex.value = event.index;
-    const option = props.stage.scenes[event.index];
-    if (option) morph.applyScene(option, { dir: event.dir });
-    // §K K-3: `?scene` is written only in answer to a reader act. A crossing made by load, layout or
-    // the `?at` restore morphs the stage and leaves the URL as the link gave it.
-    if (readerHasActed()) view.setSceneId(event.to);
+/** The reader chose a scene on the control: the one write of `?scene=` (O-12 S-2). */
+function chooseScene(id: string): void {
+    const to = props.stage.scenes.findIndex((option) => option.id === id);
+    const from = activeSceneIndex.value;
+    if (to < 0 || to === from) return;
+    const dir = to > from ? "forward" : "back";
+    activeSceneIndex.value = to;
+    const option = props.stage.scenes[to]!;
+    morph.applyScene(option, { dir });
+    props.stage.apply?.(option, runtime);
+    view.setSceneId(option.id);
     events.emit({
         type: "scene-change",
         scope,
-        from: event.from,
-        to: event.to,
-        dir: event.dir,
-        sceneIndex: event.index,
+        from: props.stage.scenes[from]!.id,
+        to: option.id,
+        dir,
+        sceneIndex: to,
         sceneCount: props.stage.scenes.length,
     });
-    emitActiveViz(event.index);
+    emitActiveViz(to);
 }
 
+/** The active scene's one line under the figure. */
+function ActiveCaption(): VNodeChild {
+    const prose = activeOption.value.prose;
+    return typeof prose === "function" ? prose() : prose;
+}
+
+onMounted(() => {
+    // The scene the page opened on (the first, or a `?scene=` link) drives the figure; nothing is written.
+    if (initialIndex > 0) morph.applyScene(activeOption.value, { dir: "forward" });
+    props.stage.apply?.(activeOption.value, runtime);
+});
+
 function onActiveChange(active: boolean): void {
-    if (
-        !active &&
-        readerHasActed() &&
-        props.stage.scenes.some((scene) => scene.id === view.sceneId)
-    )
-        view.setSceneId(undefined);
     events.emit({
         type: "stage-active",
         scope,
@@ -163,10 +179,6 @@ function onActiveChange(active: boolean): void {
 function onProvenanceOpen(detent: AppendixDetent): void {
     provenance.openProvenance(detent);
 }
-
-const sceneReadout = computed(
-    () => `Scene ${activeSceneIndex.value + 1} of ${props.stage.scenes.length}`,
-);
 
 function openSourceData(): void {
     props.stage.anatomy.export.open(scope);
@@ -228,11 +240,22 @@ watch(sourceDataOpen, (open) => {
             :key="stage.id"
             :scene="scene"
             :index="index"
-            :stage-id="stage.id"
             :beat-id="beatId"
-            @scene-change="onSceneChange"
             @active-change="onActiveChange"
         >
+            <template #control>
+                <SegmentedTabs
+                    :model-value="activeOption.id"
+                    :options="sceneOptions"
+                    :aria-label="`${stage.anatomy.foot.title}: view`"
+                    semantics="toggle"
+                    data-testid="scene-control"
+                    @update:model-value="chooseScene"
+                />
+            </template>
+            <template #caption>
+                <ActiveCaption />
+            </template>
             <template #anatomy>
                 <FootAnatomy :contract="stage.anatomy.foot">
                     <template #legend>
@@ -246,7 +269,6 @@ watch(sourceDataOpen, (open) => {
                             :is="stage.anatomy.readout"
                             v-if="stage.anatomy.readout"
                         />
-                        <span v-else>{{ sceneReadout }}</span>
                     </template>
                     <template #provenance>
                         <VizAppendixDock
@@ -271,10 +293,8 @@ watch(sourceDataOpen, (open) => {
                 <!-- THE STAGE'S ACT ROW (A-39, the plate): options, source data and
                      Enlarge, all of this stage. In a focal scene it is placed in the scene's
                      act seat, above the narrated chips. -->
-                <SceneAct v-slot="{ inSeat }">
-                    <div
+                <div
                         class="chapter-stage__act"
-                        :class="{ 'chapter-stage__act--seated': inSeat }"
                         data-plate-act
                         :data-subject="stage.id"
                     >
@@ -291,8 +311,7 @@ watch(sourceDataOpen, (open) => {
                                 />
                             </template>
                         </PlateAct>
-                    </div>
-                </SceneAct>
+                </div>
                 <aside
                     v-if="sourceDataOpen"
                     class="chapter-stage__source-data"
@@ -323,22 +342,6 @@ watch(sourceDataOpen, (open) => {
     overflow: clip;
 }
 
-/* When the source panel owns the stage, the prose story card yields: the pinned graphic (which
-   hosts the source panel) spans the whole stage and the narrated steps yield, so there is no
-   viewport-tall empty gold frame beside four lines of text, and the live-behind figure is fully
-   covered (no floating readout can occlude the data table). */
-.chapter-stage[data-source-open] :deep(.sticky-scene__graphic) {
-    grid-column: 1 / -1;
-}
-
-/* OF-19.1 — the steps' track COLLAPSES (not merely `visibility:hidden`): `display:none` stops it
-   reserving its N-viewport scroll height, so the stage shrinks to the panel's own viewport height
-   and the invisible void beneath the panel is gone. The script above snapshots + restores the
-   reader's scroll offset across the collapse, so re-opening a closed panel returns them to their step. */
-.chapter-stage[data-source-open] :deep(.sticky-scene__steps) {
-    display: none;
-}
-
 .chapter-stage__source-data {
     position: absolute;
     z-index: 4;
@@ -356,11 +359,6 @@ watch(sourceDataOpen, (open) => {
     margin-block-start: 0.75rem;
     padding-block-start: 0.5rem;
     border-block-start: 1px solid color-mix(in oklab, var(--engrave), transparent 40%);
-}
-.chapter-stage__act--seated {
-    margin: 0;
-    padding: 0;
-    border: 0;
 }
 
 .chapter-stage__source-close {

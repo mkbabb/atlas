@@ -391,13 +391,6 @@
     border-end-end-radius: inherit;
 }
 /* Placed in a focal scene's act seat: the seat wears the paper and the hairline. */
-.plate-act--seated {
-    position: static;
-    margin: 0;
-    padding: 0;
-    background: none;
-    border: 0;
-}
 @media print {
     .plate-act {
         display: none;

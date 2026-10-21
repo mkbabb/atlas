@@ -76,6 +76,7 @@ const renderer = createRenderer<HostNode, HostNode>({
 
 const scene = (id: string): SceneOption<"district"> => ({
     id,
+    label: id,
     prose: id,
     state: {},
     encode: { x: "district:x", y: "district:y" },

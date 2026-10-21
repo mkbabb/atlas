@@ -15,6 +15,10 @@
 - **The entity detail (U/B7 · O-13).** `EntityDetail` and the `describeEntity` contract
   (`useEntityDetail().register`) replace the drill-down's single-select card and `ReadoutSheet`
   (deleted). `resolveEntityIcon` titles an unnamed unit by its kind, never its key.
+- **Scrolling only scrolls (U/B7 · O-12 S-1, S-2).** `StickyScene` is an in-flow figure with a
+  period control (`PeriodControl`: Select, steppers, one-pass ▶); `ChapterStage` seats a segmented
+  scene control. Neither follows the scroll position. `ChapterScene` drops `steps`/`apply`/`anchor`/
+  `side`; scene options require `label`; `SceneAct` and `SCENE_ACT_SEAT` are deleted.
 
 ### Added
 

@@ -121,6 +121,9 @@ projecting components.
 | `ReadoutSheet` deleted (`./charts`); `EntityDetail` is the only phone readout sheet | delete the `<ReadoutSheet>` mount (sci `home/DashboardView.vue:261`) |
 | the hover card closes while the detail is open | none |
 | `resolveEntityIcon` never returns the raw key as a label: an unresolved unit is titled by its kind (`GRAIN_NOUN`: "District", "Charter school", "Map cell", …); a school is no longer titled with its district's name | pass `label` (the route's name index) where a name is known |
+| `ChapterScene` drops `steps`, `apply`, `anchor` and `side`; it takes `period?: "year"` (the period control: a glass Select of every carried period, ‹ › steppers, a one-pass ▶ at 900 ms per period that stops on hover, focus or any input and is absent under reduced motion) and `caption?: SceneProse` (one data line under the figure). `StickyScene` is an in-flow figure: no step observer, no pin, no `?at=<beat>.<step>` restore, no scroll hold of the year; the control writes `?sy=` through `yearScope.setSingle` on a reader act only. `SceneSide`, `SceneAnchor` and `SceneRuntime.setYear` are deleted. New `PeriodControl` in `./charts` | sci `02-map/scene.ts`: delete the four step cards and `apply`; declare `period: "year"` and a `caption` bound to the selected year (S3) |
+| `ChapterStage` drops `anchor`; every `SceneOption` (and `SceneStep`) requires `label`, the name on the stage's glass segmented control. `?scene=` is written only by that control; `apply` runs when the reader chooses a scene and once on mount for the opening scene; the active scene's `prose` is the one line under the figure. The stage no longer clears `?scene=` when it leaves the viewport | sci `04-scatter/stage.ts`: add `label` to each scene in the R-LABELS §3 words; drop `anchor` |
+| `SceneAct` and `SCENE_ACT_SEAT` deleted; a plate's act row renders in place | none |
 
 ## 6 · glass-ui 10.1.0
 

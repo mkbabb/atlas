@@ -74,7 +74,6 @@ import { ExpandableContainer } from "@mkbabb/glass-ui/expandable-container";
 import { useViewParams } from "../../platform/stores/useViewParams.js";
 import { useDismissArbiter } from "../../platform/interaction/useDismissArbiter.js";
 import { EXPAND_SETTLE_KEY } from "../scene/expand-settle.js";
-import SceneAct from "../scene/SceneAct.vue";
 import { figureEscapeClaim } from "./plate-act.js";
 import PlateError from "./PlateError.vue";
 import { STORY_CARD_KEY } from "./story-card-context.js";
@@ -521,17 +520,10 @@ watch(open, (value) => {
         <!-- THE ACT ROW (A-39, the plate). The figure's LAST child, so the sticky row's containing
              block is the plate: it rides the viewport foot while the plate is on screen and never
              leaves it. Every act is bound to this plate (`enlarge` opens THIS frame); the host fills
-             the rest. In a focal scene the row is placed in the scene's act seat, above the chips. -->
-        <SceneAct v-if="slots.act" v-slot="{ inSeat }">
-            <div
-                class="plate-act"
-                :class="{ 'plate-act--seated': inSeat }"
-                data-plate-act
-                :data-subject="figId"
-            >
-                <slot name="act" :enlarge="enlarge" :expanded="open" />
-            </div>
-        </SceneAct>
+             the rest. -->
+        <div v-if="slots.act" class="plate-act" data-plate-act :data-subject="figId">
+            <slot name="act" :enlarge="enlarge" :expanded="open" />
+        </div>
     </figure>
 </template>
 

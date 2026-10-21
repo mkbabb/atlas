@@ -10,7 +10,6 @@
 //     it outranks every page claim on the dismiss arbiter (selection 0, hover card 10, filter drawer
 //     30, dock sheet 40): one Escape closes the figure and nothing else (S2-1, the composition defect
 //     P2 located in atlas: the expanded figure never joined the page's arbiter).
-import type { InjectionKey } from "vue";
 import type { DismissClaim } from "../../platform/interaction/dismiss-arbiter.js";
 
 /** Every act a plate's act row can perform. `take` opens the phone sheet that holds the others. */
@@ -65,8 +64,3 @@ export function plateLayerClaim(subject: string, layer: PlateLayer, close: () =>
         onDismiss: close,
     };
 }
-
-/** The CSS selector of the enclosing focal scene's act seat. A focal scene stacks its narrated step
-    chips over its pinned graphic, so the graphic's act row is placed in the scene's own seat, a layer
-    above the chips; outside a focal scene the key is absent and the row renders in place. */
-export const SCENE_ACT_SEAT: InjectionKey<string> = Symbol("atlas:scene-act-seat");
