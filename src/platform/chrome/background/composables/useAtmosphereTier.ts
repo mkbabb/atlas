@@ -9,12 +9,10 @@
 // SOFTWARE rasteriser still falls to css). The library therefore no longer picks a device tier for
 // the field — so the ATLAS side owns it. O-F2 already holds the substrate OFF the shader by default
 // (css-baked), so this ladder is NOT about arming WebGL; it grades the CSS field's RICHNESS + MOTION:
-//   • tier A (high) — the full pole-derived CSS-baked gradient WITH the scroll Tide (the nuclei
-//     drift as the page scrolls) + the static-baked constellation + the breathing brand fleck.
-//   • tier B (mid)  — the same rich CSS gradient, but the Tide/drift is OFF (a static field); the
-//     constellation stays its static bake; the fleck breath freezes.
-//   • tier C (low)  — a flat 2-stop wash (the 2+2+1 rule-of-thirds field collapses to one warm +
-//     one cool lobe); the fleck freezes. PRM / save-data / a low-core device land HERE.
+//   • tier A (high) — the full pole-derived CSS-baked gradient.
+//   • tier B (mid)  — the same gradient (no tier moves the field: U/B7 · PLAN §5.6).
+//   • tier C (low)  — a flat 2-stop wash (one warm + one cool lobe). PRM / save-data / a low-core
+//     device / a phone-width viewport land HERE.
 //
 // PRM LANDS TIER C (motion-arch §2.3 — the half-wired close). Reduced-motion is folded into the
 // signal so PRM resolves the fully-static low tier — a strict superset of the O-F4 belt's PRM park
@@ -39,6 +37,7 @@ import {
     type MaybeRefOrGetter,
 } from "vue";
 import { useReducedMotion } from "../../../../motion/useReducedMotion.js";
+import { useMobileRegister } from "../../../composables/useMobileRegister.js";
 import { prefersReducedData } from "../../../../data/dataSaver.js";
 
 /** The three atmosphere tiers (motion-arch §2.3). A = high (rich field + Tide), B = mid (rich field,
@@ -57,6 +56,8 @@ export interface AtmosphereDeviceSignal {
     saveData: boolean;
     /** `prefers-reduced-motion: reduce`. */
     reducedMotion: boolean;
+    /** A phone-width viewport (the §V phone register). */
+    phone: boolean;
 }
 
 /** ≥ this many logical cores (with no C signal) ⇒ the HIGH tier A. */
@@ -68,7 +69,7 @@ export const TIER_C_MAX_MEMORY = 2;
 
 /**
  * THE PURE LADDER — resolve a device signal to a tier (pure, unit-testable, SSR-safe). Order:
- *   1. reduced-motion OR save-data ⇒ C (the user asked for the still, frugal field).
+ *   1. reduced-motion OR save-data OR a phone-width viewport ⇒ C (U/B7 · PLAN §5.6: tier C on phones).
  *   2. a KNOWN low-core (≤4) or low-memory (≤2 GiB) device ⇒ C.
  *   3. a KNOWN high-core (≥8) device, OR an UNKNOWN device (cores `0` — SSR / assume capable) ⇒ A.
  *   4. everything between (5–7 cores) ⇒ the mid tier B.
@@ -76,7 +77,7 @@ export const TIER_C_MAX_MEMORY = 2;
  * `isSoftwareWebGLRenderer` conservative-never-downgrade principle), not the flat wash.
  */
 export function resolveAtmosphereTier(s: AtmosphereDeviceSignal): AtmosphereTier {
-    if (s.reducedMotion || s.saveData) return "C";
+    if (s.reducedMotion || s.saveData || s.phone) return "C";
     if (s.cores > 0 && s.cores <= TIER_C_MAX_CORES) return "C";
     if (s.memory > 0 && s.memory <= TIER_C_MAX_MEMORY) return "C";
     if (s.cores === 0 || s.cores >= TIER_A_MIN_CORES) return "A"; // ≥8 cores, or unknown → assume capable
@@ -91,6 +92,8 @@ export interface UseAtmosphereTierOptions {
     reducedMotion?: MaybeRefOrGetter<boolean>;
     /** The save-data fence. Defaults to a mount-time `prefersReducedData()` snapshot; injectable. */
     saveData?: MaybeRefOrGetter<boolean>;
+    /** The phone-width fence. Defaults to `useMobileRegister().isPhone` (reactive); injectable. */
+    phone?: MaybeRefOrGetter<boolean>;
     /** Override the device legs (`cores`/`memory`) — a test drives a tier without a real device. */
     device?: Partial<Pick<AtmosphereDeviceSignal, "cores" | "memory">>;
 }
@@ -101,9 +104,6 @@ export interface UseAtmosphereTierReturn {
         snapshot. Surfaced on `[data-atmosphere-tier]` by the consumers so a probe/gate can read the
         picked tier off the built route. */
     tier: ComputedRef<AtmosphereTier>;
-    /** TIER A ONLY — the field MOTION is live: the aurora scroll Tide (nuclei drift) runs and the
-        brand fleck breathes. `false` at B/C ⇒ a fully static field (no drift/Tide, frozen fleck). */
-    tide: ComputedRef<boolean>;
     /** TIER C ONLY — the aurora collapses from the 2+2+1 rule-of-thirds field to a flat 2-stop wash
         (one warm + one cool lobe). `false` at A/B ⇒ the full pole-derived gradient. */
     flatWash: ComputedRef<boolean>;
@@ -135,17 +135,19 @@ export function useAtmosphereTier(
     const saveData: MaybeRefOrGetter<boolean> =
         opts.saveData ?? prefersReducedData();
 
+    const phone: MaybeRefOrGetter<boolean> = opts.phone ?? useMobileRegister().isPhone;
+
     const tier = computed<AtmosphereTier>(() =>
         resolveAtmosphereTier({
             cores,
             memory,
             saveData: toValue(saveData),
             reducedMotion: toValue(reduced),
+            phone: toValue(phone),
         }),
     );
 
-    const tide = computed<boolean>(() => tier.value === "A");
     const flatWash = computed<boolean>(() => tier.value === "C");
 
-    return { tier, tide, flatWash };
+    return { tier, flatWash };
 }

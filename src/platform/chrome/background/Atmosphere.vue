@@ -65,8 +65,7 @@
 // substrate's `!reducedMotion` step block — under reduce it never advances). The recessive
 // `--constellation-alpha` master stays the library default (D6's ROOT job, ≤0.9 test cap) —
 // NOT consumer-overridden here.
-import { computed } from "vue";
-import Aurora from "./Aurora.vue";
+import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { useThemeKey } from "../../composables/useThemeKey.js";
 import type { BackgroundFamily } from "../../../skin/index.js";
 import type { Theme } from "../../../contract/index.js";
@@ -74,7 +73,48 @@ import type { Theme } from "../../../contract/index.js";
 // NCSU-red anomaly node — the emergent-tricolor red leg), NOT a bare glass-ui <Constellation>.
 // The arbiter owns the SINGLE brand field so "one field per surface" holds (the gallery mounts
 // only <Atmosphere kind="brand">, never a second constellation canvas).
-import ConstellationHost from "./Constellation.host.vue";
+
+// U/B7 · PLAN §5.6 / F6: the field is not on the first-paint path. Each field is its own chunk,
+// mounted after the page has loaded, in idle time; the paper and grain paint first.
+const Aurora = defineAsyncComponent(() => import("./Aurora.vue"));
+const ConstellationHost = defineAsyncComponent(() => import("./Constellation.host.vue"));
+
+/** How long the idle mount may wait on a busy main thread. */
+const FIELD_IDLE_TIMEOUT_MS = 2000;
+
+/** `mounted`: the field chunk mounts. `shown`: its wrapper fades to full opacity (≤ 200 ms; a cut
+    under reduced motion, where the CSS sets no transition). */
+const fieldMounted = ref(false);
+const fieldShown = ref(false);
+let idleHandle: number | null = null;
+function armField(): void {
+    const mount = () => {
+        idleHandle = null;
+        fieldMounted.value = true;
+        void nextTick(() =>
+            requestAnimationFrame(() => {
+                fieldShown.value = true;
+            }),
+        );
+    };
+    idleHandle =
+        typeof requestIdleCallback === "function"
+            ? requestIdleCallback(mount, { timeout: FIELD_IDLE_TIMEOUT_MS })
+            : window.setTimeout(mount, 0);
+}
+function onLoad(): void {
+    armField();
+}
+onMounted(() => {
+    if (document.readyState === "complete") armField();
+    else window.addEventListener("load", onLoad, { once: true });
+});
+onBeforeUnmount(() => {
+    window.removeEventListener("load", onLoad);
+    if (idleHandle == null) return;
+    if (typeof cancelIdleCallback === "function") cancelIdleCallback(idleHandle);
+    else window.clearTimeout(idleHandle);
+});
 
 /** The civic scalar the brand constellation seeds its density to — NC's 100 counties (the
     canonical platform geography, geometry.ts). The lattice's node count ECHOES the dataset's
@@ -153,13 +193,20 @@ const field = computed<BackgroundFamily>(() =>
              (always present, no longer one-of-two); on brand it is the constellation
              (the gallery masthead, veiled by I6). Decision 2: the data branch mounts NO
              constellation. -->
-        <Aurora v-if="field === 'aurora'" :theme="theme" class="atmosphere__field" />
-        <ConstellationHost
-            v-else
-            :seed="seed"
-            :count="NC_COUNTIES"
+        <div
+            v-if="fieldMounted"
             class="atmosphere__field"
-        />
+            data-testid="atmosphere-field"
+            :data-shown="fieldShown ? '' : undefined"
+        >
+            <Aurora v-if="field === 'aurora'" :theme="theme" class="atmosphere__field-body" />
+            <ConstellationHost
+                v-else
+                :seed="seed"
+                :count="NC_COUNTIES"
+                class="atmosphere__field-body"
+            />
+        </div>
 
         <!-- z:-1 — the printed-paper tooth, ALWAYS present, on EVERY surface, ABOVE the
              field (the re-order, fb-backgrounds §1.4 / R2): the multiply (light) /
@@ -193,7 +240,22 @@ const field = computed<BackgroundFamily>(() =>
 .atmosphere__field {
     position: absolute;
     inset: 0;
-    z-index: -2 !important;
+    z-index: -2;
+    pointer-events: none;
+    opacity: 0;
+}
+.atmosphere__field[data-shown] {
+    opacity: 1;
+}
+/* The one arrival: an opacity crossfade of 200 ms, no movement. Under reduced motion it is a cut. */
+@media (prefers-reduced-motion: no-preference) {
+    .atmosphere__field {
+        transition: opacity 200ms var(--ease-out, ease-out);
+    }
+}
+.atmosphere__field-body {
+    position: absolute;
+    inset: 0;
     pointer-events: none;
 }
 

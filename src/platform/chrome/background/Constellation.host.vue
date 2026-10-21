@@ -85,12 +85,13 @@ const props = withDefaults(
             for a route that no longer exists (dial 6 — the seed is PINNED at the mount, redrawn on
             a theme flip only, never per load). */
         seed: number | string;
-        /** `live` while visible, static `bake`, or belt-gated `auto` (default). */
+        /** Static `bake` (default: the lattice paints once, U/B7 · PLAN §5.6), `live` while
+            visible, or belt-gated `auto`. */
         register?: ConstellationRegister;
     }>(),
     {
         count: 100,
-        register: "auto",
+        register: "bake",
     },
 );
 
@@ -100,16 +101,9 @@ const hostEl = ref<HTMLElement | null>(null);
 const overlay = ref<HTMLCanvasElement | null>(null);
 const bakeCanvas = ref<HTMLCanvasElement | null>(null);
 
-// THE O-F5 DEVICE-TIER LADDER (motion-arch §2.3). The shared `useAtmosphereTier` selector is the ONE
-// source of the atmosphere ladder; the brand cover reads it for the fleck's MOTION: `tide` is `true`
-// only at tier A (the fleck breathes), `false` at B/C (a device that gets a static field — a
-// low-core / save-data / PRM device) so the fleck freezes. This FOLDS the prior `useReducedMotion`
-// fence (PRM lands tier C) into the SAME ladder the aurora rides, and composes with the O-F4 belt
-// (`active` parks the loop on hidden/idle; `tide` freezes the breath on the low tier). `tier` is
-// surfaced on the host for the standing gate. The static lattice bake (O-F3) stands at EVERY tier —
-// it is already a 0-cost static raster (the discrepancy with §2.3's "tier C = no lattice": O-F3
-// supersedes it — dropping a free static raster gains nothing and loses the brand identity).
-const { tier, tide } = useAtmosphereTier();
+// THE O-F5 DEVICE-TIER LADDER (motion-arch §2.3) — `tier` is surfaced on the host for the standing
+// gate. The fleck and the lattice paint once at every tier (U/B7 · PLAN §4.2 idle row, §5.6).
+const { tier } = useAtmosphereTier();
 
 // THE O-F4 ACTIVITY BELT (motion-arch §2.1 MOVE 4). Post-bake the brand cover carries ONE idle loop
 // — the fleck's own 2D rAF (the lattice is now a static raster, no loop). The belt parks the fleck
@@ -321,11 +315,10 @@ function anomalyRed(canvas: HTMLCanvasElement): string {
 /**
  * Paint the ONE red anomaly fleck onto the 2D overlay: a BREATHING ring + a saturated red
  * core (the slides idiom). Pinned to a stable point in the field (≈38% / 42% of the box —
- * within the lattice, clear of the masthead's upper-left lockup). Off tier A (`tide` false —
- * a low-core / save-data / PRM device) the breath is frozen (the `now`-driven radius resolves
- * to its resting value), so the fleck is a static mark.
+ * within the lattice, clear of the masthead's upper-left lockup). A static mark: it is painted
+ * once, and again only on a resize (U/B7 · PLAN §4.2: no idle loops).
  */
-function paintFleck(now: number): void {
+function paintFleck(): void {
     const canvas = overlay.value;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -347,10 +340,7 @@ function paintFleck(now: number): void {
     const y = h * 0.42;
     const k = dpr; // scale the mark with DPR so it reads consistently across displays
     const core = 5.6 * k; // the slides H.W4 core radius
-    // The gentle breath: ±1.2k around the resting radius on a slow ~3.7s period — frozen at
-    // its mean off tier A (the low-tier / PRM static-frame floor; O-F5 folds the PRM fence).
-    const breath = tide.value ? 1.2 * Math.sin(now / 590) : 0;
-    const ring = core + (2.4 + breath) * k;
+    const ring = core + 2.4 * k;
 
     // 1) the focal ring (the slides anomaly halo — the breathing mark).
     ctx.save();
@@ -369,43 +359,19 @@ function paintFleck(now: number): void {
     ctx.restore();
 }
 
-let raf = 0;
-function loop(now: number): void {
-    paintFleck(now);
-    // Continue the breath ONLY while the belt is active (O-F4) AND the tier animates (O-F5: `tide` is
-    // false off tier A — a low-core / save-data / PRM device). When either parks (hidden / idle / low
-    // tier) the loop ends but the last frame stays painted — a frozen fleck, never a cleared canvas.
-    raf = active.value && tide.value ? requestAnimationFrame(loop) : 0;
-}
-
-/** Re-sync the fleck rAF to the belt + the tier: repaint the resting/last frame, then run or park the
-    loop to match `active && tide`. Idempotent — starts the loop only when it should run and is not
-    already running, cancels it only when it should not and is running. Drives mount + the live
-    `active` (belt) and `tide` (tier) transitions. */
-function syncFleck(): void {
-    paintFleck(performance.now());
-    if (active.value && tide.value) {
-        if (!raf) raf = requestAnimationFrame(loop);
-    } else if (raf) {
-        cancelAnimationFrame(raf);
-        raf = 0;
-    }
-}
-
 let ro: ResizeObserver | null = null;
 onMounted(() => {
     // Paint the resting fleck frame immediately, then run/park to the belt (O-F4; PRM folded into
     // `active`). Then bake the lattice to its static raster (O-F3) — the first and, absent a
     // resize/theme flip, ONLY GPU pass of the session.
-    paintFleck(0);
-    syncFleck();
+    paintFleck();
     if (shouldRun.value) void wakeLive();
     else startBake();
     if (bakeCanvas.value && typeof ResizeObserver !== "undefined") {
         // ONE observer: the fleck follows the box immediately (cheap), the lattice re-bakes only on
         // a REAL size change, debounced (the standing raster is DPR/size-locked to the box).
         ro = new ResizeObserver(() => {
-            paintFleck(performance.now());
+            paintFleck();
             const c = bakeCanvas.value;
             if (!c || !bakedOnce) return; // the mount bake owns the first pass; ignore its RO echo
             if (c.clientWidth === lastCssW && c.clientHeight === lastCssH) return;
@@ -415,10 +381,6 @@ onMounted(() => {
     }
 });
 
-// The belt + tier edge — park the fleck rAF when the tab hides / goes idle (belt) OR the device drops
-// off tier A (tier: low-core / save-data / PRM), resume on return to tier A + an active reader.
-watch([active, tide], syncFleck);
-
 watch(shouldRun, (run) => {
     if (run) void wakeLive();
     else if (liveMounted.value) sleepFromLive();
@@ -427,16 +389,15 @@ watch(shouldRun, (run) => {
 
 // THE THEME FLIP (motion-arch §2.4 "explicit moment"). A dark/light flip re-tints the lattice tokens
 // AND the fleck red; re-bake the lattice (debounced) at the new palette + force an immediate fleck
-// re-read (the breath may be parked, so the watcher repaints it directly).
+// re-read.
 const themeKey = useThemeKey();
 watch(themeKey, () => {
     resolvedRed = ""; // drop the cache so anomalyRed re-reads the flipped token
-    paintFleck(performance.now());
+    paintFleck();
     if (!liveMounted.value) rebake();
 });
 
 onBeforeUnmount(() => {
-    if (raf) cancelAnimationFrame(raf);
     if (bakeRaf) cancelAnimationFrame(bakeRaf);
     if (ro) ro.disconnect();
 });
