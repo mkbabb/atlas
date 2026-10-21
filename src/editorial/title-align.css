@@ -6,10 +6,12 @@
 
 [data-title-align="center"] {
     --atlas-title-align: center;
+    --title-scale-origin: center top;
 }
 
 [data-title-align="right"] {
     --atlas-title-align: right;
+    --title-scale-origin: right top;
 }
 
 .atlas-title-align {
@@ -21,5 +23,6 @@
 @media (max-width: 63.999rem) {
     [data-title-align="right"] {
         --atlas-title-align: left;
+        --title-scale-origin: left top;
     }
 }

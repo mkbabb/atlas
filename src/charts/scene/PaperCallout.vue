@@ -187,7 +187,7 @@ const leader = computed<{
     display: block;
     font-family: var(--font-mono, "Fira Code"), monospace;
     font-style: normal;
-    font-size: 0.56rem;
+    font-size: var(--type-micro);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;

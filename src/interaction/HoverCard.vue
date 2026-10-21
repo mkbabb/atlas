@@ -371,7 +371,7 @@ watch(
 .hover-card-readout__subhead {
     margin-block: -0.05rem 0.15rem;
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.01em;
     line-height: 1.25;
     color: var(--muted-foreground);

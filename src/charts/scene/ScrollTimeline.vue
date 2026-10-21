@@ -372,7 +372,7 @@ function onKeydown(e: KeyboardEvent): void {
    foot. Tabular-lining so a year doesn't reflow as it ticks; engraved, compact. */
 .scroll-rail__readout {
     margin-inline-start: 0.75rem;
-    font-size: 0.6875rem;
+    font-size: var(--type-micro);
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;

@@ -190,7 +190,7 @@ const detent = ref<number | null>(detents[0]);
 .readout-sheet__subhead {
     margin: 0.05rem 0 0;
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.01em;
     line-height: 1.25;
     color: var(--muted-foreground);

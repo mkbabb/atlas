@@ -125,8 +125,8 @@
        content to its flank stays visible; it is a label, not a masthead bar. */
 }
 
-/* The scroll-scrubbed shrink — LINEAR 72→30 over the first 320px of root scroll (tablet rides
-   320; phone 200 below). DOUBLE-FENCED: the outer @media means under PRM the animation NEVER
+/* The scroll-scrubbed shrink — LINEAR 72→30 px (as a scale) over the first 320px of root scroll
+   (tablet rides 320; phone 200 below). DOUBLE-FENCED: the outer @media means under PRM the animation NEVER
    binds, so the h1 rests at its LARGE recipe size (the PRM-sane un-animated title — the O-C2
    live-review gate owns any swap to a static compact state); the inner @supports means the JS
    fallback owns environments without scroll() timelines. `both` HOLDS the from-frame (large)
@@ -137,30 +137,29 @@
    `.text-page-title` sets it to `var(--background)`, so the opacify-on-stuck behaviour lands on
    the page <h1> alone.
 
-   THE `--title-rest-size`/`--title-compact-size`/`--title-*-weight` INDIRECTION (O-D20 EX-63
-   cure). The keyframe is SHARED — `.masthead__wordmark` re-points its endpoints to the cover
-   register (`--type-masthead-headline{,-compact}`) via these four custom properties, exactly as
-   its own comment always claimed. This keyframe now actually READS that indirection (it
-   previously hardcoded the page-title tokens + literal 560/600 unconditionally, so the masthead's
-   re-point was silently dead — the EX-63 find: a cover rested at 72px, never the D20-charted 88).
-   Each var() falls back to `.text-page-title`'s OWN literal, so `.text-page-title` — which sets
-   NONE of these four — is BYTE-IDENTICAL to before this cure; only a consumer that explicitly
-   sets the indirection (GalleryMasthead, or a future cover) re-points the endpoints. */
+   THE `--title-compact-scale` INDIRECTION. The keyframe is SHARED: `.masthead__wordmark`
+   re-points its compact scale (GalleryMasthead.vue); the page <h1> reads the default. The shrink
+   is a `scale` and the weight holds (U/B7 · PLAN §5.1), so neither title's layout box changes with
+   scroll: the 560 → 600 weight lift re-wrapped the phone hero title and grew /usf and /speedtest
+   by 42 px on the first wheel step. */
 @keyframes title-compact {
     from {
-        font-size: var(--title-rest-size, var(--type-page-title));
-        font-weight: var(--title-rest-weight, 560);
+        scale: 1;
         background-color: transparent;
     }
     to {
-        font-size: var(--title-compact-size, var(--type-page-title-compact));
-        font-weight: var(--title-compact-weight, 600);
+        scale: var(--title-compact-scale, 0.42);
         background-color: var(--title-scrub-bg-to, transparent);
     }
 }
 @media (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: scroll()) {
         .text-page-title {
+            /* U/B7 · PLAN §5.1: the shrink is a compositor `scale`, so the title's layout box keeps
+               its rest size and the column below never moves (a font-size shrink pulled every page
+               up by 20–100 px over the first 320 px of scroll, and scroll anchoring took that out
+               of the reader's wheel steps). 72 → 30 px at 1440; 44 → 24 px at 390. */
+            transform-origin: var(--title-scale-origin, left top);
             animation: title-compact linear both;
             animation-timeline: scroll(root);
             animation-range: 0px var(--title-scrub-range, 320px);
@@ -168,65 +167,8 @@
         @media (--phone) {
             .text-page-title {
                 --title-scrub-range: 200px;
+                --title-compact-scale: 0.55;
             }
-        }
-    }
-}
-
-/* §1b — THE COMPACT WAYFINDING KICKER (O-C2 point 3 · ANSWERS Q-11: the compact band DOUBLES as a
-   chapter locator). The sticky title band carries the route's ONE kicker INLINE beside the shrunk
-   h1, so the scrolled band names WHERE the reader is. The kicker rides INSIDE the sticky <h1> (an
-   `aria-hidden` inline-block, so the heading's accessible name stays the title ALONE — no
-   accessible-name regression), sits at a CONSTANT compact rung (the mono tracked-caps eyebrow
-   voice; it does NOT scrub with the title), and REVEALS over the TAIL of the SAME native
-   `scroll(root)` timeline the title-compact keyframe rides — no JS scroll listener. At rest
-   (scrollY 0) it has ZERO footprint (`max-inline-size: 0` + `opacity: 0` under `overflow: clip`),
-   so it is ABSENT from the rest state and can neither wrap nor overflow the large title; it fades +
-   expands in as the title reaches its compact terminal. It inherits `--title-scrub-range` from the
-   parent h1, so the phone's shorter 200px transit re-times the reveal automatically. Consumed by
-   .dashboard-hero__title (reads `coverKicker`) + .speedtest-hero__title (reads the eyebrow) — the
-   shared page-h1 wayfinding, route-generic, never a per-route fork. Under PRM the title rests LARGE
-   (no compact state), so the double-fence keeps the kicker hidden — there is no band to locate. */
-.page-title-wayfind {
-    display: inline-block;
-    vertical-align: baseline;
-    overflow: clip;
-    white-space: nowrap;
-    font-family: var(--font-mono);
-    font-size: 0.8125rem;
-    font-weight: 500;
-    line-height: 1;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted-foreground);
-    /* the leading separator + gap live INSIDE the clipped box, so the rest footprint is truly 0. */
-    padding-inline-start: 0.6em;
-    max-inline-size: 0;
-    opacity: 0;
-}
-.page-title-wayfind::before {
-    content: "·";
-    margin-inline-end: 0.5em;
-}
-@keyframes page-title-wayfind-in {
-    from {
-        max-inline-size: 0;
-        opacity: 0;
-    }
-    to {
-        /* a generous ceiling — any route kicker fits; overflow:clip is the backstop. */
-        max-inline-size: 24ch;
-        opacity: 1;
-    }
-}
-@media (prefers-reduced-motion: no-preference) {
-    @supports (animation-timeline: scroll()) {
-        .page-title-wayfind {
-            animation: page-title-wayfind-in linear both;
-            animation-timeline: scroll(root);
-            /* the reveal rides the TAIL of the title scrub — fully in as the title lands compact. */
-            animation-range: calc(var(--title-scrub-range, 320px) * 0.55)
-                var(--title-scrub-range, 320px);
         }
     }
 }

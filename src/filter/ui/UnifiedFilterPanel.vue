@@ -114,7 +114,7 @@ defineSlots<{ algebra(): unknown }>();
 }
 .unified-filter-panel__crest {
     margin: 0;
-    font-size: 0.6875rem;
+    font-size: var(--type-micro);
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
