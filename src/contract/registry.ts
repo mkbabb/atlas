@@ -16,21 +16,22 @@
 // EAGER maps would re-collect at module-eval and regress that fix — the thunk is non-negotiable.
 
 import type { Component } from "vue";
-import type { DashboardContext, DashboardEntry, DashboardMeta } from "./types.js";
+import type { DashboardContext, DashboardEntry, DashboardMeta, DashboardRank } from "./types.js";
 
 /** The instance-supplied discovery globs — the three `import.meta.glob` maps over
-    `dashboards/<slug>/{meta,dashboard,context}.ts`. The instance constructs these inside the
-    deferred thunk `createDashboardRegistry` receives (the eager half discovers the cheap
-    meta/context modules; the body half stays a lazy import map so each dashboard code-splits). */
+    `dashboards/<slug>/{meta,DashboardBody,context}`. The instance constructs these inside the
+    deferred thunk `createDashboardRegistry` receives. Discovery is the eager meta glob; the body
+    and context globs are lazy import maps, so a route loads only its own body and context
+    (U/B7 F10). The lazy maps' keys still name every folder without loading any module. */
 export type RegistryGlobs = {
     metaModules: Record<string, { meta: DashboardMeta }>;
     bodyLoaders: Record<string, () => Promise<{ default: Component }>>;
-    contextModules: Record<string, Record<string, DashboardContext>>;
+    contextModules: Record<string, () => Promise<Record<string, DashboardContext>>>;
 };
 
 /** The assembled registry — the dashboard list (built once, memoized) + the slug lookup. */
 export interface DashboardRegistry {
-    /** The discovered dashboards, newest-first (memoized on first access). */
+    /** The discovered dashboards in roster order (`rank`; memoized on first access). */
     getDashboards: () => DashboardEntry[];
     /** The registry entry for a slug, or undefined when no dashboard owns it. */
     findDashboard: (slug: string) => DashboardEntry | undefined;
@@ -46,12 +47,25 @@ function pickContext(mod: Record<string, unknown>): DashboardContext | undefined
     return undefined;
 }
 
+/** The roster order of a rank: ranked entries by number, then held, then companions. */
+function rankOrder(rank: DashboardRank): [number, number] {
+    if (typeof rank === "number") return [0, rank];
+    return rank === "held" ? [1, 0] : [2, 0];
+}
+
+/** Compare two entries by roster order (`rank`), ties broken by slug so the order is stable. */
+export function compareRank(a: DashboardMeta, b: DashboardMeta): number {
+    const [ga, ra] = rankOrder(a.rank);
+    const [gb, rb] = rankOrder(b.rank);
+    return ga - gb || ra - rb || a.slug.localeCompare(b.slug);
+}
+
 /**
  * Build the registry algebra over a DEFERRED globs thunk (R1). The thunk is called ONCE on
  * first `getDashboards()` and memoized; the dashboard array is likewise built lazily on first
  * access (the /home TDZ-safe lazy-accessor — deferring the `.map(...).sort(...)` past the
  * cyclic module-init moment, so importing `findDashboard` never forces the build at the
- * registry↔index cycle's init point). Newest-first; dashboards without `updated` sort last.
+ * registry↔index cycle's init point). Sorted by `rank` (U/B7 O-3).
  */
 export function createDashboardRegistry(
     globs: () => RegistryGlobs,
@@ -61,17 +75,21 @@ export function createDashboardRegistry(
 
     let _dashboards: DashboardEntry[] | null = null;
 
-    function buildContextByFolder(): Record<string, DashboardContext> {
-        const byFolder: Record<string, DashboardContext> = {};
-        for (const [path, mod] of Object.entries(resolvedGlobs().contextModules)) {
-            const ctx = pickContext(mod);
-            if (ctx) byFolder[folderOf(path)] = ctx;
-        }
-        return byFolder;
+    /** One memoized context loader per folder: the module loads on the first call only. */
+    function contextLoader(folder: string): () => Promise<DashboardContext> {
+        const { contextModules } = resolvedGlobs();
+        const key = Object.keys(contextModules).find((k) => folderOf(k) === folder);
+        let pending: Promise<DashboardContext> | null = null;
+        return () =>
+            (pending ??= (async () => {
+                if (!key) throw new Error(`dashboard "${folder}" has no context.ts`);
+                const ctx = pickContext(await contextModules[key]());
+                if (!ctx) throw new Error(`dashboard "${folder}" context.ts exports no *Context`);
+                return ctx;
+            })());
     }
 
     function build(): DashboardEntry[] {
-        const contextByFolder = buildContextByFolder();
         const { metaModules, bodyLoaders } = resolvedGlobs();
         return Object.entries(metaModules)
             .map(([path, mod]) => {
@@ -83,11 +101,10 @@ export function createDashboardRegistry(
                     ...mod.meta,
                     load: () =>
                         bodyLoaders[loaderKey as string]().then((m) => m.default),
-                    context: contextByFolder[folder],
+                    loadContext: contextLoader(folder),
                 };
             })
-            // newest first; dashboards without `updated` sort last
-            .sort((a, b) => (b.updated ?? "").localeCompare(a.updated ?? ""));
+            .sort(compareRank);
     }
 
     const getDashboards = (): DashboardEntry[] => (_dashboards ??= build());

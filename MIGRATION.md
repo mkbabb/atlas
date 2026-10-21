@@ -105,6 +105,14 @@ projecting components.
 | the "step N of M" live readout is teleported to `<body>` (`data-testid="dock-step-readout"`) | none |
 | `MembraneFacet` drops `"viz-context"` and `"provenance-detent"`; `MembraneBand` drops `"context"` | a total switch over either union drops those arms |
 
+## 5d · The site roster and lazy contexts (U/B7 · §2.3, O-3, F10)
+
+| Change | Consumer edit |
+|---|---|
+| `DashboardMeta.rank: DashboardRank` (`number \| "held" \| "companion"`) is required; `createDashboardRegistry` sorts by it (`compareRank`, exported): ranked entries by number, then held, then companions. The `updated` sort is deleted | each `meta.ts` declares `rank` (sci: 1 SCI, 2 USF, 3 ECF, 4 E-Rate demand, 5 BEAD, 6 measured speeds; USF integrity `"held"`; VFT `"companion"`); a gallery sort that copied the `updated` order calls `compareRank` |
+| `DashboardMeta.headline?: DashboardHeadline` (`{ value, label, period }`) | each `meta.ts` fills it from its card digest; omit when a route has no headline number |
+| `RegistryGlobs.contextModules` is a lazy import map (`Record<string, () => Promise<Record<string, DashboardContext>>>`); `DashboardEntry.context` is deleted and `DashboardEntry.loadContext(): Promise<DashboardContext>` (memoized) takes its place | drop `{ eager: true }` from the `./*/context.ts` glob; replace `entry.context` with `await entry.loadContext()` (a route guard or an async setup); discovery stays on the meta glob |
+
 ## 6 · glass-ui 10.1.0
 
 Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.
