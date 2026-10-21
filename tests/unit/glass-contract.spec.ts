@@ -62,6 +62,22 @@ describe("glass-ui component props used in atlas templates are declared by the c
         return names;
     }
 
+    // Props atlas codes against ahead of the glass release that adds them (U/B7 PLAN §5.2: GlassDock
+    // expandOn, anchor, collapsedLabel from glass lane G1, branch u/b7-glass-shape a88999b6b). Each is
+    // accepted only while the installed glass lacks it; once the planted glass declares it, the
+    // "still incoming" case below fails and the entry is deleted.
+    const INCOMING_GLASS_PROPS = new Map([
+        ["GlassDock", ["expandOn", "anchor", "collapsedLabel"]],
+    ]);
+
+    it("every incoming glass prop is still absent from the installed glass", async () => {
+        const dock: any = await import("@mkbabb/glass-ui/dock");
+        for (const [exp, props] of INCOMING_GLASS_PROPS) {
+            const declared = declaredOf(dock[exp]) ?? new Set<string>();
+            expect(props.filter((p) => declared.has(p)), `${exp}: delete the shipped entries`).toEqual([]);
+        }
+    });
+
     it("no atlas template passes an undeclared prop to a glass-ui component", async () => {
         const dropped: string[] = [];
         let checked = 0;
@@ -114,6 +130,7 @@ describe("glass-ui component props used in atlas templates are declared by the c
                                 if (!name) continue;
                                 const c = camel(name);
                                 if (HTML_ATTR.test(c) || declared.has(c)) continue;
+                                if (INCOMING_GLASS_PROPS.get(exp)?.includes(c)) continue;
                                 dropped.push(`${rel(f)}:${el.loc.start.line} <${el.tag} ${name}>`);
                             }
                         }
@@ -149,6 +166,7 @@ describe("custom properties atlas reads resolve to atlas or the installed glass-
         "--beat-cis",
         "--beat-tl",
         "--brand",
+        "--dock-bar-reserve", // the phone bar reserve (PLAN §2.2); A1 defines it in the shell, EntityDetail reads it with a 0px fallback
         "--breath-depth",
         "--breath-period",
         "--dot-op",
@@ -175,6 +193,13 @@ describe("custom properties atlas reads resolve to atlas or the installed glass-
         "--z-sticky",
         "--seal-stroke-width", // CompletionSeal's consumer-tunable nib, read with its own fallback
     ]);
+    // Tokens atlas reads ahead of the glass release that defines them, each with a fallback (U/B7
+    // PLAN §5.7: --radius-bar from glass lane G1). Accepted only while the installed glass lacks them.
+    const INCOMING_GLASS_TOKENS = new Set(["--radius-bar"]);
+    it("every incoming glass token is still absent from the installed glass", () => {
+        const glass = defsIn(GLASS_TEXT);
+        expect([...INCOMING_GLASS_TOKENS].filter((k) => glass.has(k))).toEqual([]);
+    });
 
     it("every var(--x) atlas reads is defined by atlas, by glass-ui, or is a reviewed consumer-supplied name", () => {
         const defined = new Set([...defsIn(ATLAS_FILES.map((x) => x.t)), ...defsIn(GLASS_TEXT)]);
@@ -183,7 +208,7 @@ describe("custom properties atlas reads resolve to atlas or the installed glass-
             for (const m of t.matchAll(/var\(\s*(--[\w-]*\w)(?![\w-]|\$\{)/g)) {
                 // A name composed at runtime (`var(--viz-${key})`) is not a token reference.
                 const k = m[1];
-                if (defined.has(k) || SUPPLIED_ELSEWHERE.has(k)) continue;
+                if (defined.has(k) || SUPPLIED_ELSEWHERE.has(k) || INCOMING_GLASS_TOKENS.has(k)) continue;
                 if (!unresolved.has(k)) unresolved.set(k, new Set());
                 unresolved.get(k)!.add(rel(f));
             }

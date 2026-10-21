@@ -21,6 +21,7 @@ import { computed, toValue, type ComputedRef, type MaybeRefOrGetter } from "vue"
 import type { Predicate } from "../../filter/engine/predicate.js";
 import { isIdentity } from "../../filter/engine/predicate.js";
 import { useFreshness } from "../chrome/freshness.js";
+import { resolveColumn, sourcesLine, type FeedDictionary } from "./feed-dictionary.js";
 import type { ProvenanceKind } from "../../contract/types.js";
 import {
     humanizePredicate,
@@ -84,6 +85,8 @@ export interface AlgebraInputs<Row = unknown> {
     grainNoun: string;
     /** [ANSWERS Q43] the CURRENT aggregation level (O-A9b populates); `null` when un-aggregated. */
     aggregationLevel: AggregationLevel | null;
+    /** The served feed's column dictionary (U/B7 O-19); `null` when the feed carries none. */
+    dictionary?: FeedDictionary | null;
 }
 
 /**
@@ -104,7 +107,9 @@ export function resolveProvenance<Row = unknown>(
         // — static leg —
         dataset: facet.dataset,
         sections: facet.sections ?? [],
-        attributes: facet.attributes ?? [],
+        // The facet names column keys; the feed's dictionary names them for the reader (O-19).
+        attributes: (facet.attributes ?? []).map((key) => resolveColumn(algebra.dictionary, key)?.label ?? key),
+        sources: facet.attributes?.length ? sourcesLine(algebra.dictionary, facet.attributes) : null,
         analysis: facet.analysis ?? null,
         yearRange: facet.yearRange ?? null,
         encoding: facet.encoding ?? null,
@@ -140,6 +145,8 @@ export interface ProvenanceSources<Row = unknown> {
     grainNoun?: MaybeRefOrGetter<string>;
     /** [ANSWERS Q43] the current aggregation level (O-A9b supplies; default `null`). */
     aggregationLevel?: MaybeRefOrGetter<AggregationLevel | null>;
+    /** The served feed's column dictionary (`meta.dictionary`/`vintages`/`coverage`; default `null`). */
+    dictionary?: MaybeRefOrGetter<FeedDictionary | null>;
 }
 
 /**
@@ -173,6 +180,7 @@ export function useProvenance<Row = unknown>(
             filteredCount: toValue(sources.filteredCount) ?? null,
             grainNoun: toValue(sources.grainNoun) ?? "items",
             aggregationLevel: toValue(sources.aggregationLevel) ?? null,
+            dictionary: toValue(sources.dictionary) ?? null,
         });
     });
 }

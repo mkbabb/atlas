@@ -1,0 +1,5 @@
+/* Tailwind utilities for the engine lane: the browser specs import this so atlas's class names lay
+   out as they do in a consumer's compiled root. Theme and utilities only; no preflight. */
+@import "tailwindcss/theme.css";
+@import "tailwindcss/utilities.css";
+@source "../../src";

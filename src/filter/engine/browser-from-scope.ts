@@ -33,7 +33,8 @@ function grainText<Scope>(grain: ExportGrain<Scope>): string {
 }
 
 /** The generic serializer: the PROVENANCE PREAMBLE, then one header row off the declared columns,
-    then the projected rows.
+    then the projected rows. The data viewer route (`DataViewerRoute`) writes its downloads
+    through the same function.
 
     THE FILE CARRIES ITS OWN PROVENANCE. A downloaded slice that begins at the column header cannot
     say where it came from, when, or under what filter — it is a table of numbers with no record,
@@ -42,15 +43,21 @@ function grainText<Scope>(grain: ExportGrain<Scope>): string {
     name, the grain, the round-trippable query, its prose reading, and the resolved vintage; the
     blank line then keeps the data header + rows byte-for-byte tabular for any reader. JSON says the
     same thing structurally — `{ meta, rows }`, never a bare array. */
-function serializeRows<Row, Scope>(
-    scope: DataScope<Row, Scope>,
+export interface SerializedColumn<Row> {
+    key: string;
+    label: string;
+    value: (row: Row) => unknown;
+}
+
+export function serializeRows<Row, Scope>(
+    columns: readonly SerializedColumn<Row>[],
     rows: readonly Row[],
     meta: ExportPayload<Row, Scope>["meta"],
     format: ExportFormat,
 ): string | null {
     const projected = () =>
         rows.map((row) =>
-            Object.fromEntries(scope.columns.map((c) => [c.key, c.value(row)])),
+            Object.fromEntries(columns.map((c) => [c.key, c.value(row)])),
         );
     if (format === "json") return JSON.stringify({ meta, rows: projected() }, null, 2);
     if (format !== "csv") return null;
@@ -64,8 +71,8 @@ function serializeRows<Row, Scope>(
         rung("Filter", meta.filterExplain),
         rung("As of", meta.asOf),
         "",
-        scope.columns.map((c) => cell(c.label)).join(","),
-        ...rows.map((row) => scope.columns.map((c) => cell(c.value(row))).join(",")),
+        columns.map((c) => cell(c.label)).join(","),
+        ...rows.map((row) => columns.map((c) => cell(c.value(row))).join(",")),
     ].join("\r\n");
 }
 
@@ -129,7 +136,7 @@ export function createBrowserFromScope<Row, Scope>(
                     // per-viz instance this builder replaces did it. A control the toolbar
                     // offers must keep what it says.
                     if (format === "print") return exportPrint();
-                    const text = serializeRows(scope, projection.rows, meta, format);
+                    const text = serializeRows(scope.columns, projection.rows, meta, format);
                     if (text == null) return;
                     triggerDownload(
                         text,

@@ -244,6 +244,6 @@ describe("nonmodal focus return — the invoker is the receiver, crest the fallb
         // trigger; on the plate the trigger stays mounted, so the menu's own close returns focus to it
         // and the receiver is deleted with the dock door (no alias).
         expect(vizPlate).not.toMatch(/exportMenuOpen|restoreExportFocus/);
-        expect(vizPlate).toMatch(/<PlateAct[\s\S]{0,200}:export-csv="onExportCsv"/);
+        expect(vizPlate).toMatch(/<PlateDock[\s\S]{0,200}:export-csv="onExportCsv"/);
     });
 });

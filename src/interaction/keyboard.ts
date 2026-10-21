@@ -69,8 +69,9 @@ export interface KeyStepResult<D> {
 export interface KeyInput {
     /** The `KeyboardEvent.key` value (`"ArrowRight"`, `"Enter"`, `"Home"`, `"Escape"`, …). */
     key: string;
-    /** The Shift modifier (Shift+Enter = additive pin). */
-    shift: boolean;
+    /** The add-to-selection chord (Shift, Cmd or Ctrl held: `isMultiSelect`), the keyboard twin of
+        Cmd-click (M-02). Enter or Space with it adds the mark; without it they select the mark. */
+    multi: boolean;
 }
 
 /** Clamp an index into `[0, n-1]`, treating -1 (fresh) as "before 0". */
@@ -150,11 +151,11 @@ export function keyStep<D>(spec: KeyboardNavSpec<D>, s: NavState, e: KeyInput): 
         return focusAt(cur < 0 ? 0 : dir === "next" ? cur + 1 : cur - 1);
     }
 
-    if (e.key === "Enter") {
+    if (e.key === "Enter" || e.key === " ") {
         if (cur >= 0 && cur < n) {
             return {
                 state: { index: cur, engaged: true },
-                intent: { verb: "pin", key: spec.keyOf(marks[cur]), additive: e.shift },
+                intent: { verb: "pin", key: spec.keyOf(marks[cur]), additive: e.multi },
                 focused: marks[cur],
             };
         }

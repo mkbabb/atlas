@@ -1,0 +1,6 @@
+/* A consumer-shaped root for the engine lane: Tailwind, then glass-ui's styles, so glass surfaces
+   (Sheet, Select, DropdownMenu) take their real position and size in a spec. */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@mkbabb/glass-ui/styles";
+@source "../../src";

@@ -6,7 +6,7 @@ export { default as ChartDrawMask } from "./ChartDrawMask.vue";
 export { default as ChartFrame } from "./ChartFrame.vue";
 export { default as FigureSlug } from "./FigureSlug.vue";
 export { default as FootAnatomy } from "./FootAnatomy.vue";
-export { default as PlateAct } from "./PlateAct.vue";
+export { default as PlateDock } from "./PlateDock.vue";
 export { default as PlateError } from "./PlateError.vue";
 export { default as PlateSkeleton } from "./PlateSkeleton.vue";
 export { default as PlateVoid } from "./PlateVoid.vue";

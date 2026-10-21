@@ -13,7 +13,7 @@ export const BP = {
     phone: 767.98,
     /** the dense-grid / fund-ledger @container seam — 640px. */
     compact: 640,
-    /** the sub-phone narrow-sheet seam (ReadoutSheet) — 430px. */
+    /** the sub-phone narrow-sheet seam (EntityDetail) — 430px. */
     narrow: 430,
     /** the route-body content cap (the `max-w-5xl` re-point; J-STORY re-bases the value) — 1024px. */
     read: 1024,
@@ -26,7 +26,7 @@ export const BP = {
 /** The media-query STRINGS the JS probes read — the exact twin of the breakpoints.css
     `@custom-media` conditions. `useMobileRegister()` wraps the reactive `useMediaQuery`
     subscriptions over these; the few non-reactive `window.matchMedia(...)` sites
-    (HoverCard / ReadoutSheet peek-register listeners) read these strings directly. */
+    (HoverCard / EntityDetail peek-register listeners) read these strings directly. */
 export const MQ = {
     /** `(max-width: 767.98px)` — the --phone register. */
     phone: `(max-width: ${BP.phone}px)`,
@@ -39,6 +39,6 @@ export const MQ = {
     /** `(hover: none)` — the --no-hover register. */
     noHover: "(hover: none)",
     /** `(max-width: 767.98px) and (pointer: coarse)` — the phone-AND-coarse peek register
-        (the HoverCard `peekMql` / ReadoutSheet `registerMql` seam). */
+        (the HoverCard `peekMql` / EntityDetail `registerMql` seam). */
     phoneTouch: `(max-width: ${BP.phone}px) and (pointer: coarse)`,
 } as const;

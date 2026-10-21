@@ -37,6 +37,7 @@
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { isMultiSelect, type SelectEvent } from "../contract/selection-contract.js";
 import { createReaderIntentGate, type IntentEmission } from "../../interaction/reader-intent.js";
+import { keyStep } from "../../interaction/keyboard.js";
 
 const props = defineProps<{
     /** The ordered key list — the offscreen table's row order (the meaningful traversal order). */
@@ -80,46 +81,36 @@ function send(e: IntentEmission): void {
 }
 watch(activeKey, (k) => send(gate.move(k === "" ? null : k)));
 
-// THE COMPARE CHORD (f6-interaction-grammar §2.1 / G-SHIFT-PIN) — Shift+Enter is the keyboard
-// twin of Shift-click, aliased to Cmd/Ctrl+Enter. Routed through the ONE `isMultiSelect` seam
-// so the keyboard reads the SAME modifier convention every pointer producer does.
-function multi(e: KeyboardEvent): boolean {
-    return isMultiSelect(e);
-}
+// ONE KEY MAP (U/B7 M-02). The region folds every key through the interaction family's `keyStep`, the
+// same map a figure's own keyboard nav uses: arrows walk, Home/End jump, Enter or Space selects, and
+// with the add chord (Shift, Cmd or Ctrl: `isMultiSelect`, the twin of Cmd-click) adds; Escape clears.
+const nav = {
+    archetype: "geo" as const,
+    order: () => props.keys,
+    keyOf: (k: string) => k,
+    labelOf: (k: string) => props.label(k),
+    anchorOf: () => ({ x: 0, y: 0 }),
+};
 
 function onKeydown(e: KeyboardEvent): void {
-    const n = props.keys.length;
-    if (n === 0) return;
-    switch (e.key) {
-        case "ArrowDown":
-        case "ArrowRight":
-            cursor.value = (cursor.value + 1) % n;
-            e.preventDefault();
+    if (props.keys.length === 0) return;
+    const res = keyStep(nav, { index: cursor.value, engaged: true }, { key: e.key, multi: isMultiSelect(e) });
+    switch (res.intent.verb) {
+        case "inspect":
+            cursor.value = res.state.index;
             break;
-        case "ArrowUp":
-        case "ArrowLeft":
-            cursor.value = (cursor.value - 1 + n) % n;
-            e.preventDefault();
+        case "pin":
+            emit("select", { key: res.intent.key, multi: res.intent.additive });
             break;
-        case "Home":
-            cursor.value = 0;
-            e.preventDefault();
-            break;
-        case "End":
-            cursor.value = n - 1;
-            e.preventDefault();
-            break;
-        case "Enter":
-        case " ":
-            emit("select", { key: props.keys[cursor.value] ?? "", multi: multi(e) });
-            e.preventDefault();
-            break;
-        case "Escape":
+        case "exit":
+        case "clear":
             // The consumer (`useChartSelection`) maps an empty key → clearSelection.
             emit("select", { key: "", multi: false });
-            e.preventDefault();
             break;
+        case "none":
+            return;
     }
+    e.preventDefault();
 }
 
 // KEYBOARD ENTRY SHOWS THE CURSOR (U RULINGS §J J-4, the WAI-ARIA APG listbox entry rule). When the

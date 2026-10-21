@@ -5,6 +5,7 @@
 import { readFileSync } from "node:fs";
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
+import tailwindcss from "@tailwindcss/vite";
 import { playwright } from "@vitest/browser-playwright";
 
 const engine = (process.env.ENGINE ?? "chromium") as "chromium" | "firefox" | "webkit";
@@ -29,7 +30,9 @@ const resolveCustomMedia = {
 };
 
 export default defineConfig({
-    plugins: [vue()],
+    // Tailwind compiles `tests/browser/utilities.css` for the specs that import it, so a layout spec
+    // reads the same utility rules a consumer root compiles.
+    plugins: [vue(), tailwindcss()],
     css: { postcss: { plugins: [resolveCustomMedia] } },
     // One Vue: the pre-bundled glass-ui chunks and the specs must share the runtime, or a glass
     // component that calls `useTemplateRef` (GlassDock) throws on the other copy's frozen `refs`.

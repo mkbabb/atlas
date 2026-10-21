@@ -87,8 +87,8 @@ describe("StoryManifest projections", () => {
             events: createAtlasEventHub(),
             anatomy,
             scenes: [
-                { id: "a", prose: "A", state: { year: 2020 }, encode: { x: "district:x", y: "district:y" } },
-                { id: "b", prose: "B", state: { year: 2021 }, encode: { x: "district:x", y: "district:y" } },
+                { id: "a", label: "A", prose: "A", state: { year: 2020 }, encode: { x: "district:x", y: "district:y" } },
+                { id: "b", label: "B", prose: "B", state: { year: 2021 }, encode: { x: "district:x", y: "district:y" } },
             ],
         };
         const point = {
@@ -220,7 +220,7 @@ describe("StoryManifest projections", () => {
             transition: { mode: "blend" },
             events: createAtlasEventHub(),
             anatomy,
-            scenes: [{ id: "a", prose: "A", state: { year: 2020 }, encode: { x: "district:x", y: "district:y" } }],
+            scenes: [{ id: "a", label: "A", prose: "A", state: { year: 2020 }, encode: { x: "district:x", y: "district:y" } }],
         };
         const [chapter] = chaptersOf({
             id: "staged",

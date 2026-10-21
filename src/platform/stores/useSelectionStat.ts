@@ -117,7 +117,7 @@ export const useSelectionStat = defineStore("platform:selection-stat", () => {
         // pin tier is keyed by the SELECTION key (`sel.key`), the same grain `selectedKeys` holds.
         const pinned = readout.pinnedReadouts.get(sel.key);
         if (pinned && pinned.facts.length) {
-            return { label: pinned.eyebrow ?? pinned.title, facts: pinned.facts };
+            return { label: pinned.title, facts: pinned.facts };
         }
         return null;
     }

@@ -4,6 +4,50 @@
 
 ### Breaking changes
 
+- **The hover card is the peek (U/B7 · O-13).** `HoverReadout.eyebrow` is deleted and
+  `HoverReadout.sources` added. The card is 20rem wide and shows the name, one context line, at most
+  four facts (none repeating the title), the sources and "Click for detail". `ReadoutFacts` uses a
+  label-safe grid (`max-content minmax(0,1fr)`) that stacks under 18rem; the breakdown takes the
+  same columns. See MIGRATION.md §5f.
+- **Number formats (U/B7 · O-14, R-LABELS §5).** Bandwidth prints "Gbps"; `formatKbps` is deleted
+  for `formatKbpsPerStudent` (integer kbps, never Mbps); new `formatPeriod`. The root action and
+  heading names follow R-LABELS §3.9.
+- **The entity detail (U/B7 · O-13).** `EntityDetail` and the `describeEntity` contract
+  (`useEntityDetail().register`) replace the drill-down's single-select card and `ReadoutSheet`
+  (deleted). `resolveEntityIcon` titles an unnamed unit by its kind, never its key.
+- **Scrolling only scrolls (U/B7 · O-12 S-1, S-2).** `StickyScene` is an in-flow figure with a
+  period control (`PeriodControl`: Select, steppers, one-pass ▶); `ChapterStage` seats a segmented
+  scene control. Neither follows the scroll position. `ChapterScene` drops `steps`/`apply`/`anchor`/
+  `side`; scene options require `label`; `SceneAct` and `SCENE_ACT_SEAT` are deleted.
+
+- **The figure's own dock (U/B7 · O-18, R-FIGDOCK §4–§7).** `PlateDock` replaces `PlateAct` and the
+  plate's act row: one collapsed handle in the figure head's corner that opens on a press into
+  Options, Download or View data, Enlarge and Close, each naming the figure. The dead J-VIZDOCK
+  members of `useVizPlate` and the `.viz-dock` CSS are deleted.
+- **Enlarge covers the page; Escape leaves it in place (U/B7 · F-05, §M M-3).** The enlarged body
+  paints the plate's paper over the scrim and scrolls inside the layer; the resting box holds its
+  height while open, focus returns without scrolling, and the hover card rides above the layer.
+- **Menus stay in the viewport (U/B7 · O-11, atlas half).** A census test keeps every atlas menu a
+  glass primitive; a component spec holds the dock's Download menu, its Options popover and the
+  period Select inside the viewport at 1440 and 390 with `body` overflow visible. The dock's handle
+  is found by its own mark, so a figure with Options returns focus to the handle after Enlarge.
+- **The provenance strip is one line (U/B7 · O-17).** 36 px, the bar radius, sentence case, one
+  "Source & method" action; "Browse & export" moved into the pane.
+- **One key map (U/B7).** `KeyInput.shift` is `KeyInput.multi`; Cmd or Ctrl adds to a selection like
+  Shift, and `SelectionRegion` reads the same map.
+
+### Added
+
+- **Per-measure provenance, atlas half (U/B7 · O-19).** `FeedDictionary` names each served column's
+  label, unit, definition, source and coverage. `ProvenanceFacet.attributes` are column keys,
+  named from the dictionary. The new `DataViewerRoute` shows a dataset over glass `DataTable` with
+  search, a period Select, entity filters from the address, CSV and JSON downloads that carry their
+  source, a dictionary sheet, and each published input with its sha. `SourceLink` links a served
+  record to it as "Data file (view)".
+- **Dark values (U/B7).** The dark sequential ramp is wider (ΔL 0.54) and `--ncsu-red` has a dark
+  value at 3:1 or better on the dark card.
+- **One open surface per screen seat (U/B7 · PLAN §2.5).** `useSurfaceSeat`, `useSeatedOpen`,
+  `useViewportSeat` and `useSeatYield` in `./chrome`. The filter drawer takes its seat through it.
 - **The styles contract (U · D5A-W1).** `@mkbabb/atlas/styles` is now Tailwind v4 *source*
   (`dist/styles/index.css`), compiled by the consumer's one Tailwind root, which imports
   `tailwindcss`, then `@mkbabb/glass-ui/styles`, then `@mkbabb/atlas/styles`, in that order, in one

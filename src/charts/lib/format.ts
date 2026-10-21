@@ -25,7 +25,7 @@
 //                         per-call opt-in; NEVER a trailing ".0"            0.11 → "11%"
 //   rate / multiplier     2 dp on the `×` (the ratio register)              3.15  → "3.15×"
 //   count                 integer, grouped, never abbreviated below 1M      160429 → "160,429"
-//   bandwidth             re-unit at magnitude (Gb/s ≥ 1000 Mbps; Mbps      7000   → "7 Gb/s"
+//   bandwidth             re-unit at magnitude (Gbps ≥ 1000 Mbps; Mbps      7000   → "7 Gbps"
 //                         ≥ 1000 kbps); NEVER a trailing ".0"               500    → "500 Mbps"
 //
 // THE NON-NEGOTIABLES (the F4 verbatim + the E19 keystones):
@@ -33,7 +33,7 @@
 //   · The money name collision is dead — `formatUsdLedger` (full) vs `formatUsdCompact`
 //     (abbreviated); no two formatters share a name with opposite semantics.
 //   · `formatPerCapita` / `formatPerAdm` are gone — ONE `formatUsdPerUnit` magnitude-gates them.
-//   · The tier LABEL (`tierLabel`, a discrete stop → "1 Gb/s", in sci/derive) is SPLIT from the
+//   · The tier LABEL (`tierLabel`, a discrete stop → "1 Gbps", in sci/derive) is SPLIT from the
 //     bandwidth magnitude FORMATTER (`formatBandwidth`, a continuum → rounds + re-units): the
 //     conflation that leaked `192.560851… Mbps` through the no-rounding branch dies here.
 //   · `formatPct` is the unsigned 0-dp default; `formatPctSigned` is a SEPARATE explicit face
@@ -267,30 +267,43 @@ export function formatCountCompact(v: number | null | undefined): string {
 // ── bandwidth (the magnitude FORMATTER — split from the tier LABEL) ──────────────────────────
 
 /**
- * A bandwidth in Mbps, re-united at magnitude — `7000 → "7 Gb/s"`, `7500 → "7.5 Gb/s"`,
- * `500 → "500 Mbps"`, `192.56… → "193 Mbps"`. The CONTINUUM formatter: it ROUNDS its input
- * (an average-utilization measure is never a clean stop), so the `192.560851… Mbps` leak
- * (e0-hover-gates GATE 3 / E17·E19) cannot survive. Distinct from sci/derive `tierLabel`,
- * which formats a discrete RAINBOW STOP (`1 Gb/s`, `500 Mbps`) and never rounds — the tier
- * LABEL and the magnitude FORMATTER are now two functions, not one conflated one. NO trailing
- * `.0` (the `7 Gb/s`, never `7.0 Gb/s`, F4 verbatim).
+ * A bandwidth in Mbps: Mbps below 1,000, else Gbps with one decimal only when it is non-zero
+ * (`500 → "500 Mbps"`, `7000 → "7 Gbps"`, `7500 → "7.5 Gbps"`, `743550 → "743.6 Gbps"`; R-LABELS §5).
+ * It rounds its input, so an average-utilization float never prints raw.
  */
 export function formatBandwidth(mbps: number | null | undefined): string {
     if (mbps == null || !Number.isFinite(mbps)) return "—";
-    if (mbps >= 1000) return `${sig1(mbps / 1000)} Gb/s`;
+    if (mbps >= 1000) return `${sig1(mbps / 1000)} Gbps`;
     return `${Math.round(mbps)} Mbps`;
 }
 
+const KBPS = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+
 /**
- * A per-student bandwidth in kbps, re-united at magnitude — `7000 → "7 Mbps"`, `737.5 →
- * "738 kbps"`, `14.2 → "14 kbps"`. The kbps continuum re-units to Mbps ≥ 1000 kbps (the
- * `7000.0 kbps → 7 Mbps` law, e-numbers.md), rounds below (kbps is read to the unit, not the
- * tenth — a per-student kbps is never meaningfully fractional). NO trailing `.0`.
+ * A per-student bandwidth or utilization in kbps: an integer with a thousands separator, never
+ * re-united to Mbps (`134.4 → "134 kbps"`, `7000 → "7,000 kbps"`; R-LABELS §5).
  */
-export function formatKbps(kbps: number | null | undefined): string {
+export function formatKbpsPerStudent(kbps: number | null | undefined): string {
     if (kbps == null || !Number.isFinite(kbps)) return "—";
-    if (kbps >= 1000) return `${sig1(kbps / 1000)} Mbps`;
-    return `${Math.round(kbps)} kbps`;
+    return `${KBPS.format(Math.round(kbps))} kbps`;
+}
+
+/** The period kinds a label names: a school year, an E-Rate funding year or a calendar year. */
+export type PeriodKind = "school-year" | "funding-year" | "year";
+
+/**
+ * One period label: school year `2025 → "2025–26"`, funding year `2026 → "FY2026"`, calendar year
+ * `2024 → "2024"` (R-LABELS §5; never "FY2025–26").
+ */
+export function formatPeriod(key: number, kind: PeriodKind): string {
+    switch (kind) {
+        case "school-year":
+            return `${key}–${String((key + 1) % 100).padStart(2, "0")}`;
+        case "funding-year":
+            return `FY${key}`;
+        case "year":
+            return String(key);
+    }
 }
 
 // ── the AXIS / CANVAS tick faces (the abbreviated register — the C.W7 MB-3 minting) ───────────
@@ -326,16 +339,16 @@ export function formatUsdAbbrev(v: number | null | undefined): string {
 }
 
 /**
- * Σ-bandwidth in Mbps → a compact Gb/s axis tick — `630800 → "631 Gb/s"`, `0 → "0 Gb/s"`,
- * `90000 → "90 Gb/s"`. The CONTRACTED-CEILING trend's y-axis face (the SCI utilization
- * trajectory) — a state-aggregate magnitude that always reads in Gb/s, so (unlike the seam's
- * `formatBandwidth`, which re-units DOWN to Mbps below 1 Gb/s) this axis tick stays in Gb/s
+ * Σ-bandwidth in Mbps → a compact Gbps axis tick — `630800 → "630.8 Gbps"`, `0 → "0 Gbps"`,
+ * `90000 → "90 Gbps"`. The CONTRACTED-CEILING trend's y-axis face (the SCI utilization
+ * trajectory) — a state-aggregate magnitude that always reads in Gbps, so (unlike the seam's
+ * `formatBandwidth`, which re-units DOWN to Mbps below 1 Gbps) this axis tick stays in Gbps
  * across its whole span. One significant decimal in the band, the trailing `.0` ALWAYS dropped
- * (`0 Gb/s`, never `0.0 Gb/s` — F4 verbatim). Null/non-finite → em-dash.
+ * (`0 Gbps`, never `0.0 Gbps` — F4 verbatim). Null/non-finite → em-dash.
  */
 export function formatGbpsAxis(v: number | null | undefined): string {
     if (v == null || !Number.isFinite(v)) return "—";
-    return `${sig1(v / 1000)} Gb/s`;
+    return `${sig1(v / 1000)} Gbps`;
 }
 
 /**

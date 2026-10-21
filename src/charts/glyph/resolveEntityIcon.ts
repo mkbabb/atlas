@@ -243,6 +243,17 @@ function resolveClassA(
     }
 }
 
+/** The title an entity takes when no name resolves: its kind, never its raw key (O-13). */
+export const GRAIN_NOUN: Record<EntityGrain, string> = {
+    state: "State",
+    county: "County",
+    district: "District",
+    charter: "Charter school",
+    school: "School",
+    hex: "Map cell",
+    consultant: "Consultant",
+};
+
 // ── The resolver ─────────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -268,7 +279,7 @@ export function resolveEntityIcon(
 
     // Class B — the hex cell (a true H3 hexagon). Math, no geometry to resolve.
     if (grain === "hex") {
-        const label = opts.label ?? opts.cellLabel?.(entityKey) ?? entityKey;
+        const label = opts.label ?? opts.cellLabel?.(entityKey) ?? GRAIN_NOUN.hex;
         return { mark: "hex", id: entityKey, label };
     }
 
@@ -295,7 +306,7 @@ export function resolveEntityIcon(
             geom,
             point,
             seed: supplied ? "school-point" : "district-centroid",
-            label: opts.label ?? geom?.name ?? entityKey,
+            label: opts.label ?? GRAIN_NOUN.school,
         };
     }
 
@@ -313,7 +324,7 @@ export function resolveEntityIcon(
 
     // The NEG floor — a Class-A silhouette that did not resolve, or a grain outside the taxonomy. A
     // designed neutral mark, never a crash, never a Lucide pin.
-    return { mark: "unknown", grain, label: opts.label ?? entityKey };
+    return { mark: "unknown", grain, label: opts.label ?? GRAIN_NOUN[grain] ?? "Unit" };
 }
 
 /**

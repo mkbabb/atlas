@@ -48,6 +48,8 @@ export { default as ReadoutDrill } from "./ReadoutDrill.vue";
 // `useSelectionStat` single/aggregate resolvers + `EntityIcon` (O-A12) for the rows; writes nothing
 // beyond the selection it dismisses. Consumed per-route (usf/sci/ecf placements + the abrogation).
 export { default as SelectionDrilldownPanel } from "./SelectionDrilldownPanel.vue";
+export { default as EntityDetail } from "./EntityDetail.vue";
+export * from "./describe-entity.js";
 export type { DrilldownPlacement } from "./SelectionDrilldownPanel.vue";
 export * from "./projectDrilldown.js";
 export {

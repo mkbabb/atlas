@@ -12,6 +12,7 @@
 import { computed, inject, nextTick, onBeforeUnmount, ref, watch, type Component } from "vue";
 import { Dialog, DialogTitle, DialogDescription } from "@mkbabb/glass-ui/dialog";
 import { SheetContent } from "@mkbabb/glass-ui/sheet";
+import { useSeatedOpen, useViewportSeat } from "../../platform/chrome/surfaces/useSurfaceSeat.js";
 import { Button } from "@mkbabb/glass-ui/button";
 import { Filter, SlidersHorizontal } from "@lucide/vue";
 import { DASHBOARD_KEY, useDashboardRegistry } from "../../contract/index.js";
@@ -56,6 +57,8 @@ const { label: freshnessLabel } = useFreshness();
 // The shared flag requests the full register. Its false state leaves this same
 // physical sheet at the non-occluding PIP detent.
 const { open } = useFilterPane();
+// One open surface per seat (PLAN §2.5): the drawer shares its edge with the entity detail.
+useSeatedOpen(open, useViewportSeat(), "filter-drawer");
 const { clearPin } = useFilterPanel();
 const { appliedCount } = useFilterLedger();
 
@@ -141,7 +144,7 @@ onBeforeUnmount(teardown);
 const { claimOpen } = useDockPortals();
 
 // TOPMOST SINGLE-SURFACE DISMISSAL (U6) — the arbiter's priority order is the topmost law. A plate
-// layer opened over the drawer (an act row's Options popover, Download menu or phone sheet) claims
+// layer opened over the drawer (a figure dock's Options popover or Download menu) claims
 // at priority 110 (`plateLayerClaim`, U RULINGS §K K-1), so the first Escape or outside pointer
 // closes that layer alone and the drawer (and its dock pin) survive; the next one closes the drawer.
 useDismissArbiter().claim(() =>

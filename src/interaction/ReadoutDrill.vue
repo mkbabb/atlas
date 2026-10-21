@@ -76,7 +76,7 @@ function onFocus(): void {
          verbs, mounted ONLY on the pinned card (the HoverCard gate; the transient cursor-chase card
          omits it — an action rung on a moving card is unhittable). The whole rung is the readout's
          drill: pin (isolate) · compare (add) · focus (re-aim). -->
-    <div class="readout-drill" data-testid="readout-drill" role="group" aria-label="Drill actions">
+    <div class="readout-drill" data-testid="readout-drill" role="group" aria-label="Actions">
         <Button
             emphasis="secondary"
             size="sm"
@@ -85,11 +85,11 @@ function onFocus(): void {
             :class="{ 'readout-drill__verb--on': isPinned }"
             :aria-pressed="isPinned"
             data-testid="readout-drill-pin"
-            title="Pin this entity (isolate the selection)"
+            title="Show only this unit"
             @click="onPin"
         >
             <Pin class="readout-drill__glyph" aria-hidden="true" />
-            <span class="readout-drill__label">Pin</span>
+            <span class="readout-drill__label">Show only this unit</span>
         </Button>
         <Button
             emphasis="secondary"
@@ -97,11 +97,11 @@ function onFocus(): void {
             type="button"
             class="readout-drill__verb"
             data-testid="readout-drill-compare"
-            title="Compare — add this entity to the selection"
+            title="Add to comparison"
             @click="onCompare"
         >
             <GitCompareArrows class="readout-drill__glyph" aria-hidden="true" />
-            <span class="readout-drill__label">Compare</span>
+            <span class="readout-drill__label">Add to comparison</span>
         </Button>
         <Button
             emphasis="secondary"
@@ -111,11 +111,11 @@ function onFocus(): void {
             :class="{ 'readout-drill__verb--on': isFocused }"
             :aria-pressed="isFocused"
             data-testid="readout-drill-focus"
-            title="Focus — re-aim the route to this entity"
+            title="Zoom to this unit"
             @click="onFocus"
         >
             <Crosshair class="readout-drill__glyph" aria-hidden="true" />
-            <span class="readout-drill__label">Focus</span>
+            <span class="readout-drill__label">Zoom to this unit</span>
         </Button>
     </div>
 </template>

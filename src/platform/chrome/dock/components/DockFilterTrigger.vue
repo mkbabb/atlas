@@ -3,7 +3,7 @@
 //
 // The dock keeps no figure subject. This trigger opens the route's filter drawer and nothing else: it
 // pins no figure, carries no figure id, and paints whether or not a figure is centred. A figure's own
-// dials are its own acts, in its plate's act row (A-39, `charts/frame/PlateAct.vue`). The facet-5
+// dials are its own acts, in its figure dock (O-18, `charts/frame/PlateDock.vue`). The facet-5
 // viz-context zone that used to hold this trigger (stamped with, and pinning, a "dial" figure chosen
 // by the tie rule: D3-B N4, D5-A CX-K2) is deleted with no alias.
 //

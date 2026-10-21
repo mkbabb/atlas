@@ -53,9 +53,9 @@ export interface RegisteredViz {
     dims: readonly FilterDimension[];
     /** The contract's explicit filter-response policy, normalized by the mounting host. */
     filterResponse: FilterResponse;
-    /** The E2 per-viz options controller. The figure's dials open from its OWN act row (A-39, the
+    /** The E2 per-viz options controller. The figure's dials open from its OWN dock (A-39, the
         plate); no page surface renders them. It stays readable here for one in-figure reader: a
-        composed stage's scene-aware controls (rendered in the stage's act row) narrow the controller
+        composed stage's scene-aware controls (rendered in the stage's dock) narrow the controller
         its graphic registered under the stage id. Null when the viz declares no options. */
     optionsController?: UseVizOptions | null;
     /** Native live-renderer export. Absent when the mounted plate cannot serialize an image. */

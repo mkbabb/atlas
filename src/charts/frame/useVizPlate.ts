@@ -26,16 +26,9 @@ import {
     type KeyboardNavSpec,
     type NavState,
 } from "../../interaction/keyboard.js";
-import { parseSelKey } from "../contract/selection-contract.js";
+import { isMultiSelect, parseSelKey } from "../contract/selection-contract.js";
 import { useVizOptions } from "../composables/useVizOptions.js";
-import {
-    useFilterDimensions,
-    type DimDeclaration,
-    type RouteUniverse,
-} from "../../filter/composables/useFilterDimensions.js";
 import { createBrowserFromScope } from "../../filter/engine/browser-from-scope.js";
-import { useFilterPane } from "../../filter/composables/useFilterPane.js";
-import { useFilterPanel } from "../../filter/composables/useFilterPanel.js";
 import { useVizRegistry, type VizToken } from "../composables/useVizRegistry.js";
 import { exportCsv, exportImage, type DataUrlSource } from "../lib/vizExport.js";
 import type { VizContract, LegendSpec } from "../contract/viz-contract.js";
@@ -218,7 +211,7 @@ function scrollAnchorIntoView(y: number): void {
 function onFigureKey(e: KeyboardEvent): void {
     const spec = props.nav;
     if (!spec) return;
-    const res = keyStep(spec, navState.value, { key: e.key, shift: e.shiftKey });
+    const res = keyStep(spec, navState.value, { key: e.key, multi: isMultiSelect(e) });
     navState.value = res.state;
     if (res.intent.verb === "none") return;
     e.preventDefault();
@@ -314,34 +307,6 @@ const archetype = computed(() => props.contract.archetype);
     no DOM change: declaring an archetype changes NO render). It ships the read THIS wave; the D4 drawIn
     merger + the D1 `useVizRegistry` resting-dim consumer read it through this seam, NEVER a renderer. */
 
-// ── J-VIZDOCK — THE STANDARDIZED PER-VIZ CONTROLS CLUSTER (C38 · §approach-1,2,3) ───────────────
-// The #actions rung carries ONE small <DockControl compact> cluster (consume the dock-control
-// register, never hand-roll): a filter-TOGGLE + ONE folded download + an enlarge, with a COLLAPSED
-// applied-filters summary Badge. The three loose loose nodes (the dual export <button>s + the
-// VizOptions popover) are GONE — the export handlers re-homed onto the download fold's menu, the
-// options dials re-homed into the inline filter dock the toggle raises.
-
-// ── (1) THE FILTER-TOGGLE → the ONE unified filter panel (K-FILTER-UNIFIED §4.H) ─────────────────
-// The 3-item dock STAYS (the charter §II-D1); only its filter-toggle re-points: from the RETIRED
-// inline per-viz dock to the ONE global panel. It PINS the panel to THIS viz (the panel-LOCAL pin,
-// `useFilterPanel().pin`) + opens the shared filter Drawer (`useFilterPane().open`) — NEVER a write
-// to the K-ACTIVE `activeVizId` signal (the single-writer law, the `k0-active-viz-single-writer`
-// gate). Re-clicking the SAME viz's toggle closes the panel (the drawer-close edge clears the pin).
-const filterPane = useFilterPane();
-const panel = useFilterPanel();
-/** This plate's dock toggle reads EXPANDED iff the panel is open AND pinned to THIS viz. */
-const filterDockOpen = computed(
-    () => filterPane.open.value && panel.pinnedVizId.value === props.contract.id,
-);
-function toggleFilterDock(): void {
-    if (filterDockOpen.value) {
-        filterPane.open.value = false;
-    } else {
-        panel.pin(props.contract.id);
-        filterPane.open.value = true;
-    }
-}
-
 // ── THE SELF-REGISTER (K-FILTER-UNIFIED §4.D · the Component-altitude seam) ──────────────────────
 // Each mounted plate self-registers its `filterDimensions` facet (+ its E2 options controller) so
 // the unified panel can PROJECT it off the K-ACTIVE active viz-set —
@@ -372,42 +337,8 @@ onUnmounted(() => {
     if (vizToken) vizRegistry.deregister(props.contract.id, vizToken);
 });
 
-// ── (2) THE APPLIED-FILTERS SUMMARY — the COLLAPSED readout of the active J-FRAME dials ──────────
-// When the filter dock is CLOSED, a Badge reports the active `filterDimensions` count (N filters).
-// The count is STATE-DERIVED off the live J-FRAME cells (NOT a hard-coded label) — EMPTY/absent when
-// no dial is active. It reads the SAME per-DIMENSION state the inline dock binds to (one source).
-const DEFAULT_FILTER_UNIVERSE: RouteUniverse = "sci-lea";
-const dimDeclarations = computed<DimDeclaration[]>(() =>
-    filterDimensions.value.map((d) => ({
-        key: d.key,
-        arity: d.arity,
-        universe: (d.universe as RouteUniverse | undefined) ?? DEFAULT_FILTER_UNIVERSE,
-        selectionKind: d.selectionKind,
-        label: d.label,
-    })),
-);
-const { cellFor } = useFilterDimensions(dimDeclarations);
-/** The active dimension keys — a dim whose ONE shared cell carries a constraint (a non-null
-    scalar/interval or a non-empty set). The summary count + the chip labels derive off this. */
-const activeDimChips = computed(() =>
-    dimDeclarations.value
-        .map((d) => ({ dim: d, cell: cellFor(d.key) }))
-        .filter(({ cell }) => {
-            if (!cell) return false;
-            if (cell.arity === "set") return cell.value.size > 0;
-            if (cell.arity === "multi") return cell.value.length > 0;
-            return cell.value != null;
-        })
-        .map(({ dim }) => dim.label ?? dim.key),
-);
-const activeFilterCount = computed(() => activeDimChips.value.length);
-/** The summary is present ONLY when ≥1 dial is active AND the dock is closed (the resting readout). */
-const showAppliedSummary = computed(
-    () => !filterDockOpen.value && activeFilterCount.value > 0,
-);
-
 // ── (3) THE EXPANSION READ — the `?fig=` state ChartFrame owns ─────────────────────────────────
-// The Enlarge act lives in the plate's act row and opens THIS frame through ChartFrame's own `open`
+// The Enlarge act lives in the plate's dock and opens THIS frame through ChartFrame's own `open`
 // arm (A-39, the plate). The host only READS the expansion off the ONE shared `useViewParams` bag
 // (the `?fig` one-bag fold, K-ANIM A1·§3.C) to report it to the hub below.
 const view = useViewParams();
@@ -534,12 +465,6 @@ watchEffect(() => {
         keyStats,
         provenance,
         archetype,
-        panel,
-        filterDockOpen,
-        toggleFilterDock,
-        activeDimChips,
-        activeFilterCount,
-        showAppliedSummary,
         sourceData,
         sourceEventHub,
         sourceDataOpen,

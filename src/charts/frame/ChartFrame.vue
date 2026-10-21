@@ -74,7 +74,6 @@ import { ExpandableContainer } from "@mkbabb/glass-ui/expandable-container";
 import { useViewParams } from "../../platform/stores/useViewParams.js";
 import { useDismissArbiter } from "../../platform/interaction/useDismissArbiter.js";
 import { EXPAND_SETTLE_KEY } from "../scene/expand-settle.js";
-import SceneAct from "../scene/SceneAct.vue";
 import { figureEscapeClaim } from "./plate-act.js";
 import PlateError from "./PlateError.vue";
 import { STORY_CARD_KEY } from "./story-card-context.js";
@@ -262,11 +261,39 @@ const open = computed<boolean>({
                 // `?fig=` — never stomps a sibling that re-claimed it in the same tick).
                 view.closeFig(props.figId);
             }
-            const el = returnFocusEl;
-            returnFocusEl = null;
-            if (el) void nextTick(() => el.focus?.());
         }
     },
+});
+
+// ── THE RESTING PLACE HOLDS WHILE ENLARGED (U §M M-3, R-REQ-CHECK F-05) ────────────────────────
+// glass 10.1.0's ExpandableContainer teleports the whole body to <body> while open, so the in-flow
+// `.frame-expand` box fell to its 200 px floor and the page behind the enlarged figure reflowed: a
+// figure near the end of the page moved the page 700 px, and Escape returned the reader to a page
+// that had moved. The resting box is measured as the figure opens (a `pre` flush: the body is still
+// in flow) and held while it is open; the hold drops in the patch that brings the body back. A figure
+// opened from the address on load was never in flow, so there is nothing to hold.
+const expandEl = ref<HTMLElement | null>(null);
+const restingBlockSize = ref<number | null>(null);
+watch(
+    open,
+    (now) => {
+        restingBlockSize.value = now ? (expandEl.value?.getBoundingClientRect().height ?? null) : null;
+    },
+    { flush: "pre" },
+);
+const expandHold = computed(() =>
+    restingBlockSize.value ? { minBlockSize: `${restingBlockSize.value}px` } : undefined,
+);
+
+// Focus returns when the figure has closed, not inside the close call: `closeFig` goes Back and
+// `?fig` clears on the popstate, so the figure is still open when the setter runs. Watching the state
+// also returns focus when the reader closes the figure with the browser's Back. `preventScroll`: the
+// control is where the reader left it, and the return never scrolls the page.
+watch(open, (now, was) => {
+    if (!was || now) return;
+    const el = returnFocusEl;
+    returnFocusEl = null;
+    if (el?.isConnected) void nextTick(() => el.focus({ preventScroll: true }));
 });
 
 // ── THE EXPAND-SETTLE SEAM (E3 §1.3 / e-hovers FIX-3 → J-VIZDOCK C39 — the expand resize) ───
@@ -314,8 +341,8 @@ function onSettle(fullscreen: boolean): void {
 // settle fires — only then does the fresh fullscreen instance's `resize()` read the true bounds
 // (a `nextTick` alone can land before the teleported surface lays out, leaving the canvas unsized).
 // ── THE PLATE'S OWN ACTS (A-39, the plate · RULINGS §I) ─────────────────────────────────────────
-// The figure's Enlarge lives in its act row (`#act`, filled by the host), never in page chrome. The
-// frame hands the row ONE `enlarge` bound to THIS frame: the subject is fixed by construction.
+// The figure's Enlarge lives in its dock (`#dock`, filled by the host), never in page chrome. The
+// frame hands the dock ONE `enlarge` bound to THIS frame: the subject is fixed by construction.
 // Focus returns to the control that opened the figure (the `open` setter records it on open and
 // restores it on close; the glass container also restores it on its own Escape).
 function enlarge(): void {
@@ -414,7 +441,7 @@ watch(open, (value) => {
              rides the KEY column here (the default, byte-identical to the old top-right rung);
              `rail` docks it to the SIDE RAIL beside the data (below); `none` omits the KEY zone. -->
         <header
-            v-if="eyebrow || (showTitle && slots.title) || legendInline || slots.actions"
+            v-if="eyebrow || (showTitle && slots.title) || legendInline || slots.actions || slots.dock"
             class="plate-header"
             :class="isHero ? 'mb-5' : 'mb-3'"
         >
@@ -433,8 +460,11 @@ watch(open, (value) => {
             </div>
             <!-- CONTROL zone — the quiet `#actions` cluster (options trigger + expand seam, the
                  stable top-right rung the C3 per-viz expand lands in, HD-E5). -->
-            <div v-if="slots.actions" class="plate-header__control">
+            <!-- The figure dock's seat (O-18): one handle in the top-right corner, opening leftward
+                 into the lane this zone reserves. In flow in the head row, never over the body. -->
+            <div v-if="slots.actions || slots.dock" class="plate-header__control" data-figure-dock-seat>
                 <slot name="actions" />
+                <slot name="dock" :enlarge="enlarge" :expanded="open" />
             </div>
         </header>
 
@@ -455,7 +485,7 @@ watch(open, (value) => {
                  is the two-way `?fig=` URL model; the chart slot is passed THROUGH unchanged so
                  every existing chart renders byte-identically at rest (the trigger is quiet —
                  opacity 0 — until the plate is hovered/focused). -->
-            <div class="frame-expand relative">
+            <div ref="expandEl" class="frame-expand relative" :style="expandHold">
                 <!-- NO EXPAND MORPH. The 3.10.0 `view-transition-name` prop (the `gl-expand`
                  shared-element morph) is gone from ExpandableContainer: glass 10.1.0 declares
                  `buttonPosition`, `expandLabel`, `collapseLabel`, `surface` and `open` only, and
@@ -495,6 +525,7 @@ watch(open, (value) => {
                         <div
                             class="frame-expand__body"
                             :class="{ 'frame-expand__body--fullscreen': fullscreen }"
+                            :data-frame-fullscreen="fullscreen || undefined"
                         >
                             <!-- PER-PLATE ISOLATION (H2): a throwing viz degrades to the quiet
                              fallback card; the route + every sibling plate survive. The slot is
@@ -518,20 +549,6 @@ watch(open, (value) => {
             </aside>
         </div>
 
-        <!-- THE ACT ROW (A-39, the plate). The figure's LAST child, so the sticky row's containing
-             block is the plate: it rides the viewport foot while the plate is on screen and never
-             leaves it. Every act is bound to this plate (`enlarge` opens THIS frame); the host fills
-             the rest. In a focal scene the row is placed in the scene's act seat, above the chips. -->
-        <SceneAct v-if="slots.act" v-slot="{ inSeat }">
-            <div
-                class="plate-act"
-                :class="{ 'plate-act--seated': inSeat }"
-                data-plate-act
-                :data-subject="figId"
-            >
-                <slot name="act" :enlarge="enlarge" :expanded="open" />
-            </div>
-        </SceneAct>
     </figure>
 </template>
 

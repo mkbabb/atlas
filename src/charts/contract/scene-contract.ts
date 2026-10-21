@@ -1,15 +1,9 @@
-// platform/charts/scene-contract.ts — THE StickyScene ARCHETYPE (K-SCENE · K-EXPRESS L-S3).
+// charts/contract/scene-contract.ts — the scene and stage contracts.
 //
-// A NEW compositional `ChapterViz` member in its OWN contract module (the `selection-contract.ts`
-// precedent). A `ChapterScene` PINS one graphic (plain `position:sticky` — the host owns the CSS,
-// no JS pin) while N narrated `steps` scroll past; the ACTIVE step is the one whose block crosses a
-// viewport-CENTRE band, and the per-step `apply` effect drives the graphic's STATE at the boundary
-// (DISCRETE — KISS). It is the smallest NEW composition the K-EXPRESS set adds: a scene COMPOSES an
-// existing viz, it NEVER names a picture (the D5 no-overfit keystone — the `graphic` is TYPE-FREE).
-//
-// THE SCRUBBED CONTINUOUS `t` IS DEFERRED (the YAGNI fence — Open Q5). The MVP transition is a
-// DISCRETE CSS re-tint at the boundary; the `SceneContext` is FORWARD-EXTENSIBLE, so the opt-in
-// `transitionT` lands HERE when a graphic consumer reads it — an optional field never breaks readers.
+// A `ChapterScene` is one in-flow figure (a type-free graphic: a Component or a VizContract) with an
+// optional period control in its head and one data line under it. A `ChapterStage` is one persistent
+// figure with ordered scenes the reader chooses on a segmented control. Scrolling only scrolls: no
+// scene or period follows the scroll position (U/B7 O-12, PLAN §5.1).
 
 import {
     inject,
@@ -34,21 +28,16 @@ import type { AppendixDetent } from "../../platform/provenance/appendix.js";
     is not a titled beat, so it keeps its own render-slot carrier rather than riding the title type. */
 export type SceneProse = string | (() => VNodeChild);
 
-/** Which side the pinned graphic sits (D2 alternation). 'auto' ⇒ zebra by the chapter index. */
-export type SceneSide = "left" | "right" | "auto";
-
-/** The trigger-line register (L4). 'centre' flips the active step as its block crosses the viewport
-    centre band (the canonical scrollytelling timing); 'entry' settles on entry. Default 'centre'. */
-export type SceneAnchor = "centre" | "entry";
-
 /** The named graphic STATE a step drives to — an OPAQUE payload the `apply` effect interprets. For
     the /sci floor map this is `{ year: 2014 }`. Type-free: the scene NEVER names a picture (D5). */
 export type SceneState = Record<string, unknown>;
 
 /** One narrated step over the pinned graphic. */
 export interface SceneStep {
-    /** Stable id — the active-step `v-for :key` AND the `appliedIndex` boundary key (the §3.1 law). */
+    /** Stable id: the `?scene=` value and the control's option value. */
     id: string;
+    /** The reader-facing name on the figure's scene control (R-LABELS §3). */
+    label: string;
     /** The step's narration — a plain string OR a render-slot factory (`SceneProse`), so a step can
         carry a live VNode (a picked-out figure, a `<HandMark>`). */
     prose: SceneProse;
@@ -185,10 +174,6 @@ export type StageTransition = Pick<MorphTransition, "mode">;
 
 /** The runtime the host hands a scene's `apply` effect — the platform stores the scene drives. */
 export interface SceneRuntime {
-    /** Hold the year scope at `year` while the scene is on screen (`useYearScope.hold`: in memory,
-        never written to the URL; released when the scene leaves). A no-op before the active feed
-        has loaded. */
-    setYear: (year: number) => void;
     /** The view-params store (the escape hatch for a scene that drives a non-year dim). */
     view: ReturnType<typeof useViewParams>;
     /** The active dashboard (feed access for a scene that drives a feed-scoped state). */
@@ -201,29 +186,18 @@ export interface SceneRuntime {
     `apply` effect drives the graphic's STATE at the boundary (DISCRETE). A NEW `ChapterViz` ARCHETYPE
     (alongside `Component | VizContract | "hero" | "colophon"`), NOT a chart-type. */
 export interface ChapterScene {
-    /** The discriminant — the host + DashboardEssay route on this, no structural sniff. */
+    /** The discriminant the host and DashboardEssay route on. */
     readonly kind: "scene";
-    /** The PINNED graphic — a feature-plate Component (the `SchoolMap` form) OR a declared
-        `VizContract`. TYPE-FREE (the D5 keystone: a scene composes existing vizzes; no `MapScene`). */
+    /** The figure: a feature-plate Component or a declared `VizContract`. */
     graphic: Component | VizContract;
-    /** The narrated STEPS — the discrete text blocks that scroll past the pinned graphic. */
-    steps: readonly SceneStep[];
-    /** Which side the graphic pins (D2). Omit ⇒ 'auto' (zebra by the chapter index). IGNORED when
-        `focal` is set (the focal path retires the side register — the map owns the full stage). */
-    side?: SceneSide;
-    /** THE MAP-PRIMACY FOCAL STAGE (O-A17 · the owner Map-primacy law). When set, the graphic takes
-        the FULL stage (a single track, no 50/50 split-pane) and the `steps` STEP OVER it as floating
-        scrim-chips (Q-29: one at a time, hugging the map's dead-space corner — never a reserved side
-        column). The `side` register retires. Omit ⇒ the two-column split-pane scene (byte-identical
-        default — the existing sticky-scene geometry). */
+    /** `"year"` seats the period control in the figure's head (O-12 S-1): a glass Select of every
+        period the feed carries, ‹ › steppers and a one-pass ▶. The control writes the period on a
+        reader act only; scrolling changes nothing. */
+    period?: "year";
+    /** One data line under the figure, bound to the selected period. */
+    caption?: SceneProse;
+    /** The figure takes the full stage width. */
     focal?: boolean;
-    /** The trigger-line register (L4). Omit ⇒ 'centre'. */
-    anchor?: SceneAnchor;
-    /** The DISCRETE step → world effect (KISS). The host runs this whenever the ACTIVE STEP changes
-        on a GENUINE crossing (NEVER on mount), handing the runtime stores; the graphic stays
-        type-free, the coupling lives in the CONSUMER's declaration. Omit ⇒ the graphic reads
-        `SCENE_KEY` itself (no global effect). */
-    apply?: (step: SceneStep, rt: SceneRuntime) => void;
 }
 
 /** A canonical persistent chapter stage. Unlike `ChapterScene`, a stage has its own
@@ -240,7 +214,7 @@ export interface ChapterStage<G extends Grain = Grain>
     /** The one instance host and its ordered options share this grain. */
     readonly grain: G;
     focal?: boolean;
-    anchor?: SceneAnchor;
+    /** The scene's effect, run when the reader chooses it on the scene control (O-12 S-2). */
     apply?(scene: SceneOption<G>, rt: SceneRuntime): void;
     /** The fixed foot is declared once at stage grain, never repeated per scene. */
     readonly anatomy: StageAnatomy;

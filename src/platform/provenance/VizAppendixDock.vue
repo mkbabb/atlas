@@ -91,38 +91,22 @@ defineExpose({
 <template>
     <section class="appendix-dock" :data-detent="state" data-appendix-dock>
         <Dialog v-model:open="drawerOpen">
-            <!-- THE FOOT WHISPER — the source names itself, then two doors of DIFFERENT shapes:
-                 a capsule that discloses the written record, and the one LINK that opens the table.
-                 The salience order is the point (spec-data §c.2): the eye must land on the door. -->
-            <div class="appendix-dock__head">
+            <!-- THE STRIP (O-17, PLAN §5.7): one 36 px line at every width. The source names itself
+                 in sentence case and ellipsizes; one trailing action opens the written record. -->
+            <div class="appendix-dock__strip" data-appendix-strip>
+                <span class="appendix-dock__crest" aria-hidden="true">Σ</span>
+                <span class="appendix-dock__source" :title="`Source: ${label}`">Source: {{ label }}</span>
                 <Button
                     class="appendix-dock__control"
                     type="button"
-                    emphasis="secondary"
+                    emphasis="quiet"
+                    size="sm"
                     :aria-expanded="state === 'full'"
                     :aria-controls="paneId"
                     @click="onControl"
                 >
-                    <span class="appendix-dock__crest" aria-hidden="true">Σ</span>
-                    <span>{{ label }}</span>
-                    <!-- What this control actually opens: the written record — source, measure,
-                         method, vintage. It says that, and nothing it cannot keep. -->
-                    <span class="appendix-dock__state">
-                        {{ state === "full" ? "close" : "source & method ⌄" }}
-                    </span>
+                    {{ state === "full" ? "Close" : "Source & method" }}
                 </Button>
-
-                <!-- DIAL 11 — the whisper-handle carries WORDS, on the control that keeps them.
-                     One click lands the reader in the rows with the CSV/JSON beside them. -->
-                <button
-                    v-if="browse"
-                    type="button"
-                    class="appendix-dock__browse"
-                    data-testid="appendix-dock-browse"
-                    @click="browse()"
-                >
-                    browse &amp; export <span aria-hidden="true">↗</span>
-                </button>
             </div>
 
             <div
@@ -149,11 +133,21 @@ defineExpose({
             >
                 <component :is="isPhone ? DialogHeader : 'div'" class="appendix-dock__pane-head">
                     <component :is="isPhone ? DialogTitle : 'h2'" :id="headingId">
-                        {{ label }}
+                        Source &amp; method
                     </component>
                     <DialogDescription v-if="isPhone" class="sr-only">
                         Source, method, and provenance detail for this figure.
                     </DialogDescription>
+                    <Button
+                        v-if="browse"
+                        type="button"
+                        emphasis="secondary"
+                        size="sm"
+                        data-testid="appendix-dock-browse"
+                        @click="browse()"
+                    >
+                        Browse &amp; export
+                    </Button>
                     <!-- On the phone the sheet's own ✕ (glass SheetContent) is the close. -->
                     <Button
                         v-if="!isPhone"
@@ -181,59 +175,34 @@ defineExpose({
     color: var(--foreground);
 }
 
-.appendix-dock__head {
+.appendix-dock__strip {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 0.35rem 0.75rem;
+    gap: 0.5rem;
     min-inline-size: 0;
+    block-size: 36px;
+    padding-inline: 0.75rem 0.25rem;
+    border-radius: var(--radius-bar, var(--radius-panel, 12px));
+    background: color-mix(in oklab, var(--muted, currentColor) 35%, transparent);
+    /* one type step above the caption (PV-03) */
+    font-size: var(--type-small, 0.875rem);
+    line-height: 1;
 }
-
-.appendix-dock__control {
-    display: inline-flex;
-    align-items: center;
-    justify-self: start;
-    gap: 0.45rem;
-    min-block-size: 2rem;
-    font-family: var(--font-mono);
-    font-size: var(--type-micro);
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
-
-/* THE ONE LINK IN THE FOOT. It wears the only underline here, so a reader scanning for the way in
-   finds it against a field of capsules and prose (the info-scent repair). */
-.appendix-dock__browse {
-    flex: none;
-    padding: 0;
-    font-family: var(--font-mono);
-    font-size: var(--type-micro);
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: light-dark(
-        color-mix(in oklab, var(--route-accent), var(--foreground) 40%),
-        color-mix(in oklab, var(--route-accent), var(--foreground) 12%)
-    );
-    background: none;
-    border: 0;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    text-decoration-color: color-mix(in oklab, currentColor, transparent 45%);
-    cursor: pointer;
-}
-.appendix-dock__browse:hover {
-    color: var(--foreground);
-    text-decoration-color: currentColor;
-}
-
 .appendix-dock__crest {
-    color: color-mix(in oklab, var(--foreground), transparent 18%);
+    flex: none;
+    color: color-mix(in oklab, var(--foreground), transparent 30%);
 }
-
-.appendix-dock__state {
-    color: color-mix(in oklab, var(--foreground), transparent 32%);
+.appendix-dock__source {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.appendix-dock__control {
+    flex: none;
+    min-block-size: 28px;
+    font-size: inherit;
 }
 
 .appendix-dock__peek {
@@ -255,11 +224,8 @@ defineExpose({
 }
 
 .appendix-dock__peek dt {
-    font-family: var(--font-mono);
-    font-size: var(--type-micro);
+    font-size: var(--type-caption);
     font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
 }
 
 .appendix-dock__peek dd {
@@ -296,16 +262,11 @@ defineExpose({
 }
 
 @media (--phone) {
-    .appendix-dock button {
+    .appendix-dock__pane button,
+    .appendix-dock__peek button {
         min-block-size: 44px;
     }
 
-    .appendix-dock__head {
-        display: grid;
-        justify-items: start;
-    }
-
-    .appendix-dock__control,
     .appendix-dock__peek {
         inline-size: 100%;
     }
@@ -326,7 +287,6 @@ defineExpose({
 
 @media print {
     .appendix-dock__control,
-    .appendix-dock__browse,
     .appendix-dock__peek,
     .appendix-dock__pane-head button {
         display: none;

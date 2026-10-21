@@ -142,8 +142,10 @@
        mechanism). The gestalt win: an adjudication that RETIRES the cool-250 rationale. */
     --viz-diverging-mid: oklch(0.42 0.02 78);
     --viz-diverging-high: oklch(0.68 0.14 245);
-    --viz-sequential-low: oklch(0.35 0.05 250);
-    --viz-sequential-high: oklch(0.78 0.15 250);
+    /* U/B7 C-05: widened so a per-student tint separates on dark stock (R-TAB-ECF defect 2: $216 and
+       $1,094 per student read as one teal at L 0.35 → 0.78). The span now exceeds the light arm's. */
+    --viz-sequential-low: oklch(0.3 0.04 250);
+    --viz-sequential-high: oklch(0.84 0.14 235);
     /* recessive NEUTRALS — re-hued warm (was cool-250) onto the warm spine ~55°. */
     --viz-no-data: oklch(
         0.32 0.012 55
@@ -416,6 +418,12 @@
     --ncsu-red-deep: #990000;
     --ncsu-red-bright: #e6322a;
     --red-text: light-dark(#cc0000, hsl(6 88% 62%));
+}
+
+/* U/B7 T-12: the brand red is a dashboard accent (`meta.accent`), and #cc0000 reads 2.7:1 on the dark
+   card. On dark stock it takes the AA-lifted red the small red text already uses. */
+.dark {
+    --ncsu-red: hsl(6 88% 62%);
 }
 
 /* §GRAIN — the per-surface plate-grain calibration (K-PAPER-GRAIN, P5).

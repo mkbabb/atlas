@@ -280,7 +280,7 @@ export type TierUnit = "bandwidth" | "count" | "currency" | "ordinal";
 /**
  * The UNIT-AWARE tier label (K-PAPER §5) — the legend-chip face, generalizing the SCI route's
  * bandwidth-only `tierLabel(mbps)` (`sci/lib/derive.ts`) to speak the ranked row's unit. The
- * `"bandwidth"` branch reproduces that formula byte-for-byte (`>= 1000` → `Gb/s` with the
+ * `"bandwidth"` branch reproduces that formula byte-for-byte (`>= 1000` → `Gbps` with the
  * integer/`.toFixed(1)` split, else `Mbps`); the SCI delegate re-points to `tierLabel(mbps,
  * "bandwidth")` (byte-identical output — the band-cake legend does not move a pixel).
  */
@@ -289,7 +289,7 @@ export function tierLabel(tier: number, unit: TierUnit): string {
         case "bandwidth":
             if (tier >= 1000) {
                 const gb = tier / 1000;
-                return `${Number.isInteger(gb) ? gb : gb.toFixed(1)} Gb/s`;
+                return `${Number.isInteger(gb) ? gb : gb.toFixed(1)} Gbps`;
             }
             return `${tier} Mbps`;
         case "currency":
