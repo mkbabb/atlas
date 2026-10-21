@@ -56,9 +56,11 @@ const sections = computed(() =>
             :aria-label="`${position}: ${stepper.activeLabel.value}`"
             data-testid="dock-section-select"
         >
-            <span class="dock-sections__label" data-testid="dock-section-label">{{
-                stepper.activeLabel.value
-            }}</span>
+            <span class="dock-sections__text">
+                <span class="dock-sections__label" data-testid="dock-section-label">{{
+                    stepper.activeLabel.value
+                }}</span>
+            </span>
         </SelectTrigger>
         <SelectContent side="top" align="center">
             <SelectItem
@@ -93,10 +95,12 @@ const sections = computed(() =>
                 :aria-label="`${position}: ${stepper.activeLabel.value}`"
                 data-testid="dock-section-select"
             >
-                <span class="dock-sections__position">{{ position }}</span>
-                <span class="dock-sections__label" data-testid="dock-section-label">{{
-                    stepper.activeLabel.value
-                }}</span>
+                <span class="dock-sections__text">
+                    <span class="dock-sections__position">{{ position }}</span>
+                    <span class="dock-sections__label" data-testid="dock-section-label">{{
+                        stepper.activeLabel.value
+                    }}</span>
+                </span>
             </SelectTrigger>
             <SelectContent side="bottom" align="start">
                 <SelectItem
@@ -159,18 +163,24 @@ const sections = computed(() =>
     outline-offset: 2px;
 }
 
-/* The face: two lines on the pager (the position over the title), one line in the phone cell. */
+/* The face: glass's Select trigger (a row ending in its chevron). The text block holds two lines on
+   the pager (the position over the title) and one in the phone cell. */
 .dock-sections__face {
-    display: grid;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
     min-inline-size: 0;
     max-inline-size: 18rem;
     min-block-size: 2.75rem;
-    justify-items: start;
-    align-content: center;
-    gap: 0;
-    padding-inline: 0.5rem;
+    padding-inline: 0.625rem 0.5rem;
     border-radius: 0.75rem;
     text-align: start;
+}
+.dock-sections__text {
+    display: grid;
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    justify-items: start;
 }
 .dock-sections__position {
     color: var(--muted-foreground);

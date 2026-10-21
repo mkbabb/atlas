@@ -33,10 +33,10 @@
 // ── U/B7 §2.1 D-7, D-11/D-12, §2.2 (O-12) ─────────────────────────────────────────────────────────
 // The lozenge is the section pager at ≥ 768 px: ‹ [Section n of N · title] › (DockSectionSelect).
 // It shows only past the crown, with a real active section (no empty pill: D-11/D-12), and only while
-// no section heading is in or near the band the lozenge occupies (D-7: it never sits on a heading). The shell reserves the same band (`--shell-head-reserve`) as the headings' scroll margin,
+// no heading crosses the band the lozenge occupies (D-7: it never sits on a heading). The shell reserves the same band (`--shell-head-reserve`) as the headings' scroll margin,
 // so a section jump lands the heading below it. Below 768 px there is no lozenge: the bottom bar's
 // Sections cell carries the name.
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import DockSectionSelect from "./components/DockSectionSelect.vue";
 import type { UseDockStepper } from "./composables/useDockStepper.js";
 import type { MembraneFacet } from "./membrane-facet.js";
@@ -66,53 +66,55 @@ function bandPx(): number {
     circle at the inset), so a heading a section jump lands at the band's foot is clear of it. */
 const PAGER_CLEARANCE_PX = 8;
 
-/** True while any section heading crosses the pager's band. The pager then leaves at once (no
-    leave fade), so it is never drawn over a heading. */
+/** True while any heading on the page crosses the pager's band. The pager then leaves at once (no
+    leave fade), so it is never drawn over a heading. The test runs in the scroll handler, so the
+    pager has left before the frame that would paint it over the heading; an IntersectionObserver
+    reports a frame late, and a fresh observer reports nothing until its first callback. */
 const headingInBand = ref(false);
-let headingObserver: IntersectionObserver | null = null;
+let headings: HTMLElement[] = [];
+let bandFoot = 0;
 let retryFrame = 0;
-function watchHeadings(): void {
+function measure(): void {
+    headingInBand.value = headings.some((h) => {
+        const b = h.getBoundingClientRect();
+        return b.bottom > 0 && b.top < bandFoot;
+    });
+}
+function collectHeadings(): void {
     if (retryFrame) cancelAnimationFrame(retryFrame);
     retryFrame = 0;
-    headingObserver?.disconnect();
-    headingObserver = null;
-    headingInBand.value = false;
-    if (props.isPhone) return;
-    const headings = props.stepper.beatItems.value.flatMap((item) => {
-        if (item.kind !== "beat") return [];
-        const h = document.getElementById(item.id)?.querySelector<HTMLElement>("h1, h2, h3");
-        return h ? [h] : [];
-    });
-    // The route body resolves async: wait for its sections, as the stepper's observer does.
-    if (!headings.length) {
-        if (props.stepper.beatItems.value.length) retryFrame = requestAnimationFrame(watchHeadings);
+    headings = [];
+    if (props.isPhone) {
+        headingInBand.value = false;
         return;
     }
-    const near = new Set<Element>();
-    const bottom = window.innerHeight - (bandPx() - PAGER_CLEARANCE_PX);
-    // The root is the pager's band: the viewport's top strip down to the pager's foot.
-    headingObserver = new IntersectionObserver(
-        (entries) => {
-            for (const e of entries) {
-                if (e.isIntersecting) near.add(e.target);
-                else near.delete(e.target);
-            }
-            headingInBand.value = near.size > 0;
-        },
-        // `root: document` so the margins apply to this document's viewport, framed or not.
-        { root: document, rootMargin: `0px 0px ${-bottom}px 0px`, threshold: 0 },
-    );
-    for (const h of headings) headingObserver.observe(h);
+    // Every heading on the page: the hero's title and the appendix headings pass under the band
+    // too, not only the sections'. Re-read on each section change, as lazy sections mount.
+    headings = [...document.querySelectorAll<HTMLElement>("main h1, main h2, main h3")];
+    // The route body resolves async: wait for its sections, as the stepper's observer does.
+    if (!headings.length && props.stepper.beatItems.value.length)
+        retryFrame = requestAnimationFrame(collectHeadings);
+    bandFoot = bandPx() - PAGER_CLEARANCE_PX;
+    measure();
 }
 watch(
     () => [props.stepper.activeBeatId.value, props.isPhone] as const,
-    () => watchHeadings(),
+    () => collectHeadings(),
     { immediate: true, flush: "post" },
 );
+onMounted(() => {
+    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", collectHeadings, { passive: true });
+});
 onBeforeUnmount(() => {
     if (retryFrame) cancelAnimationFrame(retryFrame);
-    headingObserver?.disconnect();
+    window.removeEventListener("scroll", measure);
+    window.removeEventListener("resize", collectHeadings);
 });
+
+function leaveNow(_el: Element, done: () => void): void {
+    done();
+}
 
 /** Past the crown, on a desktop register, with a real section whose heading has left the band. */
 const visible = computed<boolean>(
@@ -126,7 +128,9 @@ const visible = computed<boolean>(
 </script>
 
 <template>
-    <Transition name="lozenge">
+    <!-- The leave hook finishes at once: with no leave transition Vue would still hold the node for
+         two frames, long enough to paint it over the heading that sent it away. -->
+    <Transition name="lozenge" @leave="leaveNow">
         <div
             v-if="visible"
             class="membrane-lozenge"

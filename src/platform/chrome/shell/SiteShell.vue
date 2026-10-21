@@ -93,8 +93,13 @@ const outletKey = computed(() => (slug.value ? `dashboard:${slug.value}` : Strin
 </template>
 
 <style scoped>
+/* THE BAR RESERVE (U/B7 §2.2): below 768 px the shell's foot carries the bottom bar's band, so the
+   last content of every route (a dashboard, the homepage, a subject page, the data pages, the 404)
+   clears the bar. The shell mounts the bar, so it owns the band. The band does not change when the
+   bar slides out, so hiding the bar moves no layout. It is 0 at ≥ 768 px. */
 .site-shell {
     min-block-size: 100dvh;
+    padding-block-end: var(--dock-bar-reserve);
 }
 .skip-link:focus {
     z-index: var(--z-hovercard);

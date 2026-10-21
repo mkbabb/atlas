@@ -260,7 +260,7 @@
    44 × 44 with 8 px gaps; the crest is pinned at the start (glass #persistent) and More at the end
    (#persistent-end). The bar's plate is opaque (the page never shows through its cells, D-6). It
    slides out (translate only, on the dock spring) and back; the content reserve under it is fixed
-   (`--dock-bar-reserve`, PlatformShell), so hiding it moves no layout. */
+   (`--dock-bar-reserve`, SiteShell), so hiding it moves no layout. */
 .usf-dock--bar {
     box-sizing: border-box;
     --dock-seat: 2.75rem;
@@ -270,10 +270,11 @@
     z-index: var(--z-dock);
     inset-block-start: auto;
     inset-block-end: calc(1rem + env(safe-area-inset-bottom));
-    inset-inline-start: 50%;
-    inset-inline-end: auto;
-    translate: -50% 0;
-    inline-size: auto;
+    /* centred by auto margins between both insets (a fixed box at `left: 50%` would shrink-wrap
+       to the half viewport it has left and clip its cells). */
+    inset-inline: 1rem;
+    margin-inline: auto;
+    inline-size: fit-content;
     max-inline-size: calc(100vw - 2rem);
     block-size: 3.5rem;
     flex-direction: row;
@@ -285,7 +286,7 @@
     transition: translate var(--spring-dock-duration, 300ms) var(--spring-dock, ease);
 }
 .usf-dock--bar.usf-dock--out {
-    translate: -50% calc(100% + 1rem + env(safe-area-inset-bottom));
+    translate: 0 calc(100% + 1rem + env(safe-area-inset-bottom));
 }
 .usf-dock--bar :deep(.dock-layer--full) {
     flex-direction: row;
@@ -302,7 +303,9 @@
     align-items: center;
     inline-size: auto;
 }
-/* The progress track runs along the bar's top edge. */
+/* The progress track runs along the bar's edge, always shown. glass 10.1.0 seats a horizontal track
+   at the block end only; §2.2 asks for the top edge, which is relayed to glass (a track side) and
+   not overridden here. */
 .usf-dock__progress-rim--bar {
     opacity: 1;
 }

@@ -32,6 +32,28 @@ describe("the section pager (U/B7 §2.1 D-7)", () => {
         expect(seen).toBeGreaterThan(10);
     });
 
+    it("at 1440 it has left by the first frame after a scroll brings any heading into its band", async () => {
+        site = await mountSite("/sci", 1440);
+        const frame = () => new Promise((r) => requestAnimationFrame(() => r(null)));
+        const hits: string[] = [];
+        let seen = 0;
+        for (let y = 0; y <= 4400; y += 24) {
+            window.scrollTo(0, y);
+            await frame();
+            const el = lozenge();
+            if (!el) continue;
+            seen++;
+            const box = el.getBoundingClientRect();
+            for (const h of document.querySelectorAll("main h1, main h2, main h3")) {
+                const hb = h.getBoundingClientRect();
+                if (overlaps(box, hb))
+                    hits.push(`y=${y} ${h.textContent} pager ${Math.round(box.top)}-${Math.round(box.bottom)} heading ${Math.round(hb.top)}-${Math.round(hb.bottom)}`);
+            }
+        }
+        expect(hits).toEqual([]);
+        expect(seen).toBeGreaterThan(10);
+    });
+
     it("at 390 no lozenge renders and the Sections cell prints the active section", async () => {
         site = await mountSite("/sci", 390);
         window.scrollTo(0, 1500);

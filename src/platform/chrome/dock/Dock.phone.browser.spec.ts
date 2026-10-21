@@ -64,6 +64,17 @@ describe("the dock at 390 px is a bottom bar (U/B7 §2.2)", () => {
         expect(last.bottom).toBeLessThanOrEqual(dock()!.getBoundingClientRect().top + 1);
     });
 
+    for (const path of ["/", "/c/funding", "/data/sci", "/no-such-page/at-all"]) {
+        it(`on ${path} the page's last box clears the bar at the page end`, async () => {
+            site = await mountSite(path, 390);
+            window.scrollTo(0, document.documentElement.scrollHeight);
+            await settle(400);
+            const main = [...document.querySelectorAll("main")].at(-1)!.getBoundingClientRect();
+            expect(dock()!.hasAttribute("data-bar-out")).toBe(false);
+            expect(main.bottom).toBeLessThanOrEqual(dock()!.getBoundingClientRect().top + 1);
+        });
+    }
+
     it("slides out after a downward scroll of more than a viewport, and the content does not move", async () => {
         site = await mountSite("/sci", 390);
         const main = document.querySelector<HTMLElement>("main")!;

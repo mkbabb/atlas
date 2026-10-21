@@ -147,7 +147,7 @@
     /* THE DOCK BANDS (U/B7 §2.2). `--shell-head-reserve`: the top band the ≥ 768 px circle and its
        section pager occupy; section headings take it as `scroll-margin-block-start`, so a section
        jump lands the heading below the pager. `--dock-bar-reserve`: the bottom band the < 768 px bar
-       occupies (56 px + its 16 px inset + the safe area); the shell pads its foot by it and the
+       occupies (56 px + its 16 px inset + the safe area); SiteShell pads its foot by it and the
        document scroller takes it as `scroll-padding-block-end`. */
     --shell-head-reserve: 5rem;
     --dock-bar-reserve: 0px;

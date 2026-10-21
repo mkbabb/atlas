@@ -151,9 +151,6 @@ useDismissArbiter(dismissArbiter).claim(() =>
         /* no dock on the phone's inline-start edge (the dock is the bottom bar), so the inline
            reserve falls to the collapsed-tab sliver and the prose takes the phone width. */
         --cp-dock-reserve: calc(var(--cp-inset) + var(--cp-dock-tab-w));
-        /* THE BAR RESERVE (U/B7 §2.2): the bottom bar's band, so the last content clears the bar.
-           It does not change when the bar slides out, so hiding the bar moves no layout. */
-        padding-block-end: var(--dock-bar-reserve);
     }
 }
 
