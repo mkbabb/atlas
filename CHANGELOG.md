@@ -24,6 +24,9 @@
   plate's act row: one collapsed handle in the figure head's corner that opens on a press into
   Options, Download or View data, Enlarge and Close, each naming the figure. The dead J-VIZDOCK
   members of `useVizPlate` and the `.viz-dock` CSS are deleted.
+- **Enlarge covers the page; Escape leaves it in place (U/B7 · F-05, §M M-3).** The enlarged body
+  paints the plate's paper over the scrim and scrolls inside the layer; the resting box holds its
+  height while open, focus returns without scrolling, and the hover card rides above the layer.
 - **The provenance strip is one line (U/B7 · O-17).** 36 px, the bar radius, sentence case, one
   "Source & method" action; "Browse & export" moved into the pane.
 - **One key map (U/B7).** `KeyInput.shift` is `KeyInput.multi`; Cmd or Ctrl adds to a selection like

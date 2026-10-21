@@ -18,6 +18,11 @@
                         not a cursor-chasing readout) */
     --z-hovercard: 60; /* the body-teleported hover card — above the panels + the preview */
 }
+/* While a figure is enlarged (glass's fixed layer at --z-modal) the hover card rides one rung above
+   it, so hovering a mark inside the enlarged figure shows its card (U/B7 F-05). */
+:root:has([data-frame-fullscreen]) {
+    --z-hovercard: calc(var(--z-modal, 140) + 1);
+}
 
 /* §HIERARCHY — THE Z-OF-ATTENTION (the platform strata law + the --attn-* vocabulary).
    d-hierarchy M1/M2 · C-AESTHETIC §0 spine row 7 / CO-7 · DESIGN §0.

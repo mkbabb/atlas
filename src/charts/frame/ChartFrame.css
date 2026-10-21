@@ -281,10 +281,10 @@
    plate reserves at least this much vertical space, so the body never paints at 0 and then jumps.
    The floor (200px) sits BELOW the smallest real chart host (chart-h-sm = 340px), so a plate
    that DOES set a fixed host is byte-identical (its host out-measures the floor — the floor is
-   inert there); only a not-yet-sized / content-driven body is held off 0. The fullscreen body
-   is TELEPORTED to <body> (`.fixed.inset-0`), so this in-flow wrapper keeps the reserve at rest
-   regardless of expand state — no fullscreen carve needed (the teleported surface owns its own
-   layout, this box stays the resting plate behind it).
+   inert there); only a not-yet-sized / content-driven body is held off 0. While enlarged, glass 10
+   teleports the whole container to <body>, so this wrapper would fall to the floor: ChartFrame holds
+   it at its measured resting height while the figure is open (`expandHold`, U §M M-3), and the page
+   behind the enlarged figure never reflows.
 
    T-PERF-4 (I-PERF-DATA.c) — THIS reserve is what makes `useEChart({ lazyMount: true })` CLS-safe.
    A lazyMounted below-fold chart does NOT init its canvas at hydration; it inits on scroll-into-
@@ -308,34 +308,29 @@
     display: contents;
 }
 .frame-expand__body--fullscreen {
-    /* The fullscreen PRESENTATION surface (D7). A column stack that fills the teleported
-       `.fixed.inset-0` width and is AT LEAST viewport-tall (`min-block-size: 100%`), growing
-       with its content so a rich plate (hero readout + prose + chart) scrolls inside the
-       fixed surface rather than being clipped. The chart host (the last child) is the GROW
-       child — it claims the remaining room (`flex: 1`) at a generous presentation floor, so
-       the expanded chart genuinely USES the screen (the resting `chart-h-lg` host is far
-       smaller). Centered horizontally with a comfortable gutter. */
+    /* The enlarged figure (D7; U/B7 F-05). glass paints only a 50 % scrim on its fixed layer, so the
+       body paints the plate's own paper and covers the viewport: no page text prints through the
+       figure. The body is the layer's scroller: a figure taller than the viewport scrolls inside it
+       to its foot. The chart host (the last child) grows into the room left by the head. */
     display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
     box-sizing: border-box;
-    /* The PRESENTATION surface is taller than one viewport (a generous 1.2× floor) so the
-       expanded plate is a true ZOOM that scrolls inside the fixed `.inset-0` surface — never a
-       viewport-letterboxed thumbnail. The floor is content-independent: even a short single-
-       chart plate clears the viewport, so the expand always grows the figure well past its
-       resting footprint (the D7 contract). The body still GROWS past 120vh when its content
-       (a tall hero readout + prose + chart) needs more. */
-    min-block-size: 120vh;
+    block-size: 100%;
     inline-size: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: clamp(1rem, 3vw, 3rem);
+    background: var(--card);
+    color: var(--card-foreground, var(--foreground));
 }
 /* The chart host claims the remaining fullscreen height — the expand's whole point is the
    chart BIGGER. The resting `chart-h-*` fixed-height utility is overridden HERE (the only
    place ChartFrame overrides a consumer's host size, and only in the fullscreen branch) so
    the host grows to fill the tall presentation surface. */
 .frame-expand__body--fullscreen > :last-child {
-    flex: 1 1 auto;
+    flex: 1 0 auto;
     min-block-size: 60vh;
     block-size: auto;
     inline-size: 100%;
