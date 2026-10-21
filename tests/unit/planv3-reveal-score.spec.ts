@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
     bindRevealGoLive,
-    countAt,
     createRevealCuePump,
     projectRevealScore,
     type RevealCueContext,
@@ -92,12 +91,6 @@ describe("RevealScore", () => {
         expect(pump.settle()).toBe(false);
         expect(calls).toHaveLength(3);
         expect(calls.every((cue) => cue.terminal && cue.progress === 1)).toBe(true);
-    });
-
-    it("preserves integer counts and exposes the fractional count dial", () => {
-        expect(countAt(2.73, 0.5)).toBe(3);
-        expect(countAt(2.73, 0.5, { round: false })).toBeCloseTo(2.73, 12);
-        expect(countAt(318.47, 0.5, { decimals: 2 })).toBe(318.47);
     });
 
 });

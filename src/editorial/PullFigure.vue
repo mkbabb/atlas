@@ -28,22 +28,17 @@
 // hand-circle was wrong at any weight; the river figure's SIZE is its sole emphasis (the inversion
 // law made literal). No ring, no `ring` prop.
 //
-// THE REVEAL CLOCK — SCROLL: the value count-ups on scroll-ENTRY via the count-up engine, gated
-// on the beat's re-entry (a number you scroll back to arrives afresh — `retriggerOnReentry`), NOT
-// scrubbed per scroll-frame (a number is a VALUE, not a position — the MC-6 anti-move). PRM: the
-// value renders at its FINAL figure (the count snaps — `useCountUp` short-circuits under reduce);
-// information parity total. a11y: a `<figure>` with the value as the figure content (selectable,
-// in the reading order), the unit + gloss as `<figcaption>`; the count never changes the
-// accessible name (the rendered text IS the final value).
-import { computed, ref } from "vue";
+// THE VALUE AT REST (U/B7 · PLAN §4.2): the figure paints its final value; nothing counts or
+// re-fires on scroll. a11y: a `<figure>` with the value as the figure content, the unit + gloss as
+// `<figcaption>`.
+import { computed } from "vue";
 import FigureSlug from "../charts/frame/FigureSlug.vue";
-import { useCountUp } from "../platform/composables/useCountUp.js";
 import type { ColorKind } from "../charts/scale/colorKind.js";
 
 const props = withDefaults(
     defineProps<{
         /** The datum — pre-formatted via format.ts at the call site / manifest (INV-E1). A
-            string renders verbatim; a number counts up on scroll-entry. */
+            string renders verbatim; a number renders as given. */
         value: string | number;
         /** The Fira eyebrow caption — NAMES the unit (the F6.4 close; never a bare figure). */
         unit: string;
@@ -57,25 +52,6 @@ const props = withDefaults(
     { colorKind: "diverging", align: "center" },
 );
 
-/** Parse the value for the scroll-entry count; a formatted string renders verbatim (no count). */
-function numericOf(v: string | number): number {
-    if (typeof v === "number") return v;
-    const m = v.replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
-    return m ? Number(m[0]) : 0;
-}
-
-const figureEl = ref<HTMLElement | null>(null);
-
-// The scroll-entry count — re-fires on viewport re-entry (the page-turn arrival), never scrubbed
-// per frame. The RENDERED text is always the figure's own formatted string at its final value, so
-// a pre-formatted slug never loses its unit/grouping. PRM: snaps on entry (information parity).
-const target = computed(() => ({ v: numericOf(props.value) }));
-useCountUp(() => target.value, {
-    autoRecount: false,
-    retriggerOnReentry: true,
-    reentryTarget: () => figureEl.value,
-});
-
 const display = computed(() => String(props.value));
 </script>
 
@@ -83,7 +59,6 @@ const display = computed(() => String(props.value));
     <!-- The pull-quote in numbers — a <figure> in the river. It binds --attn-pull (the river
          rung ③½, recessed from a plate thesis). NO plate, NO grid, NO glass: the bare paper. -->
     <figure
-        ref="figureEl"
         class="pull-figure"
         :class="`pull-figure--${align}`"
         data-attn="pull"
@@ -131,7 +106,7 @@ const display = computed(() => String(props.value));
        unit/gloss CAPTION TEXT stays full-ink — WCAG 1.4.3 AA (4.5:1) is the floor no
        recession may cross (the host-level fade read the captions at 3.58:1 on the warm
        wash — the convergence-pass axe finding, fixed at this root). */
-    opacity: var(--attn-pull);
+    color: color-mix(in oklab, currentColor calc(var(--attn-pull) * 100%), var(--background));
     /* THE ③½ SIZE RECESSION (I13 figure-ladder · design-ecf §0/§CROSS-VIZ). The river rung
        was inheriting the FULL --type-display-audacious slug register (the page-cover size — the
        ECF `98` rendered ~176px, OUT-shouting both the cliff thesis crown (72px) and the hero

@@ -76,13 +76,13 @@ withDefaults(
     pointer-events: none;
     /* the annotation recedes to the ③½ pull / ④ chrome rung — never out-weighing the data line
        it annotates (the inversion law). Declared via `--attn-pull` (the suffusion contract). */
-    opacity: var(--attn-pull, 0.9);
+    color: color-mix(in oklab, currentColor calc(var(--attn-pull, 0.9) * 100%), var(--background));
 }
 
 /* THE EYEBROW — Fira-caps, the threshold's NAME register. */
 .viz-annotation__eyebrow {
     font-family: var(--font-mono, "Fira Code"), monospace;
-    font-size: 0.62rem;
+    font-size: var(--type-micro);
     font-weight: 600;
     letter-spacing: 0.07em;
     text-transform: uppercase;
@@ -91,14 +91,14 @@ withDefaults(
 /* THE FIGURE — Fira-tabular, the threshold's VALUE (tnum so figures sit on tabular metrics). */
 .viz-annotation__figure {
     font-family: var(--font-mono, "Fira Code"), monospace;
-    font-size: 0.72rem;
+    font-size: var(--type-micro);
     font-weight: 500;
     font-variant-numeric: tabular-nums;
 }
 
 .viz-annotation__glyph {
     font-family: var(--font-mono, "Fira Code"), monospace;
-    font-size: 0.72rem;
+    font-size: var(--type-micro);
     font-weight: 500;
 }
 

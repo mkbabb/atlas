@@ -138,15 +138,15 @@ const supports = computed<AggregateStat[]>(() => props.stats.slice(1));
     margin: 0;
     /* the lead rides at --attn-data (saturated, below the page cover's --attn-hero/1.00 — FIC-2);
        the tint is the facet's data hue. */
-    opacity: var(--attn-data, 0.92);
+    color: color-mix(in oklab, currentColor calc(var(--attn-data, 0.92) * 100%), var(--background));
 }
 /* The supporting figures recede to the legend register below the lead (the stepped hierarchy). */
 .agg-stat--support .agg-stat__value {
-    opacity: var(--attn-legend, 0.64);
+    color: color-mix(in oklab, currentColor calc(var(--attn-legend, 0.64) * 100%), var(--background));
 }
 .agg-stat__caption {
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--type-micro);
     font-weight: 500;
     letter-spacing: 0.04em;
     text-transform: uppercase;

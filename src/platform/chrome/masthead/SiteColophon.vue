@@ -223,6 +223,6 @@ const brandHref = computed(() => props.colophon?.brandHref ?? "https://www.fi.nc
    still so it never competes with the asOf date it sits beside. */
 .colophon__build {
     font-family: var(--font-mono);
-    opacity: 0.75;
+    color: color-mix(in oklab, currentColor calc(0.75 * 100%), var(--background));
 }
 </style>

@@ -66,6 +66,6 @@ withDefaults(
     max-inline-size: var(--measure, 42rem);
     margin-inline: auto;
     /* the rung ③ legend recession — the prose recedes under the data it narrates. */
-    opacity: var(--attn-legend);
+    color: color-mix(in oklab, currentColor calc(var(--attn-legend) * 100%), var(--background));
 }
 </style>

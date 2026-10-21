@@ -477,20 +477,13 @@ useEChart({
         />
         <!-- A fixed-height host — the canvas collapses to 0 without it (chart-h-lg, the
              large-plate rung matching StackedBar).
-             C.W5.4 — the LINE draw-on bind. The line is an ECharts CANVAS (animation:false — the
-             W4 geometry untouched), so a per-path `stroke-dashoffset` draw cannot ride a CSS
-             `view()` timeline (a canvas has no per-path DOM node). The faithful realization is the
-             plate-level reveal: the chart fades + lifts in on the beat's `view()` timeline
-             (`data-reveal-fan` → the scoped keyframe below), drawing as the plate enters and
-             UN-drawing on scroll-up (bidirectional, free, zero per-frame JS). Bound to the SAME
-             `--beat-tl` the map draw-on + the beat reveal ride. PRM → the line present (terminal). -->
+             The line paints at rest (U/B7 · PLAN §5.1 S-4: the scroll fan is deleted). -->
         <div
             ref="host"
             class="chart-h-lg w-full"
             role="img"
             :aria-label="ariaLabel"
             data-testid="time-series"
-            data-reveal-fan
         />
     </div>
 </template>
@@ -504,28 +497,4 @@ useEChart({
     max-width: none;
 }
 
-/* C.W5.4 — the LINE draw-on bind, keyed to the beat's `view()` timeline. A canvas line has no
-   per-path DOM, so the "draw-on" is the plate-level reveal: the chart fades + lifts in as the
-   beat enters — compositor-only `{opacity, transform}`, zero JS, bound to the SAME `--beat-tl`
-   the map draw-on + the beat reveal ride. The OUTER PRM `@media` is the structural fence (under
-   reduced motion the line rests terminal, present); the keyframe is Vue-scoped, no collision. */
-@media (prefers-reduced-motion: no-preference) {
-    @supports ((animation-timeline: view()) and (animation-range: entry)) {
-        @keyframes line-draw-fan {
-            from {
-                opacity: 0;
-                transform: translate3d(0, 2.5vh, 0) scale(0.985);
-            }
-            to {
-                opacity: 1;
-                transform: translate3d(0, 0, 0) scale(1);
-            }
-        }
-        [data-reveal-fan] {
-            animation: line-draw-fan auto linear both;
-            animation-timeline: --beat-tl;
-            animation-range: entry 6% entry 24%;
-        }
-    }
-}
 </style>

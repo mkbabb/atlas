@@ -179,15 +179,15 @@
     background-clip: content-box;
 }
 
-/* THE YEAR CROSS-FADE (B4 §4): on a year scrub the spine dips and recovers, a patient settle on the
-   same 0.6s curve the accent re-tint uses. Once per change; never loops; cut under PRM. */
+/* THE YEAR CROSS-FADE (B4 §4): on a year change the spine dips and recovers over `--duration-fast`
+   (U/B7 · PLAN §4.2: calmed from 0.6s). Once per change; never loops; cut under PRM. */
 @property --spine-o {
     syntax: "<number>";
     inherits: true;
     initial-value: 1;
 }
 .usf-dock--year-fade {
-    animation: dock-year-fade 0.6s var(--ease-engrave);
+    animation: dock-year-fade var(--duration-fast) var(--ease-out);
 }
 @keyframes dock-year-fade {
     0% {

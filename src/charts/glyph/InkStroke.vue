@@ -122,16 +122,5 @@ const d = computed(() => {
     overflow: visible;
     pointer-events: none;
 }
-/* The scroll draw — the atlas `crayon-wipe` clip (map-draw.css) on the mark's own `view()`
-   timeline, bidirectional; the host tunes the window with `--ink-scrub-range`. Under PRM or a
-   non-supporting engine the wipe never attaches and the ink rests drawn. */
-@media (prefers-reduced-motion: no-preference) {
-    @supports ((animation-timeline: view()) and (animation-range: entry)) {
-        .ink-stroke[data-clock="scroll"] {
-            animation: crayon-wipe auto linear both;
-            animation-timeline: view(block);
-            animation-range: var(--ink-scrub-range, entry 0% entry 26%);
-        }
-    }
-}
+/* clock="scroll" rests drawn (U/B7 · PLAN §4.2: no scroll-scrubbed draw). */
 </style>
