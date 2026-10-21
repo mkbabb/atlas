@@ -88,3 +88,65 @@ describe("ChartFrame ?fig: Escape goes Back, the page stays put, focus returns t
         });
     }
 });
+
+// F-K2-DRIFT (U §M M-3): the walk saw the page move on close for 2 of 4 /sci figures (bandcake
+// 1605 -> 1035 px, schoolmap 1924 -> 4463 px). Those figures are tall, and the page around them is
+// prose, not one block: a scroll anchor sits in the viewport beside the figure. The 240 px case above
+// has neither, which is why it passed while the walk drifted.
+describe("ChartFrame ?fig: a tall figure in running prose; Escape never moves the page", () => {
+    const prose = (n: number) => Array.from({ length: n }, (_, i) => `<p style="margin:0 0 16px;line-height:24px">Paragraph ${i}: the reader's text runs beside the figure.</p>`).join("");
+    for (const bodyPx of [480, 900, 1400])
+        for (const motion of ["no-preference", "reduce"] as const) {
+            it(`body ${bodyPx}px, motion ${motion}`, async () => {
+                await commands.emulateMotion(motion);
+                history.replaceState(null, "", "/");
+                const host = document.createElement("div");
+                host.innerHTML = `${prose(80)}<div id="frame-host" style="width:720px"></div>${prose(80)}`;
+                document.body.appendChild(host);
+                const app = createApp(
+                    defineComponent({
+                        setup() {
+                            provideDismissArbiter();
+                            return () =>
+                                h(
+                                    ChartFrame,
+                                    { ariaLabel: "The figure", figId: ID },
+                                    {
+                                        default: () => h("div", { style: `height:${bodyPx}px` }, "chart"),
+                                        act: ({ enlarge }: { enlarge: () => void }) =>
+                                            h(PlateAct, { id: ID, title: "The figure", enlarge, browse: null }),
+                                    },
+                                );
+                        },
+                    }),
+                );
+                app.use(createPinia());
+                app.use(createRouter({ history: createMemoryHistory(), routes: [{ path: "/", component: { render: () => null } }] }));
+                installDashboardRegistry(app, { getDashboards: () => [], findDashboard: () => undefined });
+                app.mount(host.querySelector("#frame-host")!);
+                try {
+                    await nextTick();
+                    const enlarge = host.querySelector<HTMLElement>(`[data-subject="${ID}"][data-action="enlarge"]`)!;
+                    host.querySelector<HTMLElement>("[data-plate-act]")!.scrollIntoView({ block: "center" });
+                    await sleep(150);
+                    const y0 = window.scrollY;
+                    expect(y0).toBeGreaterThan(1000);
+                    enlarge.focus({ preventScroll: true });
+                    expect(window.scrollY).toBe(y0);
+                    await userEvent.keyboard("{Enter}");
+                    expect(await until(() => fig() === ID, 2000)).toBe(true);
+                    await sleep(400);
+                    await userEvent.keyboard("{Escape}");
+                    expect(await until(() => fig() === null, 2500)).toBe(true);
+                    await sleep(500);
+                    expect(document.activeElement).toBe(enlarge);
+                    expect(window.scrollY - y0).toBe(0);
+                } finally {
+                    app.unmount();
+                    host.remove();
+                    history.replaceState(null, "", "/");
+                    window.scrollTo(0, 0);
+                }
+            });
+        }
+});

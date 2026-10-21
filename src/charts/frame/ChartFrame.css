@@ -281,10 +281,10 @@
    plate reserves at least this much vertical space, so the body never paints at 0 and then jumps.
    The floor (200px) sits BELOW the smallest real chart host (chart-h-sm = 340px), so a plate
    that DOES set a fixed host is byte-identical (its host out-measures the floor — the floor is
-   inert there); only a not-yet-sized / content-driven body is held off 0. The fullscreen body
-   is TELEPORTED to <body> (`.fixed.inset-0`), so this in-flow wrapper keeps the reserve at rest
-   regardless of expand state — no fullscreen carve needed (the teleported surface owns its own
-   layout, this box stays the resting plate behind it).
+   inert there); only a not-yet-sized / content-driven body is held off 0. While enlarged, glass 10
+   teleports the whole container to <body>, so this in-flow wrapper would fall to the floor: ChartFrame
+   holds it at its measured resting height for as long as the figure is open (`expandHold`, U §M
+   M-3), and the page behind the enlarged figure never reflows.
 
    T-PERF-4 (I-PERF-DATA.c) — THIS reserve is what makes `useEChart({ lazyMount: true })` CLS-safe.
    A lazyMounted below-fold chart does NOT init its canvas at hydration; it inits on scroll-into-

@@ -262,11 +262,43 @@ const open = computed<boolean>({
                 // `?fig=` — never stomps a sibling that re-claimed it in the same tick).
                 view.closeFig(props.figId);
             }
-            const el = returnFocusEl;
-            returnFocusEl = null;
-            if (el) void nextTick(() => el.focus?.());
         }
     },
+});
+
+// ── THE RESTING PLACE HOLDS WHILE ENLARGED (U §M M-3, F-K2-DRIFT) ─────────────────────────────
+// glass 10.1.0's ExpandableContainer teleports ITSELF (the whole body) to <body> while open, so the
+// in-flow `.frame-expand` box fell to its 200px floor and everything below the plate moved up by the
+// body's height. The page then moved under the reader twice: the browser's scroll anchoring
+// re-seated the viewport on the reflow, and the close re-inserted the body above the new anchor (on
+// /sci at 1440 the walk saw 1605 -> 1035 and 1924 -> 4463 px; with focus moved after the close,
+// 1605 -> 2175). The resting box is measured as the figure opens (a `pre` flush: the body is still
+// in flow) and held for as long as it is open, so the page around the figure never reflows; the
+// hold drops in the same patch that brings the body back. A figure opened from the address on load
+// was never in flow, so there is nothing to hold.
+const expandEl = ref<HTMLElement | null>(null);
+const restingBlockSize = ref<number | null>(null);
+watch(
+    open,
+    (now) => {
+        restingBlockSize.value = now ? (expandEl.value?.getBoundingClientRect().height ?? null) : null;
+    },
+    { flush: "pre" },
+);
+const expandHold = computed(() =>
+    restingBlockSize.value ? { minBlockSize: `${restingBlockSize.value}px` } : undefined,
+);
+
+// Focus returns when the figure has actually closed, not inside the close call: with the overlay
+// push verb (§K K-2) `closeFig` goes Back and `?fig` clears on the popstate, so the figure is still
+// open when the setter runs. Watching the state also returns focus when the reader closes the figure
+// with the browser's own Back. `preventScroll`: the control is where the reader left it, and the
+// return must never scroll the page.
+watch(open, (now, was) => {
+    if (!was || now) return;
+    const el = returnFocusEl;
+    returnFocusEl = null;
+    if (el?.isConnected) void nextTick(() => el.focus({ preventScroll: true }));
 });
 
 // ── THE EXPAND-SETTLE SEAM (E3 §1.3 / e-hovers FIX-3 → J-VIZDOCK C39 — the expand resize) ───
@@ -455,7 +487,7 @@ watch(open, (value) => {
                  is the two-way `?fig=` URL model; the chart slot is passed THROUGH unchanged so
                  every existing chart renders byte-identically at rest (the trigger is quiet —
                  opacity 0 — until the plate is hovered/focused). -->
-            <div class="frame-expand relative">
+            <div ref="expandEl" class="frame-expand relative" :style="expandHold">
                 <!-- NO EXPAND MORPH. The 3.10.0 `view-transition-name` prop (the `gl-expand`
                  shared-element morph) is gone from ExpandableContainer: glass 10.1.0 declares
                  `buttonPosition`, `expandLabel`, `collapseLabel`, `surface` and `open` only, and
