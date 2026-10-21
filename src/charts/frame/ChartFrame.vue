@@ -313,8 +313,8 @@ function onSettle(fullscreen: boolean): void {
 // settle fires — only then does the fresh fullscreen instance's `resize()` read the true bounds
 // (a `nextTick` alone can land before the teleported surface lays out, leaving the canvas unsized).
 // ── THE PLATE'S OWN ACTS (A-39, the plate · RULINGS §I) ─────────────────────────────────────────
-// The figure's Enlarge lives in its act row (`#act`, filled by the host), never in page chrome. The
-// frame hands the row ONE `enlarge` bound to THIS frame: the subject is fixed by construction.
+// The figure's Enlarge lives in its dock (`#dock`, filled by the host), never in page chrome. The
+// frame hands the dock ONE `enlarge` bound to THIS frame: the subject is fixed by construction.
 // Focus returns to the control that opened the figure (the `open` setter records it on open and
 // restores it on close; the glass container also restores it on its own Escape).
 function enlarge(): void {
@@ -413,7 +413,7 @@ watch(open, (value) => {
              rides the KEY column here (the default, byte-identical to the old top-right rung);
              `rail` docks it to the SIDE RAIL beside the data (below); `none` omits the KEY zone. -->
         <header
-            v-if="eyebrow || (showTitle && slots.title) || legendInline || slots.actions"
+            v-if="eyebrow || (showTitle && slots.title) || legendInline || slots.actions || slots.dock"
             class="plate-header"
             :class="isHero ? 'mb-5' : 'mb-3'"
         >
@@ -432,8 +432,11 @@ watch(open, (value) => {
             </div>
             <!-- CONTROL zone — the quiet `#actions` cluster (options trigger + expand seam, the
                  stable top-right rung the C3 per-viz expand lands in, HD-E5). -->
-            <div v-if="slots.actions" class="plate-header__control">
+            <!-- The figure dock's seat (O-18): one handle in the top-right corner, opening leftward
+                 into the lane this zone reserves. In flow in the head row, never over the body. -->
+            <div v-if="slots.actions || slots.dock" class="plate-header__control" data-figure-dock-seat>
                 <slot name="actions" />
+                <slot name="dock" :enlarge="enlarge" :expanded="open" />
             </div>
         </header>
 
@@ -517,13 +520,6 @@ watch(open, (value) => {
             </aside>
         </div>
 
-        <!-- THE ACT ROW (A-39, the plate). The figure's LAST child, so the sticky row's containing
-             block is the plate: it rides the viewport foot while the plate is on screen and never
-             leaves it. Every act is bound to this plate (`enlarge` opens THIS frame); the host fills
-             the rest. -->
-        <div v-if="slots.act" class="plate-act" data-plate-act :data-subject="figId">
-            <slot name="act" :enlarge="enlarge" :expanded="open" />
-        </div>
     </figure>
 </template>
 

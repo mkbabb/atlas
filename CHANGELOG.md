@@ -20,8 +20,19 @@
   scene control. Neither follows the scroll position. `ChapterScene` drops `steps`/`apply`/`anchor`/
   `side`; scene options require `label`; `SceneAct` and `SCENE_ACT_SEAT` are deleted.
 
+- **The figure's own dock (U/B7 · O-18, R-FIGDOCK §4–§7).** `PlateDock` replaces `PlateAct` and the
+  plate's act row: one collapsed handle in the figure head's corner that opens on a press into
+  Options, Download or View data, Enlarge and Close, each naming the figure. The dead J-VIZDOCK
+  members of `useVizPlate` and the `.viz-dock` CSS are deleted.
+- **The provenance strip is one line (U/B7 · O-17).** 36 px, the bar radius, sentence case, one
+  "Source & method" action; "Browse & export" moved into the pane.
+- **One key map (U/B7).** `KeyInput.shift` is `KeyInput.multi`; Cmd or Ctrl adds to a selection like
+  Shift, and `SelectionRegion` reads the same map.
+
 ### Added
 
+- **Dark values (U/B7).** The dark sequential ramp is wider (ΔL 0.54) and `--ncsu-red` has a dark
+  value at 3:1 or better on the dark card.
 - **One open surface per screen seat (U/B7 · PLAN §2.5).** `useSurfaceSeat`, `useSeatedOpen`,
   `useViewportSeat` and `useSeatYield` in `./chrome`. The filter drawer takes its seat through it.
 - **The styles contract (U · D5A-W1).** `@mkbabb/atlas/styles` is now Tailwind v4 *source*

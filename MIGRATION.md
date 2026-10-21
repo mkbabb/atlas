@@ -105,7 +105,7 @@ projecting components.
 | the "step N of M" live readout is teleported to `<body>` (`data-testid="dock-step-readout"`) | none |
 | `MembraneFacet` drops `"viz-context"` and `"provenance-detent"`; `MembraneBand` drops `"context"` | a total switch over either union drops those arms |
 
-## 5d · Figure surfaces (U/B7 · O-11, O-12, O-13, O-17, O-18, O-19)
+## 5d · Figure surfaces (U/B7 · O-11, O-12, O-13, O-14, O-17, O-18, O-19)
 
 | Change | Consumer edit |
 |---|---|
@@ -124,6 +124,11 @@ projecting components.
 | `ChapterScene` drops `steps`, `apply`, `anchor` and `side`; it takes `period?: "year"` (the period control: a glass Select of every carried period, ‹ › steppers, a one-pass ▶ at 900 ms per period that stops on hover, focus or any input and is absent under reduced motion) and `caption?: SceneProse` (one data line under the figure). `StickyScene` is an in-flow figure: no step observer, no pin, no `?at=<beat>.<step>` restore, no scroll hold of the year; the control writes `?sy=` through `yearScope.setSingle` on a reader act only. `SceneSide`, `SceneAnchor` and `SceneRuntime.setYear` are deleted. New `PeriodControl` in `./charts` | sci `02-map/scene.ts`: delete the four step cards and `apply`; declare `period: "year"` and a `caption` bound to the selected year (S3) |
 | `ChapterStage` drops `anchor`; every `SceneOption` (and `SceneStep`) requires `label`, the name on the stage's glass segmented control. `?scene=` is written only by that control; `apply` runs when the reader chooses a scene and once on mount for the opening scene; the active scene's `prose` is the one line under the figure. The stage no longer clears `?scene=` when it leaves the viewport | sci `04-scatter/stage.ts`: add `label` to each scene in the R-LABELS §3 words; drop `anchor` |
 | `SceneAct` and `SCENE_ACT_SEAT` deleted; a plate's act row renders in place | none |
+| `PlateAct` and the plate's act row (`[data-plate-act]`, `.plate-act`, the `#act` seat) deleted for `PlateDock` (`./charts`): one collapsed handle (Ellipsis, 44 px) in the figure head's top-right seat (`[data-figure-dock-seat]`, the new `ChartFrame` `#dock` slot with `{ enlarge, expanded }`). A press opens it leftward: Options, Download (a menu of "CSV data" and "PNG image") or View data when the plate declares a source scope, Enlarge, and Close where the handle sat. Every control carries `data-subject="<plate id>"` and the figure's title in its name. Escape closes an open menu, then the dock, and returns focus to the handle. A sheet taking a screen seat closes it | a selector on `[data-plate-act]` or `[data-action="filter"]` moves to `[data-plate-dock][data-subject=<id>]`; the dock's handle is its `[aria-expanded][aria-controls]` element. `PlateLayer` is `"options" \| "download" \| "dock"` |
+| `useVizPlate` drops `filterDockOpen`, `toggleFilterDock`, `activeDimChips`, `activeFilterCount`, `showAppliedSummary` and `panel` (the retired J-VIZDOCK cluster); the `.viz-dock` CSS is gone | a test double of the composable drops those keys |
+| the provenance strip (`VizAppendixDock`) is one line at every width: 36 px tall, `--radius-bar` (falling back to `--radius-panel` until glass ships it), sentence case ("Source: <dataset>"), one trailing action "Source & method". "Browse & export" moved from the strip into the opened pane's head | a text selector on "source & method" in lower case, or on the strip's browse button, follows the move |
+| dark sequential ramp widened (`--viz-sequential-low` `oklch(0.3 0.04 250)`, `--viz-sequential-high` `oklch(0.84 0.14 235)`: ΔL 0.54, was 0.43); `--ncsu-red` gets a dark value (`hsl(6 88% 62%)`) that clears 3:1 on the dark card | none |
+| one key map for figure keyboard input: `KeyInput.shift` is `KeyInput.multi` (`isMultiSelect`: Shift, Cmd or Ctrl); Enter or Space with it adds to the selection. `SelectionRegion` reads the same `keyStep` map: arrows stop at the ends instead of wrapping, Escape clears | a caller of `keyStep` passes `multi: isMultiSelect(e)` |
 
 ## 6 · glass-ui 10.1.0
 

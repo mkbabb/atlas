@@ -15,15 +15,15 @@
 //
 // THE PRIMITIVES IT COMPOSES (never absorbs — DESIGN §6.4 COMPOSE-not-absorb):
 //   • ChartFrame      — the frame / expand / error-boundary / straddle / legend-dock.
-//   • PlateAct        — the plate's own act row (A-39): options, download, Enlarge, one subject.
-//   • useVizOptions + VizOptionsBand — the URL-backed options engine; its dials open from the act row.
+//   • PlateDock       — the figure's own dock (O-18): options, download, Enlarge, one subject.
+//   • useVizOptions + VizOptionsBand — the URL-backed options engine; its dials open from the dock.
 //   • ChartLegend     — the compact top-right / stepped / rail legend (E5).
 //   • ChartDataTable  — the a11y rows that ARE the export payload (E3, off the contract).
 //   • VizDescription / VizKeyStats / PlateVoid — the new furniture rungs (E1 / B4 / E8).
 //   • vizExport       — the getDataURL / DOM-snapshot / CSV serializers (E3, ZERO heavy dep).
 import { defineAsyncComponent, inject, onBeforeUnmount, watch } from "vue";
 import ChartFrame from "./ChartFrame.vue";
-import PlateAct from "./PlateAct.vue";
+import PlateDock from "./PlateDock.vue";
 import VizOptionsBand from "../../filter/ui/VizOptionsBand.vue";
 import VizDescription from "../legend/VizDescription.vue";
 import VizKeyStats from "../legend/VizKeyStats.vue";
@@ -153,12 +153,11 @@ defineExpose({ archetype });
             <slot name="actions" />
         </template>
 
-        <!-- THE ACT ROW (A-39, the plate). The CSV/image export (or the declared source data), the
-             figure's own options and Enlarge live ON this plate, in ChartFrame's sticky `#act` seat,
-             bound to it by construction. Inside a composed stage (`suppressFoot`) the STAGE owns the
-             figure's act row (ChapterStage), so the graphic grows no second one. -->
-        <template v-if="!suppressFoot" #act="{ enlarge }">
-            <PlateAct
+        <!-- THE FIGURE DOCK (O-18): the CSV/image export (or the declared source data), the figure's
+             own options and Enlarge, in the plate head's top-right seat, bound to this plate. Inside a
+             composed stage (`suppressFoot`) the stage owns the figure's dock. -->
+        <template v-if="!suppressFoot" #dock="{ enlarge }">
+            <PlateDock
                 :id="contract.id"
                 :title="contract.title"
                 :enlarge="enlarge"
@@ -169,7 +168,7 @@ defineExpose({ archetype });
                 <template v-if="hasOptions" #options>
                     <VizOptionsBand :viz-id="contract.id" :controller="optionsController" />
                 </template>
-            </PlateAct>
+            </PlateDock>
         </template>
 
         <!-- A7 (A-39) · THE PER-VIZ FILTER-DIMENSIONS HOST-READ SEAT IS STRUCK. A `#filter-dimensions`

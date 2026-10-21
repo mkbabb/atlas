@@ -46,7 +46,7 @@ const hasContextDims = computed(() => contextDims.value.length > 0);
 const hasViewDims = computed(() => viewDims.value.length > 0);
 
 // A figure's E2 OPTIONS are its own acts (A-39, the plate · RULINGS §I): they open from the figure's
-// act row, never from this route-level panel, so the panel renders no per-viz options band.
+// dock, never from this route-level panel, so the panel renders no per-viz options band.
 
 // THE BAND-0 SLOT (O-A9 residue close) — the route's GLOBAL filter-algebra readout (`AlgebraReadout`)
 // renders ABOVE the selection-set pane. First-class so a route need not prepend it inside `filterBody`;

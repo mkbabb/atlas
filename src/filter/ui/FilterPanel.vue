@@ -144,7 +144,7 @@ onBeforeUnmount(teardown);
 const { claimOpen } = useDockPortals();
 
 // TOPMOST SINGLE-SURFACE DISMISSAL (U6) — the arbiter's priority order is the topmost law. A plate
-// layer opened over the drawer (an act row's Options popover, Download menu or phone sheet) claims
+// layer opened over the drawer (a figure dock's Options popover or Download menu) claims
 // at priority 110 (`plateLayerClaim`, U RULINGS §K K-1), so the first Escape or outside pointer
 // closes that layer alone and the drawer (and its dock pin) survive; the next one closes the drawer.
 useDismissArbiter().claim(() =>

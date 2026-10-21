@@ -3,14 +3,14 @@
 // A composed `ChapterStage` does not render through `VizPlate`, and its controls are its OWN
 // scene-aware `anatomy.gear.controls` (the /sci scatter `Controls.vue`), not the raw options the
 // stage's graphic registers under the same id. Under A-39 (the plate, RULINGS §I) those controls are
-// the stage's per-figure options, so they render in the stage's own act row (ChapterStage), never in
+// the stage's per-figure options, so they render in the stage's own dock (ChapterStage), never in
 // page chrome: the facet-5 projection seam they used to register into is deleted. This pure mapper
-// stays the one place the stage's declared gear becomes the act row's options component + props.
+// stays the one place the stage's declared gear becomes the dock's options component + props.
 
 import type { Component } from "vue";
 import type { ChapterStage } from "../contract/scene-contract.js";
 
-/** A stage's options as its act row renders them: the controls component and the props it needs. */
+/** A stage's options as its dock renders them: the controls component and the props it needs. */
 export interface StageControls {
     /** The gear cluster's label (`stage.anatomy.gear.label`). */
     readonly label: string;

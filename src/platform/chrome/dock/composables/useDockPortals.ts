@@ -8,7 +8,7 @@
 // the transient hover-bloom the rail re-collapses mid-interaction, the trigger vanishes (stale
 // aria-expanded), and focus drops. While such a surface HOLDS the dock, the dock yields
 // collapse-authority to it (the `portal:false` intent above the bloom) and does not auto-collapse until
-// the hold is RELEASED. A figure's own acts (export, source data) live in its act row (A-39, the
+// the hold is RELEASED. A figure's own acts (export, source data) live in its dock (A-39, the
 // plate), so no per-figure surface holds the dock.
 //
 // ── WHAT THIS REPLACES (the state-integrity critic S1/S2/S6) ──────────────────────────────────────

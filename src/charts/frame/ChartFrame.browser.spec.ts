@@ -3,14 +3,15 @@
 // on the popstate, not inside the close call. Focus returns to the control that opened the figure
 // when the figure has actually collapsed. Returning it inside the close call (while the figure was
 // still open over a scroll-locked page) moved the page under the reader: on /sci at 1440 the walk
-// saw 1605 -> 1035 px and 1924 -> 4463 px on close.
+// saw 1605 -> 1035 px and 1924 -> 4463 px on close. Since O-18 the Enlarge control sits in the
+// figure's dock: the dock closes as the figure opens, and focus returns to the dock's handle.
 import { describe, expect, it } from "vitest";
 import { commands, userEvent } from "vitest/browser";
 import { createApp, defineComponent, h, nextTick } from "vue";
 import { createPinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
 import ChartFrame from "./ChartFrame.vue";
-import PlateAct from "./PlateAct.vue";
+import PlateDock from "./PlateDock.vue";
 import { provideDismissArbiter } from "../../platform/interaction/useDismissArbiter";
 import { installDashboardRegistry } from "../../contract/registry-inject";
 
@@ -50,8 +51,8 @@ describe("ChartFrame ?fig: Escape goes Back, the page stays put, focus returns t
                                 { ariaLabel: "The figure", figId: ID },
                                 {
                                     default: () => h("div", { style: "height:240px" }, "chart"),
-                                    act: ({ enlarge }: { enlarge: () => void }) =>
-                                        h(PlateAct, { id: ID, title: "The figure", enlarge, browse: null }),
+                                    dock: ({ enlarge }: { enlarge: () => void }) =>
+                                        h(PlateDock, { id: ID, title: "The figure", enlarge, browse: null }),
                                 },
                             );
                     },
@@ -63,12 +64,19 @@ describe("ChartFrame ?fig: Escape goes Back, the page stays put, focus returns t
             app.mount(host.querySelector("#frame-host")!);
             try {
                 await nextTick();
-                const enlarge = host.querySelector<HTMLElement>(`[data-subject="${ID}"][data-action="enlarge"]`)!;
-                expect(enlarge).not.toBeNull();
-                enlarge.scrollIntoView({ block: "center" });
+                const dockRoot = host.querySelector<HTMLElement>(`[data-plate-dock][data-subject="${ID}"]`)!;
+                expect(dockRoot).not.toBeNull();
+                dockRoot.scrollIntoView({ block: "center" });
                 await sleep(100);
                 const y0 = window.scrollY;
                 expect(y0).toBeGreaterThan(1000);
+                const handle = dockRoot.querySelector<HTMLElement>("[aria-expanded][aria-controls]")!;
+                handle.focus();
+                await userEvent.keyboard("{Enter}");
+                const enlarge = await (async () => {
+                    await until(() => !!dockRoot.querySelector(`[data-action="enlarge"]`)?.getClientRects().length, 1500);
+                    return dockRoot.querySelector<HTMLElement>(`[data-action="enlarge"]`)!;
+                })();
                 enlarge.focus();
                 await userEvent.keyboard("{Enter}");
                 expect(await until(() => fig() === ID, 2000)).toBe(true);
@@ -77,7 +85,9 @@ describe("ChartFrame ?fig: Escape goes Back, the page stays put, focus returns t
                 await userEvent.keyboard("{Escape}");
                 expect(await until(() => fig() === null, 2500)).toBe(true);
                 await sleep(400);
-                expect(document.activeElement).toBe(enlarge);
+                const returned = document.activeElement as HTMLElement | null;
+                expect(returned?.closest(`[data-plate-dock][data-subject="${ID}"]`), "focus returns into the figure's dock").not.toBeNull();
+                expect(returned?.getAttribute("aria-expanded"), "the handle, not the inert Enlarge").toBe("false");
                 expect(Math.abs(window.scrollY - y0)).toBeLessThanOrEqual(2);
             } finally {
                 app.unmount();

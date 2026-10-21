@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, provide, ref, watch, type VNodeChild } f
 import { SegmentedTabs } from "@mkbabb/glass-ui/tabs";
 import StickyScene from "./StickyScene.vue";
 import FootAnatomy from "../frame/FootAnatomy.vue";
-import PlateAct from "../frame/PlateAct.vue";
+import PlateDock from "../frame/PlateDock.vue";
 import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
 import {
     createStageMorphDriver,
@@ -109,7 +109,7 @@ const sourcePanelProps = {
 
 // ── THE STAGE'S OWN ACTS (A-39, the plate · RULINGS §I) ─────────────────────────────────────────
 // A composed stage does not render through VizPlate (its graphic's VizPlate suppresses its foot under
-// `STAGE_ANATOMY_KEY`), so the STAGE owns the figure's act row: its scene-aware controls are its
+// `STAGE_ANATOMY_KEY`), so the STAGE owns the figure's dock: its scene-aware controls are its
 // options, its declared source pane is its download, and Enlarge opens its graphic's frame. Nothing is
 // registered for page chrome to project; the dock carries none of these acts.
 const stageControls = stageControlsOf(props.stage);
@@ -252,6 +252,16 @@ watch(sourceDataOpen, (open) => {
                     data-testid="scene-control"
                     @update:model-value="chooseScene"
                 />
+                <PlateDock
+                    :id="stage.id"
+                    :title="stage.anatomy.foot.title"
+                    :enlarge="enlargeStage"
+                    :browse="openSourceData"
+                >
+                    <template v-if="stageControls" #options>
+                        <component :is="stageControls.component" v-bind="stageControls.props" />
+                    </template>
+                </PlateDock>
             </template>
             <template #caption>
                 <ActiveCaption />
@@ -290,28 +300,6 @@ watch(sourceDataOpen, (open) => {
                         </VizAppendixDock>
                     </template>
                 </FootAnatomy>
-                <!-- THE STAGE'S ACT ROW (A-39, the plate): options, source data and
-                     Enlarge, all of this stage. In a focal scene it is placed in the scene's
-                     act seat, above the narrated chips. -->
-                <div
-                        class="chapter-stage__act"
-                        data-plate-act
-                        :data-subject="stage.id"
-                    >
-                        <PlateAct
-                            :id="stage.id"
-                            :title="stage.anatomy.foot.title"
-                            :enlarge="enlargeStage"
-                            :browse="openSourceData"
-                        >
-                            <template v-if="stageControls" #options>
-                                <component
-                                    :is="stageControls.component"
-                                    v-bind="stageControls.props"
-                                />
-                            </template>
-                        </PlateAct>
-                </div>
                 <aside
                     v-if="sourceDataOpen"
                     class="chapter-stage__source-data"
@@ -352,14 +340,6 @@ watch(sourceDataOpen, (open) => {
     background: var(--background);
 }
 
-/* The stage's act row: the graphic's foot, closed off by the plate's engraved hairline. Placed in a
-   focal scene's act seat, the seat wears the hairline and the paper instead. */
-.chapter-stage__act {
-    inline-size: 100%;
-    margin-block-start: 0.75rem;
-    padding-block-start: 0.5rem;
-    border-block-start: 1px solid color-mix(in oklab, var(--engrave), transparent 40%);
-}
 
 .chapter-stage__source-close {
     display: block;

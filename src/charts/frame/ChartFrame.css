@@ -377,22 +377,41 @@
         --plate-pad: 2rem;
     }
 }
-.plate-act {
-    position: sticky;
-    inset-block-end: 0;
-    z-index: 2;
-    margin-block-start: 0.75rem;
-    margin-inline: calc(-1 * var(--plate-pad));
-    margin-block-end: calc(-1 * var(--plate-pad));
-    padding: 0.5rem var(--plate-pad);
-    background: var(--card);
-    border-block-start: 1px solid color-mix(in oklab, var(--engrave), transparent 40%);
-    border-end-start-radius: inherit;
-    border-end-end-radius: inherit;
+
+/* ── THE FIGURE DOCK'S LANE (U/B7 O-18, R-FIGDOCK §4.1) ──────────────────────────────────────
+   The plate answers to its own width. At 40rem or more the head row reserves the expanded dock's
+   lane (four 44 px cells and the cockpit padding) at all times, so opening the dock moves nothing.
+   Below 40rem the lane holds only the 44 px handle beside the title; the open dock takes its own
+   end-aligned row under the title row, and the legend sits below it. */
+.plate {
+    container: plate / inline-size;
 }
-/* Placed in a focal scene's act seat: the seat wears the paper and the hairline. */
-@media print {
-    .plate-act {
-        display: none;
+.plate-header__control:has([data-plate-dock]) {
+    justify-content: flex-end;
+}
+@container plate (min-width: 40rem) {
+    .plate-header__control:has([data-plate-dock]) {
+        min-inline-size: 196px;
+    }
+}
+@container plate (max-width: 39.99rem) {
+    .plate-header:has(.plate-header__control [data-plate-dock]) {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .plate-header:has(.plate-header__control [data-plate-dock]) .plate-header__masthead {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    .plate-header:has(.plate-header__control [data-plate-dock]) .plate-header__control {
+        grid-column: 2;
+        grid-row: 1;
+    }
+    .plate-header:has(.plate-header__control [data-plate-dock]) .plate-header__key {
+        grid-column: 1 / -1;
+        grid-row: 3;
+    }
+    .plate-header:has(.plate-header__control [data-plate-dock][data-expanded]) .plate-header__control {
+        grid-column: 1 / -1;
+        grid-row: 2;
     }
 }
