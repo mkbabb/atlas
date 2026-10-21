@@ -54,6 +54,24 @@ describe("the section pager (U/B7 §2.1 D-7)", () => {
         expect(seen).toBeGreaterThan(10);
     });
 
+    it("at 1440 it leaves for a heading that mounted after the section became active", async () => {
+        site = await mountSite("/sci", 1440);
+        const two = document.getElementById("two")!;
+        window.scrollTo(0, two.getBoundingClientRect().top + scrollY + 200);
+        await settle(400);
+        expect(lozenge()?.dataset.activeBeat).toBe("two");
+        // A lazy figure mounts its own heading inside the active section.
+        const late = document.createElement("h3");
+        late.textContent = "A figure title";
+        late.style.cssText = "margin:600px 0 0;font-size:20px;line-height:28px";
+        two.appendChild(late);
+        await settle(100);
+        window.scrollTo(0, late.getBoundingClientRect().top + scrollY - 30);
+        await new Promise((r) => requestAnimationFrame(() => r(null)));
+        const el = lozenge();
+        if (el) expect(overlaps(el.getBoundingClientRect(), late.getBoundingClientRect())).toBe(false);
+    });
+
     it("at 390 no lozenge renders and the Sections cell prints the active section", async () => {
         site = await mountSite("/sci", 390);
         window.scrollTo(0, 1500);

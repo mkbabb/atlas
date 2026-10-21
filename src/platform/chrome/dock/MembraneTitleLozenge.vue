@@ -71,45 +71,41 @@ const PAGER_CLEARANCE_PX = 8;
     pager has left before the frame that would paint it over the heading; an IntersectionObserver
     reports a frame late, and a fresh observer reports nothing until its first callback. */
 const headingInBand = ref(false);
-let headings: HTMLElement[] = [];
+// Live collections: a heading a lazy section or figure mounts later is in them without a re-read.
+const levels = ["h1", "h2", "h3"].map((tag) => document.getElementsByTagName(tag));
 let bandFoot = 0;
-let retryFrame = 0;
 function measure(): void {
-    headingInBand.value = headings.some((h) => {
-        const b = h.getBoundingClientRect();
-        return b.bottom > 0 && b.top < bandFoot;
-    });
-}
-function collectHeadings(): void {
-    if (retryFrame) cancelAnimationFrame(retryFrame);
-    retryFrame = 0;
-    headings = [];
     if (props.isPhone) {
         headingInBand.value = false;
         return;
     }
-    // Every heading on the page: the hero's title and the appendix headings pass under the band
-    // too, not only the sections'. Re-read on each section change, as lazy sections mount.
-    headings = [...document.querySelectorAll<HTMLElement>("main h1, main h2, main h3")];
-    // The route body resolves async: wait for its sections, as the stepper's observer does.
-    if (!headings.length && props.stepper.beatItems.value.length)
-        retryFrame = requestAnimationFrame(collectHeadings);
+    // Every heading in the page's main: the hero's title and the appendix headings pass under the
+    // band too, not only the sections'.
+    headingInBand.value = levels.some((list) => {
+        for (const h of list) {
+            const b = h.getBoundingClientRect();
+            if (b.bottom > 0 && b.top < bandFoot && h.closest("main")) return true;
+        }
+        return false;
+    });
+}
+function readBand(): void {
     bandFoot = bandPx() - PAGER_CLEARANCE_PX;
     measure();
 }
+// A section change can move the page without a scroll event of its own (a route's body resolving).
 watch(
     () => [props.stepper.activeBeatId.value, props.isPhone] as const,
-    () => collectHeadings(),
+    () => readBand(),
     { immediate: true, flush: "post" },
 );
 onMounted(() => {
     window.addEventListener("scroll", measure, { passive: true });
-    window.addEventListener("resize", collectHeadings, { passive: true });
+    window.addEventListener("resize", readBand, { passive: true });
 });
 onBeforeUnmount(() => {
-    if (retryFrame) cancelAnimationFrame(retryFrame);
     window.removeEventListener("scroll", measure);
-    window.removeEventListener("resize", collectHeadings);
+    window.removeEventListener("resize", readBand);
 });
 
 function leaveNow(_el: Element, done: () => void): void {
