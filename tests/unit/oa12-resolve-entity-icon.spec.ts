@@ -105,7 +105,9 @@ describe("viewBoxCenter — the school-dot `district-centroid` fallback anchor",
 
 // ── The resolver — the discriminated union (icon-facility §2.2) ──────────────────────────────────
 describe("resolveEntityIcon — the generalized 4-variant resolver", () => {
-    it("resolves a Class-A grain to a `glyph` mark (the baked silhouette)", () => {
+    it("resolves a Class-A grain to a `glyph` mark (the baked silhouette)", async () => {
+        // Every tier is lazy (U/B7 · F1): warm the memo, exactly as the runtime does.
+        await loadGlyphRegistry("state", pxToLod(48));
         const d = resolveEntityIcon("06", "state", { size: 48 });
         expect(d.mark).toBe("glyph");
         if (d.mark === "glyph") {
@@ -230,8 +232,9 @@ describe("grainForKind / resolveEntityIconForSelection — the folded mini-map r
 // ── The icon-tier resolution (the A12 degrade flip — icon-facility §2.4 · §3.1) ──────────────────
 describe("the `icon` bake tier — the A12 coarse-floor degrade flips", () => {
     it("a ≤18px district resolves the ICON tier (a DISTINCT, coarser geometry than the coarse band)", async () => {
-        // `icon` is additive-LAZY (off the eager floor) — warm the memo, exactly as the runtime does.
+        // Every tier is lazy (U/B7 · F1): warm the memo, exactly as the runtime does.
         await loadGlyphRegistry("district", "icon");
+        await loadGlyphRegistry("district", "coarse");
 
         // The px path: ≤18 → the icon tier; 24 → the coarse tier (the former icon FLOOR). A known LEA.
         const icon = resolveEntityIcon("100", "district", { size: 16 });

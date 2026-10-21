@@ -268,7 +268,6 @@ function TitleSlot(props_: {
             :color-kind="chapter.colorKind ?? 'diverging'"
             :hinge="chapter.hinge ?? 0.5"
             :figure-label="figureLabelFor(chapter, figures[i]!)"
-            :reveal="chapter.reveal?.tier ?? 'default'"
             :lift="chapter.reveal?.lift ?? !isCoverChapter(chapter, i)"
             :testid="chapter.id"
             :data-point="chapter.id"

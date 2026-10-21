@@ -18,11 +18,10 @@ import type { EditorialChapter } from "./editorial-contract.js";
 
 export type ResolvedLayout = {
     /** The resolved title pole — `left|center|right` (the O-A15 `center` third pole, spent
-        sparingly; a `center` masthead centres its block and rises vertically on reveal). */
+        sparingly; a `center` masthead centres its block). */
     title: TitlePole;
     numbers: "top" | "bottom";
     dock: "left" | "right";
-    scrollIn: "left" | "right" | "up";
 };
 
 /** Whether a chapter carries the editorial masthead (eyebrow · h2 · dek · drop-cap). Canonical
@@ -56,14 +55,7 @@ export function resolveLayout(chapter: Chapter, phase: number): ResolvedLayout {
     const title = pick<TitlePole>(L.title, even ? "left" : "right") as TitlePole;
     const numbers = pick<"top" | "bottom">(L.numbers, even ? "top" : "bottom") as "top" | "bottom";
     const dock = pick<"left" | "right">(L.dock, counterweight(title)) as "left" | "right";
-    // The reveal-in axis FOLLOWS the title pole (K-EXPRESS D2 · O-A15 ANSWERS Q-21): left slides
-    // from left, right from right, and a `center` title RISES vertically (no margin to slide from).
-    const scrollIn = pick<"left" | "right" | "up">(
-        L.scrollIn,
-        title === "center" ? "up" : title === "right" ? "right" : "left",
-    ) as "left" | "right" | "up";
-
-    return { title, numbers, dock, scrollIn };
+    return { title, numbers, dock };
 }
 
 /** The masthead-phase index for a chapter array — counts MASTHEAD-bearing beats ONLY, so the `hero`

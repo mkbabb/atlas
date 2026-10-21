@@ -166,7 +166,7 @@ describe("StoryManifest projections", () => {
             hinge: 0.35,
             transition: { kind: "crossfade" },
             focus: [{ kind: "highlight", marks: ["a"] }],
-            reveal: { layout: { title: "right", scrollIn: "right" } },
+            reveal: { layout: { title: "right" } },
             rule: "draw",
             superlative: { label: "is the canonical example", tone: "quiet" },
             figure: { kind: "value-scaled", value: 0.75, domain: [0, 1] },

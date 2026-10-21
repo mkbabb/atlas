@@ -147,6 +147,7 @@ describe("custom properties atlas reads resolve to atlas or the installed glass-
         "--a", // atmosphere.ts template `var(--${a})` scan artefact
         "--token", // ink.ts / useAuroraConfig.ts template `var(--${token})` scan artefact
         "--beat-cis",
+        "--first-figure-cis", // the route's first-figure reserve (U/B7 · M-2); falls back to --beat-cis
         "--beat-tl",
         "--brand",
         "--breath-depth",

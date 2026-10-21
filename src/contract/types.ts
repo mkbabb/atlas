@@ -340,9 +340,6 @@ export interface TitleFacet {
     /** W-66/O-04 — the title shrinks-into-glass and PERSISTS through the viz. B renders the
         persistence; A carries the flag (default false). */
     sticky?: boolean;
-    /** W-59 — the title's OWN entrance/parallax transform, distinct from the beat body's reveal
-        axis. Omit ⇒ follows the beat reveal. C authors the curve. */
-    scrollIn?: ScrollDir;
     /** THE ONE NARROW TYPED DOOR — the inline post-title device as a PROP-BAG (dial 10, owner-ruled:
         the typed bag stands, un-folded to `ornament`). It carries per-title DATA a bare Component
         cannot hold: the `label` (the discovery's aria name) + the `reveal` (its discovered detail, a
@@ -385,53 +382,22 @@ export type ChapterViz =
     | "hero"
     | "colophon";
 
-/** The motion facet of a chapter (I3 §2 / §8) — how the beat REVEALS, mapped onto the
-    `Beat`/`scroll-driven.css` reveal tiers (the F6.3 seam), plus the optional asymmetric
-    grid-break flag. The host derives the `AnimatedRule :seed` cadence from the chapter
-    INDEX (the SM-1/`:seed` drift folds), so a chapter declares only what is intrinsic to
-    it (its reveal register, whether it leads, whether it is the asymmetric beat) and the
-    cadence is a function of position. Every field optional ⇒ the default beat reveal. */
+/** The beat facet of a chapter: its grid-break inset, its scrub-host opt-in and its placement.
+    U/B7 · PLAN §5.1 deleted the scroll-scrubbed reveal (S-4), so the reveal register (`tier`), the
+    reveal shape (`shape`) and the exit posture (`out`) are gone with it. Every field optional. */
 export interface RevealSpec {
-    /** The reveal register → the `Beat` `scroll-driven.css` attribute tier. Omit ⇒ default. */
-    tier?: "default" | "dense" | "chrome" | "tail";
-    /** The LEAD beat opts OUT of the lift (a translate displaces the masthead top — the
-        bodies' `beatStyle(scene, false)`). Omit ⇒ the full scroll-scrubbed rise. */
+    /** `false` marks the lead beat: it is exempt from the interior beats' render skip
+        (`content-visibility: auto`) because it is the first paint. Omit ⇒ interior, except the
+        cover, which the essay leads by default. */
     lift?: boolean;
     /** The ONE asymmetric grid-breaker (the `beat--aside` offset — usf normalization beat). */
     aside?: boolean;
-    /** N.WD1 DEFECT C — opt this beat into the COVER-SCRUB axis (the `[data-scroll-tl]` host
-        `useCoverProgress` walks up to) WITHOUT the `aside` inset. A figure beat whose plate declares a
-        scroll-driven reveal/count (a WC1 `MotionDeclaration` `on:"scroll"` segment — the demand
-        crossover crown, the product-mix draw, the usf-integrity scatter draw-in) needs a scrub host, or
-        its scroll scalar degrades to terminal 1 (the figure shows fully drawn, never scrubbing). The
-        essay stamps `data-scroll-tl` on `aside || scrub`; this DECOUPLES the scrub-axis opt-in from the
-        aside inset (the two were conflated onto `aside` alone, so an essay route with no aside beat had
-        ZERO cover hosts). CONSUMES the KEPT `scroll-driven.css` `[data-reveal-beat][data-scroll-tl]`
-        register + `useCoverProgress` — it authors no new reveal machinery. */
+    /** Opt this beat in as a `[data-scroll-tl]` scrub host without the `aside` inset (a figure
+        beat whose plate reads the beat's `--scroll-tl` position clock). */
     scrub?: boolean;
-    /** P-CF06 · THE BOUNDED REVEAL-SHAPE AXIS — a closed 2-name register layered
-        onto the SAME `translate3d(...)` the `reveal-beat` keyframe already scrubs
-        (`scroll-driven.css`), compositor-safe by construction (AG7: transform/opacity only, zero
-        new paint properties). `lift` = today's shape (unchanged, the majority default); `settle`
-        = PLUS a gentle `scale()` zoom-in. Omit ⇒ the tier-rotated fallback
-        (`rotateRevealShape`, `story/beat-template.ts`), restraint-biased (`lift` wins most slots).
-        An AUTHORED value always wins over the fallback — the same override law every other
-        `RevealSpec` field carries. */
-    shape?: "lift" | "settle";
     /** The PLACEMENT grammar (K-EXPRESS D2). Omit ⇒ the beat auto-zebras by its masthead-phase
         index. Independent of `aside`, which retains only its real inset + scrub-host semantics. */
     layout?: BeatLayout;
-    /** A-14 · THE EXIT POSTURE — the grammar's other half of "fade in/out". Omit ⇒ `"hold"`: the
-        `fill-mode: both` terminal every beat rests at today, byte-identical for every route that
-        declares nothing. `"fade"` opts this beat into the departure — its card leaves the way it
-        arrived (opacity 1→0 back along the beat's OWN resolved entrance axis, sign preserved: a
-        card that entered from the left leaves to the left, so the eye's model of where it lives
-        holds) over the beat's `exit 0% → 45%` phase. Scrub-reversible by construction (the whole
-        curve is position-derived), and PRM rests it at opacity 1 — information parity total.
-        Opt-in per point: this is the full in-dwell-out breath, for marquee beats that earn it,
-        never the route-wide default. `scroll-driven.css` compiles it on `.story-card` (the beat
-        host's descendant), so a card-less beat declares it to no effect. */
-    out?: "hold" | "fade";
 }
 
 /** A furniture SIDE (K-EXPRESS D2). `auto` ⇒ the zebra resolver picks by beat phase. The masthead
@@ -443,13 +409,8 @@ export type Side = "left" | "right" | "top" | "bottom" | "center" | "auto";
 
 /** The masthead TITLE pole — the RESOLVED horizontal placement `resolveLayout` / `resolveBeatTemplate`
     emit. A superset of the historical `left|right` with the O-A15 `center` third pole (the missing
-    middle pole, spent sparingly per the ≤2-C-per-corridor constraint). The `center` beat rises
-    vertically (its reveal follows the pole ⇒ `scrollIn:"up"`), never sliding from a margin. */
+    middle pole, spent sparingly per the ≤2-C-per-corridor constraint). */
 export type TitlePole = "left" | "center" | "right";
-
-/** The reveal-in AXIS (K-EXPRESS D2). `left|right` slide the beat in horizontally; `up` keeps the
-    vertical rise; `auto` ⇒ follows the resolved title side. */
-export type ScrollDir = "left" | "right" | "up" | "auto";
 
 /** FACET — the per-beat PLACEMENT grammar (K-EXPRESS D2). Every field optional ⇒ omit and the beat
     auto-zebras by masthead phase. Declare ONE field to break the zebra for that mark only. The
@@ -470,8 +431,6 @@ export interface BeatLayout {
         `center` title has no opposite margin, so the dock rests at its default right corner). A
         HORIZONTAL subset of `Side` (the dock never centers — it is always a corner counterweight). */
     dock?: Exclude<Side, "top" | "bottom" | "center">;
-    /** The reveal-in axis. Omit ⇒ FOLLOWS the resolved title (left title ⇒ slide from left). */
-    scrollIn?: ScrollDir;
 }
 
 /** A CHAPTER — the essay-host projection of one manifest point (I3 §1).
@@ -495,7 +454,7 @@ export interface Chapter {
     /** The viz the beat mounts — a feature-plate component, a `VizContract`, or a
         `"hero"`/`"colophon"` page-level slot. */
     viz: ChapterViz;
-    /** The motion facet (reveal tier, lead/lift, the asymmetric grid-break). Omit ⇒ default. */
+    /** The beat facet (the asymmetric grid-break, the scrub host, the placement). Omit ⇒ default. */
     reveal?: RevealSpec;
     /** The dock nav LABEL — the entry the projection surfaces (distinct from the eyebrow:
         the eyebrow is the on-page kicker, the label is the dock tooltip). Omit ⇒ `eyebrow`. */

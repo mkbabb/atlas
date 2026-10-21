@@ -280,8 +280,9 @@ describe("A-39 · keyboard reach, focus and Escape", () => {
         const frame = readFileSync(join(SRC, "charts/frame/ChartFrame.vue"), "utf8");
         expect(frame).toMatch(/useDismissArbiter\(\)\.claim\(\(\) =>\s*open\.value\s*\?\s*figureEscapeClaim\(/);
         expect(frame).toMatch(/<slot name="act" :enlarge="enlarge"/);
-        // focus return: the `open` setter records the opener and restores it on close.
+        // focus return: the `open` setter records the opener; a watch on `open` restores it once the
+        // figure has closed, without scrolling (U/B7 · M-3).
         expect(frame).toMatch(/returnFocusEl = \(document\.activeElement/);
-        expect(frame).toMatch(/if \(el\) void nextTick\(\(\) => el\.focus\?\.\(\)\)/);
+        expect(frame).toMatch(/if \(el\?\.isConnected\) void nextTick\(\(\) => el\.focus\(\{ preventScroll: true \}\)\)/);
     });
 });

@@ -20,7 +20,6 @@ const props = withDefaults(
         figureLabel?: string;
         colorKind?: ColorKind;
         hinge?: number;
-        reveal?: "default" | "dense" | "chrome" | "tail";
         lift?: boolean;
         testid?: string;
         titleOwned?: boolean;
@@ -37,7 +36,6 @@ const props = withDefaults(
         figureLabel: undefined,
         colorKind: "diverging",
         hinge: 0.5,
-        reveal: "default",
         lift: true,
         testid: undefined,
         titleOwned: true,
@@ -67,7 +65,6 @@ const secondSeam = computed(
         :figure-label="figureLabel"
         :color-kind="colorKind"
         :hinge="hinge"
-        :reveal="reveal"
         :lift="lift"
         :testid="testid"
         :title-owned="titleOwned"

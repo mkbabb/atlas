@@ -17,7 +17,7 @@
 // PURE + TOTAL — no DOM, no Vue, no clock. Every (policy, phase, seed) yields a concrete
 // `ResolvedBeatTemplate`, unit-testable without mounting.
 
-import type { RevealSpec, ScrollDir, TitlePole } from "../contract/index.js";
+import type { RevealSpec, TitlePole } from "../contract/index.js";
 import { rotateRuleVariant, type RuleVariant } from "../editorial/rule-register.js";
 import { microGrain, hashSeed, type MicroGrain } from "../motion/seededVariety.js";
 import type { Rank } from "../motion/variant-bounds.js";
@@ -91,46 +91,14 @@ export interface BeatVariationPolicy {
     seed?: number;
 }
 
-// ── THE REVEAL-SHAPE AXIS (P-CF06 — mirrors `RULE_VARIANTS`/`rotateRuleVariant`) ───────────────────
-
-/** THE CLOSED REVEAL-SHAPE REGISTER — the beat-reveal transform variety `Beat`'s
-    `data-reveal-shape` stamp selects (scroll-driven.css's `reveal-beat` keyframe). Restraint-first:
-    `lift` is today's translate+opacity rise (the majority default); `settle` layers a `scale` term
-    onto that SAME keyframe. A shape can ONLY be one of these two (no free variant) — the
-    RevealSpec.shape field literal union this register mirrors. */
-export const REVEAL_SHAPES = ["lift", "settle"] as const;
-
-/** The beat-reveal transform-shape register — the variety a beat's rise wears. */
-export type RevealShape = (typeof REVEAL_SHAPES)[number];
-
-/** The per-tier rotation OFFSET for the shape cadence — modelled BYTE-FOR-BYTE on
-    `rule-register.ts`'s own `TIER_OFFSET` (duplicated, not imported: this is an independent closed
-    register mirroring that one's shape, not a shared dependency). */
-const SHAPE_TIER_OFFSET: Record<Rank, number> = {
-    lede: 0,
-    support: 1,
-    ancillary: 2,
-};
-
-/** THE ROTATION — resolve a beat's reveal shape from its tier + its running index, mirroring
-    `rotateRuleVariant` BYTE-FOR-BYTE (rule-register.ts:37-42): the SAME period-4, tier-offset
-    cadence over a 2-name register, restraint-biased (`lift` wins three of every four slots). The
-    AUTHORED `RevealSpec.shape` field ALWAYS wins over this fallback (the
-    resolver below only reaches it when a beat leaves `shape` unset). Deterministic + total: same
-    (tier, index) ⇒ same shape, never random. */
-export function rotateRevealShape(tier: Rank, index: number): RevealShape {
-    const step = ((index + SHAPE_TIER_OFFSET[tier]) % 4 + 4) % 4;
-    return step === 1 ? "settle" : "lift";
-}
-
 // ── A pure resolved variation utility ─────────────────────────────────────────────────────────────
 
 /** A concrete, total variation tuple carrying authored poles and seed micro-grain. */
 export interface ResolvedBeatTemplate {
     /** The resolved title pole (L/C/R) — `useBeatLayout` stamps it as `data-title`. */
     title: TitlePole;
-    /** The resolved reveal facet — the pole-following layout merged UNDER the authored reveal. Its
-        `layout.title`/`layout.scrollIn` carry the pole so `resolveLayout` produces the same sides. */
+    /** The resolved beat facet — the pole-following layout merged UNDER the authored one. Its
+        `layout.title` carries the pole so `resolveLayout` produces the same sides. */
     reveal: RevealSpec;
     /** The resolved rule variant — `AnimatedRule` renders it (authored ?? tier-rotated). */
     rule: RuleVariant;
@@ -151,12 +119,6 @@ export interface ResolvedBeatTemplate {
     grain: MicroGrain;
     /** The masthead phase this template resolves (the beats[] index). */
     phase: number;
-}
-
-/** The reveal-in axis FOLLOWS the title pole (Q-21): left slides from left, right from right, a `center`
-    beat RISES vertically (no margin to slide from — the same rule `resolveLayout` applies). */
-function revealDirForPole(pole: TitlePole): ScrollDir {
-    return pole === "center" ? "up" : pole === "right" ? "right" : "left";
 }
 
 /**
@@ -183,17 +145,12 @@ export function resolveBeatTemplate(
     const numbers: NumbersPole = authored.numbers ?? (phase % 2 === 0 ? "top" : "bottom");
     const rule: RuleVariant = authored.rule ?? rotateRuleVariant(tier, phase);
 
-    // The reveal FOLLOWS the title pole by default (Q-21). The pole-derived layout is the FLOOR; the
-    // authored reveal (and its own `layout`) overrides ON TOP — so a route may author a bespoke reveal
-    // while the pole still governs any field it leaves unset (the merge is field-granular).
-    // O-A26 · the SHAPE field resolves the SAME way `rule` does above: authored ?? tier-rotated
-    // fallback (`rotateRevealShape`) — deterministic, restraint-biased, never random.
+    // The pole-derived layout is the FLOOR; the authored facet (and its own `layout`) overrides on
+    // top, field by field.
     const reveal: RevealSpec = {
         ...authored.reveal,
-        shape: authored.reveal?.shape ?? rotateRevealShape(tier, phase),
         layout: {
             title,
-            scrollIn: revealDirForPole(title),
             ...authored.reveal?.layout,
         },
     };

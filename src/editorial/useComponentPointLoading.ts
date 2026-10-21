@@ -87,7 +87,7 @@ export function useComponentPointLoading(
             if (queued.size && idle == null) idle = requestIdle(flush, idleTimeoutMs);
         },
         // The document is the root, so the margin extends this document's own viewport (an
-        // implicit root would be the top-level viewport, which ignores the margin in a frame).
+        // implicit root would be the outermost viewport, which ignores the margin in a frame).
         { root: document, rootMargin: `${margin} 0px ${margin} 0px` },
     );
 

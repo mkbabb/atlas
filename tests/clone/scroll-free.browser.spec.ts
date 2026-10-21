@@ -132,6 +132,14 @@ describe("scrolling only scrolls (PLAN §5.1)", () => {
                 last = sy;
                 if (sy >= end - 1) break;
             }
+            // Firefox can coalesce two wheel events into one scroll: a 0 px step followed by a
+            // 600 px step is one input delivered late, not a held or jumped page.
+            c.stuck = c.stuck.filter((x, _i, all) => {
+                const next = all.find((y) => y.k === x.k + 1);
+                const prev = all.find((y) => y.k === x.k - 1);
+                const pair = (a: { moved: number }, b: { moved: number }) => a.moved === 0 && Math.abs(b.moved - 2 * STEP_PX) <= 2;
+                return !((next && pair(x, next)) || (prev && pair(prev, x)));
+            });
             c.missingFromInnerText = await page.evaluate(() => {
                 const inner = document.body.innerText.replace(/\s+/g, " ");
                 return [...document.querySelectorAll<HTMLElement>(".essay-beat h2")]

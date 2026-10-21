@@ -169,7 +169,6 @@ function revealOf<Stage extends ChapterStage>(
         ...point.reveal,
         layout: {
             title: point.pole,
-            scrollIn: point.pole === "center" ? "up" : point.pole,
             ...point.reveal?.layout,
         },
     };
