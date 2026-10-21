@@ -10,7 +10,8 @@
 //   • `pager` (≥ 768 px) — ‹ [Section n of N · title] ›, seated beside the collapsed dock once the
 //     reader has left the top and the section's heading has cleared the band (`MembraneTitleLozenge`);
 //   • `cell` (< 768 px) — the bottom bar's Sections cell: a 120 px face printing the active section's
-//     name, with "Section n of N" as its accessible name.
+//     name, with "Section n of N" as its accessible name. Its list's open state is a model, so the
+//     dock can seat it (the bar's bottom seat, PLAN §2.5).
 import { computed } from "vue";
 import { ChevronLeft, ChevronRight } from "@lucide/vue";
 import {
@@ -32,6 +33,9 @@ const { stepper, variant = "pager" } = defineProps<{
     variant?: "pager" | "cell";
 }>();
 
+/** The section list is open. */
+const open = defineModel<boolean>("open", { default: false });
+
 const total = computed(() => stepper.beatItems.value.length);
 const n = computed(() => stepper.activeStep.value);
 const position = computed(() => `Section ${n.value} of ${total.value}`);
@@ -49,7 +53,7 @@ const sections = computed(() =>
 </script>
 
 <template>
-    <Select v-if="variant === 'cell' && n > 0 && stepper.activeLabel.value" v-model="model">
+    <Select v-if="variant === 'cell' && n > 0 && stepper.activeLabel.value" v-model="model" v-model:open="open">
         <SelectTrigger
             v-bind="$attrs"
             class="dock-sections__face dock-sections__face--cell"
@@ -89,7 +93,7 @@ const sections = computed(() =>
         >
             <ChevronLeft aria-hidden="true" />
         </button>
-        <Select v-model="model">
+        <Select v-model="model" v-model:open="open">
             <SelectTrigger
                 class="dock-sections__face"
                 :aria-label="`${position}: ${stepper.activeLabel.value}`"

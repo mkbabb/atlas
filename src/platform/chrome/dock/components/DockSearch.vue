@@ -1,8 +1,9 @@
 <script setup lang="ts">
 // DockSearch — the site layer's Search (U/B7 §2.2). A glass command palette over the dashboards and
 // any instance search source (sci: the school units, by name). A source loads on the first open of
-// Search, once, so no route's first paint carries it. A result routes to its page.
-import { computed, ref, shallowRef } from "vue";
+// Search, once, so no route's first paint carries it. A result routes to its page. The palette's open
+// state is a model, so the dock can seat it or hold the rail open while it is open (PLAN §2.5).
+import { computed, shallowRef } from "vue";
 import { useRouter } from "vue-router";
 import { Search } from "@lucide/vue";
 import { DockControl } from "@mkbabb/glass-ui/dock";
@@ -33,7 +34,8 @@ const dashboards = computed<SiteSearchItem[]>(() =>
         .map((d) => ({ label: d.title, to: `/${d.slug}` })),
 );
 
-const open = ref(false);
+/** The palette is open. */
+const open = defineModel<boolean>("open", { default: false });
 const loaded = shallowRef<{ group: string; items: readonly SiteSearchItem[] }[]>([]);
 let loading: Promise<void> | null = null;
 function loadSources(): void {
