@@ -93,22 +93,22 @@ describe("dial 11 · the handle carries words, and only words it can keep", () =
     it("names the record its own handle opens, and promises no table it has not got", async () => {
         const html = await render({ facet: SERVED, vizId: "sci-cover" });
         expect(html).toContain("source &amp; method");
-        expect(html).not.toContain("browse &amp; export");
+        expect(html).not.toContain("Browse &amp; export");
     });
 
     it("carries the ruled words on the control that opens the viewer", async () => {
         const browsable = await renderDock({ browse: () => {} });
-        expect(browsable).toContain("browse &amp; export");
+        expect(browsable).toContain("Browse &amp; export");
         expect(browsable).toContain('data-testid="appendix-dock-browse"');
         // and its own control still names what IT opens
-        expect(browsable).toContain("source &amp; method");
+        expect(browsable).toContain("Source &amp; method");
     });
 
     // Guard-3 is ABSENCE: a plate that declares no `DataScope` passes no `browse`, so no browse
     // handle exists to make the promise. There is no disabled control and no dead affordance.
     it("grows no browse handle where no scope is declared", async () => {
         const plain = await renderDock({});
-        expect(plain).not.toContain("browse &amp; export");
+        expect(plain).not.toContain("Browse &amp; export");
         expect(plain).not.toContain('data-testid="appendix-dock-browse"');
     });
 });
@@ -130,6 +130,6 @@ describe("W-63 · the illustrative figure is attribution-only", () => {
         // the record, the handle, and any promise of rows are all gone
         expect(html).not.toContain('data-testid="provenance-bar-record"');
         expect(html).not.toContain('data-testid="provenance-bar-handle"');
-        expect(html).not.toContain("browse &amp; export");
+        expect(html).not.toContain("Browse &amp; export");
     });
 });
