@@ -115,6 +115,7 @@ projecting components.
 | `formatKbps` deleted; `formatKbpsPerStudent` prints an integer kbps with a thousands separator and never re-units to Mbps | replace `formatKbps(x)` with `formatKbpsPerStudent(x)` (sci `SchoolMap.vue`, `RainbowStack.vue`, `selectionStat.ts`, `useScatterStatResolver.ts`; speedtest) |
 | new `formatPeriod(key, "school-year" \| "funding-year" \| "year")` → "2025–26", "FY2026", "2024"; the school-year period noun reads it | print periods through it |
 | ReadoutDrill's verbs read "Show only this unit", "Add to comparison", "Zoom to this unit"; UnifiedFilterPanel's headings "Filter" and "Filter this dashboard"; ScrollTimeline's default label "Year" (R-LABELS §3.9) | update text selectors |
+| new `./chrome` seat API: `useSurfaceSeat(seat, owner)`, `useSeatedOpen(open, seat, owner)`, `useViewportSeat()`, `useSeatYield(fn)`, `useSurfaceSeats`. One open surface per seat (`right` at ≥ 768 px, `bottom` below); the filter drawer holds its seat through it | a sheet that shares the right or bottom edge binds its open model with `useSeatedOpen` (the dock's sheets in A4) |
 
 ## 6 · glass-ui 10.1.0
 

@@ -12,6 +12,7 @@
 import { computed, inject, nextTick, onBeforeUnmount, ref, watch, type Component } from "vue";
 import { Dialog, DialogTitle, DialogDescription } from "@mkbabb/glass-ui/dialog";
 import { SheetContent } from "@mkbabb/glass-ui/sheet";
+import { useSeatedOpen, useViewportSeat } from "../../platform/chrome/surfaces/useSurfaceSeat.js";
 import { Button } from "@mkbabb/glass-ui/button";
 import { Filter, SlidersHorizontal } from "@lucide/vue";
 import { DASHBOARD_KEY, useDashboardRegistry } from "../../contract/index.js";
@@ -56,6 +57,8 @@ const { label: freshnessLabel } = useFreshness();
 // The shared flag requests the full register. Its false state leaves this same
 // physical sheet at the non-occluding PIP detent.
 const { open } = useFilterPane();
+// One open surface per seat (PLAN §2.5): the drawer shares its edge with the entity detail.
+useSeatedOpen(open, useViewportSeat(), "filter-drawer");
 const { clearPin } = useFilterPanel();
 const { appliedCount } = useFilterLedger();
 

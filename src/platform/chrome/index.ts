@@ -24,3 +24,4 @@ export * from "./dock/index.js";
 export * from "./background/index.js";
 export * from "./masthead/index.js";
 export * from "./freshness.js";
+export * from "./surfaces/index.js";
