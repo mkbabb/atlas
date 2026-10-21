@@ -123,8 +123,8 @@ describe("ChartFrame ?fig: a tall figure in running prose; Escape never moves th
                                     { ariaLabel: "The figure", figId: ID },
                                     {
                                         default: () => h("div", { style: `height:${bodyPx}px` }, "chart"),
-                                        act: ({ enlarge }: { enlarge: () => void }) =>
-                                            h(PlateAct, { id: ID, title: "The figure", enlarge, browse: null }),
+                                        dock: ({ enlarge }: { enlarge: () => void }) =>
+                                            h(PlateDock, { id: ID, title: "The figure", enlarge, browse: null }),
                                     },
                                 );
                         },
@@ -136,11 +136,17 @@ describe("ChartFrame ?fig: a tall figure in running prose; Escape never moves th
                 app.mount(host.querySelector("#frame-host")!);
                 try {
                     await nextTick();
-                    const enlarge = host.querySelector<HTMLElement>(`[data-subject="${ID}"][data-action="enlarge"]`)!;
-                    host.querySelector<HTMLElement>("[data-plate-act]")!.scrollIntoView({ block: "center" });
+                    const dockRoot = host.querySelector<HTMLElement>(`[data-plate-dock][data-subject="${ID}"]`)!;
+                    dockRoot.scrollIntoView({ block: "center" });
                     await sleep(150);
                     const y0 = window.scrollY;
                     expect(y0).toBeGreaterThan(1000);
+                    const handle = dockRoot.querySelector("[data-plate-dock-handle]")!.closest<HTMLElement>("[tabindex]")!;
+                    handle.focus({ preventScroll: true });
+                    expect(window.scrollY).toBe(y0);
+                    await userEvent.keyboard("{Enter}");
+                    expect(await until(() => !!dockRoot.querySelector(`[data-action="enlarge"]`)?.getClientRects().length, 1500)).toBe(true);
+                    const enlarge = dockRoot.querySelector<HTMLElement>(`[data-action="enlarge"]`)!;
                     enlarge.focus({ preventScroll: true });
                     expect(window.scrollY).toBe(y0);
                     await userEvent.keyboard("{Enter}");
@@ -149,7 +155,8 @@ describe("ChartFrame ?fig: a tall figure in running prose; Escape never moves th
                     await userEvent.keyboard("{Escape}");
                     expect(await until(() => fig() === null, 2500)).toBe(true);
                     await sleep(500);
-                    expect(document.activeElement).toBe(enlarge);
+                    const returned = document.activeElement as HTMLElement | null;
+                    expect(returned?.closest(`[data-plate-dock][data-subject="${ID}"]`), "focus returns into the figure's dock").not.toBeNull();
                     expect(window.scrollY - y0).toBe(0);
                 } finally {
                     app.unmount();
