@@ -43,7 +43,7 @@ const props = withDefaults(
         railId?: string;
     }>(),
     {
-        label: "Story position",
+        label: "Year",
         rivetHue: undefined,
         railId: undefined,
     },

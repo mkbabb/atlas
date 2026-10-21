@@ -104,7 +104,7 @@ withDefaults(
     inline-size: 0.5rem;
     block-size: 0.5rem;
     flex-shrink: 0;
-    border-radius: var(--radius-circle, 50%);
+    border-radius: 50%;
     align-self: center;
 }
 .readout-facts__value :deep(.figure-slug-card) {

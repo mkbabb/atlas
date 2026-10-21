@@ -9,6 +9,9 @@
   four facts (none repeating the title), the sources and "Click for detail". `ReadoutFacts` uses a
   label-safe grid (`max-content minmax(0,1fr)`) that stacks under 18rem; the breakdown takes the
   same columns. See MIGRATION.md §5d.
+- **Number formats (U/B7 · O-14, R-LABELS §5).** Bandwidth prints "Gbps"; `formatKbps` is deleted
+  for `formatKbpsPerStudent` (integer kbps, never Mbps); new `formatPeriod`. The root action and
+  heading names follow R-LABELS §3.9.
 - **The styles contract (U · D5A-W1).** `@mkbabb/atlas/styles` is now Tailwind v4 *source*
   (`dist/styles/index.css`), compiled by the consumer's one Tailwind root, which imports
   `tailwindcss`, then `@mkbabb/glass-ui/styles`, then `@mkbabb/atlas/styles`, in that order, in one

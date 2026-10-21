@@ -111,6 +111,10 @@ projecting components.
 |---|---|
 | `HoverReadout.eyebrow` deleted; the hover card shows the name, one context line (`subhead`), at most four facts, a sources line (new `HoverReadout.sources: string[]`) and "Click for detail". A fact whose value repeats the title is not shown | drop `eyebrow` from every published payload; put the kind and period in `subhead` ("LEA 93N · Charter · 2025–26"); pass the dataset names in `sources` |
 | `ReadoutFacts` lays out on its own grid (`max-content minmax(0,1fr)`, stacked under 18rem) and no longer depends on Tailwind grid utilities | none |
+| `formatBandwidth`, `formatGbpsAxis` and `tierLabel(_, "bandwidth")` print "Gbps" (was "Gb/s") | update any test or string match on "Gb/s" |
+| `formatKbps` deleted; `formatKbpsPerStudent` prints an integer kbps with a thousands separator and never re-units to Mbps | replace `formatKbps(x)` with `formatKbpsPerStudent(x)` (sci `SchoolMap.vue`, `RainbowStack.vue`, `selectionStat.ts`, `useScatterStatResolver.ts`; speedtest) |
+| new `formatPeriod(key, "school-year" \| "funding-year" \| "year")` → "2025–26", "FY2026", "2024"; the school-year period noun reads it | print periods through it |
+| ReadoutDrill's verbs read "Show only this unit", "Add to comparison", "Zoom to this unit"; UnifiedFilterPanel's headings "Filter" and "Filter this dashboard"; ScrollTimeline's default label "Year" (R-LABELS §3.9) | update text selectors |
 
 ## 6 · glass-ui 10.1.0
 

@@ -71,7 +71,7 @@ defineSlots<{ algebra(): unknown }>();
 
         <!-- (3) THE CONTEXT BAND — `scope:'context'` projected dials ("Narrow the fleet"). -->
         <div v-if="hasContextDims" class="unified-filter-panel__band">
-            <h3 class="unified-filter-panel__crest sr-only">Narrow the fleet</h3>
+            <h3 class="unified-filter-panel__crest sr-only">Filter</h3>
             <TransitionGroup tag="ul" name="dim-flip" class="unified-filter-panel__dials">
                 <DimDial
                     v-for="d in contextDims"
@@ -84,7 +84,7 @@ defineSlots<{ algebra(): unknown }>();
 
         <!-- (4) THE VIEW DIALS — `scope:'view'` projected dials ("Filter within the fleet"). -->
         <div v-if="hasViewDims" class="unified-filter-panel__band">
-            <h3 class="unified-filter-panel__crest sr-only">Filter within the fleet</h3>
+            <h3 class="unified-filter-panel__crest sr-only">Filter this dashboard</h3>
             <TransitionGroup tag="ul" name="dim-flip" class="unified-filter-panel__dials">
                 <DimDial
                     v-for="d in viewDims"

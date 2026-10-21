@@ -22,6 +22,7 @@
 //
 // PURE — no Vue. `useYearScope` binds it to the URL.
 import type { FeedMeta } from "./contract.js";
+import { formatPeriod } from "../charts/lib/format.js";
 
 /** The kinds of period axis a feed can declare. An undeclared axis is the plain `year` kind. */
 export type PeriodAxisKind = "school-year" | "year";
@@ -83,7 +84,7 @@ const SCHOOL_YEAR_NOUN: PeriodNoun = {
     kind: "school-year",
     singular: "school year",
     plural: "school years",
-    label: (k) => `${k}–${tail(k)}`,
+    label: (k) => formatPeriod(k, "school-year"),
 };
 
 const YEAR_NOUN: PeriodNoun = {

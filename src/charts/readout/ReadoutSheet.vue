@@ -164,18 +164,6 @@ const detent = ref<number | null>(detents[0]);
 .readout-sheet__title {
     margin: 0;
 }
-.readout-sheet__eyebrow {
-    margin: 0 0 0.15rem;
-}
-/* O-C7 D5 — the readout eyebrow tints to the hovered datum's fill as a READABLE INK (hue kept, L
-   clamped per theme); the raw fill rides --readout-accent as a non-text carrier. Same cure as the
-   desktop HoverCard. */
-.readout-sheet__eyebrow--ink {
-    color: light-dark(
-        oklch(from var(--readout-accent) min(l, 0.52) min(c, 0.17) h),
-        oklch(from var(--readout-accent) max(l, 0.75) min(c, 0.15) h)
-    );
-}
 .readout-sheet__subhead {
     margin: 0.05rem 0 0;
     font-family: var(--font-mono);
@@ -227,7 +215,6 @@ const detent = ref<number | null>(detents[0]);
     .readout-sheet__value {
         font-size: max(14px, 0.9375rem);
     }
-    .readout-sheet__eyebrow,
     .readout-sheet__subhead,
     .readout-sheet__facts .text-caption {
         font-size: max(12px, 0.75rem);
