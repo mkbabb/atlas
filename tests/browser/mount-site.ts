@@ -17,6 +17,9 @@ import {
     type DashboardMeta,
     type DashboardRegistry,
 } from "../../src/contract/index.js";
+// glass-ui's styles, as a consumer root loads them: the dock reads glass tokens (`--radius-circle`,
+// `--radius-bar`) that atlas does not define.
+import "./glass-root.css";
 import "../../src/design/tokens/elevation.css";
 import "../../src/design/tokens/space.css";
 

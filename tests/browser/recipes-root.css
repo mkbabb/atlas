@@ -1,0 +1,5 @@
+/* The recipes compiled as a consumer root compiles them: Tailwind and glass-ui's theme first, so the
+   `@utility` recipes and their `@apply` resolve, then atlas's recipes sheet. A spec that reads a
+   recipe (`text-page-title`, `title-compact`) imports this in place of the raw sheet. */
+@import "./glass-root.css";
+@import "../../src/design/recipes/recipes.css";

@@ -3,7 +3,7 @@
 // weight lift, which re-wrapped the phone hero title and grew /usf and /speedtest by 42 px on the
 // first wheel step (clone scroll-free, Chromium, 390). It now animates `scale` and the ground only.
 import { describe, expect, it } from "vitest";
-import "./recipes.css";
+import "../../../tests/browser/recipes-root.css";
 
 const frames = (n: number) =>
     new Promise<void>((r) => {
