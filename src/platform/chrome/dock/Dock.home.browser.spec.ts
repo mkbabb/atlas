@@ -2,6 +2,7 @@
 // wide, and its run lists the ranked roster: SCI first, the six ranked dashboards in rank order, the
 // held entry left out, the companion last. Every other route rests as a 44 × 44 circle.
 import { afterEach, describe, expect, it } from "vitest";
+import { userEvent } from "vitest/browser";
 import { dock, mountSite, settle, type MountedSite } from "../../../../tests/browser/mount-site.js";
 
 let site: MountedSite | null = null;
@@ -51,6 +52,10 @@ describe("the dock at 1440 px (U/B7 §2.2)", () => {
 
     it("collapses to the circle when the reader leaves / for a dashboard, and reopens on return", async () => {
         site = await mountSite("/", 1440);
+        // The reader is not on the dock: a pointer resting over it holds glass's hover expand open
+        // (out/b7-i1/atlas-dockhome-hover-probe.log), and the engine lane shares one page, so a
+        // previous file can leave the pointer there.
+        await userEvent.hover(document.body);
         await site.router.push("/usf");
         await settle(500);
         expect(dock()!.classList.contains("collapsed")).toBe(true);
