@@ -76,15 +76,10 @@ export interface HoverReadout {
     origin: string;
     /** The entity title (state / school / district / applicant name). */
     title: string;
-    /** An optional eyebrow above the title (the VERDICT word / the entity KIND — the lede). */
-    eyebrow?: string;
-    /**
-     * The SECONDARY eyebrow line (the per-plate CONTEXT: the map's quantity, the strip's rank,
-     * the scatter's question, the flip's normalization). The eyebrow becomes a TWO-tier head —
-     * verdict word / context phrase — the house hierarchy (d-hover-usf M2). Optional + backward-
-     * compatible: a payload that omits it renders the one-line eyebrow exactly as before.
-     */
+    /** The one context line under the name ("LEA 93N · Charter · 2025–26"). */
     subhead?: string;
+    /** The dataset names the visible rows come from; the card's foot lists them (O-19). */
+    sources?: string[];
     /**
      * The card-level SPINE ACCENT — the verdict/category pole the card tints the eyebrow glyph
      * + the title's leading hairline with (the USF net-direction pole; the ECF teal data-pole).

@@ -93,6 +93,15 @@ useAffordanceHint();
 // transient card must NOT paint — the platform ReadoutSheet (a bottom sheet) takes over the
 // mobile readout, so the old right-margin tapPeek fork is retired by keeping the card HIDDEN
 // there. The DESKTOP pointer path is byte-unchanged (`tapPeek` is false off the coarse-phone media).
+/** At most four measures, and never a row whose value repeats the card's own title. */
+const PEEK_ROWS = 4;
+const peekFacts = computed<Fact[]>(() => {
+    const r = readout.value;
+    if (!r) return [];
+    const title = r.title.trim().toLowerCase();
+    return r.facts.filter((f) => f.value.trim().toLowerCase() !== title).slice(0, PEEK_ROWS);
+});
+
 const transientOpen = computed(
     () =>
         readout.value !== null && readout.value.anchor !== null && !tapPeek.value,
@@ -103,7 +112,7 @@ const transientOpen = computed(
 // rect (a component ref is the instance, whose `$el` is the rendered root div). `measureEl`
 // resolves either a raw element or the instance's `$el` so the measure stays robust.
 const card = ref<{ $el?: HTMLElement } | HTMLElement | null>(null);
-const footprint = ref({ w: 320, h: 200 }); // a sane pre-measure default (max-w-xs ≈ 320)
+const footprint = ref({ w: 320, h: 200 }); // the pre-measure default (20rem)
 
 /** The TRANSIENT card's template ref (the single live-hover card — the pinned tier is retired). */
 function setCardRef(el: unknown): void {
@@ -296,50 +305,34 @@ watch(
             v-if="transientOpen && readout"
             :ref="(el) => setCardRef(el)"
             tier="floating"
-            class="hover-card-readout z-(--z-hovercard) pointer-events-auto max-w-xs px-3 py-2.5 transition-opacity duration-100"
+            class="hover-card-readout z-(--z-hovercard) pointer-events-auto px-3 py-2.5 transition-opacity duration-100"
             :style="style"
             role="tooltip"
             data-testid="hover-card"
             :data-readout-origin="readout.origin || undefined"
         >
-            <!-- THE TWO-TIER HEAD (d-hover-* M2): the eyebrow is the LEDE (the verdict word /
-                 the entity kind), the subhead its CONTEXT (the plate's own question). The card-
-                 level `accent` (the verdict/category pole) tints the eyebrow + the title's
-                 leading hairline ONE place, never threaded per-fact. Both tiers optional. -->
-            <p
-                v-if="readout.eyebrow"
-                class="eyebrow mb-0.5"
-                :class="{ 'readout-eyebrow--ink': readout.accent }"
-                :style="readout.accent ? { '--readout-accent': readout.accent } : undefined"
-            >
-                {{ readout.eyebrow }}
-            </p>
-            <p v-if="readout.subhead" class="hover-card-readout__subhead">
-                {{ readout.subhead }}
-            </p>
-            <!-- THE LONG-NAME RECONCILIATION (G-NAME-RECONCILE) — the title CLAMPS to 2 lines at
-                 rest (the transient register). The full string is on `title=` at all times so the
-                 name is never lost; the persistent-complete relax lives on the FilterView card. -->
+            <!-- The peek: name, one context line, at most four measures, the sources, the cue. -->
             <p
                 class="text-panel-title hover-card-readout__title"
                 :class="{ 'hover-card-readout__title--accented': readout.accent }"
-                :style="
-                    readout.accent ? { '--title-accent': readout.accent } : undefined
-                "
+                :style="readout.accent ? { '--title-accent': readout.accent } : undefined"
                 :title="readout.title"
             >
                 {{ readout.title }}
             </p>
-
-            <!-- THE SHARED FACT GRAMMAR (I5 §6 · DRY) — the `<dl>` fact grid + the breakdown bars,
-                 extracted to `<ReadoutFacts>` so the hover card + the FilterView card render ONE
-                 fact language. The markup/classes/skin are byte-identical to the prior inline blocks. -->
+            <p v-if="readout.subhead" class="hover-card-readout__context">
+                {{ readout.subhead }}
+            </p>
             <ReadoutFacts
-                :facts="readout.facts"
+                :facts="peekFacts"
                 :density="readout.density"
                 :breakdown="readout.breakdown"
                 :breakdown-label="readout.breakdownLabel"
             />
+            <p class="hover-card-readout__foot">
+                <span v-if="readout.sources?.length">Source: {{ readout.sources.join(", ") }}. </span>
+                <span>Click for detail</span>
+            </p>
         </Surface>
     </Teleport>
 </template>
@@ -352,28 +345,20 @@ watch(
     border-radius: var(--radius-plate);
 }
 
-/* O-C7 D5 — the eyebrow tints to the hovered datum's fill as a READABLE INK (the ecf-readout
-   disease cure): hue survives, L clamps to the contrast band per theme. The template sets the raw
-   datum fill on --readout-accent (a NON-text carrier that still tints the title's leading hairline);
-   the words go readable. Scoped, so this beats the global .eyebrow base color. */
-.readout-eyebrow--ink {
-    color: light-dark(
-        oklch(from var(--readout-accent) min(l, 0.52) min(c, 0.17) h),
-        oklch(from var(--readout-accent) max(l, 0.75) min(c, 0.15) h)
-    );
+/* The card is 20rem wide (never under 18rem, never wider than the viewport less its gutters), so the
+   fact grid's container query has a definite width to read. */
+.hover-card-readout {
+    inline-size: min(20rem, 100vw - 2rem);
 }
-/* ── THE TWO-TIER HEAD (d-hover-* M2) — the subhead + the accented title hairline ─────────
-   The eyebrow (the recipe's red-ruled label) carries the VERDICT/KIND lede; the subhead is the
-   recessive CONTEXT line beneath it (the plate's question), in the muted caption voice; the
-   title's leading hairline wears the card-level `accent` (the verdict/category pole) so the
-   spine read is one engraved rule, not a per-fact dot. All additive — a payload with no
-   subhead/accent renders neither rule. */
-.hover-card-readout__subhead {
-    margin-block: -0.05rem 0.15rem;
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.01em;
-    line-height: 1.25;
+.hover-card-readout__context {
+    margin-block: 0.1rem 0;
+    font-size: var(--type-caption, 0.75rem);
+    line-height: 1.3;
+    color: var(--muted-foreground);
+}
+.hover-card-readout__foot {
+    margin-block: 0.5rem 0;
+    font-size: var(--type-caption, 0.75rem);
     color: var(--muted-foreground);
 }
 .hover-card-readout__title--accented {
@@ -429,9 +414,8 @@ watch(
         font-size: max(13px, var(--type-figure-card));
     }
     /* LABEL — the eyebrow + the subhead + the fact-row labels. */
-    .hover-card-readout .eyebrow,
-    .hover-card-readout__subhead,
-    .hover-card-readout .text-caption {
+    .hover-card-readout__context,
+    .hover-card-readout__foot {
         font-size: max(11px, 0.75rem);
     }
 }

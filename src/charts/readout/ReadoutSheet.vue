@@ -120,17 +120,6 @@ const detent = ref<number | null>(detents[0]);
                     Tapped-datum readout detail.
                 </DialogDescription>
 
-                <!-- THE TWO-TIER HEAD — the eyebrow (the verdict / kind lede, tinted by the card-
-                     level accent), the title (above, the DialogTitle), the subhead (the plate's
-                     context). The SAME head grammar as the desktop HoverCard. -->
-                <p
-                    v-if="readout.eyebrow"
-                    class="eyebrow readout-sheet__eyebrow"
-                    :class="{ 'readout-sheet__eyebrow--ink': readout.accent }"
-                    :style="readout.accent ? { '--readout-accent': readout.accent } : undefined"
-                >
-                    {{ readout.eyebrow }}
-                </p>
                 <p v-if="readout.subhead" class="readout-sheet__subhead">
                     {{ readout.subhead }}
                 </p>

@@ -4,6 +4,11 @@
 
 ### Breaking changes
 
+- **The hover card is the peek (U/B7 · O-13).** `HoverReadout.eyebrow` is deleted and
+  `HoverReadout.sources` added. The card is 20rem wide and shows the name, one context line, at most
+  four facts (none repeating the title), the sources and "Click for detail". `ReadoutFacts` uses a
+  label-safe grid (`max-content minmax(0,1fr)`) that stacks under 18rem; the breakdown takes the
+  same columns. See MIGRATION.md §5d.
 - **The styles contract (U · D5A-W1).** `@mkbabb/atlas/styles` is now Tailwind v4 *source*
   (`dist/styles/index.css`), compiled by the consumer's one Tailwind root, which imports
   `tailwindcss`, then `@mkbabb/glass-ui/styles`, then `@mkbabb/atlas/styles`, in that order, in one

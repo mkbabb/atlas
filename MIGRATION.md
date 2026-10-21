@@ -105,6 +105,13 @@ projecting components.
 | the "step N of M" live readout is teleported to `<body>` (`data-testid="dock-step-readout"`) | none |
 | `MembraneFacet` drops `"viz-context"` and `"provenance-detent"`; `MembraneBand` drops `"context"` | a total switch over either union drops those arms |
 
+## 5d · Figure surfaces (U/B7 · O-11, O-12, O-13, O-17, O-18, O-19)
+
+| Change | Consumer edit |
+|---|---|
+| `HoverReadout.eyebrow` deleted; the hover card shows the name, one context line (`subhead`), at most four facts, a sources line (new `HoverReadout.sources: string[]`) and "Click for detail". A fact whose value repeats the title is not shown | drop `eyebrow` from every published payload; put the kind and period in `subhead` ("LEA 93N · Charter · 2025–26"); pass the dataset names in `sources` |
+| `ReadoutFacts` lays out on its own grid (`max-content minmax(0,1fr)`, stacked under 18rem) and no longer depends on Tailwind grid utilities | none |
+
 ## 6 · glass-ui 10.1.0
 
 Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.

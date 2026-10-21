@@ -4,12 +4,15 @@
 // only here. ENGINE picks one engine per run (ci.yml runs the three as a matrix).
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
+import tailwindcss from "@tailwindcss/vite";
 import { playwright } from "@vitest/browser-playwright";
 
 const engine = (process.env.ENGINE ?? "chromium") as "chromium" | "firefox" | "webkit";
 
 export default defineConfig({
-    plugins: [vue()],
+    // Tailwind compiles `tests/browser/utilities.css` for the specs that import it, so a layout spec
+    // reads the same utility rules a consumer root compiles.
+    plugins: [vue(), tailwindcss()],
     test: {
         include: ["src/**/*.browser.spec.ts"],
         browser: {

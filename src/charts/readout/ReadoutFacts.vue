@@ -1,28 +1,24 @@
 <script setup lang="ts">
-// ReadoutFacts.vue — the SHARED fact-row grammar (I5 §6 · DRY, OQ-4). The `<dl>` fact grid + the
-// per-program/per-tier breakdown bars EXTRACTED from `HoverCard.vue` so BOTH the hover card and the
-// I5 `SelectionPreview` card render ONE fact language — duplicating the ~30-line grammar would
-// re-detonate the drift the platform unifies elsewhere (the I-PATH §2 reusable-facility discipline).
+// ReadoutFacts.vue — the one fact grid the hover card and the entity detail share (U/B7 O-13).
 //
-// THIS IS A REFACTOR, NOT A REDESIGN. The markup, the classes, and the `:deep(.figure-slug-card)`
-// skin are reproduced BYTE-IDENTICAL to HoverCard's inline `<dl>`/breakdown blocks, so HoverCard's
-// rendered output is unchanged when it swaps the inline markup for `<ReadoutFacts>`. The card-level
-// chrome (the eyebrow / subhead / title / pin pip) STAYS in HoverCard — only the fact grammar moves.
+// Labels sit left on one line (`max-content`), values right in the remaining track
+// (`minmax(0,1fr)`), tabular figures. A value wraps at word boundaries inside its own cell and never
+// takes width from the label. Under 18rem of container width each row stacks, label over value. The
+// breakdown bars use the same label-safe columns. The host sets `container-type`, so a caller that
+// sizes to content (the hover card) gives the host a definite width.
 import FigureSlug from "../frame/FigureSlug.vue";
-// `Fact` is canonically declared in HoverCard.vue; `ReadoutBar` in the readout store. Both are
-// type-only imports, so the HoverCard ⇄ ReadoutFacts cycle is elided at compile time (no runtime edge).
 import type { Fact } from "../../interaction/HoverCard.vue";
 import type { ReadoutBar } from "../../platform/stores/useHoverReadout.js";
 
 withDefaults(
     defineProps<{
-        /** The fact rows — the universal fact-row grid. */
+        /** The fact rows. */
         facts: Fact[];
-        /** `compact` = facts only; `full` also reveals the breakdown bars (the HoverCard density). */
+        /** `compact` = facts only; `full` also shows the breakdown bars. */
         density?: "compact" | "full";
-        /** The breakdown bars (revealed at `full` density) — optional, structured. */
+        /** The breakdown bars, shown at `full` density. */
         breakdown?: ReadoutBar[];
-        /** The breakdown band's header label (defaults to "By program", HoverCard's prior fallback). */
+        /** The breakdown's heading (defaults to "By program"). */
         breakdownLabel?: string;
     }>(),
     {
@@ -34,131 +30,158 @@ withDefaults(
 </script>
 
 <template>
-    <!-- THE FACT GRID (extracted from HoverCard) — the universal labelled-row grid. A `divider` row
-         rules a hairline spanning both columns before the credentials block. C48: `readout-facts`
-         carries the −1-golden-step token; `gap-y-0.5` tightens the inter-fact rhythm (the spacing arm).
-         O-DIR-3 (the owner's readout-collapse directive): the LABEL column is `minmax(0,1fr)` — the
-         shrinkable, WRAPPING track — and the VALUE column is `auto` — sized to its own content, never
-         squeezed. The prior `[auto_1fr]` order did the reverse (the label hogged max-content width,
-         the value's 1fr track got crushed toward zero), so a long label + a narrow host (the 280px
-         single-select drilldown) wrapped the value one glyph per line. Values never wrap intra-token;
-         labels wrap. -->
-    <dl class="readout-facts mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5">
-        <template v-for="f in facts" :key="f.label">
-            <!-- The tier divider (d-hover-ecf Move 1) — a hairline spanning both columns
-                 before the first credentials row, so the spine reads first. -->
-            <hr
-                v-if="f.divider"
-                class="readout-facts__divider col-span-2"
-                aria-hidden="true"
-            />
-            <dt class="text-caption min-w-0">{{ f.label }}</dt>
-            <!-- THE FACT VALUE — the value cell is content-sized and NEVER wraps intra-token
-                 (O-DIR-3): the `auto` column takes exactly the value's own measure, so a long
-                 sibling label can never crush it. The full string rides `title=` always (the
-                 G-NO-MARQUEE-MOTION reveal: fixed measure + native tooltip, zero motion). -->
-            <dd
-                class="readout-facts__value flex items-center justify-end gap-1.5"
-                :title="f.value"
-            >
-                <span
-                    v-if="f.accent"
-                    class="inline-block size-2 shrink-0 rounded-full"
-                    :style="{ background: f.accent }"
-                />
-                <FigureSlug size="card" as="span" class="text-right">{{
-                    f.value
-                }}</FigureSlug>
-            </dd>
-        </template>
-    </dl>
+    <div class="readout-facts-host">
+        <dl class="readout-facts">
+            <template v-for="f in facts" :key="f.label">
+                <hr v-if="f.divider" class="readout-facts__divider" aria-hidden="true" />
+                <dt class="readout-facts__label">{{ f.label }}</dt>
+                <dd class="readout-facts__value" :title="f.value">
+                    <span
+                        v-if="f.accent"
+                        class="readout-facts__dot"
+                        :style="{ background: f.accent }"
+                    />
+                    <FigureSlug size="card" as="span">{{ f.value }}</FigureSlug>
+                </dd>
+            </template>
+        </dl>
 
-    <!-- The breakdown bars (per-program / per-tier) — revealed only at full density. -->
-    <div
-        v-if="density === 'full' && breakdown && breakdown.length"
-        class="mt-3 border-t border-border/40 pt-2"
-    >
-        <p class="eyebrow mb-1">{{ breakdownLabel ?? "By program" }}</p>
         <div
-            v-for="bar in breakdown"
-            :key="bar.label"
-            class="mb-0.5 flex items-center gap-2"
+            v-if="density === 'full' && breakdown && breakdown.length"
+            class="readout-facts__breakdown"
         >
-            <span class="figure w-20 shrink-0 text-(length:--type-caption) text-muted-foreground">{{
-                bar.label
-            }}</span>
-            <span class="h-2 flex-1 rounded-full bg-muted/40">
-                <span
-                    class="block h-full rounded-full"
-                    :style="{
-                        width: `${Math.max(2, bar.share * 100)}%`,
-                        background: bar.color,
-                    }"
-                />
-            </span>
-            <span class="figure w-12 shrink-0 text-right text-(length:--type-caption)">{{
-                bar.value
-            }}</span>
+            <p class="readout-facts__breakdown-head">{{ breakdownLabel ?? "By program" }}</p>
+            <div class="readout-facts__bars">
+                <template v-for="bar in breakdown" :key="bar.label">
+                    <span class="readout-facts__bar-label">{{ bar.label }}</span>
+                    <span class="readout-facts__bar-track">
+                        <span
+                            class="readout-facts__bar-fill"
+                            :style="{
+                                width: `${Math.max(2, bar.share * 100)}%`,
+                                background: bar.color,
+                            }"
+                        />
+                    </span>
+                    <span class="readout-facts__bar-value">{{ bar.value }}</span>
+                </template>
+            </div>
         </div>
     </div>
 </template>
 
 <style scoped>
-/* ── THE J-READOUT-TYPE ARM (J-FILTER C48-type · J-FEEDBACK-5 §6/§7-C48 · ATLAS-LOCAL) ───────────
-   The readout typography is demoted one golden step + the unit recedes + kerning is set, all
-   atlas-local (an atlas font-stack seam, NOT a glass-ui root change). Three relations:
-
-   1 · −1 GOLDEN TYPE-STEP. The readout figure steps DOWN one rung on the φ ladder — read off the
-       glass-ui golden type-step TOKEN (`--type-figure-card`), divided by the golden ratio, NEVER a
-       magic px. So the readout reads one notch quieter, in-scale with the surrounding chrome, and a
-       later token re-tune carries through (the token consume, not a hard px).
-   2 · THE KERNING FONT-FEATURE. The atlas-local `font-feature-settings` SETS `kern` (beside the
-       inherited `tnum`/`lnum` so the tabular figures stay aligned) — the kerning seam the prior
-       readout left unset.
-   3 · UNITS NOT BOLD (only the VALUE bold). The figure VALUE carries the bold/figure weight; the
-       UNIT sub-rung (`.unit`) is DEMOTED to the regular weight so the number leads and the unit
-       annotates — two bold tokens never compete (the unit-weight relation the gate reads). */
-.readout-facts {
-    /* the readout figure rung — ONE golden step below the card figure token (a token consume). */
-    --readout-figure-step: calc(var(--type-figure-card) / 1.618);
+.readout-facts-host {
+    container-type: inline-size;
+    container-name: readout-facts;
 }
-/* THE FACT VALUE — the in-card value-clip reconciliation (H.W1.a · §4), SUPERSEDED by O-DIR-3 (the
-   owner's readout-collapse directive): a value must NEVER wrap intra-token — H.W1.a's `white-space:
-   normal; overflow-wrap: anywhere` let the value's min-content shrink to ~1 glyph, which the `auto`
-   label / `1fr` value column order (since reversed, see the template) then crushed to that minimum
-   beside a long label. The value cell is content-sized (the template's `auto` column) and `nowrap`;
-   the full string still rides `title=`. No marquee — fixed measure + the native tooltip. C48: the
-   −1 golden step + the kerning feature + the bold VALUE weight (so the demoted unit reads lighter
-   than it). */
+.readout-facts {
+    /* the readout figure rung: one golden step below the card figure token */
+    --readout-figure-step: calc(var(--type-figure-card, 1rem) / 1.618);
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    column-gap: 0.75rem;
+    row-gap: 0.125rem;
+    align-items: baseline;
+    margin: 0.5rem 0 0;
+}
+.readout-facts__label {
+    white-space: nowrap;
+    font-size: var(--type-caption, 0.75rem);
+    color: var(--muted-foreground);
+}
 .readout-facts__value {
-    overflow: visible;
+    min-inline-size: 0;
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 0.375rem;
+    text-align: end;
+}
+.readout-facts__dot {
+    display: inline-block;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    flex-shrink: 0;
+    border-radius: var(--radius-circle, 50%);
+    align-self: center;
 }
 .readout-facts__value :deep(.figure-slug-card) {
-    overflow: visible;
-    text-overflow: clip;
+    min-inline-size: 0;
     max-inline-size: 100%;
-    white-space: nowrap;
-    text-align: right;
-    /* C48 · −1 golden type-step (the token consume) + the kerning font-feature + the VALUE weight. */
+    white-space: normal;
+    overflow-wrap: normal;
+    text-align: end;
     font-size: var(--readout-figure-step);
     font-weight: 600;
-    font-feature-settings:
-        "kern" 1,
-        "tnum" 1,
-        "lnum" 1;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "kern" 1;
 }
-/* C48 · UNITS NOT BOLD — the unit sub-rung (FigureSlug's `.unit`) recedes to the regular weight, so
-   it reads LIGHTER than the bold value (the units-not-bold relation; only the value carries weight). */
+/* the unit reads lighter than the value */
 .readout-facts__value :deep(.figure-slug-card .unit) {
     font-weight: 400;
 }
-
-/* The tier divider (d-hover-ecf Move 1) — a hairline ruling the spine from the credentials. */
 .readout-facts__divider {
+    grid-column: 1 / -1;
     border: 0;
-    border-block-start: 1px solid
-        var(--border, color-mix(in oklab, currentColor 18%, transparent));
+    border-block-start: 1px solid var(--border, color-mix(in oklab, currentColor 18%, transparent));
     margin-block: 0.25rem 0.1rem;
     opacity: 0.5;
+}
+
+.readout-facts__breakdown {
+    margin-block-start: 0.75rem;
+    padding-block-start: 0.5rem;
+    border-block-start: 1px solid color-mix(in oklab, var(--border, currentColor) 40%, transparent);
+}
+.readout-facts__breakdown-head {
+    margin: 0 0 0.25rem;
+    font-size: var(--type-caption, 0.75rem);
+    font-weight: 600;
+}
+.readout-facts__bars {
+    display: grid;
+    grid-template-columns: max-content minmax(2rem, 1fr) max-content;
+    column-gap: 0.5rem;
+    row-gap: 0.125rem;
+    align-items: center;
+    font-size: var(--type-caption, 0.75rem);
+}
+.readout-facts__bar-label {
+    white-space: nowrap;
+    color: var(--muted-foreground);
+}
+.readout-facts__bar-track {
+    block-size: 0.5rem;
+    border-radius: var(--radius-pill, 9999px);
+    background: color-mix(in oklab, var(--muted, currentColor) 40%, transparent);
+}
+.readout-facts__bar-fill {
+    display: block;
+    block-size: 100%;
+    border-radius: inherit;
+}
+.readout-facts__bar-value {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+}
+
+@container readout-facts (max-width: 18rem) {
+    .readout-facts {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: 0;
+    }
+    .readout-facts__label {
+        white-space: normal;
+    }
+    .readout-facts__value {
+        justify-content: flex-start;
+        text-align: start;
+        margin-block-end: 0.25rem;
+    }
+    .readout-facts__value :deep(.figure-slug-card) {
+        text-align: start;
+    }
 }
 </style>
