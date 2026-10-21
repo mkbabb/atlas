@@ -10,64 +10,33 @@
 // geometry + the ONE gold focus-ring (the four-voice law — gold is the transient state, so
 // BrandMark's inherited red focus outline is re-inked gold on the crest).
 //
-// M.W1 D2 · N.WG1 Arm B — THE PHONE CREST-BUTTON. At the phone register the crest is the
-// SECTION-MENU trigger (the I-MOBILE law: collapse-into-the-TIL-logo → tap → the ruled sheet):
-// the orchestrator passes `as-button`, the SAME gilt mark renders as a `<button>` wearing
-// `aria-expanded`/`aria-controls`, and `toggle` drives the EXISTING `useDockCollapse` machine.
-// The desktop crest stays the home LINK (home rides the sheet's labeled first ROW on the phone).
-// `focusCrest` is exposed so the sheet's Esc/scrim close can return focus without scrolling.
-import { ref, type Component } from "vue";
+// U/B7 §2.2: the crest is the home link at every register (the rail's circle, the bar's first
+// cell). The phone crest-button and its section sheet are deleted: the bottom bar's Sections cell
+// carries the sections.
+import type { Component } from "vue";
 import BrandMark from "../../masthead/BrandMark.vue";
 
 const props = withDefaults(
     defineProps<{
-        /** The phone register (D2): render the crest as the section-menu toggle BUTTON. */
-        asButton?: boolean;
-        /** The sheet's open state — mirrored onto `aria-expanded` (button register only). */
-        expanded?: boolean;
         crest?: Component;
         morphStage?: "seed" | "full";
     }>(),
-    { asButton: false, expanded: false, crest: undefined, morphStage: "full" },
+    { crest: undefined, morphStage: "full" },
 );
-
-const emit = defineEmits<{
-    /** The crest-button was pressed — the orchestrator flips the collapse machine (D2). */
-    toggle: [];
-}>();
-
-const markRef = ref<InstanceType<typeof BrandMark> | null>(null);
-
-/** Return focus to the crest control after the sheet closes — `{preventScroll}` so the close
-    never yanks the page (the D2 focus-return law). Routed through BrandMark's exposed `focus()`
-    (its SFC root is a fragment, so a raw `$el` read would land on a comment node). */
-function focusCrest(): void {
-    markRef.value?.focus({ preventScroll: true });
-}
-defineExpose({ focusCrest });
 </script>
 
 <template>
-    <!-- ⓪ THE PERSISTENT CREST (#persistent slot, H9 §B.1) — the TIL crest anchors the deck in
-         BOTH states. Desktop: the HOME affordance to `/` AND the deck's title-card; it holds the
-         gold budget (D7.b). Phone (D2): the SAME mark as the section-menu BUTTON
-         (aria-expanded/aria-controls) firing the collapse machine — reachable without expanding
-         in both registers (touch/keyboard always-on). -->
+    <!-- ⓪ THE PERSISTENT CREST (#persistent slot, H9 §B.1): the home link to `/` and the dock's
+         title-card at every register; it holds the gold budget (D7.b). -->
     <div class="usf-dock__crest-register">
         <BrandMark
-            ref="markRef"
             variant="crest"
-            :as="props.asButton ? 'button' : 'link'"
+            as="link"
             :crest="props.crest"
             :data-morph-stage="props.morphStage"
             to="/"
-            :label="props.asButton ? 'Page sections' : undefined"
-            :aria-expanded="props.asButton ? String(props.expanded) : undefined"
-            :aria-controls="props.asButton ? 'dock-sheet' : undefined"
             data-testid="dock-brand"
             class="usf-dock__crest glass-specular-track"
-            @focusin="props.asButton && $event.stopPropagation()"
-            @click="props.asButton && emit('toggle')"
         />
     </div>
 </template>

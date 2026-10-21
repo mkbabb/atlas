@@ -136,6 +136,20 @@
 - FilterPanel's freshness chip names the period with the feed's noun ("2024–25", or the pooled set)
   instead of "FY{year}" / "all years".
 
+- **The site roster and lazy contexts (U/B7 · §2.3).** `DashboardMeta.rank` (required, new type
+  `DashboardRank`) orders the registry; the `updated` sort is gone, and `compareRank` is exported.
+  `DashboardMeta.headline` (new type `DashboardHeadline`) carries a roster row's one number.
+  `RegistryGlobs.contextModules` is a lazy import map, and `DashboardEntry.context` is replaced by a
+  memoized `loadContext()`, so a route loads only its own context. See MIGRATION.md §5d.
+
+- **The site shell and the one dock (U/B7 · §2.2).** `SiteShell` (new) owns the dock above the router
+  outlet, so the dock is one node on every route; `PlatformShell` no longer mounts it, binds the
+  route theme, scopes the dock portals or carries the skip link. `Dock` takes `context`, `home`,
+  `subjects` and `searchSources` as props. At ≥ 768 px it rests open on `/` with the ranked roster
+  and as a 44 × 44 circle elsewhere, with a section pager beside it; below 768 px it is a bottom bar
+  with a cell list per context. The phone crest→sheet, its scrim and `resolvePhoneExclusion` are
+  deleted. `?at=` is written only by the section controls (S-6). See MIGRATION.md §5e.
+
 ### Added
 
 - `useViewParams` gains `pushParam(key, value)` and `popParam(key, value?)` (the overlay push

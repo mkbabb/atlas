@@ -40,6 +40,19 @@ export interface FlagshipFigure {
     label: string;
 }
 
+/** A dashboard's place in the site roster: a 1-based rank, held back, or a companion piece. */
+export type DashboardRank = number | "held" | "companion";
+
+/** The roster row's headline: the printed value, its label and the period it covers. */
+export interface DashboardHeadline {
+    /** The value as printed (for example "743.6 Gbps"). */
+    value: string;
+    /** What the value counts (for example "contracted"). */
+    label: string;
+    /** The period the value covers (for example "2025–26"). */
+    period: string;
+}
+
 /** Cheap card metadata — lives in each dashboard's `meta.ts` (eager-loaded for the
     gallery, so listing dashboards never pulls in their feature/chart chunks). */
 export interface DashboardMeta {
@@ -65,8 +78,15 @@ export interface DashboardMeta {
     /** The card's flagship-figure teaser (B4) — the route's ONE crown number, previewed on the
         gallery cover. Pre-formatted + source-traced in each `meta.ts`. Omit ⇒ no teaser numeral. */
     flagship?: FlagshipFigure;
-    /** ISO date the dashboard was last updated; sorts the gallery newest-first. */
+    /** ISO date the dashboard was last updated. Informational: the roster order is `rank`. */
     updated?: string;
+    /** The dashboard's place in the site roster (U/B7 O-3). A number orders the ranked list
+        (1 first); `"held"` lists after every ranked entry and is not shown until released;
+        `"companion"` lists last, below a rule. The registry sorts by this field alone. */
+    rank: DashboardRank;
+    /** The roster row's one number: the value as printed, a short label and the period it covers,
+        each as the route's card digest stamps it. Omit when the route has no headline number. */
+    headline?: DashboardHeadline;
     /** THE EDITORIAL LEAD (A-26 · home H5 · dial 4) — marks this route the gallery's ONE featured
         lead card (the 2-col span + the display-serif flagship figure). An EDITORIAL weight, orthogonal
         to `updated`: the contents page derives the lead from this flag FIRST and falls back to the
@@ -87,14 +107,14 @@ export interface DashboardContent {
     component: Component;
 }
 
-/** Registry entry — the metadata plus a lazy loader for the body component and the
-    (eager, cheap) chrome context the active dashboard provides to the shell. */
+/** Registry entry — the metadata plus lazy loaders for the body component and the chrome
+    context (U/B7 F10: a route loads only its own context). */
 export interface DashboardEntry extends DashboardMeta {
     /** Lazily import the dashboard body component. */
     load: () => Promise<Component>;
-    /** The dashboard's chrome contract (the seam the Dock/filter read). Discovered
-        eagerly from the folder's context.ts; undefined until a dashboard declares one. */
-    context?: DashboardContext;
+    /** Load the dashboard's chrome contract (the seam the Dock and filter read) from the folder's
+        context.ts. Memoized: every call after the first resolves the same object. */
+    loadContext: () => Promise<DashboardContext>;
 }
 
 // ── The DashboardContext seam (G10 §4) ──────────────────────────────────────

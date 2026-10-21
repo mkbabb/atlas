@@ -1,8 +1,7 @@
-// useDockStepper in a real engine: U-F60 clause 3 (U RULINGS §K K-3). `?at` is written by
-// replaceState only after a READER scroll settles, never on load. The dock seeds the first beat, the
-// observer re-fires while the body lays out, a linked anchor is restored, and a program scroll moves
-// the page: none of these is a reader act, so the URL stays as it loaded. A trusted key press that
-// scrolls the page is a reader act; once that scroll settles, `?at` names the beat the reader is on.
+// useDockStepper in a real engine: U-F60 clause 3 (U RULINGS §K K-3) under U/B7 S-6. `?at` is written
+// only by a section control (section-pager.browser.spec.ts). The dock seeds the first beat, the
+// observer re-fires while the body lays out, a linked anchor is restored, a program scroll moves the
+// page, and a reader's key-press scroll moves it too: none of these writes the URL.
 import { afterEach, describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { createApp, defineComponent, h, ref } from "vue";
@@ -77,7 +76,7 @@ describe("the dock's ?at writer waits for a reader act (K-3)", () => {
         expect(location.href).toBe(before);
     });
 
-    it("load and a program scroll write nothing; a reader's key-press scroll writes ?at once it settles", async () => {
+    it("load, a program scroll and a reader's key-press scroll write nothing", async () => {
         const before = location.href;
         done = mount();
         await wait(700);
@@ -89,6 +88,7 @@ describe("the dock's ?at writer waits for a reader act (K-3)", () => {
 
         await userEvent.keyboard("{End}"); // a trusted key: the reader scrolls to the last beat
         await wait(1200);
-        expect(atParam()).toBe("beat-d");
+        expect(atParam()).toBeNull();
+        expect(location.href).toBe(before);
     });
 });

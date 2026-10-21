@@ -105,6 +105,26 @@ projecting components.
 | the "step N of M" live readout is teleported to `<body>` (`data-testid="dock-step-readout"`) | none |
 | `MembraneFacet` drops `"viz-context"` and `"provenance-detent"`; `MembraneBand` drops `"context"` | a total switch over either union drops those arms |
 
+## 5d · The site roster and lazy contexts (U/B7 · §2.3, O-3, F10)
+
+| Change | Consumer edit |
+|---|---|
+| `DashboardMeta.rank: DashboardRank` (`number \| "held" \| "companion"`) is required; `createDashboardRegistry` sorts by it (`compareRank`, exported): ranked entries by number, then held, then companions. The `updated` sort is deleted | each `meta.ts` declares `rank` (sci: 1 SCI, 2 USF, 3 ECF, 4 E-Rate demand, 5 BEAD, 6 measured speeds; USF integrity `"held"`; VFT `"companion"`); a gallery sort that copied the `updated` order calls `compareRank` |
+| `DashboardMeta.headline?: DashboardHeadline` (`{ value, label, period }`) | each `meta.ts` fills it from its card digest; omit when a route has no headline number |
+| `RegistryGlobs.contextModules` is a lazy import map (`Record<string, () => Promise<Record<string, DashboardContext>>>`); `DashboardEntry.context` is deleted and `DashboardEntry.loadContext(): Promise<DashboardContext>` (memoized) takes its place | drop `{ eager: true }` from the `./*/context.ts` glob; replace `entry.context` with `await entry.loadContext()` (a route guard or an async setup); discovery stays on the meta glob |
+
+## 5e · The site shell and the one dock (U/B7 · §2.1, §2.2, §5.1 S-6; O-1, O-2, O-12)
+
+| Change | Consumer edit |
+|---|---|
+| `SiteShell` (new, `./chrome`) owns the dock and the router outlet; the dock is mounted once and is the same node on every route. It resolves the active dashboard from the route named `dashboardRoute` (default `"dashboard"`, `params.slug`) through `loadContext()`, binds the `--route-*` theme cascade and scopes the dock-portal registry. Props: `dashboardRoute`, `homeRoute` (default `"gallery"`), `subjects: SiteSubject[]`, `searchSources: SiteSearchSource[]` | `App.vue` renders `<SiteShell :subjects :search-sources />` in place of the keyed `<RouterView>`; the outlet is keyed by dashboard slug inside SiteShell |
+| `PlatformShell` no longer mounts the dock (its `dock` slot and `<header role="banner">` are deleted), binds no `--route-*` style, provides no dock-portal registry and carries no skip link: all four moved to SiteShell | a route that rendered its own dock through the slot drops it; the route keeps `<PlatformShell>` for its content stage and filter slot |
+| `Dock` takes the context as a prop (`context?: DashboardContext`) and `home?`, `subjects?`, `searchSources?`; it injects nothing. Below 768 px it is a bottom bar (`data-dock-register="bar"`); the crest is a home link at every width | none under SiteShell |
+| Deleted with no alias: the phone crest→sheet (DockCrest `asButton`/`expanded`/`toggle`, `focusCrest`), the sheet scrim (`.usf-dock-scrim`), the sheet's Home row (`dock-home-row`), `phone-surface-exclusion.ts` (`resolvePhoneExclusion`, `PhoneSurface`), DockFoot's phone branch | selectors move to the bar's cells: `[data-dock-cell="crest|dashboards|sections|search|saved|filters|more"]` |
+| `?at=` is written only by a section control (a rung, the Sections select, ‹ ›, PageUp/PageDown: `useDockStepper().goToSection`/`stepSection`); a reader's scroll, wheel or key-press scroll writes nothing | a test that expected a reader scroll to write `?at=` expects nothing; sci `tests/browser/k3-url-quiet.mjs` drops its `at` requirement |
+| `DockFilterTrigger` takes `ctx` as a prop; `useDockDataState` and `useDockStepper` take a context getter | none under Dock |
+| `--shell-head-reserve` (5rem; 1rem below 768 px) and `--dock-bar-reserve` (0; the bar's band below 768 px) are `:root` tokens; `.essay-beat` takes `--shell-head-reserve` as `scroll-margin-block-start` at every width | the homepage gives its own `main` the `id="main-content"` the skip link targets |
+
 ## 6 · glass-ui 10.1.0
 
 Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.

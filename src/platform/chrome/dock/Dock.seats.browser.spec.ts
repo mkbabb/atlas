@@ -9,15 +9,16 @@
 //      chapter rail), with exactly one Tab stop across the run: no container seat in the toolbar;
 //   2. ArrowUp/Down/Home/End inside the chapter rail move between chapters and stay in the rail;
 //   3. a Tab walk through the open dock reaches every dock control: the rail's stop, Filters, the
-//      theme toggle and Collapse at the desk; the rail's stop, Filters and the gear on the phone;
+//      theme toggle and Collapse at the desk; the run's stop, Filters and More on the phone bar
+//      (U/B7 §2.2: below 768 px the dock is a horizontal bar whose run seats are its cells);
 //   4. the dock carries no figure subject: no control in it names or pins a figure id.
 import { afterEach, describe, expect, it } from "vitest";
 import { page, server, userEvent } from "vitest/browser";
-import { createApp, defineComponent, h, nextTick, provide } from "vue";
+import { createApp, defineComponent, h, nextTick } from "vue";
 import { createPinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
 import Dock from "./Dock.vue";
-import { DASHBOARD_KEY, type DashboardContext } from "../../../contract/index.js";
+import type { DashboardContext } from "../../../contract/index.js";
 import { installDashboardRegistry } from "../../../contract/registry-inject.js";
 import { useVizRegistry } from "../../../charts/composables/useVizRegistry.js";
 
@@ -65,8 +66,7 @@ function mount() {
     const app = createApp(
         defineComponent({
             setup() {
-                provide(DASHBOARD_KEY, ctx);
-                return () => h(Dock);
+                return () => h(Dock, { context: ctx });
             },
         }),
     );
@@ -86,12 +86,10 @@ function mount() {
     };
 }
 
-/** Open the dock the reader's way: focus entering the desk rail blooms it; the phone crest is the
-    section-menu button. */
+/** Open the dock the reader's way: focus entering the desk rail blooms it; the phone bar is open. */
 async function openDock(phone: boolean): Promise<void> {
-    const crest = dockEl().querySelector<HTMLElement>(".dock-persistent [data-testid='dock-brand'], .dock-persistent a, .dock-persistent button")!;
-    if (phone) crest.click();
-    else crest.focus();
+    const crest = dockEl().querySelector<HTMLElement>("[data-testid='dock-brand']")!;
+    if (!phone) crest.focus();
     await nextTick();
     await wait(400);
 }
@@ -139,15 +137,20 @@ describe.each([
             (s) => !s.matches(FOCUSABLE) && s.querySelectorAll(CANDIDATE).length > 0,
         );
         expect(containers.map((s) => s.className)).toEqual([]);
-        // Every seat is a chapter rung (the phone sheet adds its Home row first).
-        expect(seats.length).toBe(BEATS.length + (phone ? 1 : 0));
-        expect(seats.every((s) => s.classList.contains("usf-dock__step"))).toBe(true);
-        expect(seats.every((s) => s.querySelectorAll(CANDIDATE).length === 0)).toBe(true);
+        if (phone) {
+            // The bar's run holds its middle cells, each one control: Dashboards and Sections.
+            expect(seats.map((s) => s.dataset.dockCell)).toEqual(["dashboards", "sections"]);
+        } else {
+            // Every seat is a chapter rung.
+            expect(seats.length).toBe(BEATS.length);
+            expect(seats.every((s) => s.classList.contains("usf-dock__step"))).toBe(true);
+        }
+        expect(seats.every((s) => s.matches(CANDIDATE) && s.querySelectorAll(CANDIDATE).length === 0)).toBe(true);
         // The run is one Tab stop (glass's roving tabindex).
         expect(seats.filter(isTabbable).length).toBe(1);
     });
 
-    it("ArrowDown, ArrowUp, Home and End move between chapters and stay in the rail", async () => {
+    it.skipIf(phone)("ArrowDown, ArrowUp, Home and End move between chapters and stay in the rail", async () => {
         await page.viewport(width, height);
         done = mount();
         await wait(300);
@@ -166,8 +169,7 @@ describe.each([
         await userEvent.keyboard("{ArrowUp}");
         expect(document.activeElement).toBe(step(3));
         await userEvent.keyboard("{Home}");
-        const first = phone ? document.querySelector("[data-testid='dock-home-row']") : step(1);
-        expect(document.activeElement).toBe(first);
+        expect(document.activeElement).toBe(step(1));
     });
 
     it("a Tab walk through the open dock reaches every dock control", async () => {
@@ -177,7 +179,7 @@ describe.each([
         await openDock(phone);
         // The controls a reader must reach by Tab, read while the dock is open (the desk rail
         // re-collapses once focus leaves it): the rail's one stop, then every foot control.
-        const railStop = [...run().querySelectorAll(".usf-dock__step")].find(isTabbable);
+        const railStop = [...run().children].find((c) => isTabbable(c));
         // Structure-agnostic: every visible control in the dock that is not a chapter row or the crest.
         const foot = [...dockEl().querySelectorAll("button, a[href], input, [role='switch']")].filter(
             (e) =>
@@ -194,7 +196,7 @@ describe.each([
         const missed = [railStop!, ...foot].filter((e) => !reached.has(e as HTMLElement)).map((e) => e.getAttribute("data-testid") ?? e.getAttribute("aria-label") ?? e.className);
         expect(missed).toEqual([]);
         expect(stops.some((s) => s.matches("[data-membrane-filter-trigger]"))).toBe(true);
-        if (phone) expect(stops.some((s) => s.matches("[data-testid='dock-gear']"))).toBe(true);
+        if (phone) expect(stops.some((s) => s.matches("[data-dock-cell='more']"))).toBe(true);
         else expect(stops.some((s) => s.matches("[data-testid='dock-collapse-toggle']"))).toBe(true);
     });
 

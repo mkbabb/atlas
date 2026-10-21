@@ -27,9 +27,7 @@ import {
     PanelLeftClose,
 } from "@lucide/vue";
 import { computed } from "vue";
-import DockSettings from "../DockSettings.vue";
 import DockFilterTrigger from "./DockFilterTrigger.vue";
-import { useDockGear } from "../composables/useDockGear.js";
 import { useDockDataState } from "../composables/useDockDataState.js";
 import type { DashboardContext } from "../../../../contract/index.js";
 
@@ -48,13 +46,6 @@ const emit = defineEmits<{
     "toggle-collapse": [];
 }>();
 
-// ── The MOBILE-GEAR posture register (J-DOCK · useDockGear) ────────────────────────────────────
-// The gear-sheet open ref, the selection-chip mount-gate (`showChip`), the live `selectionCount`,
-// the `@media(--phone)` register read (CONSUMING the ONE `useMobileRegister` seam — no second
-// breakpoint home), and the FilterView opener (the C24 chip's job). The chip + the gear share the
-// foot register, so the gate co-locates here.
-const { gearOpen, isPhone } = useDockGear();
-
 // ── The A4 dock pull-out filter seam (useFilterPane — the ONE open truth) ──────────────────────
 // The foot's filter affordance summons the floating right `Drawer mode="live-behind"`; it drives
 // the SAME shared `useFilterPane().open` singleton the FilterPanel trigger flips — ONE open truth.
@@ -62,7 +53,7 @@ const { gearOpen, isPhone } = useDockGear();
 // The year-scrubber RANGE-mode toggle + the `useSavedViews` ⤓-save door, on the SAME `useViewParams`
 // year-scope and `platform:views` shelf they already shared (no second shelf, no second scope).
 const { yearModeNow, hasYearScope, toggleRange, saveCurrentView, saveFlash } =
-    useDockDataState(ctx);
+    useDockDataState(() => ctx);
 
 // The route-control group (Filters · Compare years · Save this view) paints only when the route
 // declares that content, and the hairlines that fence it paint with it (W-22≡W-74: no phantom rule).
@@ -74,29 +65,13 @@ const hasRouteControls = computed(() => routeHasFilter.value || hasYearScope.val
     <!-- ══ THE FOOT (glass `#persistent-end`) ══════════════════════════════════════════════════
          Two groups, top to bottom: the ROUTE controls (Filters, Compare years, Save this view),
          then, below a hairline, the CHROME controls (theme, Collapse). Each control is one Tab
-         stop. On the phone the route group keeps Filters and the rest folds behind the gear. -->
+         stop. Below 768 px the dock is the bottom bar (Dock.vue), which carries its own cells. -->
     <div class="usf-dock__persistent-foot" data-testid="dock-persistent-foot">
-        <DockSeparator v-if="isPhone || hasRouteControls" />
+        <DockSeparator v-if="hasRouteControls" />
 
-        <template v-if="isPhone">
-            <DockFilterTrigger />
-            <!-- THE MOBILE GEAR (@media(--phone), C23): Compare years, Save this view and the theme
-                 toggle fold behind one Settings glyph opening the DockSettings sheet. -->
-            <DockSettings
-                v-model:open="gearOpen"
-                :has-year-scope="hasYearScope"
-                :year-mode-now="yearModeNow"
-                :save-flash="saveFlash"
-                :disable-transitions="disableTransitions"
-                @toggle-range="toggleRange"
-                @save-view="saveCurrentView"
-            />
-        </template>
-
-        <template v-else>
             <!-- The ROUTE controls: what the reader is looking at (filters, years) and keeping it. -->
             <div v-if="hasRouteControls" class="usf-dock__foot-controls">
-                <DockFilterTrigger />
+                <DockFilterTrigger :ctx="ctx" />
                 <!-- The year-scrubber RANGE-mode control: the pressed accent pill is range mode. -->
                 <button
                     v-if="hasYearScope"
@@ -148,7 +123,6 @@ const hasRouteControls = computed(() => routeHasFilter.value || hasYearScope.val
                     <PanelLeftClose class="usf-dock__ctl-glyph" aria-hidden="true" />
                 </button>
             </div>
-        </template>
     </div>
 </template>
 

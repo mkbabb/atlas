@@ -1,96 +1,81 @@
 <script setup lang="ts">
-// Dock — the platform's single floating glass INSTRUMENT (C.W3.2, C3.md §Scope 2,
-// CP-2/A2/A3/A4). ONE component, no per-dashboard fork: it injects the active
-// DashboardContext and renders that dashboard's crest + nav. There is NO hard-coded nav
-// array here; the dock is dumb to the dashboard, reading only the injected seam (G10 §5.2).
+// Dock — the platform's one dock (U/B7 §2.2, O-1, O-2). `SiteShell` mounts it once, above the
+// router, so it outlives every route change: the same node on `/`, on a dashboard, on a subject
+// page, under `/data` and on a 404. It reads the active route's `DashboardContext` as a prop
+// (undefined off a dashboard route) and renders two layers:
+//   • the SITE layer, on every page: the crest (home and progress), Dashboards, Search, Saved views;
+//   • the ROUTE layer, only with a context: the chapter rungs, Filters, Compare years, Save this view.
 //
-// ── THE ORCHESTRATOR SHELL (K-H-ARCH · the TEMPLATE-axis split) ──────────────────────────
-// K-H-ARCH split the 300-L template into FOUR colocated sub-components under `./components/`,
-// each owning the composable it consumes (the composable moves WITH its sub-component):
-//   • band 1 — `DockCrest`           (the #persistent TIL crest — a PURE crest; the progress rim
-//                                     re-seated UP to this orchestrator at the dock-box level, so
-//                                     its ring resolves to the DOCK PILL, not a crest square — OF-21.1)
-//   • band 2 — `DockStepperRender`   (the Roman rungs, a fragment rendered straight into glass's
-//                                     run; owns `useDockStepper` — the dock's ONE IntersectionObserver)
-//   •          `DockNavItem`         (the repeating beat/view rung the stepper v-fors)
-//   • band 3 — `DockFoot`            (the #persistent-end foot; owns `useDockGear`/`useFilterPane`/
-//                                     `useDockDataState` + the foot's sticky CSS, verbatim)
-// This SFC is now the thin `<GlassDock>` shell that mounts the four and keeps ONLY what the
-// orchestrator itself binds: the `ctx` inject, the `useDockCollapse` `<GlassDock ref>` bind, the
-// `isPhone` register read (the GlassDock posture props), the `<GlassDock>` prop literals, and the
-// dock PLATE-geometry / liquid-glass-surface / #default-layer CSS. (N.WG1 arm F — the dead
-// `--dock-accent`/`--cp-dock-accent` inline writes retired; chrome accent = the ONE `--cp-accent`
-// authority + the route's `--route-accent`, never a re-declared dock-local pole.)
+// Two registers of the one component, chosen by the viewport (`useMobileRegister`):
+//   • ≥ 768 px — the vertical GlassDock rail at the top-left. On `/` it rests open, 280 px wide, and
+//     its run lists the ranked roster (DockRoster). Elsewhere it rests as the 44 × 44 crest circle
+//     with the progress track on its rim, and opens on hover or focus. Past the top of a dashboard,
+//     the section pager (‹ Section n of N ›) sits beside the circle (MembraneTitleLozenge).
+//   • < 768 px — a horizontal GlassDock bar on the bottom edge, 56 px tall, with the crest pinned at
+//     the start and More at the end, and a cell list per context (§2.2's table). It slides out after
+//     a downward scroll of more than one viewport and back on any upward scroll, on focus inside it
+//     and at the page end; the content reserve under it does not change, so hiding moves no layout.
 //
-// ── THE CONSUMED GlassDock — a VERTICAL 3-BAND INSTRUMENT (J-DOCK · C23/C26) ─────
-// The CONSUMED `GlassDock` composite reached through `@mkbabb/glass-ui/dock`, mounted
-// `orientation="vertical"`. The dock FLOATS (position:fixed off the left margin — A3) and is a
-// THREE-BAND persistent instrument, NOT a single scroller (J-DOCK §approach-3, the keystone):
-//   • band 1 — the sticky CREST (#persistent slot, top): rendered OUTSIDE the collapsed↔expanded
-//     crossfade (the library anchors #persistent above the deck).
-//   • band 2 — the scrollable MIDDLE (#default slot): glass's toolbar run, whose seats are the Roman
-//     rungs themselves (B6 · §M M-4); the run scrolls, and the identity spine is its paint.
-//   • band 3 — the FOOT (#persistent-end slot, block-end): glass 10.1.0 ships the block-end persistent
-//     band, so the foot leaves the scrolling run (R-FOOT-1). Outside the run each control is its own
-//     Tab stop; inside it, glass's toolbar roving dropped all but one control of the old foot seat
-//     (B6 · RULINGS §M M-4, the B5 seat census).
-// The collapse machine glass SHIPS (`collapse="closed"|"open"` + `expand()`/`collapse()`/`expanded`)
-// is RE-ENABLED here via `useDockCollapse`. The posture is gear-TOGGLED + collapse-on-phone, NOT
-// forced-collapsed-everywhere; the desktop register may still rest expanded (a register OPTION,
-// J-PATH §8 Decision 2). The `:always-expanded` true-literal opt-OUT is DELETED.
-import { computed, inject, onBeforeUnmount, ref, watch } from "vue";
+// The dock carries no figure subject (§L D3-1): per-figure tools live on the figure.
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { DarkModeToggle } from "@mkbabb/glass-ui/dark-mode-toggle";
 import { DockSeparator, GlassDock } from "@mkbabb/glass-ui/dock";
 import { ScrollProgressRim } from "@mkbabb/glass-ui/scroll-progress-rim";
 import DockCrest from "./components/DockCrest.vue";
 import DockStepperRender from "./components/DockStepperRender.vue";
 import DockFoot from "./components/DockFoot.vue";
+import DockRoster from "./components/DockRoster.vue";
+import DockDashboardSelect from "./components/DockDashboardSelect.vue";
+import DockSectionSelect from "./components/DockSectionSelect.vue";
+import DockSearch from "./components/DockSearch.vue";
+import DockSavedViews from "./components/DockSavedViews.vue";
+import DockFilterTrigger from "./components/DockFilterTrigger.vue";
+import DockSettings from "./DockSettings.vue";
 import MembraneTitleLozenge from "./MembraneTitleLozenge.vue";
 import { MEMBRANE_FACETS } from "./membrane-facet.js";
 import { spineFill } from "./spine-fill.js";
-import {
-    useDockCollapse,
-    type DockExposed,
-} from "./composables/useDockCollapse.js";
+import { useDockCollapse, type DockExposed } from "./composables/useDockCollapse.js";
+import { useDockStepper } from "./composables/useDockStepper.js";
+import { useDockDataState } from "./composables/useDockDataState.js";
 import { useMobileRegister } from "../../composables/useMobileRegister.js";
 import { useScrollChrome } from "./composables/useScrollChrome.js";
 import { useDocumentScrollProgress } from "../../../motion/useScrollProgress.js";
-import { useDismissArbiter } from "../../interaction/useDismissArbiter.js";
+import { useReducedMotion } from "../../../motion/useReducedMotion.js";
 import { useDockPortals } from "./composables/useDockPortals.js";
-import {
-    revealReleasesOnLeave,
-    revealPersists,
-} from "./composables/coarse-reveal.js";
-import {
-    resolvePhoneExclusion,
-    type PhoneSurface,
-} from "./composables/phone-surface-exclusion.js";
+import { revealReleasesOnLeave, revealPersists } from "./composables/coarse-reveal.js";
 import { useFilterPane } from "../../../filter/composables/useFilterPane.js";
-import { DASHBOARD_KEY } from "../../../contract/index.js";
+import type { DashboardContext } from "../../../contract/index.js";
+import type { SiteSearchSource, SiteSubject } from "./site.js";
 
 const props = withDefaults(
     defineProps<{
-        /** An ordered multi-stop ramp (base → apex) for a SPECTRUM-thesis dashboard
-            (SCI's rainbow, ECF's sequential) — shared by the stepper's identity spine and the
-            persistent crest rim. Undefined ⇒ the route theme's ramp, then the route tritone. */
+        /** The active route's chrome contract; undefined off a dashboard route (the site layer only). */
+        context?: DashboardContext;
+        /** True on the homepage (`/`): the rail rests open with the roster at ≥ 768 px. */
+        home?: boolean;
+        /** The subject index the roster's "By subject" row opens. */
+        subjects?: readonly SiteSubject[];
+        /** Search sources beyond the dashboards (sci: the school units), loaded on first open. */
+        searchSources?: readonly SiteSearchSource[];
+        /** An ordered ramp for a spectrum dashboard's spine and progress track. */
         ramp?: readonly string[];
-        /** Wire glass-ui's no-transition fast-path on the dark toggle (C1, T-5) so the
-            theme is an INSTANT re-print here too (and the correct hard-cut under PRM). */
+        /** Wire glass-ui's no-transition fast path on the theme toggle (an instant re-print). */
         disableTransitions?: boolean;
     }>(),
-    { ramp: undefined, disableTransitions: true },
+    {
+        context: undefined,
+        home: false,
+        subjects: () => [],
+        searchSources: () => [],
+        ramp: undefined,
+        disableTransitions: true,
+    },
 );
 
-// The active dashboard's chrome contract — the dock reads ONLY this.
-const ctx = inject(DASHBOARD_KEY);
-
-// The CLOSED eight-facet roster (spec-chrome §c.1/§c.2) stamped as a shipped fact — the membrane
-// declares its facet count in the DOM so the closure is inspectable, not merely type-asserted. A
-// ninth facet is a compile error at `membrane-facet.ts`'s total switch, never a silent DOM add.
+const ctx = computed(() => props.context);
 const membraneFacets = MEMBRANE_FACETS.join(" ");
 
-// The ONE document-progress scalar for the whole dock. Collapse behavior, the stepper's terminal
-// beat correction, and the collapsed Glass rim all read this same computed; no child instantiates a
-// second `useWindowScroll` writer.
+// The one document-progress scalar: the progress track, the stepper's end zone, the crown gate.
 const scrollProgress = useDocumentScrollProgress();
 const ROUTE_TRITONE = [
     "var(--route-accent)",
@@ -98,124 +83,52 @@ const ROUTE_TRITONE = [
     "var(--route-accent-cool, var(--route-accent))",
 ] as const;
 const identityRamp = computed<readonly string[]>(
-    () => props.ramp ?? ctx?.theme?.barometerRamp ?? ROUTE_TRITONE,
+    () => props.ramp ?? ctx.value?.theme?.barometerRamp ?? ROUTE_TRITONE,
 );
 
-// THE SPINE IS THE RUN'S PAINT (B6 · §M M-4). The chapter rungs are the toolbar run's own seats, so
-// the identity spine cannot be an element beside them; it is the run's background (Dock.css), fed by
-// this one custom property on the dock root. The year cross-fade (`useDockStepper`, handed up by the
-// rail) dips `--spine-o` on the root, so only the spine fades.
+// The stepper outlives the route: it re-seeds on a context change (useDockStepper's route watch).
+// The rungs, the section pager and the phone Sections cell share this one handle.
+const stepper = useDockStepper(() => ctx.value, scrollProgress);
 const spineStyle = computed(() => ({ "--spine-fill": spineFill(identityRamp.value) }));
-const yearFading = ref(false);
 
-// ── ONE responsive Dock (the atlas-unified-register law) ──────────────────────
-// The SAME vertical `GlassDock` rail at EVERY viewport — no phone fork, no bottom/horizontal
-// register. What J-DOCK ADDS is the COLLAPSE posture: the rail rests collapsed at @media(--phone)
-// (reclaiming its width to the prose) and is gear-toggle-collapsible everywhere. The `isPhone`
-// register read CONSUMES the ONE `useMobileRegister` seam (the breakpoint-DRY law — no second home);
-// it drives the phone class (the GlassDock `collapse` pole is the fixed `"closed"` rest).
 const { isPhone, isNoHover } = useMobileRegister();
-// The device hover CAPABILITY — `!(hover: none)`. The wide-coarse reveal semantics (coarse-reveal.ts)
-// key their release decision off this capability + the pointer kind, never a single event string: a
-// gesture reveal (touch/pen, or ANY pointer on a no-hover surface) persists; a hover mouse stays
-// transient. `isNoHover` is the ONE `useMobileRegister` seam (no second matchMedia home).
 const canHover = computed(() => !isNoHover.value);
+const reduced = useReducedMotion();
 
-// ── The COLLAPSE posture (J-DOCK §approach-4 · useDockCollapse · C26) ──────────
-// The re-enabled 4.0.1 collapse machine — `useDockCollapse` wraps the GlassDock `expanded` /
-// `expand()` / `collapse()` exposed API (bound via the `<GlassDock ref>` below). The orchestrator
-// owns the bind (the `<GlassDock ref>` is its node) and threads the live `collapsed` posture down to
-// `DockFoot`, which renders the toggle and emits `toggle-collapse` back up to drive the machine.
-const {
-    collapsed,
-    bound,
-    toggle: collapseToggle,
-    collapse,
-    bindDock,
-    setIntent,
-} = useDockCollapse();
-// The `<GlassDock ref>` instance — typed as the minimal exposed slice `useDockCollapse` wraps.
-// Vue's component template ref hands back the exposed surface ({ expanded, expand, collapse, … });
-// we narrow to `DockExposed` (the slice the collapse wrap reads) on bind.
+// ══ ≥ 768 px: THE RAIL ══════════════════════════════════════════════════════════════════════════
+const { collapsed, toggle: collapseToggle, bindDock, setIntent } = useDockCollapse();
 const dockRef = ref<DockExposed | null>(null);
 watch(dockRef, (inst) => bindDock(inst), { immediate: true });
 
-// ── THE REACTIVE REGISTER BRIDGE (O-D1 · dock-chrome §2.1/§7.1 · mobile §1 resize-strand) ───────
-// GlassDock's `collapse` pole is a MOUNT-ONLY latch — GlassDock reads it once in `onMounted`, so a
-// desktop→phone RESIZE / orientation flip / devtools emulation (mounted at desktop width) never
-// re-collapsed the dock: it stranded EXPANDED as the 20rem sheet OVER content (mobile §1). This
-// watch reconciles the REST posture to the LIVE register on EVERY entry path — it fires on `isPhone`
-// change AND when the `<GlassDock ref>` binds (`dockRef`), so a late bind still lands on the current
-// register (register WINS on entry). The A21 scroll edge (below) is a DISTINCT signal — collapse-by-
-// scroll — that acts THEREAFTER; on phone it early-returns, so this bridge is the sole phone owner.
+// The rest posture: open on `/` (the roster is the homepage's index), the crest circle elsewhere.
 watch(
-    [dockRef, isPhone],
-    ([inst]) => {
-        if (!inst) return;
-        // W-MEMBRANE COLLAPSED-REST (spec-chrome §a.2 · the gutter death): the rail rests COLLAPSED at
-        // EVERY register — the disc + progress rim + the facet-3 lozenge carry wayfinding, the full
-        // rail is a transient BLOOM on intent (below), never persistent chrome (W-10/W-14). So the
-        // persistent gutter reserves only the disc (112px → 64px). Phone is unchanged (it already
-        // rested collapsed; its expand is the crest-tap sheet, a `manual` intent that outranks this).
-        setIntent("register", true);
+    [dockRef, () => props.home],
+    ([inst, home]) => {
+        if (inst) setIntent("register", !home);
     },
     { immediate: true },
 );
 
-// ── THE PORTAL-OPEN PIN (ADJUDICATION-R4-REOPEN · the child-portal ownership model) ──────────────
-// While ANY facet portal the dock spawned is OPEN — the filter DRAWER, which TELEPORTS to <body>
-// outside this rail's `$el` — the dock yields collapse-authority to that
-// portal and stays PINNED expanded (the `portal` intent, priority ABOVE bloom, non-releasing). This is
-// the ONE cure for C1/C2/F9/G1: a pointer/focus move into the teleported portal still fires the dock's
-// pointerleave/focusout (releasing the bloom below), but the pin outranks it so the rail never
-// collapses mid-interaction — the trigger stays put, focus stays managed, and glass's expand-flip guard
-// never re-fires (no fresh flip to guard). DESKTOP ONLY: on phone the expanded rail IS the sheet, so
-// pinning it open would collide with the drawer — the phone arbiter (below) subordinates one to the
-// other instead. When every portal closes the pin releases (null) and the rail returns to transient bloom.
+// An open filter drawer (teleported outside the rail) pins the rail open while it is open.
 const { anyHeld: anyPortalOpen } = useDockPortals();
-watch(
-    [anyPortalOpen, isPhone],
-    ([open, phone]) => setIntent("portal", !phone && open ? false : null),
-    { immediate: true },
-);
+watch(anyPortalOpen, (open) => setIntent("portal", open ? false : null), { immediate: true });
 
-// ── THE COLLAPSED-REST BLOOM (spec-chrome §a.2 · W-MEMBRANE) ─────────────────────────────────────
-// The resting disc BLOOMS to the full rail on DESKTOP intent — a pointer or keyboard-focus over the
-// dock — and re-collapses the instant intent leaves (a transient reveal, never persistent chrome).
-// GlassDock forwards ATTRS but not template LISTENERS to its real node (the same reason the sheet Esc
-// is a document listener), so we bind pointer/focus NATIVELY to the dock's own `$el`. Phone is fenced:
-// its expand is the crest-tap sheet, so hover/focus never blooms there (the CD-01 over-content regress).
+// The bloom: a pointer or focus over the circle opens the rail; leaving releases it. A gesture
+// reveal (touch, pen, or any pointer on a no-hover surface) persists until an outside tap or an
+// interrupted gesture (coarse-reveal.ts).
 let detachBloom: (() => void) | null = null;
 function bindBloom(inst: DockExposed | null): void {
     detachBloom?.();
     detachBloom = null;
     const el = (inst as unknown as { $el?: HTMLElement } | null)?.$el;
     if (!el) return;
-    const bloom = (): void => {
-        if (!isPhone.value) setIntent("bloom", false);
-    };
-    // F9/U4/S8 — THE WIDE-COARSE REVEAL SEMANTICS (coarse-reveal.ts). A GESTURE reveal has no transient
-    // "hover": a tap/stroke REVEALS the rail and it must PERSIST so the follow-up gesture lands on the
-    // now-visible facet control. A gesture `pointerleave` is the gesture ENDING, NOT a hover departure —
-    // releasing on it re-collapses the rail mid-gesture and the click hit-tests the collapsed disc
-    // behind (drawer never opens). `revealReleasesOnLeave` returns true ONLY for a hover-transient
-    // pointer (a mouse on a hover-capable device); a touch OR pen, or ANY pointer on a no-hover surface,
-    // PERSISTS. This cures the E24 defect where the raw touch-only pointer-kind fork still released a
-    // no-hover STYLUS (pen) and recreated the second-action race.
+    const bloom = (): void => setIntent("bloom", false);
     const restFromPointer = (e: PointerEvent): void => {
         if (revealReleasesOnLeave(e.pointerType, canHover.value)) setIntent("bloom", null);
     };
     const onFocusOut = (e: FocusEvent): void => {
         if (!el.contains(e.relatedTarget as Node | null)) setIntent("bloom", null);
     };
-    // THE GESTURE-REVEAL DISMISSALS — a persisted reveal releases on an OUTSIDE tap, or deterministically
-    // (timer-free) when the opening gesture is INTERRUPTED: `pointercancel` (the browser took the gesture
-    // over for a scroll starting inside the dock, or the stroke was cancelled) or `lostpointercapture`.
-    // All three gate on the reveal PERSISTING (`revealPersists` — touch OR pen, never a hover mouse
-    // that already released on leave) and on NO portal owning the dock (an open drawer/menu keeps the
-    // pin regardless — the banked already-open hold). Bounded to the one gesture: no idle timer, no
-    // stranded bloom. `onOutsidePointerDown` is capture-phase so it reads the tap before any descendant
-    // stops it; it only reads + releases, never prevents.
     const onOutsidePointerDown = (e: PointerEvent): void => {
         if (!revealPersists(e.pointerType, canHover.value) || anyPortalOpen.value) return;
         if (e.target instanceof Node && el.contains(e.target)) return;
@@ -245,211 +158,184 @@ function bindBloom(inst: DockExposed | null): void {
 watch(dockRef, (inst) => bindBloom(inst), { immediate: true });
 onBeforeUnmount(() => detachBloom?.());
 
-// ── THE CROWN ZONE — `atTop` off the CD-05 scroll clock (O-A21) ────────────────────────────────
-// `useScrollChrome` reads the ONE page scroll clock (PRM-guarded, AG8-safe — no wheel/touch capture)
-// and yields `atTop` (progress ≤0.4%, the crown). W-MEMBRANE consumes ONLY that scalar here: it gates
-// the facet-3 lozenge's materialise (§a.2 — bare disc at the crown, the pill grows once the reader
-// leaves it). The composable's collapse-on-scroll EDGE is no longer driven: the collapsed-rest posture
-// (register bridge, above) rests the rail collapsed at every scroll position, so a scroll→collapse
-// driver is redundant; the only expansion is the on-intent bloom.
+// The crown: the section pager shows once the reader has left the top.
 const { atTop } = useScrollChrome({ source: scrollProgress });
 
-// ── THE VIEW-MODE TOGGLE — RETIRED FROM THE SERVED DOCK (O-DIR-4 ARM 3) ──────────────────────────
-// The owner's verdict on the A23 TOC interim: "entirely worthless" — it duplicated the stepper
-// behind an extra toggle and added nothing. The TOC view-mode toggle + render path (the register
-// composable, the TOC component mount, its toggled-visibility gate + select handler, `DockFoot`'s
-// toggle button) are REMOVED from the served dock; the stepper renders unconditionally. The retired
-// component + composable files STAY on disk, UNCONSUMED, behind the existing
-// `GLASS_TOC_ABSTRACTION_AVAILABLE` owner-held seam (off by default, no dead-code delete) — the
-// WG-E glass-abstraction arm's flip revives this wiring on the real latex-paper TOC primitive
-// (the R-008 ask stays alive via that arm, not this interim).
+/** The rail's site layer shows while the rail is open (the circle is the crest alone). */
+const railOpen = computed(() => !collapsed.value);
 
-// ── THE PHONE SHEET (M.W1 D2 · N.WG1 Arm B — the I-MOBILE law made code) ──────────────────────
-// The crest-BUTTON fires the EXISTING collapse machine into the top-left ruled section-menu SHEET
-// (crest→ruled-sheet, NEVER a bottom/horizontal fork): `DockStepperRender` at a register, the
-// geometry/morph carved by the `.usf-dock--phone:not(.collapsed)` cascade below. Esc + the scrim
-// close it and RETURN FOCUS to the crest (`focus({preventScroll})` — the close never yanks the
-// page); a chosen row scrolls, closes, and returns focus the same way.
-const crestRef = ref<InstanceType<typeof DockCrest> | null>(null);
-// Gate the sheet on the REAL posture (O-D1 · dock-chrome §2.1 secondary flicker): before the
-// `<GlassDock ref>` binds, `collapsed` falls back to `false`, so a bare `isPhone && !collapsed`
-// armed the scrim + `:sheet` register for one pre-bind tick on phone (a scrim flash). `bound`
-// holds the sheet shut until the posture is knowable — the register bridge has collapsed by then.
-const sheetOpen = computed(() => bound.value && isPhone.value && !collapsed.value);
-
-// ── THE PHONE ARBITER (C4 · sheet ↔ drawer mutual exclusivity) ───────────────────────────────────
-// On phone the crest-tap SHEET and the filter DRAWER must never co-occupy the viewport: the drawer
-// teleports to <body> UNDER the dock scrim/sheet (the 215,407 px² buried-under-scrim collision). They
-// are mutually exclusive — opening one SUBORDINATES the other. Opening the drawer (from the sheet's
-// facet-7 trigger) COLLAPSES the dock, closing the sheet so the drawer stands alone and reachable (no
-// scrim above it); opening the sheet closes the drawer. The FORM of the phone dock stays dial-13
-// owner-held — this is only the exclusivity LOGIC + the reachability it buys, not a new phone posture.
+// ══ < 768 px: THE BAR ═══════════════════════════════════════════════════════════════════════════
+// The route controls the bar's More sheet carries (Compare years, Save this view) for this context.
+const dataState = useDockDataState(() => ctx.value);
+const gearOpen = ref(false);
 const { open: filterOpen } = useFilterPane();
-// THE CONTINUOUS PHONE EXCLUSION (phone-surface-exclusion.ts · U5/S5). `lastActivated` is the crossfade
-// tie-break: during a drawer's open transition the sheet has not yet collapsed, so BOTH flags are
-// briefly true — the just-activated surface must own the viewport and the outgoing one must yield
-// hit-testing. Eventual boolean exclusivity (the two watchers alone) left the OUTGOING scrim a
-// full-viewport, pointer-active element for its 200ms (120ms PRM) leave clock; the resolver + the
-// pointer-events yield below make the handoff a SINGLE-owner invariant at onset, mid, AND settle.
-const lastActivated = ref<PhoneSurface>("none");
-watch(filterOpen, (drawerOpen) => {
-    if (!isPhone.value || !drawerOpen) return;
-    lastActivated.value = "drawer";
-    if (sheetOpen.value) collapse(); // subordinate the sheet — the drawer owns the viewport
+// One sheet at a time on the bottom edge: the filter drawer closes More, and More closes the drawer.
+watch(filterOpen, (open) => {
+    if (open) gearOpen.value = false;
 });
-watch(sheetOpen, (open) => {
-    if (!isPhone.value || !open) return;
-    lastActivated.value = "sheet";
-    if (filterOpen.value) filterOpen.value = false; // subordinate the drawer — the sheet owns it
+watch(gearOpen, (open) => {
+    if (open && filterOpen.value) filterOpen.value = false;
 });
-// The single-owner projection THIS frame — drives the scrim's hit ownership (never two surfaces at
-// once). STATE + exclusivity only: the phone FORM (dial-13 posture) stays owner-held.
-const phoneExclusion = computed(() =>
-    resolvePhoneExclusion({
-        sheetOpen: sheetOpen.value,
-        drawerOpen: isPhone.value && filterOpen.value,
-        lastActivated: lastActivated.value,
-    }),
-);
 
-function onCrestToggle(): void {
-    if (!isPhone.value) return;
-    collapseToggle();
+/** The bar is out (slid below the edge). Read once per `scrollend`; never under reduced motion. */
+const barOut = ref(false);
+let lastY = 0;
+let travelled = 0;
+function onScrollEnd(): void {
+    const y = window.scrollY;
+    const dy = y - lastY;
+    lastY = y;
+    const atEnd = y + window.innerHeight >= document.documentElement.scrollHeight - 2;
+    if (reduced.value || !isPhone.value || dy < 0 || atEnd) {
+        travelled = 0;
+        barOut.value = false;
+        return;
+    }
+    travelled += dy;
+    if (travelled > window.innerHeight) barOut.value = true;
 }
-
-/** Close the sheet (Esc / scrim / row-select) and return focus to the crest button (D2).
-    Focus moves FIRST — the crest lives in the persistent band (never inert), so seating focus
-    there before the deck collapses/inertifies means the browser never dumps it to `<body>`. */
-function closeSheet(): void {
-    if (!sheetOpen.value) return;
-    crestRef.value?.focusCrest();
-    collapse();
+function onBarFocus(): void {
+    barOut.value = false;
 }
-
-/** The sheet-wide Escape — a DOCUMENT listener alive only while the sheet is open (GlassDock's
-    attr forwarding does not carry listeners to a real node, so a template `@keydown` never
-    binds). Document keydown fires BEFORE PlatformShell's window-level Esc arbiter, and the
-    preventDefault makes that arbiter defer (no double-handle — the sheet owns this Escape). */
-useDismissArbiter().claim(() =>
-    sheetOpen.value
-        ? { id: "dock-sheet", priority: 40, escape: true, onDismiss: closeSheet }
-        : null,
-);
+onMounted(() => {
+    lastY = window.scrollY;
+    window.addEventListener("scrollend", onScrollEnd, { passive: true });
+});
+onBeforeUnmount(() => window.removeEventListener("scrollend", onScrollEnd));
+watch(gearOpen, (open) => {
+    if (open) barOut.value = false;
+});
 </script>
 
 <template>
-    <!-- The CONSUMED GlassDock composite (C3-2) — the VERTICAL 3-BAND rail. `.usf-dock` fixes it off
-         the left margin (A3; glass 9 folded GlassDock's `position` prop onto the consumer's own
-         classes, Dock.css); the content stage flows full-bleed UNDER it. The dock binds its
-         `<GlassDock ref>` so `useDockCollapse` reaches the exposed `expand()` / `collapse()` /
-         `expanded`. `collapse="closed"` is the mount pole (glass 9 folded `startCollapsed` onto
-         `collapse`): the rail rests collapsed at every register (the register bridge below).
-
-         glass 9 also removed `interaction` (`"manual"` quieted glass's six environmental writers —
-         hover / focus / idle / outside-click / collapsed-tap / touch — so `useDockCollapse` was the
-         sole posture owner), `density` (one density at 9) and `overflow`. glass 10.1.0 has no
-         successor for the manual pole: `:collapse="false"` quiets the writers but never collapses.
-         Atlas does NOT mask the writers here (no consumer-side watcher, pointer suppression or forced
-         pole); the missing consumer-owned posture mode is relayed to glass-ui at its root
-         (U build B4-ATLAS-GLASS10, relay row R-4). -->
-    <!-- THE SHEET SCRIM (D2) — phone-sheet-open only: the paper-wash veil the ruled menu floats
-         over; a tap closes the sheet with the same focus return as Esc. Sits ONE rung under the
-         raised sheet (`--z-overlay`; the sheet rides `--z-overlay + 1` below). -->
-    <Transition name="dock-scrim">
-        <div
-            v-if="ctx && sheetOpen"
-            class="usf-dock-scrim"
-            :class="{ 'usf-dock-scrim--yield': !phoneExclusion.scrimOwnsHit }"
-            aria-hidden="true"
-            data-testid="dock-scrim"
-            @click="closeSheet"
-        />
-    </Transition>
-
+    <!-- ≥ 768 px: the vertical rail. -->
     <GlassDock
-        v-if="ctx"
-        id="dock-sheet"
+        v-if="!isPhone"
+        id="dock-rail"
+        key="rail"
         ref="dockRef"
         orientation="vertical"
         shape="card"
-        collapse="closed"
+        :collapse="home ? 'open' : 'closed'"
         class="usf-dock"
-        :class="{ 'usf-dock--phone': isPhone, 'usf-dock--year-fade': yearFading }"
+        :class="{ 'usf-dock--home': home, 'usf-dock--year-fade': stepper.yearFading.value }"
         :style="spineStyle"
-        aria-label="Section navigation"
+        aria-label="Site navigation"
         data-testid="dock"
+        data-dock-register="rail"
+        :data-dock-context="ctx ? 'dashboard' : home ? 'home' : 'site'"
         :data-membrane-facets="membraneFacets"
     >
-        <!-- band 1 — THE PERSISTENT CREST + THE DOCK-BOX PROGRESS RIM (#persistent slot, H9 §B.1).
-             The library renders this slot OUTSIDE the collapsed↔expanded crossfade, so the crest
-             affordance is always reachable: the HOME link at the desktop rail, the section-menu
-             BUTTON at the phone register (D2 — home then rides the sheet's labeled first row).
-             The `ScrollProgressRim` seats HERE (a sibling of the crest, NOT nested inside it) so its
-             `position:absolute` box resolves to the GlassDock ROOT — `.dock-persistent` is static,
-             `.glass-dock` is the position:relative + `contain:layout` containing block — so glass 10's
-             vertical progress track runs down the DOCK PILL's own inline-end edge at rest, never an
-             inner square around the crest raster (OF-21.1). The expand-yield fade lives in
-             Dock.css; the value/stops are the same whole-document scalar + identity ramp the crest
-             once forwarded. -->
         <template #persistent>
             <ScrollProgressRim
+                v-if="!home"
                 class="usf-dock__progress-rim"
                 orientation="vertical"
                 :value="scrollProgress"
                 :stops="identityRamp"
             />
-            <DockCrest
-                ref="crestRef"
-                :as-button="isPhone"
-                :expanded="sheetOpen"
-                :crest="ctx?.crest"
-                :morph-stage="collapsed ? 'seed' : 'full'"
-                @toggle="onCrestToggle"
-            />
-            <!-- The crest's rule: home above, the chapters below. Expanded only — the collapsed disc
-                 is the crest alone. -->
-            <DockSeparator v-if="!collapsed" class="usf-dock__crest-rule" />
+            <DockCrest :crest="ctx?.crest" :morph-stage="collapsed ? 'seed' : 'full'" />
+            <!-- The site layer (open rail, off the homepage): Dashboards, Search, Saved views. -->
+            <template v-if="railOpen && !home">
+                <DockSeparator class="usf-dock__crest-rule" />
+                <div class="usf-dock__site" data-testid="dock-site-layer">
+                    <DockDashboardSelect :active="ctx?.id" side="right" />
+                    <DockSearch :sources="searchSources" />
+                    <DockSavedViews side="right" />
+                </div>
+            </template>
         </template>
 
-        <!-- band 2 — THE RUN (#default slot). glass 10.1.0 claims `role="toolbar"` on the element that
-             holds this slot and roves its direct children as seats (`useDockRun`). Every seat is one
-             chapter rung (DockStepperRender renders a fragment of single controls), so glass's own
-             roving IS the chapter rail's: one Tab stop, ArrowUp/Down/Home/End between chapters, the
-             reach-scroll and the status line. No container seat sits in the run (B6 · RULINGS §M
-             M-4). Every other dock control is a single control in the foot, outside the run. The
-             dock carries no figure subject (§L D3-1): a figure's provenance, options and exports
-             are its own, in its plate. -->
+        <!-- The run: the chapter rungs on a dashboard, the ranked roster on the homepage. Every seat
+             is one control (B6 · §M M-4). -->
         <template #default>
-            <DockStepperRender
-                :ctx="ctx"
-                :progress="scrollProgress"
-                :sheet="sheetOpen"
-                @close="closeSheet"
-                @year-fade="yearFading = $event"
-            />
+            <DockStepperRender v-if="ctx" :key="ctx.id" :ctx="ctx" :stepper="stepper" />
+            <DockRoster v-else-if="home" :subjects="subjects" />
         </template>
 
-        <!-- band 3 — THE FOOT (#persistent-end slot): the route controls (Filters, Compare years, Save
-             this view) and the chrome controls (theme, Collapse), outside the run, below the rail.
-             On the phone the same band renders inside the SHEET register (D2): Filters + the gear. -->
         <template #persistent-end>
             <DockFoot
+                v-if="ctx"
+                :key="ctx.id"
                 :ctx="ctx"
-                :disable-transitions="props.disableTransitions"
+                :disable-transitions="disableTransitions"
                 :collapsed="collapsed"
                 @toggle-collapse="collapseToggle"
             />
+            <div v-else class="usf-dock__site-foot" data-testid="dock-site-foot">
+                <template v-if="home">
+                    <DockSearch :sources="searchSources" />
+                    <DockSavedViews side="right" />
+                </template>
+                <DarkModeToggle
+                    class="usf-dock__theme"
+                    :size="home ? 'lg' : 'dock'"
+                    :disable-transitions="disableTransitions"
+                />
+            </div>
         </template>
-
     </GlassDock>
 
-    <!-- FACET 3 — THE TITLE LOZENGE (spec-chrome §a · §c.1 · the A-39 fold). The wayfinding pill
-         grafted onto the collapsed disc's right edge: it carries the active beat's navLabel
-         (`useActiveBeat`, the ONE dock-IO scalar — the seam-15 seat) once the reader leaves the crown
-         (`!atTop`), and re-collapses to the bare disc at the top as the in-content title re-reveals.
-         A fixed sibling of the rail so it survives the collapse (never inside `.dock-layers`), yet is
-         one membrane at the node grain. Desktop-only: the phone readout is the O-03 bar (dial-13). -->
-    <MembraneTitleLozenge v-if="ctx" :at-top="atTop" :is-phone="isPhone" />
+    <!-- < 768 px: the bottom bar. -->
+    <GlassDock
+        v-else
+        id="dock-bar"
+        key="bar"
+        orientation="horizontal"
+        shape="card"
+        :collapse="false"
+        class="usf-dock usf-dock--bar"
+        :class="{ 'usf-dock--out': barOut }"
+        aria-label="Site navigation"
+        data-testid="dock"
+        data-dock-register="bar"
+        :data-dock-context="ctx ? 'dashboard' : home ? 'home' : 'site'"
+        :data-bar-out="barOut ? '' : undefined"
+        :data-membrane-facets="membraneFacets"
+        @focusin="onBarFocus"
+    >
+        <template #persistent>
+            <ScrollProgressRim
+                class="usf-dock__progress-rim usf-dock__progress-rim--bar"
+                orientation="horizontal"
+                :value="scrollProgress"
+                :stops="identityRamp"
+            />
+            <DockCrest :crest="ctx?.crest" morph-stage="seed" data-dock-cell="crest" />
+        </template>
+        <template #default>
+            <template v-if="ctx">
+                <DockDashboardSelect :active="ctx.id" side="top" data-dock-cell="dashboards" />
+                <DockSectionSelect :stepper="stepper" variant="cell" data-dock-cell="sections" />
+            </template>
+            <template v-else-if="home">
+                <DockSearch :sources="searchSources" data-dock-cell="search" />
+                <DockSavedViews side="top" data-dock-cell="saved" />
+            </template>
+            <template v-else>
+                <DockDashboardSelect side="top" data-dock-cell="dashboards" />
+                <DockSearch :sources="searchSources" data-dock-cell="search" />
+            </template>
+        </template>
+        <template #persistent-end>
+            <!-- Filters sits outside the run (its applied count is a second node), before More. -->
+            <DockFilterTrigger v-if="ctx" :ctx="ctx" data-dock-cell="filters" />
+            <DockSettings
+                v-model:open="gearOpen"
+                :has-year-scope="dataState.hasYearScope.value"
+                :year-mode-now="dataState.yearModeNow.value"
+                :save-flash="dataState.saveFlash.value"
+                :can-save="Boolean(ctx)"
+                :disable-transitions="disableTransitions"
+                data-dock-cell="more"
+                @toggle-range="dataState.toggleRange()"
+                @save-view="dataState.saveCurrentView()"
+            />
+        </template>
+    </GlassDock>
+
+    <!-- ≥ 768 px, past the top of a dashboard: the section pager beside the circle. -->
+    <MembraneTitleLozenge v-if="ctx" :at-top="atTop" :is-phone="isPhone" :stepper="stepper" />
 </template>
 
 <style scoped src="./Dock.css"></style>

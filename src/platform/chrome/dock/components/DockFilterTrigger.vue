@@ -10,18 +10,20 @@
 // It is a single control seated in the dock's foot (`#persistent-end`), outside glass's toolbar run,
 // so it is its own Tab stop. Gated on the route declaring a filter body (A-19), so vft and speedtest
 // grow no empty-drawer trigger.
-import { computed, inject } from "vue";
+import { computed } from "vue";
 import { SlidersHorizontal } from "@lucide/vue";
 import { DockControl } from "@mkbabb/glass-ui/dock";
-import { DASHBOARD_KEY } from "../../../../contract/index.js";
+import type { DashboardContext } from "../../../../contract/index.js";
 import { useFilterPane } from "../../../../filter/composables/useFilterPane.js";
 import { useFilterLedger } from "../../../../filter/composables/useFilterLedger.js";
 import type { MembraneFacet } from "../membrane-facet.js";
 
 const FACET: MembraneFacet = "filter-trigger";
 
-const ctx = inject(DASHBOARD_KEY, null);
-const routeHasFilter = computed(() => Boolean(ctx?.filterBody));
+// The dock is mounted once above the router (U/B7 §2.2), so the route's context arrives as a prop
+// from the dock, not by inject from the route view.
+const { ctx } = defineProps<{ ctx: DashboardContext }>();
+const routeHasFilter = computed(() => Boolean(ctx.filterBody));
 
 const { open } = useFilterPane();
 const { appliedCount } = useFilterLedger();
@@ -29,7 +31,7 @@ const { appliedCount } = useFilterLedger();
 /** The accessible name is the human contract: the route's Filters dialog, never a technical slug.
     The applied count is spoken with it, since the counter badge is only paint. */
 const name = computed(() => {
-    const base = ctx?.title ? `Filters — ${ctx.title}` : "Filters";
+    const base = ctx.title ? `Filters — ${ctx.title}` : "Filters";
     return appliedCount.value > 0 ? `${base}, ${appliedCount.value} applied` : base;
 });
 

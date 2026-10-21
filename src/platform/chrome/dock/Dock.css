@@ -32,6 +32,10 @@
        to `auto` (both block insets pinned would over-constrain `height:auto` into a top↔bottom
        stretch). */
     position: fixed;
+    /* THE Z RUNG (REGISTRY 119). A fixed box at `z-index: auto` paints beneath the positioned
+       content stage (`main`, `--z-content`), so the stage took every pointer hit over the dock. The
+       dock carries its own rung; the phone sheet's `--z-overlay + 1` below lifts it over its scrim. */
+    z-index: var(--z-dock);
     inset-block-start: var(--cp-inset, 1.25rem);
     inset-block-end: auto;
     inset-inline-start: var(--cp-inset, 1.25rem);
@@ -108,8 +112,7 @@
    progress) or the phone sheet (active navigation) a progress track would only double-encode or compete
    with the stepper's own "step N of M" wayfinding. The fade ties to glass's own `.collapsed` posture
    class — the SAME machine `useDockCollapse` drives — so it needs no new atlas state. The phone
-   register uses this identical seat: `.usf-dock--phone.collapsed` also carries `.collapsed`, so the
-   track rides the phone pill and yields to the ruled sheet by the same rule. */
+   bar (< 768 px) keeps its track along its top edge at all times. */
 .usf-dock__progress-rim {
     opacity: 0;
     transition: opacity var(--duration-normal) var(--ease-standard);
@@ -127,14 +130,18 @@
    Collapsed, the dock is JUST the persistent crest medal. The #default deck (the stepper + the foot)
    yields its layout ENTIRELY (`display:none`, not a visibility-hidden ghost that still reserves its
    expanded height) so the pill's block-size is crest + the padding canon — no tall empty void below
-   the dome (the OF-27 capture). The R4 progress rim then traces the HUGGED pill's true collapsed
-   extent (the resting `--radius-pill` disc). The phone crest→sheet already hugged this way; the
-   desktop rail now shares the SAME rule, so the collapsed medal reads identically at every register.
+   the dome (the OF-27 capture). U/B7 (R-REQ-CHECK D-04): the hug is a 44 × 44 CIRCLE — no block
+   padding (padded, the pill read 44 × 60, an oval) at 50%. glass G1 adds `--radius-circle` and
+   `--radius-bar` (12 px); the I1 merge re-points this 50% and the dock's 0.75rem bar radii onto
+   them. The progress track runs on its rim.
    The foot (glass `#persistent-end`, B6) is part of the deck in atlas's register: it yields with it,
    the same `display:none` (so it also leaves the Tab order and the accessibility tree with it). */
 .usf-dock.collapsed {
-    padding-block: 0.5rem;
+    padding: 0;
     gap: 0;
+    block-size: var(--cp-dock-collapsed-w, 2.75rem);
+    aspect-ratio: 1;
+    border-radius: 50%;
     /* THE GUTTER DEATH (W-MEMBRANE · A-39 · spec-chrome §d.1) — the collapsed rail hugs its crest to
        the TRUE disc width (`--cp-dock-collapsed-w`, 2.75rem), so its right edge lands at exactly the
        reclaimed 64px reserve (inset + disc) — zero persistent overlap. Snapped (no width transition):
@@ -212,172 +219,98 @@
     inline-size: 100%;
 }
 
-/* ══ THE PHONE REGISTER (M.W1 D2, ratified · N.WG1 Arm B — the I-MOBILE law) ══════════════════
-   ONE responsive dock, two machine states restyled — never a bottom/horizontal fork:
-   · COLLAPSED — the rail condenses INTO the TIL crest (the lone gilt dome pill; the empty deck
-     stub dies so the pill hugs the dome and the D1 phone block-reserve clears it).
-   · EXPANDED — the SAME instrument morphs into the top-left RULED SECTION-MENU SHEET: labeled
-     rows ≥2.75rem parted by the engrave hairline, the active row on the chrome accent, the home
-     row first, the foot band beneath. Geometry per D2: min(20rem, 100vw − 2·inset) wide,
-     viewport-capped by the rail's own `--dock-max-block-size` token, radius --cp-radius. */
-@media (--phone) {
-    /* The collapsed pill's crest-hug (padding + deck `display:none`) is now register-agnostic
-       (`.usf-dock.collapsed`, above · OF-27) — the phone shares the desktop rule, no phone twin. */
-
-    /* THE MORPH — O-D1 STOPS WRITING the `inline-size` WIDTH TRANSITION on the glass box (the
-       vertical-dock corner desync, dock-chrome §3.4): animating WIDTH on a dock whose glass engine
-       morphs on the BLOCK axis / center-scale drove the atlas box a sub-pixel off glass's rim /
-       `::after` grain / clip corner mid-collapse. The rail↔sheet WIDTH now snaps to its endpoint
-       (the geometry is still the `min(20rem…)` below) and glass owns the morph clock; the smooth
-       width morph is the O-D2 glass-consume. (The PRM opacity print below is untouched.) */
-
-    /* THE SHEET — the expanded phone dock. Rides ABOVE the scrim (one rung over --z-overlay). */
-    .usf-dock--phone:not(.collapsed) {
-        inline-size: min(20rem, calc(100vw - 2 * var(--cp-inset, 1.25rem)));
-        z-index: calc(var(--z-overlay) + 1);
-        align-items: stretch;
-    }
-
-    /* the sheet's run — full-measure ruled rows, top-aligned (a MENU, not a centred rail), on the
-       row pitch (2.75rem rows, no gap) so glass's reach-scroll lands whole rows. The spine is RAIL
-       furniture (the identity ramp); the sheet is ruled by its rows, so the spine rests. */
-    .usf-dock--phone:not(.collapsed) {
-        --dock-seat: 2.75rem;
-        --dock-run-gap: 0rem;
-    }
-    .usf-dock--phone:not(.collapsed) :deep(.dock-layer--full) {
-        align-items: stretch;
-        padding-block: 0.25rem;
-        background-image: none;
-    }
-
-    /* A RULED ROW — the same rung, re-registered: full width, the Roman (or the home glyph) as
-       the leading mark, the section label as the word, the engrave hairline as the rule between
-       rows (the ruled-menu ink), ≥2.75rem (the D2 row floor; the 44px tap floor still binds). */
-    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step) {
-        /* display/align restated here because the HOME row renders in the stepper's scope —
-           DockNavItem's rail skin never reaches it; the sheet row is fully carved by this rule. */
-        display: flex;
-        align-items: center;
-        inline-size: 100%;
-        justify-content: flex-start;
-        gap: 0.75rem;
-        min-block-size: 2.75rem;
-        padding-inline: 0.75rem;
-        border: 0;
-        /* the resting row is RULED, not boxed — square ends so the engrave rule runs true;
-           the active fill below re-rounds to the control radius. */
-        border-radius: 0;
-        background: transparent;
-        border-block-end: 1px solid var(--engrave);
-        scale: none;
-        color: var(--foreground);
-        cursor: pointer;
-        text-decoration: none;
-    }
-    /* the home ROW renders in the stepper's own scope (no DockNavItem skin reaches it) — the
-       sheet cascade carries the one interaction mark it needs beyond the shared row rule. */
-    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step:focus-visible) {
-        outline: 2px solid var(--focus-ring-color, currentColor);
-        outline-offset: -2px;
-    }
-    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step-num) {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        /* wide enough for `VIII` at the rung size — the label column stays aligned to one edge. */
-        inline-size: 2rem;
-        flex: none;
-        color: var(--muted-foreground);
-    }
-    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step-label) {
-        display: block;
-        flex: 1 1 auto;
-        min-inline-size: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        text-align: start;
-        font-size: 0.875rem;
-        font-weight: 500;
-        letter-spacing: 0.01em;
-    }
-    /* the ACTIVE row — the chrome accent bar (--cp-accent fill, --cp-accent-ink word; the D2
-       active-row voice — the same wayfinding singleton the rail's raised pill speaks). */
-    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step--active) {
-        background: var(--cp-accent, var(--foreground));
-        color: var(--cp-accent-ink, var(--background));
-        border-block-end-color: transparent;
-        border-radius: var(--radius-plate-control);
-        box-shadow: none;
-    }
-    .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step--active .usf-dock__step-num) {
-        color: inherit;
-    }
-
-    /* THE ROW STAGGER (D2) — the rows rise on the snappy spring, 40ms×i down the column, replayed
-       on every open (the selector newly matches when `.collapsed` drops, so the animation
-       restarts). Scoped keyframes — DockNavItem's rail-mount rise is a different clock. */
-    @media (prefers-reduced-motion: no-preference) {
-        .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step) {
-            animation: usf-dock-sheet-row-rise var(--spring-dock-duration)
-                var(--spring-dock) both;
-            animation-delay: calc(var(--rivet-i, 0) * 40ms);
-        }
-    }
-
-    /* PRM — the morph + stagger become a 120ms opacity-only print (D2); geometry snaps. */
-    @media (prefers-reduced-motion: reduce) {
-        .usf-dock--phone,
-        .usf-dock--phone.collapsed {
-            transition: opacity 120ms ease;
-        }
-        .usf-dock--phone:not(.collapsed) :deep(.usf-dock__step) {
-            animation: none;
-        }
-    }
+/* ══ THE HOMEPAGE POSTURE (≥ 768 px, `/` · U/B7 §2.2, O-2) ══════════════════════════════════════
+   On `/` the rail rests open, 280 px wide, and its run is the ranked roster: rows run the full
+   measure, start-aligned, with no spine (the spine is a dashboard's identity ramp). */
+.usf-dock--home:not(.collapsed) {
+    box-sizing: border-box;
+    inline-size: 17.5rem;
+    align-items: stretch;
+    padding-inline: 0.5rem;
+    --dock-seat: 2.75rem;
+    --dock-run-gap: 0.125rem;
+}
+.usf-dock--home :deep(.dock-layer--full) {
+    align-items: stretch;
+    background-image: none;
 }
 
-@keyframes usf-dock-sheet-row-rise {
-    from {
-        opacity: 0;
-        transform: translateY(0.375rem);
-    }
-    to {
-        opacity: 1;
-        transform: none;
-    }
+/* The site layer (the open rail off the homepage): Dashboards, Search, Saved views, one column. */
+.usf-dock__site,
+.usf-dock__site-foot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+}
+.usf-dock--home .usf-dock__site-foot {
+    flex-direction: row;
+    justify-content: space-between;
+    padding-inline: 0.25rem;
 }
 
-/* THE SCRIM (D2) — the paper wash under the raised sheet; a tap dismisses. `--z-overlay` (the
-   sheet rides one rung above). Fixed, so it veils the whole page behind the menu. */
-.usf-dock-scrim {
+/* The route hand-off (site-transition.ts): the dock is captured as its own view-transition group,
+   which SiteShell holds still, so it neither fades nor slides when the page changes under it. */
+.usf-dock {
+    view-transition-name: site-dock;
+}
+
+/* ══ THE BOTTOM BAR (< 768 px · U/B7 §2.2, D-10) ═══════════════════════════════════════════════
+   Centred on the bottom edge, 56 px tall, inset 16 px from the sides and the safe area. Cells are
+   44 × 44 with 8 px gaps; the crest is pinned at the start (glass #persistent) and More at the end
+   (#persistent-end). The bar's plate is opaque (the page never shows through its cells, D-6). It
+   slides out (translate only, on the dock spring) and back; the content reserve under it is fixed
+   (`--dock-bar-reserve`, SiteShell), so hiding it moves no layout. */
+.usf-dock--bar {
+    box-sizing: border-box;
+    --dock-seat: 2.75rem;
+    --dock-run-gap: 0.5rem;
+    --dock-plate-bg: var(--card);
     position: fixed;
-    inset: 0;
-    z-index: var(--z-overlay);
-    background: color-mix(in oklab, var(--background) 55%, transparent);
+    z-index: var(--z-dock);
+    inset-block-start: auto;
+    inset-block-end: calc(1rem + env(safe-area-inset-bottom));
+    /* centred by auto margins between both insets (a fixed box at `left: 50%` would shrink-wrap
+       to the half viewport it has left and clip its cells). */
+    inset-inline: 1rem;
+    margin-inline: auto;
+    inline-size: fit-content;
+    max-inline-size: calc(100vw - 2rem);
+    block-size: 3.5rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.5rem;
+    background: var(--card);
+    border-radius: 0.75rem;
+    transition: translate var(--spring-dock-duration, 300ms) var(--spring-dock, ease);
 }
-/* CONTINUOUS HIT HANDOFF (U5/S5 · phone sheet↔drawer exclusivity) — a scrim that is not the viewport
-   OWNER is hit-INERT. `--yield` fires the instant the drawer is opening (the resolver flips
-   owner→drawer while the sheet has not yet collapsed); `.dock-scrim-leave-active` covers the outgoing
-   scrim's WHOLE leave clock. Both are pointer-events, NOT opacity — independent of the motion
-   preference, so PRM's shorter opacity clock can never hide a hit-test collision (U5 ¶5). The scrim
-   still tap-closes while it OWNS the viewport (no yield, not leaving). */
-.usf-dock-scrim--yield,
-.dock-scrim-leave-active {
-    pointer-events: none;
+.usf-dock--bar.usf-dock--out {
+    translate: 0 calc(100% + 1rem + env(safe-area-inset-bottom));
 }
-.dock-scrim-enter-active,
-.dock-scrim-leave-active {
-    transition: opacity 200ms var(--ease-out, ease);
+.usf-dock--bar :deep(.dock-layer--full) {
+    flex-direction: row;
+    align-items: center;
+    inline-size: auto;
+    padding-block: 0;
+    gap: 0.5rem;
+    background-image: none;
 }
-.dock-scrim-enter-from,
-.dock-scrim-leave-to {
-    opacity: 0;
+.usf-dock--bar :deep(.dock-persistent),
+.usf-dock--bar :deep(.dock-persistent-end) {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    inline-size: auto;
+}
+/* The progress track runs along the bar's edge, always shown. glass 10.1.0 seats a horizontal track
+   at the block end only; §2.2 asks for the top edge, which is relayed to glass (a track side) and
+   not overridden here. */
+.usf-dock__progress-rim--bar {
+    opacity: 1;
 }
 @media (prefers-reduced-motion: reduce) {
-    .dock-scrim-enter-active,
-    .dock-scrim-leave-active {
-        transition: opacity 120ms ease;
+    .usf-dock--bar {
+        transition: none;
     }
 }

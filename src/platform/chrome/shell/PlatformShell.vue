@@ -20,52 +20,15 @@
 //
 // Named slots — all FLOAT over the single stage, none reserve space:
 //   `aurora`   — the app-level pole-wash mount (behind content).
-//   `dock`     — the floating dock instrument. Defaults to the current Dock, ONE responsive
-//                component (the atlas-unified-register law, MEMORY "Unified chrome register"):
-//                the floating VERTICAL LEFT rail at every viewport (position:fixed off the left
-//                margin). It rests COLLAPSED at the phone register (Dock.vue
-//                `collapse="closed"`), where its gilt crest is the BUTTON that expands
-//                the top-left ruled section-menu SHEET — crest→ruled-sheet, NEVER a
-//                bottom/horizontal fork. One Dock, one orientation, re-collapsed responsively.
+//   (U/B7 §2.2: the dock is not a slot here. `SiteShell` mounts it once, above the router, so it
+//   survives every route change; PlatformShell is a dashboard route's frame inside it.)
 //   `filter`   — the right live-behind filter Drawer (C3.3 fills; a peer at --z-panel).
-import { computed, inject } from "vue";
-import Dock from "../dock/Dock.vue";
-import { AMERICA, DASHBOARD_KEY, themeCssVars } from "../../../contract/index.js";
-import { atmosphereCssVars } from "../background/composables/atmosphere.js";
 import { useSelection } from "../../stores/useSelection.js";
 import { useFilterPane } from "../../../filter/composables/useFilterPane.js";
 import { provideDismissArbiter, useDismissArbiter } from "../../interaction/useDismissArbiter.js";
-import { provideDockPortals } from "../dock/composables/useDockPortals.js";
 
-// The active dashboard's context — the dock reads its nav at every register (the filter is the
-// floating Drawer, one affordance for both). Bound here as the `--route-*` cascade + injected by
-// the route view.
-const ctx = inject(DASHBOARD_KEY);
-
-// ── THE --route-* THEME CASCADE (design-palette-identity §2.4 MOVE 4 — the keystone) ──────────
-// The shell IS the EXACT element wrapping the dock + the content stage, so THIS is the ONE binder:
-// the active route's theme chrome legs, bound as the `--route-*` custom-property GROUP via inline
-// `:style` — the data-DRIVEN cascade, NEVER a `[data-dashboard]` stylesheet fork (the C1-retired
-// anti-pattern), and never a second writer (the essay's category-skin bind is gone: one token, one
-// author). The tokens cascade to every chrome descendant (the dock rivets via `rivetHue()`, the
-// eyebrow icon, the legend chip). Each leg falls through to the tokens.css `:root` neutral default
-// when the theme omits it (warm/cool ⇒ the accent; ECF declares no legs). A route that declares no
-// theme IS america — the resolution happens HERE, route-scoped, so the gallery/about (which mounts
-// no PlatformShell) keeps the `:root` rest. Theme-aware for free — the values are
-// `var(--viz-*)`/`var(--rainbow-*)` references, so a light/dark flip retunes them.
-// The SAME bind carries the theme's ATMOSPHERE render half (W-ATMOS): `--versal-ink` (the rung a
-// section opener's flank watermark wears), a pure function of the declared `atmosphere.intensity`;
-// the shell is the exact element wrapping BOTH the dock and the essay, so the ladder cannot drift
-// between the field and the chrome that floats over it. (The dock plate's half of the aurora pair,
-// `--glass-opacity-dock`, retired with glass 8's opacity alphas; glass's dock legibility owns it.)
-const routeThemeStyle = computed<Record<string, string>>(() => {
-    if (!ctx) return {};
-    const theme = ctx.theme ?? AMERICA;
-    return {
-        ...themeCssVars(theme),
-        ...atmosphereCssVars(theme.atmosphere?.intensity),
-    };
-});
+// The route's `--route-*` theme cascade and the dock-portal registry are bound by `SiteShell`, the
+// element that wraps both the dock and this frame (U/B7 §2.2): one binder for both.
 
 // ── THE DOCUMENT-LEVEL Esc CONTRACT (D2.4 / D6) ──────────────────────────────────────────
 // ONE chrome-level keydown seam — the platform's single Escape arbiter (the user's ask:
@@ -94,13 +57,6 @@ const routeThemeStyle = computed<Record<string, string>>(() => {
 const selection = useSelection();
 const { open: filterOpen } = useFilterPane();
 
-// ── THE DOCK PORTAL OWNERSHIP REGISTRY (E24-ADJUDICATION §6.3 · the app/dock-scoped owner model) ──
-// The shell wraps the dock, the filter drawer, and the content stage's plates, so it is the ONE
-// element that scopes their shared outside-interaction-hold registry (the `useDismissArbiter` idiom).
-// Providing it HERE — not a module singleton — isolates two app roots / HMR scopes / test mounts, and
-// lets the dock (`anyHeld` pin), the drawer, and each plate reach the SAME claim registry by inject.
-provideDockPortals();
-
 const dismissArbiter = provideDismissArbiter();
 useDismissArbiter(dismissArbiter).claim(() =>
     selection.hasSelection && !filterOpen.value
@@ -117,33 +73,9 @@ useDismissArbiter(dismissArbiter).claim(() =>
 </script>
 
 <template>
-    <div class="platform-shell text-foreground" :style="routeThemeStyle">
+    <div class="platform-shell text-foreground">
         <!-- The app-level pole-wash mount (fills behind content; inert here). -->
         <slot name="aurora" />
-
-        <!-- Skip link — first focusable element (the keyboard landmark). -->
-        <a
-            href="#main-content"
-            class="skip-link sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:shadow-lg focus-visible:ring-2 focus-visible:ring-(--focus-ring-color)"
-        >
-            Skip to content
-        </a>
-
-        <!-- ① The floating dock — an OVERLAY, not a grid track. ONE responsive Dock (the
-             atlas-unified-register law): the position:fixed VERTICAL LEFT rail at every viewport,
-             resting collapsed at the phone register where its crest expands the ruled section-menu
-             sheet (crest→sheet, never a bottom/horizontal fork). The stage flows UNDER it, its
-             inline-start reserved by the 112px dock gutter (D1) so no hero ink sits under the rail.
-
-             O-D3 PLAT-6 — THE BANNER LANDMARK. The dock is the ONE persistent site-chrome present
-             at every route (the brand crest + the primary section nav), so it is the shell's
-             `role=banner` (a11y.md: "no route exposes a banner … landmark"). `<header>` carries no
-             layout CSS of its own here — `.platform-shell__dock-slot` still owns the z-rung, and a
-             bare semantic wrapper does not create a new containing block, so the dock's OWN
-             `position:fixed` continues to size against the viewport, unchanged. -->
-        <header role="banner" class="platform-shell__dock-slot">
-            <slot name="dock"><Dock /></slot>
-        </header>
 
         <!-- ② The content — the SINGLE full-width stage. No reserved gutter, no inset; the
              hero is full-bleed under the floating dock at every viewport.
@@ -175,13 +107,6 @@ useDismissArbiter(dismissArbiter).claim(() =>
 .platform-shell {
     position: relative;
     min-height: 100dvh;
-}
-
-/* The dock slot — a floating overlay container. The dock surface inside FLOATS
-   (C3.2's GlassDock is position:fixed); this slot reserves no layout space, it only
-   seats the z-rung so the dock rides above the content stage and below the panels. */
-.platform-shell__dock-slot {
-    z-index: var(--z-dock);
 }
 
 /* The content stage — the single full-width track. min-w-0 (utility) lets wide charts
@@ -223,27 +148,18 @@ useDismissArbiter(dismissArbiter).claim(() =>
    env(safe-area-inset-bottom) is 0 on every non-notched surface. */
 @media (--phone) {
     .platform-shell__main {
-        /* the dock rests COLLAPSED at the phone register (Dock.vue `collapse="closed"`)
-           — it floats over the page margin as the tab sliver, so the phone re-bases the reserve
-           to the collapsed-tab footprint and the prose reclaims the phone width (j0-dock-reserve
-           holds). */
+        /* no dock on the phone's inline-start edge (the dock is the bottom bar), so the inline
+           reserve falls to the collapsed-tab sliver and the prose takes the phone width. */
         --cp-dock-reserve: calc(var(--cp-inset) + var(--cp-dock-tab-w));
-        /* THE PHONE BLOCK RESERVE (D1 · N.WG1 Arm B — the crest→sheet pair). The phone trades the
-           desktop's INLINE gutter for a TOP reserve: the collapsed crest pill (inset 1.25rem +
-           the hugged dome ≈ 3.75rem) floats over the page's head margin, so the content stage
-           starts BELOW it — no eyebrow/title ink under the pill (the F9 family, phone arm). The
-           reserve is a NAMED token so snap-target descendants (DashboardEssay's `.essay-beat`
-           scroll-margin) lift their snap stop by the SAME measure — one owner, no drifting twin. */
-        --shell-head-reserve: 5rem;
-        padding-block-start: var(--shell-head-reserve);
-        padding-block-end: max(7rem, calc(7rem + env(safe-area-inset-bottom)));
     }
 }
 
-/* The skip-link, when focused, must sit above everything reachable. */
-.skip-link:focus {
-    z-index: var(--z-hovercard);
+/* Section jump targets land below the dock's top band (U/B7 §2.2): a section control scrolls the
+   heading to `--shell-head-reserve`, clear of the ≥ 768 px section pager. No snap target remains. */
+.platform-shell__main :deep(.essay-beat) {
+    scroll-margin-block-start: var(--shell-head-reserve);
 }
+
 </style>
 
 <!-- C7.c (FIX 5) · the right live-behind filter Drawer's SAFE-AREA inset. The Drawer

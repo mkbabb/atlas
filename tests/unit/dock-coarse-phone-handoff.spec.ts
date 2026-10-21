@@ -2,6 +2,9 @@
 // handoff detectors (B6 · E24-TRIUMVIRATE-ADJUDICATION-C2 §6.6 · critics `E24-UX-A11Y-CRIT-C2` U4/U5 ·
 // `E24-BROWSER-PROOF-CRIT-C2` P1-phone-continuity · state critic S5/S8).
 //
+// U/B7 §2.2 deleted the phone crest→sheet and its scrim (the phone dock is the bottom bar), and with
+// them the continuous sheet↔drawer exclusion resolver and its cases. The wide-coarse reveal cases stay.
+//
 // Lane e25:coarse-phone owns, off the preserved E24 dirty cut:
 //   • the WIDE-COARSE reveal semantics — a gesture reveal (touch OR pen, or ANY pointer on a no-hover
 //     device) PERSISTS; only a hover-capable mouse releases on leave. Covers touch, pen, cancel,
@@ -27,10 +30,6 @@ import {
     revealReleasesOnLeave,
     revealPersists,
 } from "../../src/platform/chrome/dock/composables/coarse-reveal";
-import {
-    resolvePhoneExclusion,
-    type PhoneSurface,
-} from "../../src/platform/chrome/dock/composables/phone-surface-exclusion";
 
 const src = (rel: string): string =>
     readFileSync(fileURLToPath(new URL(`../../src/${rel}`, import.meta.url)), "utf8");
@@ -102,110 +101,5 @@ describe("wide-coarse SHIPPED wiring — Dock.vue consumes the capability semant
     it("an open portal still outranks every release — the banked already-open hold survives a gesture", () => {
         // the pin outranks bloom; the outside/cancel release must respect `anyPortalOpen` (banked).
         expect(dock).toMatch(/anyPortalOpen/);
-    });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────────────────────────
-// CONTINUOUS PHONE HANDOFF — one owner at every frame, the scrim yields hit (U5 · S5)
-// ─────────────────────────────────────────────────────────────────────────────────────────────────
-describe("phone exclusion — a SINGLE viewport owner at onset/mid/settle, bidirectional (U5/S5)", () => {
-    it("nothing open ⇒ no owner, no scrim hit", () => {
-        const x = resolvePhoneExclusion({ sheetOpen: false, drawerOpen: false, lastActivated: "none" });
-        expect(x.owner).toBe("none");
-        expect(x.scrimOwnsHit).toBe(false);
-    });
-
-    it("sheet only ⇒ the sheet owns; its scrim owns hit", () => {
-        const x = resolvePhoneExclusion({ sheetOpen: true, drawerOpen: false, lastActivated: "sheet" });
-        expect(x.owner).toBe("sheet");
-        expect(x.scrimOwnsHit).toBe(true);
-        expect(x.sheetSubordinated).toBe(false);
-        expect(x.drawerSubordinated).toBe(true);
-    });
-
-    it("drawer only ⇒ the drawer owns; the scrim never owns hit", () => {
-        const x = resolvePhoneExclusion({ sheetOpen: false, drawerOpen: true, lastActivated: "drawer" });
-        expect(x.owner).toBe("drawer");
-        expect(x.scrimOwnsHit).toBe(false);
-        expect(x.drawerSubordinated).toBe(false);
-        expect(x.sheetSubordinated).toBe(true);
-    });
-
-    it("sheet→drawer crossfade: both momentarily open, the DRAWER (last activated) owns; the leaving scrim yields hit", () => {
-        // the U5 cure — during the drawer's open transition the sheet has not yet collapsed, so BOTH
-        // flags are true. The just-activated drawer must own the viewport and the still-present scrim
-        // must be hit-INERT, so a pointer can never be caught by the outgoing scrim over the drawer.
-        const mid = resolvePhoneExclusion({ sheetOpen: true, drawerOpen: true, lastActivated: "drawer" });
-        expect(mid.owner).toBe("drawer");
-        expect(mid.scrimOwnsHit).toBe(false); // the leaving scrim yields
-        expect(mid.sheetSubordinated).toBe(true);
-    });
-
-    it("drawer→sheet crossfade: both momentarily open, the SHEET (last activated) owns; its scrim owns hit over the closing drawer", () => {
-        const mid = resolvePhoneExclusion({ sheetOpen: true, drawerOpen: true, lastActivated: "sheet" });
-        expect(mid.owner).toBe("sheet");
-        expect(mid.scrimOwnsHit).toBe(true);
-        expect(mid.drawerSubordinated).toBe(true);
-    });
-
-    it("exactly ONE surface is unsubordinated at every reachable state (no co-occupancy)", () => {
-        const states: PhoneSurface[] = ["none", "sheet", "drawer"];
-        for (const sheetOpen of [false, true]) {
-            for (const drawerOpen of [false, true]) {
-                for (const lastActivated of states) {
-                    const x = resolvePhoneExclusion({ sheetOpen, drawerOpen, lastActivated });
-                    const live = [x.sheetSubordinated, x.drawerSubordinated].filter((s) => !s).length;
-                    // at most one live surface; the scrim owns hit ONLY when the sheet is that surface.
-                    expect(live).toBeLessThanOrEqual(1);
-                    expect(x.scrimOwnsHit).toBe(x.owner === "sheet");
-                }
-            }
-        }
-    });
-});
-
-describe("phone handoff SHIPPED wiring — Dock.vue + Dock.css (U5/S5)", () => {
-    const dock = src("platform/chrome/dock/Dock.vue");
-    const css = src("platform/chrome/dock/Dock.css");
-
-    it("Dock.vue consumes the continuous exclusion resolver — not two terminal watchers alone", () => {
-        expect(dock).toContain("resolvePhoneExclusion");
-        // the recency tie-break the crossfade needs is tracked (a stack, not a bare boolean pair).
-        expect(dock).toMatch(/lastActivated/);
-    });
-
-    it("the scrim yields hit-testing when it is not the owner (a class bound to the resolver)", () => {
-        expect(dock).toContain("usf-dock-scrim--yield");
-    });
-
-    it("a LEAVING scrim is hit-inert for its whole leave clock — pointer-events:none, not just opacity", () => {
-        // the U5 core: the outgoing scrim must not stay a pointer-active full-viewport element while it
-        // fades. pointer-events:none on the leave-active state + the yield class kills the collision.
-        expect(css).toMatch(/\.dock-scrim-leave-active[^{]*\{[^}]*pointer-events:\s*none/s);
-        expect(css).toMatch(/\.usf-dock-scrim--yield[^{]*\{[^}]*pointer-events:\s*none/s);
-    });
-
-    it("PRM keeps the SAME hit ownership — no prefers-reduced-motion block touches pointer-events", () => {
-        // U5 ¶5 / P1: PRM may not use its shorter opacity clock to hide a hit-test collision. The
-        // scrim's hit yield is pointer-events (not opacity) and lives OUTSIDE every
-        // prefers-reduced-motion block, so it applies to normal motion and PRM identically. Extract
-        // each PRM block by BALANCED braces (regex alone cannot match nested rules) and assert none of
-        // them alters pointer-events.
-        const prmBlocks: string[] = [];
-        const open = /@media[^{]*prefers-reduced-motion[^{]*\{/g;
-        let m: RegExpExecArray | null;
-        while ((m = open.exec(css))) {
-            let depth = 1;
-            let i = open.lastIndex;
-            for (; i < css.length && depth > 0; i++) {
-                if (css[i] === "{") depth++;
-                else if (css[i] === "}") depth--;
-            }
-            prmBlocks.push(css.slice(m.index, i));
-        }
-        expect(prmBlocks.length).toBeGreaterThan(0);
-        for (const block of prmBlocks) expect(block).not.toContain("pointer-events");
-        // the yield rule itself is present as a standalone (non-PRM) rule.
-        expect(css).toMatch(/\.usf-dock-scrim--yield[^{]*\{[^}]*pointer-events:\s*none/s);
     });
 });

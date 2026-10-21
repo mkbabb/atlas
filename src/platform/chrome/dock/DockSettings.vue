@@ -26,6 +26,9 @@ import {
     Download,
 } from "@lucide/vue";
 
+// One control: the caller's attributes land on the gear (the bar's end cell).
+defineOptions({ inheritAttrs: false });
+
 defineProps<{
     /** The gear-sheet open model (the `v-model:open` from the dock's `useDockGear().gearOpen`). */
     open: boolean;
@@ -37,6 +40,8 @@ defineProps<{
     saveFlash: boolean;
     /** Wire glass-ui's no-transition fast-path on the dark toggle (the INSTANT theme re-print). */
     disableTransitions: boolean;
+    /** Offer "Save this view": only on a dashboard route (a view is a dashboard's URL state). */
+    canSave?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -59,10 +64,11 @@ const emit = defineEmits<{
         @update:open="(v: boolean) => emit('update:open', v)"
     >
         <DockTrigger
+            v-bind="$attrs"
             for="dropdown"
             class="usf-dock__gear"
-            aria-label="Dock settings"
-            title="Settings"
+            aria-label="More"
+            title="More"
             data-testid="dock-gear"
         >
             <Settings class="usf-dock__ctl-glyph" aria-hidden="true" />
@@ -74,7 +80,8 @@ const emit = defineEmits<{
              in the content as buttons (no `DropdownMenuItem` auto-dismiss), so a year-range flip
              keeps the sheet open. -->
         <DropdownMenuContent
-            align="start"
+            side="top"
+            align="end"
             :side-offset="8"
             class="usf-dock-settings"
         >
@@ -98,6 +105,7 @@ const emit = defineEmits<{
 
             <!-- The ⤓-save door — quick-save the current full URL state onto the views shelf. -->
             <Button
+                v-if="canSave"
                 emphasis="quiet"
                 size="sm"
                 class="usf-dock-settings__row"

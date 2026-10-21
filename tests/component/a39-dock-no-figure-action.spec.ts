@@ -4,7 +4,7 @@
 // renders no options band, and no page-chrome source reaches a figure's enlarge/export/options seam.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { createSSRApp, defineComponent, h, provide } from "vue";
+import { createSSRApp, defineComponent, h } from "vue";
 import { renderToString } from "@vue/server-renderer";
 import { createPinia, setActivePinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
@@ -63,7 +63,6 @@ describe("A-39 · the dock carries no per-figure action", () => {
     });
 
     it("the dock's filter trigger is route-level: no figure id, no pin, no Enlarge (B6 · §L D3-1)", async () => {
-        const { DASHBOARD_KEY } = await import("../../src/contract/index");
         const { useVizRegistry } = await import("../../src/charts/composables/useVizRegistry");
         const { useActiveBeat } = await import("../../src/platform/stores/useActiveBeat");
         const DockFilterTrigger = (await import("../../src/platform/chrome/dock/components/DockFilterTrigger.vue")).default;
@@ -74,10 +73,10 @@ describe("A-39 · the dock carries no per-figure action", () => {
         registry.register({ vizId: "usf-net-retention", dims: [], filterResponse: "responsive" } as never);
         // A figure is centred: the retired zone stamped and pinned exactly this id (D3-B N4, CX-K2).
         useActiveBeat().$patch({ activeVizId: "usf-net-retention" } as never);
+        // The dock passes the route's context down (U/B7 §2.2: it sits above the route view).
         const Host = defineComponent({
             setup() {
-                provide(DASHBOARD_KEY, { title: "USF", filterBody: {} } as never);
-                return () => h(DockFilterTrigger);
+                return () => h(DockFilterTrigger, { ctx: { title: "USF", filterBody: {} } as never });
             },
         });
         const html = await renderApp(Host, pinia);
