@@ -28,9 +28,8 @@
 // series tints via `colorKind` (the page palette echo of the FigureInitial gradient — the cover and
 // the chapter cap speak one color).
 //
-// THE REVEAL CLOCK — LOAD (the page's arrival): the series count-ups via the heroes' existing
-// `useCountUp` (NumericAnimation), once. the atlas CompletionSeal draws the route's ONE seal beside the
-// THESIS figure when the count settles. PRM: the count and seal both snap to their final states.
+// THE FIGURES AT REST (U/B7 · PLAN §4.2 load row): the series paints its final values at first
+// paint, with no count-up. The atlas CompletionSeal marks the THESIS figure from mount.
 //
 // THE RING-KILL (H.W1.b · G-MARKS / F7.3 · AXIOM-4 morphology): the editorial DatumRing is RETIRED
 // — the hand-circle was wrong at any weight (the 3-arc chronic), and the audacious figure is found
@@ -40,9 +39,8 @@
 // GLASS / GRID: the hero wears NO glass and NO grid (the un-gridded headline band on the paper
 // ground, DESIGN §2). It is closed by `<AnimatedRule weight="hero">` (the assembler seats that
 // below it — the hero band ends; the lead beat begins).
-import { computed, onMounted, ref } from "vue";
+import { computed } from "vue";
 import FigureSlug from "../charts/frame/FigureSlug.vue";
-import { useCountUp } from "../platform/composables/useCountUp.js";
 import type { ColorKind } from "../charts/scale/colorKind.js";
 import type { DashboardCategory } from "../contract/index.js";
 import { resolveSkin } from "../skin/category.js";
@@ -53,7 +51,7 @@ import { resolveTitleAlign, type TitleAlign } from "./title-align.js";
 /** One audacious cover figure — the pre-formatted value (routed through format.ts at the
     call site / the manifest, INV-E1), the unit caption (the F6.4 unit/context word), and the
     Newsreader caption beneath. The figure is found by SIZE; the THESIS figure additionally
-    receives the route's ONE CompletionSeal at the count finish (the ring-kill, H.W1.b).
+    carries the route's ONE CompletionSeal, drawn from first paint (the ring-kill, H.W1.b).
 
     THE COVER RANK (I11 §2 · design-usf §0 ⓪ · K-C-HIER graded). A cover series is not always THREE
     co-equal figures: a route whose thesis is ONE number (USF's −$324.1M net carry) crowns that
@@ -65,7 +63,7 @@ import { resolveTitleAlign, type TitleAlign } from "./title-align.js";
     floated between figures as a non-figure in a figure slot (CC-6) — the relation reads as the
     equation yielding the crown, not a fourth co-equal figure. */
 export interface HeroFigure {
-    /** The audacious value — a pre-formatted string ("$8.92B") OR a number to count up. */
+    /** The audacious value — a pre-formatted string ("$8.92B") or a number, shown as given. */
     value: string | number;
     /** The Fira eyebrow caption — NAMES the unit (the F6.4 close; never a bare figure). */
     unit: string;
@@ -89,11 +87,8 @@ const props = withDefaults(
         /** The page <h1> title (the dashboard's editorial name). */
         title: string;
         /** THE COVER EYEBROW (the EX-44 D21 rider) — the small kicker word above the <h1> title.
-            Omit ⇒ the title itself renders as the eyebrow (today's byte-identical default — every
-            existing route keeps its title doubled, unchanged). Pass an explicit, DISTINCT kicker
-            (the route's section name, say) so a route stops needing to duplicate its own title
-            node and `display:none` the redundant copy (the D21 find: the usf/usfi/sci covers each
-            hand-built that workaround because no lawful distinct-eyebrow seat existed). */
+            Omit ⇒ no eyebrow (U/B7 · PLAN §5.8: eyebrows are off by default; one renders only when
+            it names something the title does not). */
         eyebrow?: string;
         /** The Newsreader dek beneath the title. */
         dek: string;
@@ -135,46 +130,18 @@ const props = withDefaults(
 
 const titleAlign = computed<TitlePole>(() => resolveTitleAlign(props.align, "left"));
 
-/** Parse a figure's value into a number for the count-up; a non-numeric string (already
-    formatted, e.g. "$8.92B") has its digits extracted so the count climbs to the same crown. */
-function numericOf(v: string | number): number {
-    if (typeof v === "number") return v;
-    // Pull the leading numeric magnitude (sign + digits + decimal) from the formatted slug.
-    const m = v.replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
-    return m ? Number(m[0]) : 0;
-}
-
-// THE COUNT-UP — the page's load arrival (one clock, the heroes' NumericAnimation engine). The
-// display counts from 0 to each figure's numeric crown; the RENDERED text is always the figure's
-// own formatted string at its final value, so a pre-formatted slug ("$8.92B") never loses its
-// unit/grouping to the count (the count drives a numeric overlay only where the value is a bare
-// number; a formatted string renders verbatim — its count is the page's arrival cadence). Under
-// PRM `run()` snaps in one paint (information parity); the rendered text is the final figure.
-const targets = computed(() =>
-    Object.fromEntries(props.figures.map((f, i) => [`f${i}`, numericOf(f.value)])),
-);
-const { run } = useCountUp(() => targets.value, { autoRecount: false });
-
 const categorySkin = computed(() =>
     props.category ? resolveSkin(props.category) : null,
 );
 const categoryStyle = computed(() =>
     categorySkin.value ? { "--category-accent": categorySkin.value.accent } : undefined,
 );
-const complete = ref(false);
 const completionSeal = computed(() =>
     resolveCompletionSeal({
-        complete: complete.value && props.thesisIndex >= 0,
-        label: `${props.title} figures complete`,
+        complete: props.thesisIndex >= 0,
         shape: categorySkin.value?.shape ?? "check",
     }),
 );
-
-onMounted(async () => {
-    // The page arrival: count the series, then draw the earned completion seal once.
-    await run();
-    complete.value = true;
-});
 
 /** Whether figure `i` is the THESIS figure — the page apex that wears the ONE completion seal. */
 function isThesis(i: number): boolean {
@@ -195,8 +162,7 @@ const isRanked = computed(() => props.figures.some((f) => f.rank != null));
 // from the DATA (rank + cardinality), never a per-route fork — the usf `:deep()` 2×2 retires.
 const isBanner = computed(() => isRanked.value && props.figures.length >= 4);
 
-// The rendered value — always the figure's own formatted string (the count is the arrival
-// cadence, not a digit-replace on a formatted slug; PRM renders the same final string).
+// The rendered value — always the figure's own formatted string, final from first paint.
 /** A leading sign glyph (− U+2212 / + / hyphen / en-dash) carried at FigureSlug's own `sign`
     sub-rung — NEVER inlined in the slug slot. Inlining a signed value ("−$324.1M") lets the
     cap-box break after the sign and float it a line above the digits (the CC-6 floating-dash
@@ -271,7 +237,7 @@ function rankNumTrack(f: HeroFigure): Record<string, number> | undefined {
         :data-category="category"
         :style="categoryStyle"
     >
-        <p class="eyebrow dashboard-hero__eyebrow">{{ eyebrow ?? title }}</p>
+        <p v-if="eyebrow" class="eyebrow dashboard-hero__eyebrow">{{ eyebrow }}</p>
         <p v-if="categorySkin" class="eyebrow-plain dashboard-hero__identity">
             <span
                 class="dashboard-hero__identity-mark"
@@ -281,22 +247,10 @@ function rankNumTrack(f: HeroFigure): Record<string, number> | undefined {
             />
             {{ categorySkin.label }}
         </p>
-        <!-- THE PAGE <h1> — rests LARGE, scroll-scrubs to the compact sticky wayfinding label (§1a).
-             In the COMPACT state the route's ONE kicker (coverKicker) rides INLINE beside the shrunk
-             title (aria-hidden — the accessible name stays the title alone), so the sticky band
-             doubles as a chapter locator (O-C2 point 3 · ANSWERS Q-11). The `.page-title-wayfind`
-             recipe (§1b) reveals it over the tail of the SAME native scroll timeline; at rest it has
-             zero footprint (absent from the rest state). -->
+        <!-- THE PAGE <h1> — rests LARGE and shrinks to the compact sticky label as a compositor
+             `scale` (§1a), so its layout box never changes while the reader scrolls. -->
         <div class="dashboard-hero__title-band" :data-title-align="titleAlign">
-            <h1
-                class="dashboard-hero__title text-page-title atlas-title-align"
-            >{{ title
-            }}<span
-                v-if="coverKicker"
-                class="page-title-wayfind"
-                aria-hidden="true"
-                >{{ coverKicker }}</span
-            ></h1>
+            <h1 class="dashboard-hero__title text-page-title atlas-title-align">{{ title }}</h1>
         </div>
         <p class="dashboard-hero__dek text-prose">{{ dek }}</p>
         <!-- THE COVER STANDFIRST (K-PAPER-COVER · ARM B) — the magazine deck / felt so-what, DERIVED

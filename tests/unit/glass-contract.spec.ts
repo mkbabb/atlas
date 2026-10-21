@@ -164,6 +164,7 @@ describe("custom properties atlas reads resolve to atlas or the installed glass-
         "--a", // atmosphere.ts template `var(--${a})` scan artefact
         "--token", // ink.ts / useAuroraConfig.ts template `var(--${token})` scan artefact
         "--beat-cis",
+        "--first-figure-cis", // the route's first-figure reserve (U/B7 · M-2); falls back to --beat-cis
         "--beat-tl",
         "--brand",
         "--dock-bar-reserve", // the phone bar reserve (PLAN §2.2); A1 defines it in the shell, EntityDetail reads it with a 0px fallback

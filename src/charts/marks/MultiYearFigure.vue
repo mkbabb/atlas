@@ -222,7 +222,7 @@ const showFootTerminal = computed<boolean>(
     display: flex;
     align-items: baseline;
     gap: 0.5rem;
-    opacity: 0.62;
+    color: color-mix(in oklab, currentColor calc(0.62 * 100%), var(--background));
 }
 /* EX-51 · O-D12 residue 2 — seated in the crown's OWN `.viz-plate__foot` ledger band instead of
    floating below the frame: the outer margin is the FOOT band's own (`margin-block-start: 1.25rem`
@@ -242,10 +242,9 @@ const showFootTerminal = computed<boolean>(
 }
 .multi-year-figure__terminal-caption {
     font-family: "Fira Code", monospace;
-    font-size: 0.6875rem;
+    font-size: var(--type-micro);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--muted-foreground);
-    opacity: 0.8;
+    color: color-mix(in oklab, var(--muted-foreground) calc(0.8 * 100%), var(--background));
 }
 </style>

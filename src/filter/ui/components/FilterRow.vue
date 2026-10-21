@@ -33,7 +33,7 @@ defineProps<{
 }
 .filter-row__label {
     font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-size: var(--type-micro);
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--muted-foreground);

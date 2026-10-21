@@ -72,6 +72,10 @@
             "types": "./types/data/index.d.ts",
             "import": "./dist/data.js"
         },
+        "./data/entity-geometry": {
+            "types": "./types/data/entityGeometry.d.ts",
+            "import": "./dist/entity-geometry.js"
+        },
         "./stores": {
             "types": "./types/platform/stores/index.d.ts",
             "import": "./dist/stores.js"

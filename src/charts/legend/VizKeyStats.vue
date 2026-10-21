@@ -78,11 +78,11 @@ const stats = computed<KeyStat[]>(() => {
 .key-stat__value {
     margin: 0;
     /* the value rides at --attn-data (the chart-mark weight); the tint is the contract's data hue. */
-    opacity: var(--attn-data, 0.92);
+    color: color-mix(in oklab, currentColor calc(var(--attn-data, 0.92) * 100%), var(--background));
 }
 .key-stat__caption {
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--type-micro);
     font-weight: 500;
     letter-spacing: 0.04em;
     text-transform: uppercase;

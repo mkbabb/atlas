@@ -24,19 +24,13 @@
 // SAME pole `trajectory-marks.dropRule` gives its in-canvas boundary, so an HTML plate's seam and a
 // canvas plate's drop-rule read as one mark vocabulary across the atlas.
 //
-// THE REVEAL CLOCK — SCROLL, off the SAME cover scalar the CrownFigure reads (`useCoverProgress`):
-// the seam draws in as its beat arrives, so a route can order it FIRST and the reader meets the
-// fact/forecast boundary before the marks it parts. OPACITY ONLY (`liftEm: 0` — a rule at a fixed x
-// must not translate off it; the emitted `translateY(0)` is an inert no-op). PRM: the scalar pins to
-// 1 and the seam mounts drawn — the guard is the SUBSTRATE's, never a per-component fence.
+// AT REST (U/B7 · PLAN §4.2): the seam paints drawn; it does not fade with scroll.
 //
 // a11y: `aria-hidden` — the seam is a VISIBLE text channel (it names itself in words, so it survives
 // forced-colors, where a dashed hairline does not), while the boundary is announced ONCE by the
 // consuming plot's own accessible name. That is the convention at both live sites; a second read
 // from the seam would only double it.
-import { computed, ref } from "vue";
-import { revealHostStyle } from "../motion/reveal-register.js";
-import { useCoverProgress } from "../motion/useCoverProgress.js";
+import { computed } from "vue";
 
 const props = withDefaults(
     defineProps<{
@@ -55,16 +49,10 @@ const props = withDefaults(
     { at: undefined },
 );
 
-const host = ref<HTMLElement | null>(null);
-const { t } = useCoverProgress(host);
-
-/** The draw-in (opacity only) + the seam's inline seat. */
-const seamStyle = computed<Record<string, string>>(() => ({
-    ...revealHostStyle(t.value, { liftEm: 0 }),
-    ...(props.at != null
-        ? { insetInlineStart: props.at, insetInlineEnd: "auto" }
-        : {}),
-}));
+/** The seam's inline seat. */
+const seamStyle = computed<Record<string, string> | undefined>(() =>
+    props.at != null ? { insetInlineStart: props.at, insetInlineEnd: "auto" } : undefined,
+);
 
 /** The glyph points INTO the unfiled side — forward past a filed record, back into a void. */
 const glyph = computed(() => (props.record === "before" ? "→" : "←"));
@@ -72,7 +60,6 @@ const glyph = computed(() => (props.record === "before" ? "→" : "←"));
 
 <template>
     <span
-        ref="host"
         class="record-seam"
         :class="`record-seam--${record}`"
         :style="seamStyle"
@@ -114,7 +101,7 @@ const glyph = computed(() => (props.record === "before" ? "→" : "←"));
     inset-block-start: -0.2rem;
     white-space: nowrap;
     font-family: var(--font-mono);
-    font-size: 0.625rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.02em;
     text-transform: uppercase;
     color: var(--ink-diverging-low);

@@ -15,35 +15,11 @@
 // poles are normalised rgb→hex first, then handed to the library converter. The result
 // is a valid `OklchStop` triple derived from the oklab poles, NOT an invented palette.
 //
-// THE f(p) TIDE (the Bidirectional Aurora Tide coupling point, design-language-gap P0·4).
-// Each nucleus `y` is a `computed(() => lerp(rest, lifted, p))` of the scroll scalar `p`:
-// the warm nuclei RISE + brighten as the page scrolls (their `y` lerps UP toward the top,
-// `valueBias` lifts), the cool nuclei SINK + deepen (their `y` lerps DOWN, `valueBias`
-// drops). The push is glass-ui's REACTIVE-CONFIG mutation — the parent hands a reactive
-// `AuroraConfig`, Vue's deep watch re-uploads the uniforms; there is NO imperative
-// `instance.update` (glass-ui's Aurora exposes none). C6 OWNS THE FINAL Aurora-`p` BIND:
-// `p` is read LIVE off C5's `useDocumentScrollProgress()` (the whole-document scroll
-// fraction), so the Tide breathes against the real scroll — NOT a stubbed `p=0` field.
-//
-// THE SECTION-AWARE POLE DRIFT (D2.d / ds2-motion-field M11 — beyond the Tide). The Tide
-// moves the nuclei; M11 moves the EMPHASIS. The aurora's pole lean follows the argument down
-// the page: the warm payer pole leads the early "money IN" section, the cool receiver pole
-// leads the late "money OUT" section — the glow follows the story. This reads the SAME `p`
-// (the D1 single-writer law — NO second scroll listener; this composable is a READER) and
-// re-weights each nucleus's `paletteBias` toward/away from its pole, bounded by the surface
-// `biasCap` so ECF (cap 0.0 — magnitude has no direction) gets ZERO drift. The
-// `opacityCeiling` keeps the whole field recessive, so the drift is FELT, never garish.
+// AT REST (U/B7 · PLAN §5.6, R-INTERACT §5): the field reads no scroll. The nuclei sit at their
+// rest position with no Tide, no section lean and no selection lean, and the breath depth is 0, so
+// glass-ui's demand gate parks the loop. The config changes only on a route or theme change.
 
-import {
-    computed,
-    reactive,
-    ref,
-    toValue,
-    watch,
-    onScopeDispose,
-    type ComputedRef,
-    type MaybeRefOrGetter,
-} from "vue";
+import { computed, reactive, toValue, type ComputedRef, type MaybeRefOrGetter } from "vue";
 import { useThemeKey } from "../../../composables/useThemeKey.js";
 
 import {
@@ -60,7 +36,6 @@ import {
     resolveAtmosphereColors,
     type VizPalette,
 } from "../../../../charts/composables/useVizPalette.js";
-import { useDocumentScrollProgress } from "../../../../motion/useScrollProgress.js";
 import { blendOklch, type Oklab } from "../../../../charts/scale/oklab.js";
 import type {
     AtmosphereIntensity,
@@ -72,11 +47,7 @@ import {
     selectAtmosphere,
     type AtmosphereSelection,
 } from "./atmosphere.js";
-import {
-    nucleiSpecs,
-    nucleusAt,
-    SELECTION_LEAN,
-} from "./aurora-nuclei.js";
+import { nucleiSpecs, nucleusAt } from "./aurora-nuclei.js";
 
 // ── THE ATMOSPHERE RESOLUTION (N.WD2 §4.D2 — the ruled departure) ─────────────────────────────
 // The per-surface `surfacePoles`/`surfaceProfile` slug-switch is DELETED (D2.5). The poles + the
@@ -188,20 +159,6 @@ export function toOklchStop(token: string): OklchStop {
     return hexToOklchStop(rgbToHex(t));
 }
 
-/** THE SCROLL-MOTION BREATH GATE (P7 · J-GLASS §5 — the consume-side aurora-at-rest fix). The
-    aurora WebGL rAF already carries glass-ui's `shouldContinue()` demand-gate (it parks the loop
-    IFF `needsAnimation` goes false), but the atlas's per-route `breathDepth` is non-zero EVERY
-    frame, so `needsAnimation` never settles and the loop spins ~86 rAF/s AT REST on every route.
-    The fix gates the breath on a MOTION scalar derived from the live scroll `p`: a scroll step lifts
-    it to 1, and at rest it DECAYS geometrically toward 0. Once it crosses `MOTION_PARK_FLOOR` the
-    live `breathDepth` rounds to EXACTLY 0 — so `needsAnimation` goes false and the demand-gate parks
-    the loop, while the aurora stays visible + full-viewport (only the ambient breath quiesces). The
-    decay is timer-driven (NOT a second scroll listener — the D1 single-writer law holds; this is a
-    pure READER of the `p` the Tide already rides). The breath re-arms the instant `p` moves again. */
-const MOTION_DECAY = 0.86; // per-tick geometric decay of the at-rest motion scalar
-const MOTION_PARK_FLOOR = 0.04; // below this the breath rounds to 0 (the loop parks)
-const MOTION_DECAY_MS = 80; // the decay tick cadence (≈12.5 Hz — a brief settle, then park)
-
 /** THE AURORA OPACITY CEILING — the felt-but-DEFT compositing envelope (J-GLASS re-gate · J-CLOSE
     arm b · O-DIR-4 ARM 2 · UN-STRANGLED at W-ATMOS). `opacityCeiling` is the OUTER envelope glass-ui
     applies uniformly to the canvas AND the CSS placeholder (via `--aurora-opacity-ceiling`): the
@@ -223,32 +180,19 @@ const MOTION_DECAY_MS = 80; // the decay tick cadence (≈12.5 Hz — a brief se
     legibility over the field is now glass's adaptive dock register (backdrop-luma veil lift +
     `contrast-color` ink). The ceiling is the one lever left here. */
 
-/** THE DEVICE-TIER GATES (O-F5 · motion-arch §2.3) — the atmosphere ladder's two levers on the
-    field, injected by `Aurora.vue` off the shared `useAtmosphereTier` selector (NOT re-derived here).
-    Both default to the TIER-A behaviour, so an absent options object reproduces the pre-O-F5 field
-    byte-for-byte. */
+/** THE DEVICE-TIER GATE (O-F5 · motion-arch §2.3), injected by `Aurora.vue` off the shared
+    `useAtmosphereTier` selector (NOT re-derived here). */
 export interface UseAuroraConfigOptions {
-    /** TIER A ⇒ `true` — the scroll Tide is LIVE (the nuclei drift + lean off `p`). `false` (tier
-        B/C) FREEZES the field at rest: the nuclei sit at their `yRest`, no scroll travel, no section
-        drift, no selection lean — a static gradient. Default `true`. */
-    tide?: MaybeRefOrGetter<boolean>;
     /** TIER C ⇒ `true` — collapse the 2+2+1 rule-of-thirds field to a flat 2-stop wash (the primary
-        warm + primary cool lobe only), the low-tier "flat wash". `false` (tier A/B) keeps the full
-        5-nucleus pole-derived gradient. Default `false`. */
+        warm + primary cool lobe only). `false` (tier A/B) keeps the full 5-nucleus gradient. */
     flatWash?: MaybeRefOrGetter<boolean>;
-    /** Optional selection state injected by dashboard hosts. Neutral/static hosts omit it and
-        therefore never instantiate the dashboard selection store. */
-    selectionActive?: MaybeRefOrGetter<boolean>;
 }
 
 /** The composable's reactive surface. `config` is a REACTIVE `AuroraConfig` (glass-ui
-    deep-watches it and re-uploads uniforms — the push mechanism); `p` is the live
-    document-scroll scalar driving the Tide (the named Aurora-`p` BIND). */
+    deep-watches it). */
 export interface UseAuroraConfig {
     /** The reactive pole-derived config — hand straight to `<Aurora :config>`. */
     config: AuroraConfig;
-    /** The live scroll scalar [0,1] the Tide rides (C5's useDocumentScrollProgress). */
-    p: ComputedRef<number>;
     /** The outer compositing envelope (→ `<Aurora :opacity-ceiling>`) — the DECLARED intensity's
         row, per stock. Re-derives on every theme flip and on a route change. */
     opacityCeiling: ComputedRef<number>;
@@ -258,7 +202,7 @@ export interface UseAuroraConfig {
 
 /**
  * Build the reactive, pole-derived `AuroraConfig` for a route, with the f(p) Tide wired
- * LIVE off C5's `useDocumentScrollProgress()`. The palette (5 stops: bg → warm → hinge →
+ * at rest. The palette (5 stops: bg → warm → hinge →
  * cool → bg) and the nuclei are all DERIVED from the route's DECLARED atmosphere poles (or its
  * chrome legs / NEUTRAL — N.WD2 §4.D2) + the page ground through the canonical OKLab
  * matrix (oklab.ts) — never invented, never a hardcoded slug-switch. The returned `config` is a
@@ -275,59 +219,10 @@ export function useAuroraConfig(
     theme: () => Theme | undefined,
     options: UseAuroraConfigOptions = {},
 ): UseAuroraConfig {
-    // The O-F5 device-tier gates (default tier-A: Tide live, no flat-wash) — an absent options object
-    // is the pre-O-F5 field, byte-exact. `Aurora.vue` feeds these from the shared `useAtmosphereTier`.
-    const { tide = true, flatWash = false, selectionActive = false } = options;
+    const { flatWash = false } = options;
     const palette = useVizPalette();
-    // C6's close obligation: the Aurora-`p` BIND drives the Tide off C5's exposed scalar.
-    const p = useDocumentScrollProgress();
-    // `useThemeKey` BUMPS on any `.dark` flip, so the ceiling below switches light↔dark the instant
-    // the theme changes.
     const themeKey = useThemeKey();
 
-    // THE SCROLL-MOTION BREATH GATE (P7 — the consume-side aurora-at-rest fix). `scrollMotion` is 1
-    // the frame `p` moves and DECAYS geometrically toward 0 at rest; `breathGate` rounds it to a
-    // hard 0 below the park floor so glass-ui's demand-gate can settle `needsAnimation` and park the
-    // rAF loop. A pure READER of `p` (the Tide's scalar) + a self-disposing decay timer — NO second
-    // scroll listener (the D1 single-writer law). On the server (`setInterval` absent under SSR) the
-    // motion stays 0 — the breath is a runtime-only ambient, never an SSR concern.
-    const scrollMotion = ref(0);
-    let decayTimer: ReturnType<typeof setInterval> | null = null;
-    const stopMotionWatch = watch(p, () => {
-        // a scroll step re-arms the breath at full depth; the decay timer walks it back to rest.
-        scrollMotion.value = 1;
-        if (decayTimer === null && typeof setInterval !== "undefined") {
-            decayTimer = setInterval(() => {
-                const next = scrollMotion.value * MOTION_DECAY;
-                if (next < MOTION_PARK_FLOOR) {
-                    scrollMotion.value = 0; // park: the breath rounds to 0, the demand-gate settles
-                    if (decayTimer !== null) {
-                        clearInterval(decayTimer);
-                        decayTimer = null;
-                    }
-                } else {
-                    scrollMotion.value = next;
-                }
-            }, MOTION_DECAY_MS);
-        }
-    });
-    /** The live breath gate ∈ {0} ∪ [floor, 1] — 0 at rest (the loop parks), the motion scalar while
-        the page scrolls. The hard-0 below the park floor is what lets `needsAnimation` go false. */
-    const breathGate = computed<number>(() =>
-        scrollMotion.value < MOTION_PARK_FLOOR ? 0 : scrollMotion.value,
-    );
-    onScopeDispose(() => {
-        stopMotionWatch();
-        if (decayTimer !== null) {
-            clearInterval(decayTimer);
-            decayTimer = null;
-        }
-    });
-
-    // THE RESOLVED ATMOSPHERE (N.WD2 §4.D2) — the route's two poles (concrete rgb), bias-cap, and
-    // clamped deposition, resolved through the declared → chrome-leg → NEUTRAL ladder. Keyed ONLY
-    // on the palette (theme) + the route: the DOM pole probe runs here, NOT per scroll tick (the Tide
-    // reads the cached poles below), so the scroll path never touches getComputedStyle.
     const resolved = computed<ResolvedAtmosphere>(() =>
         resolveAtmosphere(theme(), palette.value),
     );
@@ -362,34 +257,13 @@ export function useAuroraConfig(
         ];
     });
 
-    // The Tide-resolved + section-drifted nuclei — recomputed when the route's bias-cap/deposition or
-    // `p` moves. `lean` ∈ [-1,1] is the M11 document emphasis derived from the SAME `p` the
-    // Tide rides (no second scroll writer): −1 warm-lead at the top, +1 cool-lead at the
-    // bottom, 0 at the document middle (the balanced hinge). A neutral route (biasCap 0) gets zero drift.
+    // The nuclei AT REST — recomputed only when the route's bias-cap/deposition changes. Tier C
+    // collapses the 2+2+1 field to the primary warm (0) + primary cool (2) lobe.
     const nuclei = computed<AuroraNucleus[]>(() => {
         const { biasCap, deposition } = resolved.value;
         const specs = nucleiSpecs(biasCap, deposition);
-        // O-F5 · the TIDE gate (motion-arch §2.3): tier A rides the live scroll Tide; tier B/C FREEZE
-        // the field at rest (t=0 — the nuclei sit at their `yRest`, no scroll travel). The `p.value`
-        // read is short-circuited when the Tide is off, so a frozen field never re-derives on scroll.
-        const tideOn = toValue(tide);
-        const t = tideOn ? p.value : 0;
-        // M11 section drift: the scroll position is the document emphasis (−1 warm-lead at top,
-        // +1 cool-lead at bottom). M12 selection lean: a live pin ADDS a cool-ward swing (the
-        // field commits to the data pole the reader is interrogating), clamped into [-1,1] so the
-        // composite stays a valid emphasis. A neutral route (biasCap 0) zeroes BOTH inside nucleusAt —
-        // the neutral surface never invents a lean. A pure read of the selection set (no writer).
-        // Both leans are GATED on the Tide: a static field (tier B/C) never leans on scroll or
-        // selection — it holds the neutral rest emphasis.
-        const scrollLean = tideOn ? 2 * t - 1 : 0; // [0,1] scroll → [-1,1] warm↔cool emphasis
-        const selectedLean =
-            tideOn && toValue(selectionActive) ? SELECTION_LEAN : 0;
-        const lean = Math.max(-1, Math.min(1, scrollLean + selectedLean));
-        // O-F5 · the FLAT-WASH gate (motion-arch §2.3): tier C collapses the 2+2+1 rule-of-thirds
-        // field to a flat 2-stop wash — the primary warm (0) + primary cool (2) lobe only. Tier A/B
-        // keep the full 5-nucleus pole-derived gradient.
         const activeSpecs = toValue(flatWash) ? [specs[0], specs[2]] : specs;
-        return activeSpecs.map((s) => nucleusAt(s, t, lean, biasCap));
+        return activeSpecs.map((s) => nucleusAt(s));
     });
 
     // THE PER-ROUTE DEPOSITION (N.WD2 §4.D2) — the declared (clamped) deposition character that gives
@@ -423,12 +297,9 @@ export function useAuroraConfig(
         get granulation(): number {
             return profile.value.granulation;
         },
-        get breathDepth(): number {
-            // P7 — the per-route breath CEILING gated on the scroll-motion scalar: full depth while
-            // the page scrolls, EXACTLY 0 at rest (below the park floor) so glass-ui's demand-gate
-            // settles `needsAnimation` and parks the rAF loop. The always-on ambient default is GONE.
-            return profile.value.breathDepth * breathGate.value;
-        },
+        // The field does not breathe (U/B7 · PLAN §4.2 idle row): depth 0 lets glass-ui's demand
+        // gate settle `needsAnimation` and park the loop.
+        breathDepth: 0,
         get breathPeriod(): number {
             return profile.value.breathPeriod;
         },
@@ -451,7 +322,6 @@ export function useAuroraConfig(
 
     return {
         config,
-        p,
         opacityCeiling,
         rung: computed(() => resolved.value.rung),
     };

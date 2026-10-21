@@ -36,43 +36,25 @@
    signature) — likewise re-authored container-relative. The recipes in recipes.css §1
    bind these as @utility text-audacious/text-mega/figure-slug. */
 :root {
-    /* §FONT REGISTER — PIN the editorial faces (C1 ground, glass-ui ^3.9.0 fix).
-       The B-era INERT-contract assumption "—font-display/--font-serif stay glass-ui's"
-       BROKE at the C0 ^3.6→^3.9 bump: glass-ui 3.9 re-pointed its brand register to
-       "Plus Jakarta Sans" (text + display), so the inherited display title rendered in
-       Plus Jakarta, not Fraunces (render-matrix "display title must be Fraunces" RED).
-       The warm-paper design language mandates Fraunces (editorial display) + Newsreader
-       (prose serif); both are Google-loaded in index.html. Pin them HERE, decoupled from
-       glass-ui's now-changed default. --font-mono (Fira Code) still matches glass-ui's. */
-    --font-display: "Fraunces", "Fraunces Fallback", Georgia, "Times New Roman", serif;
-    --font-serif:
-        "Newsreader", "Newsreader Fallback", Georgia, "Times New Roman", serif;
-    /* THE BODY PIN (D3.a / augment 7 / E2) — the ROOT seam, one move fixes the platform.
-       glass-ui 3.9+ re-homed its WHOLE text register onto --font-stack-text ("Plus Jakarta
-       Sans"): theme.css §Font-families @theme inline INLINES --font-stack-* into the Tailwind
-       --font-* namespace utilities (theme.css:165-169), and typography.css sets
-       `body { font-family: var(--font-text) }` → var(--font-stack-text). So the C2-era
-       --font-display/--font-serif pins above re-point the WRONG SIDE of the bridge:
-       (a) the `font-display` UTILITY references the INLINED --font-stack-display (Jakarta),
-           never our --font-display (the D20 drawer-h3 leak);
-       (b) every unregistered body-inherited node falls to --font-text → Jakarta (the D19
-           colophon-brand leak + the 78-82% register-sweep leak across all three dashboards).
-       The cure glass-ui itself documents (tokens.css §0 / theme.css:162-163: "A consumer
-       rebrands the whole text register by overriding --font-text once") is to pin the
-       SOURCE tokens, not the bridged names. We re-point all three §0 source stacks:
-       the BODY/prose register → Newsreader (the warm-paper prose serif, the editorial body
-       law — the language has no sanctioned sans), the DISPLAY register → Fraunces (so the
-       inlined `font-display` utility resolves to Fraunces), and the bare --font-stack-sans
-       to the same prose face so an unregistered element FAILS to the platform voice, never
-       to Jakarta. --font-stack-mono stays glass-ui's (Fira Code = our --font-mono). This is
-       belt + suspenders with the bridged-name pins above (which remain as the explicit
-       --font-display/--font-serif consumers' source). */
-    --font-stack-text:
-        "Newsreader", "Newsreader Fallback", Georgia, "Times New Roman", serif;
-    --font-stack-display:
-        "Fraunces", "Fraunces Fallback", Georgia, "Times New Roman", serif;
-    --font-stack-sans:
-        "Newsreader", "Newsreader Fallback", Georgia, "Times New Roman", serif;
+    /* §FONT REGISTER (U/B7 · OD-6, re-ruled 2026-10-19). Dashboards set headings, labels, tables,
+       stats and deks in the system UI sans stack, which costs no font bytes. This re-rules the old
+       comment "the language has no sanctioned sans" under the owner's C-D20 ("serif on the gallery
+       only", 07-05). The serif faces stay as named tokens for the three surfaces that keep them:
+       the homepage wordmark, the SCI lead and the VFT companion paper. Such a surface opts in with
+       `[data-type-face="serif"]` (below), which re-points the role tokens inside it.
+
+       The role tokens keep their names: `--font-display` is the display ROLE and `--font-serif` the
+       prose ROLE (glass-ui's `--font-stack-*` source stacks are pinned to match, so an unregistered
+       element falls to the same face, never to glass's brand face). --font-stack-mono stays glass's
+       (Fira Code = our --font-mono). */
+    --font-sans-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-serif-display: "Fraunces", "Fraunces Fallback", Georgia, "Times New Roman", serif;
+    --font-serif-prose: "Newsreader", "Newsreader Fallback", Georgia, "Times New Roman", serif;
+    --font-display: var(--font-sans-ui);
+    --font-serif: var(--font-sans-ui);
+    --font-stack-text: var(--font-sans-ui);
+    --font-stack-display: var(--font-sans-ui);
+    --font-stack-sans: var(--font-sans-ui);
     /* THE audacious register — contained (cqw), floored to the $N.NNB measure. The
        figure scales with its GRID TRACK, never the viewport. (retires the 22vw apex.)
        H.W10.a — LIFTED to figure-PRIMACY: the leading number IS the cover-line, so the
@@ -263,28 +245,40 @@
     /* the MUTED prose rung — deks, glosses, the quiet second voice under a heading. Token-owned at
        W-ATMOS: `text-prose-muted` was the ONE reading recipe still bound to a hardcoded Tailwind
        step (`@apply text-sm`), so a route that wanted a different reading register had nothing to
-       re-point and forked the RECIPE instead — the vft dual ladder. The two values reproduce
-       `text-sm` exactly (14px / 20px @ the 16px root), so every route is byte-identical. */
-    --type-prose-muted: 0.875rem;
-    --type-prose-muted-lh: calc(1.25 / 0.875);
+       re-point and forked the RECIPE instead — the vft dual ladder. U/B7 · PLAN §5.8 moves it one
+       step up, from 14/20 px to 16/24 px. */
+    --type-prose-muted: 1rem;
+    --type-prose-muted-lh: 1.5;
     --type-kicker: clamp(
-        0.8125rem,
-        0.7rem + 0.5vw,
-        0.875rem
-    ); /* eyebrow/kicker — 14px @1440+ · 13px phone floor (+1 √φ over 12px; the whisper register, cleared) */
-    --type-caption: clamp(
-        0.8125rem,
-        0.72rem + 0.5vw,
+        0.875rem,
+        0.76rem + 0.5vw,
         0.9375rem
-    ); /* caption/gloss — 15px @1440 · 13px phone floor (+1 √φ over 12px; captions follow the kicker up) */
+    ); /* eyebrow/kicker — 15px @1440 · 14px phone (U/B7 · PLAN §5.8: one step up) */
+    --type-caption: clamp(
+        0.875rem,
+        0.78rem + 0.5vw,
+        1rem
+    ); /* caption/gloss — 16px @1440 · 14px phone (U/B7 · PLAN §5.8: one step up) */
     --type-heading-section: clamp(
         1.875rem,
         4.2vw + 0.6rem,
         2.625rem
     ); /* h2 section — 42px @1440 (keep the measured 41.6) · 30px phone floor [§A3]; text-section-fluid binds it */
+    /* THE READER-TEXT FLOOR (U/B7 · PLAN §5.8): the smallest size any reader text takes, 12px. The
+       component labels that sat at 9–11.5px (tick tags, chip counts, seam tags) bind this. */
+    --type-micro: 0.75rem;
     --type-heading-sub: clamp(
         1.625rem,
         1.5rem + 0.8vw,
         1.75rem
     ); /* h3 plate/sub — 28px @1440/768 · 27px @390 (the middle rung; h3 ≥ 1.2×prose at all 3 widths, G3) */
+}
+
+/* THE SERIF SURFACES (U/B7 · OD-6): the homepage wordmark, the SCI lead and the VFT companion paper
+   keep the editorial serif. Inside `[data-type-face="serif"]` the role tokens point at it. */
+[data-type-face="serif"] {
+    --font-display: var(--font-serif-display);
+    --font-serif: var(--font-serif-prose);
+    --font-stack-text: var(--font-serif-prose);
+    --font-stack-display: var(--font-serif-display);
 }

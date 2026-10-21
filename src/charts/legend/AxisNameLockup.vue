@@ -108,7 +108,7 @@ withDefaults(
    face at 0.68rem beside small-caps at 0.78rem already reads one tier down at full ink. */
 .axis-name-lockup__unit {
     font-family: var(--font-mono, "Fira Code"), monospace;
-    font-size: 0.68rem;
+    font-size: var(--type-micro);
     font-weight: 400;
     font-variant-numeric: tabular-nums;
     color: var(--muted-foreground);

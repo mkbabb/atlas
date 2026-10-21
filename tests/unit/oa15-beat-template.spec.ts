@@ -1,9 +1,9 @@
 // tests/unit/oa15-beat-template.spec.ts — O-A15 ACCEPTANCE teeth at the pure-mechanism layer:
-//   · resolveBeatTemplate — authored poles WIN, cadence fills the rest; reveal FOLLOWS the pole;
-//     the center pole rises vertically; the rule is authored ?? tier-rotated.
+//   · resolveBeatTemplate — authored poles WIN, cadence fills the rest; the rule is authored ??
+//     tier-rotated.
 //   · the RESEED determinism — a route reseed drifts the MICRO-GRAIN but NOT the authored poles (E1).
 //   · figureLadderScalar (Q-27) — index=0.5, value-scaled clamps, degenerate domain ⇒ 0.5 (no NaN).
-//   · the center pole through resolveLayout (useBeatLayout) — the third pole resolves L/C/R + up + dock.
+//   · the center pole through resolveLayout (useBeatLayout) — the third pole resolves L/C/R + dock.
 //   · SuperlativeRegister (Q-48) — the ceiling guard passes a ceiling verb, FAILS a forbidden one; opt-in.
 //   · rotateRuleVariant — restraint-first (`rule` dominant), tier-offset cadence.
 import { describe, it, expect } from "vitest";
@@ -11,8 +11,6 @@ import {
     resolveBeatTemplate,
     resolveBeatTemplates,
     figureLadderScalar,
-    rotateRevealShape,
-    REVEAL_SHAPES,
     type BeatVariationPolicy,
 } from "../../src/story/beat-template";
 import { resolveLayout } from "../../src/editorial/useBeatLayout";
@@ -37,19 +35,17 @@ const policy: BeatVariationPolicy = {
 };
 
 describe("O-A15 · resolveBeatTemplate — authored poles win, cadence fills the rest", () => {
-    it("an AUTHORED pole survives verbatim; the reveal FOLLOWS it (scrollIn mirrors the pole)", () => {
+    it("an AUTHORED pole survives verbatim; the layout carries it", () => {
         const t = resolveBeatTemplate(policy, 0, 1234);
         expect(t.title).toBe("left");
         expect(t.reveal.layout?.title).toBe("left");
-        expect(t.reveal.layout?.scrollIn).toBe("left");
         expect(t.numbers).toBe("top"); // phase 0 cadence (even ⇒ top)
         expect(t.rule).toBe("rule"); // authored
     });
 
-    it("the CENTER pole rises vertically (scrollIn:'up') — no margin to slide from (Q-21)", () => {
+    it("the CENTER pole resolves as authored", () => {
         const t = resolveBeatTemplate(policy, 1, 1234);
         expect(t.title).toBe("center");
-        expect(t.reveal.layout?.scrollIn).toBe("up");
         expect(t.numbers).toBe("bottom"); // authored override of the even-cadence top
     });
 
@@ -58,20 +54,6 @@ describe("O-A15 · resolveBeatTemplate — authored poles win, cadence fills the
         expect(t.title).toBe("right");
         expect(t.numbers).toBe("bottom");
         expect(RULE_VARIANTS).toContain(t.rule); // tier-rotated, in the closed register
-    });
-
-    it("O-A26 — an unauthored beat's reveal.shape falls to the tier-rotated fallback (in the closed register)", () => {
-        const t = resolveBeatTemplate(policy, 3, 1234);
-        expect(REVEAL_SHAPES).toContain(t.reveal.shape);
-    });
-
-    it("O-A26 — an AUTHORED reveal.shape wins over the fallback", () => {
-        const shaped: BeatVariationPolicy = {
-            id: "test-route-shaped",
-            seed: 1,
-            beats: [{ title: "left", reveal: { shape: "settle" } }],
-        };
-        expect(resolveBeatTemplate(shaped, 0, 1).reveal.shape).toBe("settle");
     });
 
     it("the signature flag reads through; the rest default false", () => {
@@ -116,10 +98,9 @@ describe("O-A15 · figureLadderScalar (Q-27) — value-scaled sizing, total", ()
 });
 
 describe("O-A15 · the CENTER third pole through resolveLayout (useBeatLayout)", () => {
-    it("an explicit center title resolves L/C/R + rises + docks right (the counterweight default)", () => {
+    it("an explicit center title resolves L/C/R + docks right (the counterweight default)", () => {
         const layout = resolveLayout({ reveal: { layout: { title: "center" } }, viz: stub } as never, 0);
         expect(layout.title).toBe("center");
-        expect(layout.scrollIn).toBe("up");
         expect(layout.dock).toBe("right");
     });
     it("the zebra still alternates L/R when unauthored (center is authored-only, never auto-picked)", () => {
@@ -158,28 +139,5 @@ describe("O-A15 · rotateRuleVariant — restraint-first, tier-offset cadence", 
         const lede = Array.from({ length: 4 }, (_, i) => rotateRuleVariant("lede", i));
         const anc = Array.from({ length: 4 }, (_, i) => rotateRuleVariant("ancillary", i));
         expect(lede).not.toEqual(anc);
-    });
-});
-
-describe("O-A26 · rotateRevealShape — restraint-first, tier-offset cadence (mirrors rotateRuleVariant)", () => {
-    it("`lift` dominates the register (restraint-first — ≥half the beats stay the plain rise)", () => {
-        const seq = Array.from({ length: 8 }, (_, i) => rotateRevealShape("support", i));
-        const lifts = seq.filter((v) => v === "lift").length;
-        expect(lifts).toBeGreaterThanOrEqual(4); // ≥ half stay `lift`
-        expect(seq.every((v) => (REVEAL_SHAPES as readonly string[]).includes(v))).toBe(true);
-    });
-    it("the tier OFFSETS the cadence (lede vs ancillary escalate on different beats)", () => {
-        const lede = Array.from({ length: 4 }, (_, i) => rotateRevealShape("lede", i));
-        const anc = Array.from({ length: 4 }, (_, i) => rotateRevealShape("ancillary", i));
-        expect(lede).not.toEqual(anc);
-    });
-    it("pure + total: the SAME (tier,index) always yields the SAME shape, never random", () => {
-        for (let i = 0; i < 8; i++) {
-            expect(rotateRevealShape("support", i)).toBe(rotateRevealShape("support", i));
-        }
-    });
-    it("the non-lift shape appears at step 1 over a sampled run", () => {
-        const seq = Array.from({ length: 4 }, (_, i) => rotateRevealShape("support", i));
-        expect(seq).toContain("settle");
     });
 });

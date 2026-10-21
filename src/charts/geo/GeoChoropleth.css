@@ -68,7 +68,7 @@
    always present (the channel exists), so the meaning is one media-query away. */
 .geo-value-label {
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: var(--type-micro);
     fill: var(--foreground);
     opacity: 0.04;
     pointer-events: none;

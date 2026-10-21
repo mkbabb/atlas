@@ -91,7 +91,7 @@ const range = computed<number[]>({
     align-items: baseline;
     gap: 0.3rem;
     font-family: var(--font-mono, monospace);
-    font-size: 0.72rem;
+    font-size: var(--type-micro);
     color: var(--muted-foreground);
 }
 </style>

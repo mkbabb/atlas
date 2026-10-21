@@ -351,7 +351,7 @@ function release(m: FilterMember): void {
 .filter-view__eyebrow {
     margin: 0;
     font-family: var(--font-mono, monospace);
-    font-size: 0.62rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--muted-foreground);
@@ -466,7 +466,7 @@ function release(m: FilterMember): void {
 .filter-view__stat-label {
     margin: 0;
     font-family: var(--font-mono, monospace);
-    font-size: 0.6rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--muted-foreground);
@@ -475,7 +475,7 @@ function release(m: FilterMember): void {
 .filter-view__empty {
     margin: 0.3rem 0 0;
     font-family: var(--font-mono, monospace);
-    font-size: 0.62rem;
+    font-size: var(--type-micro);
     color: var(--muted-foreground);
     opacity: 0.66;
 }

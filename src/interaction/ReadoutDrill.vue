@@ -142,7 +142,7 @@ function onFocus(): void {
     align-items: center;
     gap: 0.3rem;
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.02em;
 }
 .readout-drill__glyph {

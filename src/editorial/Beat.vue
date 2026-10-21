@@ -12,37 +12,21 @@
 // does; the plate owns its data rung, the interstitial its pull/legend/chrome rung). It is
 // never glass, never a plate; it is the un-gridded section the data-essay flows down.
 //
-// REVEAL CLOCK (the F6.3 seam): the section is the `[data-reveal-beat]` host. The native
-// `view()` engine (scroll-driven.css) OWNS the fade+lift on the compositor — <Beat> emits NO
-// inline `beatStyle` (the assembler computes that ONLY in the `@supports` fallback path; here
-// the markup is the host, the CSS is the writer — the single-writer law, T6). The `reveal`
-// prop maps to the scroll-driven.css attribute TIERS so a beat opts into the corrected
-// (faster, F6.3) reveal window without per-component timing:
-//   default → the base `entry 10% / cover 38%` window.
-//   dense   → `[data-dense]` (a data-heavy plate reveals SOONER — entry 5% / cover 30%).
-//   chrome  → `[data-chrome]` (a chrome/about beat reveals gentlest — entry 12% / cover 40%).
-//   tail    → `[data-reveal-tail]` (the colophon tail-beat — the reachability fix; completes
-//             exactly when the beat is fully present, never resting dim).
-//
-// PRM: inherited from the engine — under reduced motion the `from` keyframe never binds
-// (scroll-driven.css outer `@media (prefers-reduced-motion: no-preference)`); the section
-// stands at its terminal state. Information parity total (INV-F6).
+// THE BEAT HOST: the section is the `[data-reveal-beat]` host of the `--beat-tl` view timeline
+// (map-draw.css) that the kept `--scroll-tl` position clock reads (scroll-driven.css). U/B7 · PLAN
+// §5.1 deleted the scrubbed reveal (S-4), so a beat paints at rest and carries no reveal tier.
 //
 // a11y: a `<section>` with the anchor id (the dock `kind:"beat"` scroll target). The optional
 // `<FigureInitial>` is `role="img"` (the library wrapper); the `#header` slot carries the
 // eyebrow + `<h2>` + dek triplet the plate header owns (interstitials omit it).
-import { computed, provide } from "vue";
+import { provide } from "vue";
 import FigureInitial from "../platform/chrome/masthead/FigureInitial.vue";
 import { BEAT_TITLE_KEY } from "../charts/legend/beat-title.js";
 import type { ColorKind } from "../charts/scale/colorKind.js";
 
 const props = withDefaults(
     defineProps<{
-        /** The reveal register → the scroll-driven.css attribute tier (the F6.3 seam). */
-        reveal?: "default" | "dense" | "chrome" | "tail";
-        /** The lead beat opts OUT of the lift (a translate on it displaces the masthead top —
-            the B4 fix the bodies hard-code today as `beatStyle(scene, false)`). The reveal
-            engine reads `data-reveal-once="load"` for the lead's load-anchored draw. */
+        /** `false` marks the lead beat: the first paint, exempt from the render skip below. */
         lift?: boolean;
         /** The chapter figure-number — mounts <FigureInitial> in the margin when present. */
         figure?: number;
@@ -70,7 +54,6 @@ const props = withDefaults(
         sticky?: boolean;
     }>(),
     {
-        reveal: "default",
         lift: true,
         figure: undefined,
         colorKind: "diverging",
@@ -89,10 +72,6 @@ const props = withDefaults(
 // title-ownership is STATIC across its life, so the provide is a plain constant, not a Ref (KISS).
 provide(BEAT_TITLE_KEY, { owned: props.titleOwned });
 
-/** The lead beat (no lift) carries the page's first structural header, so its reveal is the
-    load-anchored one-shot (`data-reveal-once="load"`) — the lead fades IN PLACE, never
-    displacing the measured masthead top. Interior beats keep the full scroll-scrubbed rise. */
-const revealOnce = computed<string | undefined>(() => (props.lift ? undefined : "load"));
 </script>
 
 <template>
@@ -101,10 +80,6 @@ const revealOnce = computed<string | undefined>(() => (props.lift ? undefined : 
         class="beat section-anchor"
         :class="{ 'beat--lead': !lift, 'beat--sticky': sticky }"
         data-reveal-beat
-        :data-reveal-once="revealOnce"
-        :data-dense="reveal === 'dense' ? '' : undefined"
-        :data-chrome="reveal === 'chrome' ? '' : undefined"
-        :data-reveal-tail="reveal === 'tail' ? '' : undefined"
         :data-testid="testid ? `beat-${testid}` : undefined"
     >
         <!-- The illuminated chapter cap — the platform signature (FD3 §0). It COMPOSES with the

@@ -58,14 +58,14 @@ describe("category skins", () => {
 });
 
 describe("completion recipe", () => {
-    it("mounts only after completion and forwards every paint input", () => {
+    it("mounts only after completion, still and drawn (U/B7 §4.2: no load draw)", () => {
         const input = { complete: false, label: "Figures complete", shape: "ring" as const };
 
         expect(resolveCompletionSeal(input)).toBeNull();
         expect(resolveCompletionSeal({ ...input, complete: true })).toEqual({
             label: "Figures complete",
             shape: "ring",
-            play: true,
+            play: false,
         });
     });
 });

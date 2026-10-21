@@ -22,10 +22,8 @@
 // surface that offers NO pole source at all reaches the NEUTRAL paper wash. Never USF's tide (the
 // deliberate D2.5 delta — an unknown route never wears the fund's directional currents).
 //
-// THE f(p) TIDE rides LIVE (C6's Aurora-`p` BIND close obligation). useAuroraConfig reads
-// C5's useDocumentScrollProgress() and lerps the nuclei y / valueBias against it; the push
-// is glass-ui's reactive-config deep-watch (NO imperative instance.update — it ships none),
-// so the field breathes with the real scroll and reverses on scroll-up.
+// AT REST (U/B7 · PLAN §5.6): the config reads no scroll and no selection; it changes only on a
+// route or theme change, so the CSS ground is encoded once per field.
 //
 // THE CEILING — the felt-but-DEFT compositing envelope, now OWNED by useAuroraConfig (J-CLOSE
 // re-gate · arm b · REBALANCED O-DIR-4 ARM 2, see useAuroraConfig.ts for the full account).
@@ -40,9 +38,7 @@
 // no longer runs a per-frame WebGPU program to paint a subliminal wash. `render-mode` DEFAULTS to
 // `"css"`: glass-ui paints the SAME pole-derived pigment as a stack of radial-gradients positioned at
 // the `useAuroraConfig` nuclei x/y (`auroraFallbackGround(config)`) — 0 live WebGPU contexts, 0 present
-// loop, 0 `writeBuffer` on scroll, near-zero idle. The Tide (nuclei `y` lerp on `p`) survives at parity:
-// the config stays reactive, so a scroll re-lays the CSS radial-gradient stops on the compositor with NO
-// GPU frame — the same breath, off the shader. At the 0.30/0.36 ceiling behind opaque data plates the
+// loop, 0 `writeBuffer` on scroll, near-zero idle. At the 0.30/0.36 ceiling behind opaque data plates the
 // dropped fBm warp stays imperceptible (motion-arch §2.1 "on killing WebGPU"), so this is a visual
 // parity, not a downgrade. WebGPU stays OFF the default path for ANY route; the `shader` prop is the
 // explicit HIGH-TIER opt-in (a future hero/brand moment) that arms `render-mode="webgl"` — never
@@ -72,7 +68,6 @@ import { AMERICA, DASHBOARD_KEY, type Theme } from "../../../contract/index.js";
 import { useAuroraConfig } from "./composables/useAuroraConfig.js";
 import { useAtmosphereActivity } from "./composables/useAtmosphereActivity.js";
 import { useAtmosphereTier } from "./composables/useAtmosphereTier.js";
-import { useSelection } from "../../stores/useSelection.js";
 
 // THE HIGH-TIER SHADER OPT-IN (O-F2 · motion-arch §2.1 "on killing WebGPU"). The default is the
 // CSS-baked field (0 WebGPU); `shader` is the ONLY door back to the WebGPU substrate — an explicit,
@@ -99,7 +94,6 @@ const renderMode: AuroraRenderMode = shader ? "webgl" : "css";
 // unknown route) → the NEUTRAL paper wash, NOT USF's tide (the deliberate D2.5 delta, render-matrix-
 // verified): an unknown route never wears the fund's directional currents.
 const ctx = inject(DASHBOARD_KEY, undefined);
-const selection = ctx ? useSelection() : undefined;
 
 // The pole-derived reactive config + the live Tide scalar (the f(p) seam) + the theme-aware
 // compositing ceiling. useAuroraConfig resolves the route's declared → chrome-leg → NEUTRAL
@@ -113,13 +107,12 @@ const selection = ctx ? useSelection() : undefined;
 // the full pole-derived gradient WITH the scroll Tide, B = the same gradient FROZEN (no Tide/drift),
 // C = a flat 2-stop wash. PRM lands tier C. The gates are HANDED to useAuroraConfig (the ONE
 // derivation — no per-component tier logic); `tier` is surfaced on the wrapper for the standing gate.
-const { tier, tide, flatWash } = useAtmosphereTier();
+const { tier, flatWash } = useAtmosphereTier();
 
-const { config, opacityCeiling, rung } = useAuroraConfig(() => (ctx ? (ctx.theme ?? AMERICA) : theme), {
-    tide,
-    flatWash,
-    selectionActive: () => selection?.hasSelection ?? false,
-});
+const { config, opacityCeiling, rung } = useAuroraConfig(
+    () => (ctx ? (ctx.theme ?? AMERICA) : theme),
+    { flatWash },
+);
 
 // THE O-F4 ACTIVITY BELT (motion-arch §2.1 MOVE 4). glass-ui's <Aurora> exposes imperative
 // `pause()`/`resume()` (the substrate's "manual" suspend reason). The belt drives them off the ONE

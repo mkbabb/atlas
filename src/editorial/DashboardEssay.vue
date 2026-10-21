@@ -32,27 +32,13 @@
 // A chapter that declares NEITHER falls back to the body's `#hero`/`#colophon` slot (byte-identical to
 // every un-migrated route), so the facet is a widening, not a break (the `EditorialChapter` seam).
 //
-// THE REVEAL CLOCK (the F6.3 single-writer law, T6): the native `view()` engine (scroll-driven.css)
-// OWNS the fade+lift on the compositor whenever it is present — the host emits NO inline style on
-// that path (the <Beat> markup is the host, the CSS is the writer). The JS reveal is the
-// `@supports` fallback ONLY (Firefox / jsdom / SSR); its `style` is empty under native or PRM. So
-// the reveal binding mounts ONCE per chapter without two clocks fighting.
-//
-// J-SCROLL §7 — the chapter reveal is now a `kind:"reveal"` FACET of the ONE clock, NOT a second
-// `useScrollScene` rAF/geometry scene. `useScrollScene` retires: each chapter subscribes to the
-// THIN page-clock subscriber (`useSectionReveal`, the light section-windowed 0..1 reader — one
-// geometry read, no second scroll listener), and the host emits the fade+lift INLINE style ONLY on
-// the @supports fallback path (`!supportsViewTimeline()`), empty under native or PRM (the
-// single-writer law, T6 — the compositor is the sole writer under native; the beat is SET under
-// PRM). The @supports fallback is thus the timeline's terminal `seek(1)`-equivalent: ONE reveal
-// engine on ONE clock. (Phase-A SHAPE: subscribes to each section's own scroll position; on the
-// Phase-C re-pin the source re-seats onto the BC `useScrollTrigger` page-reader — a one-line swap.)
+// AT REST (U/B7 · PLAN §4.2, §5.1 S-4/S-5): the essay paints every beat at rest. There is no
+// per-beat fade or lift, no scroll-bound title size and no scroll snap at any width. A beat's
+// component point mounts in idle time once the beat comes within 1.5 viewports (F9), behind a
+// reserve at the route's beat height; a cold `#fragment` mounts its target and the beat before it
+// at setup, so the restore lands on settled content.
 import { computed, h, ref, watch, type Component, type VNodeChild } from "vue";
-import { useDeck } from "@mkbabb/glass-ui/deck";
-import { useSectionReveal } from "../motion/useScrollTimeline.js";
-import { supportsViewTimeline } from "../motion/useScrollProgress.js";
-import { useReducedMotion } from "../motion/useReducedMotion.js";
-import { toRoman } from "../platform/composables/useRomanNumeral.js";
+import { useRoute } from "vue-router";
 import Beat from "./Beat.vue";
 import EssayTitle from "./EssayTitle.vue";
 import AnimatedRule from "./AnimatedRule.vue";
@@ -74,7 +60,6 @@ import type { Chapter, ChapterTitle } from "../contract/index.js";
 import { resolveLayout, beatPhases, hasMasthead, figureLabelFor } from "./useBeatLayout.js";
 import type { EditorialChapter, HeroFacet } from "./editorial-contract.js";
 import { provideStoryDirector } from "../story/story-director-provide.js";
-import { recedeStyle } from "../story/corridor.js";
 import type { StoryChapter } from "../story/story-contract.js";
 import {
     chaptersOf,
@@ -86,10 +71,10 @@ import {
 import StoryCorridor from "../story/StoryCorridor.vue";
 import { figureLadderScalar } from "../story/beat-template.js";
 import { useActiveDashboard } from "../platform/stores/useActiveDashboard.js";
-import { useActiveBeat } from "../platform/stores/useActiveBeat.js";
-import { useMobileRegister } from "../platform/composables/useMobileRegister.js";
 import { resolveHeroSystem } from "./hero-system.js";
 import { useComponentPointLoading } from "./useComponentPointLoading.js";
+import { watchFigureSettle } from "./first-figure-floor.js";
+import PlateSkeleton from "../charts/frame/PlateSkeleton.vue";
 
 const props = defineProps<{
     /** The canonical route story and sole source of essay order. */
@@ -104,8 +89,7 @@ const activeDashboard = useActiveDashboard();
 // ── K-EXPRESS D2 — THE AUTO-ZEBRA PLACEMENT (resolved ONCE, the sequence is STATIC per route) ──
 // The masthead-phase index counts MASTHEAD-bearing beats only (the sentinels never consume a zebra
 // slot), so the first narrative beat is phase 0 (title=left) deterministically. `layouts[i]` is the
-// resolved side-set the <Beat> stamps as `data-*` registers + the fallback reveal axis reads. Hoisted
-// here so `revealStyles` reads `layouts[i]` with no temporal-dead-zone hazard.
+// resolved side-set the <Beat> stamps as `data-*` registers.
 const phases = beatPhases(chapterShape);
 // The Roman ordinal is a projection of the manifest order, never a second authored facet. Sentinels
 // carry 0; every masthead-bearing chapter advances exactly once in the same phase sequence as layout.
@@ -114,22 +98,17 @@ const figures = chapterShape.map((c, i) =>
 );
 const layouts = chapterShape.map((c, i) => resolveLayout(c, phases[i]!));
 
-// ── P1 · CLS RESERVE — THE FIRST FIGURE BEAT (CLS-02) ────────────────────────────────────────
-// The first figure-bearing beat is the data plate sitting directly below the cover — on-screen at
-// first paint, so its `content-visibility` skip (Beat.vue) never fires and never reserves its box.
-// Its plate then resolves its height a frame late (the ECharts/canvas mount) and reflows the whole
-// column beneath. Below-fold beats are reserved by `content-visibility`; only this one on-screen beat
-// needs an explicit floor. The stamp lets the CSS reserve its settled height (`--beat-cis`, the same
-// route-measured median the skip uses) from first paint, so the mount fills reserved space.
+// ── P1 · CLS RESERVE — THE FIRST FIGURE BEAT (CLS-02, U §M M-2) ─────────────────────────────
+// The first figure-bearing beat sits directly below the cover, on screen at first paint, so its
+// `content-visibility` skip (Beat.vue) never reserves its box. While its plate resolves it is stamped
+// `held` and reserves the route's declared `--first-figure-cis` (else the `--beat-cis` median); once
+// the figure's own boxes hold still it is stamped `settled` and is its own height, so no blank band is
+// left under a figure shorter than the median (`first-figure-floor.ts`).
 const firstFigureIndex = chapterShape.findIndex((c) => isPlateBeat(c));
+const firstFigureHeld = ref(firstFigureIndex >= 0);
 
-// ── DIAL 1 · THE OCCASIONAL LAW (the versal recession ladder) ────────────────────────────
-// The versal used to mount on EVERY plate beat under a blanket gate, at one uniform ⑤ ink — six
-// identical ghosts a corridor, which is wallpaper, not a signature. It is now OCCASIONAL
-// (`versalRegisters`, the manifest-POSITION law): the beat that OPENS its section keeps the route's
-// `--versal-ink` rung, every other beat re-points the token down to the ⑤ floor, and `"off"` mounts
-// no glyph at all. The style is `null` on the `route` rung — no inline write there, so the shell's
-// one bind cascades through untouched.
+// ── THE VERSAL (FigureInitial) — off unless a chapter declares it (U/B7 · PLAN §5.8). A declared
+// `route` versal carries the route's `--versal-ink`; `atmosphere`/`legend` re-point the token. ──
 const VERSAL_OVERRIDE_INK: Record<"atmosphere" | "legend", string> = {
     atmosphere: "var(--attn-atmosphere)",
     legend: "var(--attn-legend)",
@@ -141,43 +120,22 @@ const versalStyles = versals.map((v) =>
         : null,
 );
 
-// ── THE REVEAL FACET — one per chapter, mounted ONCE (the §7 `kind:"reveal"` fallback writer) ──
-// The per-beat `<section ref>` the bodies hand-rolled is hoisted here: ONE ref + ONE
-// `useSectionReveal` per chapter (the thin page-clock subscriber — the §7 `kind:"reveal"` enter
-// facet, NOT a `useScrollScene` rAF/geometry scene). The chapter's reveal STYLE (opacity + lift)
-// is the `beatStyle()` output the bodies hard-coded — but emitted INLINE only on the @supports
-// fallback path (`!supportsViewTimeline()`), EMPTY under the native `view()` engine or PRM (the
-// single-writer law, T6 — scroll-driven.css is the sole writer under native; the beat is SET under
-// PRM). The chapter sequence is STATIC per route (a route's `context.ts` declares its `Chapter[]`
-// once), so the subscriber pool is built ONCE at setup — composables run only in setup (never
-// inside a computed); `setBeatEl` populates the per-beat element ref each subscriber reads from.
-const reduced = useReducedMotion();
 const beatEls = chapterShape.map(() => ref<HTMLElement | null>(null));
 function setBeatEl(el: HTMLElement | null, i: number): void {
     if (beatEls[i]) beatEls[i].value = el;
 }
-const reveals = chapterShape.map((c, i) =>
-    useSectionReveal(beatEls[i], { tail: c.reveal?.tier === "tail" }),
-);
 
-// ── PA-5 · PHONE PAGING — native document scroll snap + Glass `useDeck` for a11y ONLY ────────────
-// On phone each beat is a DOCUMENT scroll-snap page (the CSS below; the page scrolls on <html>, so
-// there is NO nested scroller). Glass `useDeck` is consumed ONLY for the SETTLED-page index, the
-// `aria-current` stamp, and the polite "Slide N of M: <name>" live announcement — it drives NO
-// scroll clock and mounts NO observer. The settled page is read off the dock's EXISTING active-beat
-// store (`activeBeatId`, the ONE upper-third observer), so there is no second observer or rAF clock,
-// and no `useDeckDetent`. Desktop sets no snap-type (continuous, unchanged).
-const { isPhone } = useMobileRegister();
-const activeBeat = useActiveBeat();
-const deck = useDeck(chapterShape.length, {
-    label: (i) => chapterShape[i]?.eyebrow ?? chapterShape[i]?.id ?? "",
-});
-const settledIndex = computed(() =>
-    Math.max(0, chapterShape.findIndex((c) => c.id === activeBeat.activeBeatId)),
-);
-watch(settledIndex, (i) => deck.go(i));
-/** Glass's portable "Slide N of M: <name>" announcement off the settled index (the sole a11y read). */
-const pageAnnouncement = deck.liveMessage;
+// The first-figure floor's release (see `firstFigureHeld` above): one watch on that beat's element.
+if (firstFigureIndex >= 0) {
+    watch(
+        beatEls[firstFigureIndex]!,
+        (beat, _was, onCleanup) => {
+            if (!beat || !firstFigureHeld.value) return;
+            onCleanup(watchFigureSettle(beat, () => (firstFigureHeld.value = false)));
+        },
+        { immediate: true, flush: "post" },
+    );
+}
 
 // ── N.WB1 · THE STORY DIRECTOR + THE CORRIDOR RECEDE (the T1 primitives, LIVE — guarded) ──────────
 // The essay is the story host. When ANY chapter declares a `transition` facet, it mounts the ONE
@@ -205,116 +163,10 @@ if (director) {
         if (el) director.registerAnchor(c.id, el);
     });
 }
-/** Which chapters host a shared-element corridor edge (a director + a resolvable edge) — the ONLY
-    beats whose masthead recedes. The native CSS `corridor-recede` keyframe (scroll-driven.css) is
-    GATED to these via the `data-corridor-recede` stamp (below); an un-staged route stamps nothing. */
-const hasCorridorEdge = storyChapters.map(
-    (c) => !!director && director.edgeFor(c.id) !== null,
-);
-
-/** The per-chapter corridor recede — the arriving masthead cluster damps to `--corridor-prose-floor`
-    across its shared-element edge (0 at the poles). O-A18 MIGRATION: EMPTY under the native `view()`
-    engine (the compositor `corridor-recede` keyframe is the single writer off `--beat-tl` — the same
-    hand-off `revealStyles` makes) OR PRM (`recedeStyle({prm})` already returns `{}`; the beat rests at
-    opacity 1, information parity). The JS `recedeStyle` survives ONLY as the `@supports` fallback
-    writer (Firefox/jsdom/SSR), reading the director's `edge.t` per frame — one writer per environment. */
-const recedeStyles = storyChapters.map((c) =>
-    computed<Record<string, string>>(() => {
-        if (!director || supportsViewTimeline()) return {};
-        const edge = director.edgeFor(c.id);
-        if (!edge || !edge.active.value) return {};
-        return recedeStyle(edge.t.value, { prm: reduced.value });
-    }),
-);
-
-/** The arrival lift in viewport-height units — the beat rises this far from below as it reveals
-    (`y: +6% → 0`, the same engraved settle the retired `useScrollScene` carried, S3 §2.3). */
-const REVEAL_LIFT_VH = 6;
-/** The horizontal scroll-in magnitude (vw) — the fallback mirror of scroll-driven.css's
-    `--reveal-shift: 6vw` (the K-EXPRESS D2 axis swap). */
-const REVEAL_SHIFT_VW = 6;
-
-/** The per-chapter reveal STYLE — the @supports fallback writer (the §7 terminal-bind path). EMPTY
-    under the native `view()` engine (the compositor owns the fade+lift — single writer, T6) OR PRM
-    (the beat stands at its terminal state, information parity). On the fallback path the opacity +
-    the lift/slide both run off the subscriber's entry-anchored `t` (1 ⇒ settled), so the beat fades
-    in as it enters and fades back on scroll-up (bidirectional by construction). The transform AXIS is
-    the D2 scroll-in: a masthead beat slides along `layouts[i].scrollIn` (left/right/up); the sentinels
-    (no masthead, never stamped `data-scroll-in`) keep the VERTICAL rise — closing the divergence the
-    native path already has (`--reveal-x:0` where `data-scroll-in` is absent). */
-const revealStyles = reveals.map((r, i) =>
-    computed<Record<string, string>>(() => {
-        // A SCENE beat emits NO beat-level reveal transform (the steps ARE its reveal) — a transform
-        // ancestor perturbs the scene graphic's `position:sticky` pin (the K-SCENE pin-safety guard).
-        if (
-            chapters.value[i]!.card?.mode === "stage" ||
-            isChapterStage(chapters.value[i]!.viz) ||
-            isChapterScene(chapters.value[i]!.viz)
-        )
-            return {} as Record<string, string>;
-        if (supportsViewTimeline() || reduced.value)
-            return {} as Record<string, string>;
-        const t = r.t.value;
-        const dir = hasMasthead(chapters.value[i]!) ? layouts[i]!.scrollIn : "up";
-        const off = 1 - t;
-        const x =
-            dir === "left"
-                ? -off * REVEAL_SHIFT_VW
-                : dir === "right"
-                  ? off * REVEAL_SHIFT_VW
-                  : 0;
-        const y = dir === "up" ? off * REVEAL_LIFT_VH : 0;
-        return {
-            opacity: String(t),
-            transform: `translate3d(${x.toFixed(3)}vw, ${y.toFixed(3)}vh, 0)`,
-        };
-    }),
-);
-
-/** A-13 · THE TITLE'S OWN ENTRANCE — the axis a masthead cluster articulates along, layered ON the
-    beat's own reveal rather than replacing it (`scroll-driven.css`'s `data-title-in` arms scrub the
-    SHARED `reveal-beat` keyframes at half amplitude over `entry 10% → 30%`).
-
-    STAMPED ONLY when the title DECLARES an axis (`TitleFacet.scrollIn`, A-15) that DIFFERS from the
-    beat's resolved axis: `auto`, a plain-string title, or a declaration that MATCHES the beat is the
-    beat's own entrance already rendered — a second binding there would merely double it. Absent ⇒ no
-    binding at all, byte-identical for every silent title.
-
-    The recede REFUSES it (single-writer law): a cluster inside a shared-element corridor edge is
-    already animated end-to-end by `corridor-recede` off the same `--beat-tl`, and a second
-    `animation` declaration on the one element replaces rather than layers. The corridor wins — it
-    carries the arriving-beat meaning; the title entrance yields. */
-const titleInAxes = chapterShape.map((c, i) => {
-    const declared = typeof c.title === "object" ? c.title.scrollIn : undefined;
-    return declared && declared !== "auto" && declared !== layouts[i]!.scrollIn
-        ? declared
-        : undefined;
-});
-
 /** The HandMark grain seed for a masthead beat's picked-word title — a host constant rotated by the
     beat's masthead phase (the 3..6 pool; a seed is wobble determinism, not data — no `seed` field). */
 function titleSeed(i: number): number {
     return 3 + (phases[i]! % 4);
-}
-
-/** P-CF06 · THE `data-reveal-shape` STAMP — present ONLY for the non-default settle shape
-    (the CSS default `lift` needs no attribute, mirroring `data-dense`/
-    `data-chrome`'s "attribute present only when non-default" convention). Read directly off
-    `chapter.reveal` — no `hasMasthead` gate needed (a sentinel's `reveal` never carries a
-    variation-zipped `shape`, the same ungated precedent `data-scroll-tl` already sets below). */
-function revealShapeAttr(c: Chapter): string | undefined {
-    const shape = c.reveal?.shape;
-    return shape && shape !== "lift" ? shape : undefined;
-}
-
-/** A-14 · THE `data-scroll-out` STAMP — the exit posture, the counterpart of `data-scroll-in`'s
-    entrance axis, stamped by the SAME non-default-only convention as `data-reveal-shape` above: the
-    settled `hold` needs no attribute, so a route that declares nothing carries nothing and binds
-    nothing (byte-identical). The exit arm reads the axis it departs along off the beat's OWN
-    inherited `--reveal-x`, so this attribute names only WHETHER the card leaves, never where to. */
-function scrollOutAttr(c: Chapter): string | undefined {
-    const out = c.reveal?.out;
-    return out && out !== "hold" ? out : undefined;
 }
 
 /** Is a chapter `viz` a mountable Component (vs a contract or a sentinel)? Anything that is not
@@ -331,15 +183,26 @@ function vizComponent(v: Chapter["viz"]): Component | null {
     return v as Component;
 }
 
-// Plain component points load from the dock's existing active-beat observer and remain mounted once
-// reached. ChapterStage/ChapterScene retain their own virtualization and bypass this ledger.
+// F9 · Plain component points mount in idle time once their beat is within 1.5 viewports, so the
+// work lands before the beat scrolls in and outside scroll frames. ChapterStage/ChapterScene keep
+// their own virtualization and bypass this ledger. A cold `#fragment` names its target at setup.
+const route = useRoute();
 const loadedComponentIds = useComponentPointLoading(
     chapterShape.map((chapter, index) => ({
         id: chapter.id,
         component: vizComponent(chapter.viz) !== null,
-        eager: isCoverChapter(chapter, index),
+        // The cover and the first figure beat are on screen at first paint: they mount at setup.
+        eager: isCoverChapter(chapter, index) || index === firstFigureIndex,
     })),
+    beatEls,
+    { fragment: route.hash ? decodeURIComponent(route.hash.slice(1)) : null },
 );
+
+/** Whether a chapter's component point is still waiting for its idle mount (the beat reserves its
+    route height and shows the skeleton until then). */
+function pointPending(chapter: Chapter): boolean {
+    return vizComponent(chapter.viz) !== null && !loadedComponentIds.value.has(chapter.id);
+}
 
 /** Canonical component-backed cover points keep the same lead treatment as the legacy hero arm. */
 function isCoverChapter(chapter: Chapter, index: number): boolean {
@@ -405,7 +268,6 @@ function TitleSlot(props_: {
             :color-kind="chapter.colorKind ?? 'diverging'"
             :hinge="chapter.hinge ?? 0.5"
             :figure-label="figureLabelFor(chapter, figures[i]!)"
-            :reveal="chapter.reveal?.tier ?? 'default'"
             :lift="chapter.reveal?.lift ?? !isCoverChapter(chapter, i)"
             :testid="chapter.id"
             :data-point="chapter.id"
@@ -418,42 +280,22 @@ function TitleSlot(props_: {
             "
             class="essay-beat"
             :class="{ 'essay-beat--aside': chapter.reveal?.aside }"
-            :aria-current="isPhone && i === settledIndex ? 'true' : undefined"
-            :style="[revealStyles[i]?.value, ladderStyles[i], versalStyles[i]]"
+            :style="[ladderStyles[i], versalStyles[i]]"
             :data-scroll-tl="
                 chapter.reveal?.aside || chapter.reveal?.scrub ? '' : undefined
             "
-            :data-reveal-shape="revealShapeAttr(chapter)"
-            :data-scroll-out="scrollOutAttr(chapter)"
-            :data-first-figure="i === firstFigureIndex ? '' : undefined"
+            :data-first-figure="
+                i === firstFigureIndex ? (firstFigureHeld ? 'held' : 'settled') : undefined
+            "
+            :data-point-pending="pointPending(chapter) ? '' : undefined"
             :data-title="hasMasthead(chapter) ? layouts[i]!.title : undefined"
             :data-dock="hasMasthead(chapter) ? layouts[i]!.dock : undefined"
-            :data-scroll-in="hasMasthead(chapter) ? layouts[i]!.scrollIn : undefined"
         >
-            <!-- THE HEADER TRIPLET — eyebrow · <h2> · dek. The page cover + colophon carry their
-                 own header internally (the hero <h1>, the colophon About rung), so they omit it. -->
+            <!-- THE HEADER — <h2> and dek. The eyebrow is off (U/B7 · PLAN §5.8: it repeated the
+                 nav label and the Roman numeral; `chapter.eyebrow` stays the dock's nav label). The
+                 page cover + colophon carry their own header internally, so they omit it. -->
             <template v-if="hasMasthead(chapter)" #header>
-                <!-- N.WB1 · THE MASTHEAD CLUSTER — eyebrow · <h2> · dek, ONE wrapper (the recede's
-                     single opacity write). It damps to `--corridor-prose-floor` across the arriving
-                     shared-element corridor (compositor-only opacity + ≤0.25rem translate); `{}` (no
-                     style, byte-identical) when the beat has no active edge or the route is un-staged. -->
-                <div
-                    class="essay-masthead-cluster space-y-3"
-                    :style="recedeStyles[i]?.value"
-                    :data-corridor-recede="hasCorridorEdge[i] ? '' : undefined"
-                    :data-title-in="hasCorridorEdge[i] ? undefined : titleInAxes[i]"
-                >
-                    <!-- SM-1 — the eyebrow carries the chapter's nav icon, tinted in the route data hue
-                         (the "pops live in the icons" site). The TEXT stays muted ink (fill-vs-label). -->
-                    <p class="eyebrow">
-                        <component
-                            :is="chapter.icon"
-                            class="eyebrow__icon"
-                            :size="14"
-                            aria-hidden="true"
-                        />
-                        {{ toRoman(figures[i]!) }} · {{ chapter.eyebrow }}
-                    </p>
+                <div class="essay-masthead-cluster space-y-3">
                     <h2 class="text-section-fluid">
                         <!-- THE TITLE REGISTER (A-15) — a plain string or a `TitleFacet` (the 3-arm
                              register: plain/typewriter/lettering + marginalia). `lead`/`seed` are
@@ -545,6 +387,12 @@ function TitleSlot(props_: {
                     vizComponent(chapter.viz) && loadedComponentIds.has(chapter.id)
                 "
             />
+            <!-- F9 · the reserve while the point waits for its idle mount. -->
+            <PlateSkeleton
+                v-else-if="pointPending(chapter)"
+                class="essay-beat__pending"
+                :label="typeof chapter.title === 'string' ? chapter.title : undefined"
+            />
             </template>
 
         </component>
@@ -571,11 +419,6 @@ function TitleSlot(props_: {
             :director="director"
             :chapters="storyChapters"
         />
-        <!-- PA-5 · the polite paging announcement — Glass `useDeck`'s portable "Slide N of M:
-             <name>" seam surfaced in ONE sr-only status region. Phone only (desktop is continuous). -->
-        <p v-if="isPhone" class="sr-only" role="status" aria-live="polite">
-            {{ pageAnnouncement }}
-        </p>
     </div>
 </template>
 
@@ -596,15 +439,21 @@ function TitleSlot(props_: {
     isolation: isolate;
 }
 
-/* P1 · CLS RESERVE — THE FIRST FIGURE BEAT (CLS-02). The beat stamped `data-first-figure` is the
-   data plate directly below the cover: on-screen at first paint, so Beat.vue's `content-visibility`
-   skip never fires for it and never reserves its box — its plate resolves height a frame late and
-   reflows the column. Reserve its settled height (`--beat-cis`, the SAME route-measured median the
-   below-fold skip reserves with) from first paint, so the mount fills reserved space instead of
-   growing into it. Below-fold beats keep their `content-visibility` reservation; this floors the ONE
-   on-screen beat the skip cannot reach. */
-.essay-beat[data-first-figure] {
+/* P1 · CLS RESERVE — THE FIRST FIGURE BEAT (CLS-02, U §M M-2). While its plate resolves (`held`)
+   the first figure beat reserves the route's declared `--first-figure-cis`, else its `--beat-cis`
+   median. Once the figure has settled the floor is gone and the beat is its own height, so the
+   trailing chapter rule never sits under a band of empty paper. */
+.essay-beat[data-first-figure="held"] {
+    min-block-size: var(--first-figure-cis, var(--beat-cis, 720px));
+}
+
+/* F9 · A beat whose point waits for its idle mount reserves the route's beat height, so the mount
+   (which runs 1.5 viewports ahead, outside scroll frames) fills reserved space. */
+.essay-beat[data-point-pending] {
     min-block-size: var(--beat-cis, 720px);
+}
+.essay-beat__pending {
+    flex: 1;
 }
 
 /* THE STRUCTURAL ORNAMENT — a chapter's optional botanical/figure ornament, seated LOCALLY in the
@@ -625,19 +474,6 @@ function TitleSlot(props_: {
    inert with a single child); a plain block with no inline style is byte-identical to the former
    direct-flow triplet. When an edge is active the inline `opacity` + `≤0.25rem translateY` damp the
    whole cluster (compositor-only, no layout write; `will-change` is set inline for the flight only). */
-
-/* THE EYEBROW DATA-HUE ICON (design-suffusion §2 #1 / d-pops M2) — the section eyebrow carries its
-   beat's nav icon tinted in the route's DATA hue (the literal "pops live in the icons" site). The
-   icon resolves `--route-eyebrow-hue` via `color`, so the `currentColor`-stroked Lucide glyph paints
-   in the data hue; it sits at --attn-chrome (the eyebrow's editorial recession). The eyebrow TEXT
-   stays muted ink (the §3.4 fill-vs-label law). This is the de-copy of the per-body `.eyebrow__icon`
-   block the three bodies each re-spelled — hoisted here ONCE. */
-.eyebrow__icon {
-    color: var(--route-eyebrow-hue);
-    opacity: var(--attn-chrome);
-    flex: none;
-    margin-inline-end: 0.4em;
-}
 
 /* ── K-EXPRESS D2 — THE AUTO-ZEBRA PLACEMENT (the a11y keystone: grid placement, NEVER `order`) ──
    The masthead furniture HUGS the title side (even=left, odd=right); the data plate stays
@@ -703,28 +539,6 @@ function TitleSlot(props_: {
     }
 }
 
-/* O-A15 (item 8) · THE TITLE-LAW SCROLL CLAMP — the resolved title couples its size to the SAME
-   `--scroll-tl` the beat reveal rides (the MECHANISM is the template's; the SIZE values are WG-C's —
-   O-C1/O-C2's Title-law ladder). It is INERT this cut: `--title-law-min`/`--title-law-max` default to
-   the `text-section-fluid` size (`--type-heading-section`), so the interpolation is the IDENTITY (the
-   title renders at its normal fluid size, no visual change) until WG-C sets the ladder endpoints. Bound
-   only where `--scroll-tl` is live (`[data-scroll-tl]` beats on the native view() engine); under PRM /
-   no-timeline it never attaches. The mechanism is scroll-driven, ZERO per-frame JS (the compositor
-   reads `--scroll-tl` — the H11 faceted scrub host owns the axis; this only samples it). */
-@media (prefers-reduced-motion: no-preference) {
-    @supports (animation-timeline: view()) {
-        .essay-beat[data-scroll-tl] .essay-masthead-cluster h2 {
-            font-size: calc(
-                var(--title-law-min, var(--type-heading-section)) +
-                    (
-                        var(--title-law-max, var(--type-heading-section)) -
-                        var(--title-law-min, var(--type-heading-section))
-                    ) * var(--scroll-tl, 0)
-            );
-        }
-    }
-}
-
 /* THE reading-flow PROGRESSIVE UPGRADE (@supports) — INERT for the shipped HUG, the named forward
    seam for the future RAIL placement. For the HUG zebra DOM order == visual order at ALL times (the
    masthead always sits ABOVE the plate, only hugging a margin), so this block changes NOTHING today;
@@ -738,24 +552,4 @@ function TitleSlot(props_: {
     }
 }
 
-/* ── PA-5 · PHONE PAGING — native DOCUMENT scroll snap (the page scrolls on <html>, so this is the
-   root scroller, NOT a nested one). Each beat is a snap page; `proximity` (never `mandatory`) so a
-   taller-than-viewport beat never TRAPS the reader on a pathologically long phone page. Desktop sets
-   no snap-type (continuous, unchanged). The root rule is a no-op on routes with no `.essay-beat`
-   targets (home/gallery), so it needs no route gate. The settled page + its `aria-current`/live
-   announcement ride Glass `useDeck` off the existing active-beat observer (no second clock). */
-@media (--phone) {
-    :global(html) {
-        scroll-snap-type: y proximity;
-    }
-    .essay-beat {
-        scroll-snap-align: start;
-        /* PA-5 · SNAP SAFE-INSET — the collapsed dock crest pill floats over the phone's head margin
-           (PlatformShell reserves `--shell-head-reserve` of block-start for it). A beat snapping to
-           `start` would seat its eyebrow UNDER that pill; the scroll-margin lifts each snap stop clear
-           of the crest by the SHELL-OWNED reserve (inherited from `.platform-shell__main`), so no
-           snapped page seats beneath the sticky masthead. */
-        scroll-margin-block-start: var(--shell-head-reserve);
-    }
-}
 </style>

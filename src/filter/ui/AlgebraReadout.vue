@@ -117,7 +117,7 @@ const shown = computed<boolean>(
 .algebra-readout__crest {
     margin: 0;
     font-family: var(--font-mono);
-    font-size: 0.6rem;
+    font-size: var(--type-micro);
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -132,7 +132,7 @@ const shown = computed<boolean>(
 }
 .algebra-readout__scope {
     margin: 0;
-    font-size: 0.72rem;
+    font-size: var(--type-micro);
     line-height: 1.4;
     color: var(--muted-foreground);
     text-wrap: pretty;
@@ -142,7 +142,7 @@ const shown = computed<boolean>(
     align-items: baseline;
     justify-content: space-between;
     gap: 0.75rem;
-    font-size: 0.68rem;
+    font-size: var(--type-micro);
     color: var(--muted-foreground);
 }
 .algebra-readout__clear {

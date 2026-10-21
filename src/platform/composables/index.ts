@@ -27,7 +27,6 @@ export * from "./useSavedViews.js";
 export * from "./useThemeKey.js";
 
 // — the audacious-figure count-up tween (the crown-number settle) —
-export * from "./useCountUp.js";
 
 // — the roman-numeral formatter (the beat/section enumerator) —
 export * from "./useRomanNumeral.js";

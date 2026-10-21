@@ -37,10 +37,12 @@ describe("constellation register", () => {
 });
 
 describe("aurora register", () => {
-    it("moves the warm pair deeper into warm at page top and preserves neutral bias-cap zero", () => {
-        const warm = nucleiSpecs(0.3, deposition)[0]!;
-        expect(nucleusAt(warm, 0, -1, 0.3).paletteBias).toBeLessThan(warm.paletteBias);
-        expect(nucleusAt(warm, 1, 1, 0.3).paletteBias).toBeGreaterThan(warm.paletteBias);
-        expect(nucleusAt(warm, 0, -1, 0).paletteBias).toBe(warm.paletteBias);
+    it("resolves every nucleus at rest: its own bias, rest y and rest value (U/B7 §5.6)", () => {
+        for (const spec of nucleiSpecs(0.3, deposition)) {
+            const n = nucleusAt(spec);
+            expect(n.paletteBias).toBe(spec.paletteBias);
+            expect(n.y).toBe(spec.yRest);
+            expect(n.valueBias).toBe(spec.valueRest);
+        }
     });
 });

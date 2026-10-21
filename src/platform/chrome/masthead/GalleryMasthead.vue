@@ -92,7 +92,7 @@ withDefaults(defineProps<{ showEyebrow?: boolean }>(), { showEyebrow: true });
                  (J-HANDMARK §6's grain-clip mark-register — the headline wears the shipped
                  glass's warm `--paper-grain-tooth` within its letterforms, SOLID-INK fallback-first, NEVER on the
                  prose tagline below). -->
-            <h1 class="masthead-headline masthead__wordmark">
+            <h1 class="masthead-headline masthead__wordmark" data-type-face="serif">
                 The <span class="text-pickout">Connectivity</span> Atlas
             </h1>
             <p class="text-prose-muted masthead__tagline">{{ site.tagline }}</p>
@@ -133,18 +133,18 @@ withDefaults(defineProps<{ showEyebrow?: boolean }>(), { showEyebrow: true });
 @media (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: scroll()) {
         .masthead__wordmark {
-            /* the register endpoints the shared `title-compact` keyframe interpolates: the towering
-               rest (88 @1440 — the recipe's own `--type-masthead-headline`) → the ruled 0.78 compact
-               terminal. Weight held at the masthead's display 560 both ends (the audacity is FACE +
-               SCALE, never a weight lift — design-typography R5/T3; distinct from the dashboards'
-               560→600 tighten). */
-            --title-rest-size: var(--type-masthead-headline);
-            --title-compact-size: var(--type-masthead-headline-compact);
-            --title-rest-weight: 560;
-            --title-compact-weight: 560;
+            /* 88 → 52 px at 1440 as a compositor scale (U/B7 · PLAN §5.1: the shrink moves no
+               layout); at phone width the rest and compact rungs meet, so there is no shrink. */
+            --title-compact-scale: 0.59;
+            transform-origin: left top;
             animation: title-compact linear both;
             animation-timeline: scroll(root);
             animation-range: 0px var(--title-scrub-range, 320px);
+        }
+        @media (--phone) {
+            .masthead__wordmark {
+                --title-compact-scale: 1;
+            }
         }
     }
 }

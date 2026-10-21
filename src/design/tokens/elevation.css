@@ -75,6 +75,9 @@
        IS the recession). Live-audited: the ④-on-muted-text stacks read 1.94:1 (/usf light) and
        2.41:1 (/sci dark) before the consumer fixes (DashboardHero relation · AxisNameLockup). */
     --attn-chrome: 0.46; /* ④ dock/filter/eyebrow/editorial mark — the margin (non-text) */
+    /* U/B7 · PLAN §5.1 (scroll-free: no text below opacity 1): TEXT takes its rung as ink, not
+       opacity — `color: color-mix(in oklab, <ink> calc(var(--attn-*) * 100%), var(--background))`.
+       Marks, rules and glyphs keep the opacity form. */
     /* ④½ THE VERSAL — the flank watermark rung (dial 1, RULED: the versal is RESTORED at
        section/chapter openers ONLY, the quiet fallback everywhere else). It sits BETWEEN ④ and
        ⑤ on purpose: OF-22 was right that a ~287px illuminated cap at reading ink is a SECOND

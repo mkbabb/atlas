@@ -246,7 +246,10 @@ export function useDockStepper(
                 finishRestore();
             },
         });
-        el.scrollIntoView({ behavior: reduced.value ? "auto" : "smooth", block });
+        // The restore lands at once (U/B7 · PLAN §4.2: no motion on load). A smooth restore was
+        // still in flight when the settle re-anchored, and Chromium finished 3–6 px past the beat
+        // (U RULINGS §N N-1: the refuted 5 px residual of 2cc051e).
+        el.scrollIntoView({ behavior: "auto", block });
         if (settleTimer) clearTimeout(settleTimer);
         settleTimer = setTimeout(
             () => {
@@ -266,8 +269,10 @@ export function useDockStepper(
         );
     }
 
-    /** Restore the narrative position from `?at` on the section-nodes-resolved edge. Early-returns on
-        a null anchor or an absent section (a stale/wrong-route link → stay at top, never crash). When
+    /** Restore the narrative position from `?at` (or the `#fragment`) on the section-nodes-resolved
+        edge. Early-returns on a null anchor. An anchor naming no element (a stale or wrong-route link,
+        a fragment that is not on this page) stays at the top and still publishes its settle, aborted,
+        so every consumer waiting on the restore edge goes live (no scene consumes it). When
         a co-deep-linked `?fig` is open it LOCKS body scroll, so the `scrollIntoView` is DEFERRED to
         the fig-close edge via a one-shot `watch(figId)`. `view.narrativeAt`/`view.figId` are read as
         the Pinia-UNWRAPPED values (NO `.value` — a setup store auto-unwraps the returned computeds). */
@@ -275,7 +280,10 @@ export function useDockStepper(
         const anchor = view.narrativeAt;
         if (!anchor) return;
         const el = anchorElement(anchor);
-        if (!el) return;
+        if (!el) {
+            settleNarrativeRestore(anchor, { aborted: true });
+            return;
+        }
         if (view.figId) {
             const stop = watch(
                 () => view.figId,

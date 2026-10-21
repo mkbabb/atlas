@@ -217,11 +217,7 @@ defineExpose({ chart, host, highlight, downplay, settled, frame });
         <template v-if="$slots.foot" #foot="slotProps">
             <slot name="foot" v-bind="slotProps" />
         </template>
-        <!-- C-FOLD-SCAT-8 (C.W5.4) — the marks FAN IN on beat-entry. A scatter is an ECharts
-             CANVAS (animation:false), so the per-mark stagger cannot ride a CSS `view()` timeline
-             (no per-mark DOM nodes): the faithful realization is the plate-level marks-fan — the
-             whole field fades + lifts in on the beat's `view()` timeline (`data-reveal-fan` → the
-             scoped keyframe below), un-fanning on scroll-up, bound to the SAME `--beat-tl`. The
+        <!-- The field paints at rest (U/B7 · PLAN §5.1 S-4: the scroll fan is deleted). The
              keyboard control persona + the optional <Glyph> overlay layer as siblings over the
              canvas in ONE `.relative` host. -->
         <div class="relative" :style="axisInsetVars">
@@ -231,7 +227,6 @@ defineExpose({ chart, host, highlight, downplay, settled, frame });
                 role="img"
                 :aria-label="figureLabel"
                 :data-testid="testid"
-                data-reveal-fan
             />
             <!-- THE OPTIONAL <Glyph> SVG OVERLAY SLOT (J-FEEDBACK-3 §1) — a BreakEvenScatter/
                  RankedStrip facility ABSENT from SciScatter. ECharts is the invisible hit+layout
@@ -307,33 +302,4 @@ defineExpose({ chart, host, highlight, downplay, settled, frame });
     justify-content: center;
 }
 
-/* C-FOLD-SCAT-8 (C.W5.4) — the marks-FAN reveal, keyed to the beat's `view()` timeline. The
-   scatter is a canvas (no per-mark DOM), so the fan is the plate-level field fading + lifting in
-   as the beat enters — the compositor-only `{opacity, transform}` whitelist, zero JS. Bound to the
-   SAME `--beat-tl` the map draw-on + the beat reveal ride (declared on the [data-reveal-beat] host
-   section). The OUTER PRM `@media` is the structural fence — under reduced motion the block never
-   binds and the field rests at its terminal (all marks present, opacity:1). The INNER `@supports`
-   gates the native timeline; where it is absent the field simply rests present. The keyframe name
-   is component-scoped by Vue, so this never collides with the map/line fans. */
-@media (prefers-reduced-motion: no-preference) {
-    @supports ((animation-timeline: view()) and (animation-range: entry)) {
-        @keyframes scatter-fan {
-            from {
-                opacity: 0;
-                transform: translate3d(0, 2.5vh, 0) scale(0.985);
-            }
-            to {
-                opacity: 1;
-                transform: translate3d(0, 0, 0) scale(1);
-            }
-        }
-        [data-reveal-fan] {
-            animation: scatter-fan auto linear both;
-            animation-timeline: --beat-tl;
-            /* Fan in over the entry-anchored span (F6 §2.4 recut — `entry 6% → entry 24%`) so the
-               field is settled as it enters — bidirectional on the position timeline. */
-            animation-range: entry 6% entry 24%;
-        }
-    }
-}
 </style>

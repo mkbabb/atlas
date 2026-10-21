@@ -23,23 +23,13 @@
 // names the dimension, not a second comparative. The primitive cannot enforce a sentence; it makes
 // the two faces adjacent so the convention is visible where the copy is written.
 //
-// THE REVEAL CLOCK — SCROLL, off ONE scalar. `useCoverProgress` walks to the nearest [data-scroll-tl]
-// beat host and reads the page's live cover position; `revealHostStyle` fades + lifts the figure and
-// `countAt` dials the value, both P193-timed to COMPLETE at cover 0.50 (viewport centre) — the
-// ratified count arm. No director, no viz id, no second clock. PRM: `useCoverProgress` pins to 1, so
-// the figure mounts terminal and the value renders at its final digits (information parity, total) —
-// the guard is the SUBSTRATE's, never a per-component reduced-motion fence.
-//
-// PRECISION: the `format` function owns it. A formatted crown counts FRACTIONALLY (`7.36×` must not
-// collapse to `7×` mid-dial — the DemandRidge float-math the hand-rolled sites open-coded); a bare
-// numeric crown counts in whole steps (a YEAR, a filing count). One rule, no dial.
+// AT REST (U/B7 · PLAN §4.2): the crown paints its final value at first paint. It does not count,
+// fade or lift with scroll. A numeric value passes through `format` when one is given.
 //
 // a11y: a `<figure>` whose value is the figure content (selectable, in the reading order) and whose
 // unit/pill/gloss are the `<figcaption>`.
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import FigureSlug from "../charts/frame/FigureSlug.vue";
-import { countAt, revealHostStyle } from "../motion/reveal-register.js";
-import { useCoverProgress } from "../motion/useCoverProgress.js";
 import { figureLadderScalar, type FigureLadder } from "../story/beat-template.js";
 import type { ColorKind } from "../charts/scale/colorKind.js";
 
@@ -54,11 +44,10 @@ export interface CrownPill {
 
 const props = withDefaults(
     defineProps<{
-        /** The datum. A NUMBER dials up on scroll-entry; a pre-formatted STRING renders verbatim. */
+        /** The datum. A NUMBER renders through `format`; a pre-formatted STRING renders verbatim. */
         value: number | string;
-        /** The formatter the dialing value passes through (`formatMultiplier`, `formatUsdCompact`,
-            `formatCount`). Present ⇒ the count runs fractional and the formatter owns precision;
-            absent ⇒ the value dials in whole steps and renders bare. */
+        /** The formatter a numeric value passes through (`formatMultiplier`, `formatUsdCompact`,
+            `formatCount`). Absent ⇒ the value renders bare. */
         format?: (n: number) => string;
         /** The Fira eyebrow that NAMES the figure (never a bare crown). */
         unit?: string;
@@ -88,31 +77,22 @@ const props = withDefaults(
     },
 );
 
-const host = ref<HTMLElement | null>(null);
+/** The DECLARED rung when the crown carries its own `ladder` (an inline custom property, so it wins
+    over the beat's inherited publication). */
+const hostStyle = computed<Record<string, string> | undefined>(() =>
+    props.ladder ? { "--crown-rung": String(figureLadderScalar(props.ladder)) } : undefined,
+);
 
-// THE ONE SCALAR — the nearest beat host's live cover position (1 under PRM / a host-less mount).
-const { t } = useCoverProgress(host);
-
-/** The composed host style: the reveal fade+lift, plus the DECLARED rung when the crown carries its
-    own `ladder` (an inline custom property, so it wins over the beat's inherited publication). */
-const hostStyle = computed<Record<string, string>>(() => ({
-    ...revealHostStyle(t.value),
-    ...(props.ladder ? { "--crown-rung": String(figureLadderScalar(props.ladder)) } : {}),
-}));
-
-/** The dialing value — fractional under a formatter (the formatter owns precision), whole otherwise. */
+/** The value at rest — through the formatter when one is given. */
 const display = computed<string>(() => {
     if (typeof props.value === "string") return props.value;
-    return props.format
-        ? props.format(countAt(props.value, t.value, { round: false }))
-        : String(countAt(props.value, t.value));
+    return props.format ? props.format(props.value) : String(props.value);
 });
 </script>
 
 <template>
     <!-- The thesis crown — a <figure> at rung ②, on bare paper. NO plate, NO grid, NO glass. -->
     <figure
-        ref="host"
         class="crown-figure"
         :class="`crown-figure--${align}`"
         :style="hostStyle"
@@ -200,7 +180,7 @@ const display = computed<string>(() => {
     align-items: baseline;
     gap: 0.35em;
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.04em;
     color: var(--emphasis-record);
 }
@@ -210,7 +190,7 @@ const display = computed<string>(() => {
 }
 .crown-figure__record-label {
     text-transform: uppercase;
-    opacity: 0.85;
+    color: color-mix(in oklab, currentColor calc(0.85 * 100%), var(--background));
 }
 /* The gloss holds a CAPTION measure, not a body one: 46ch is the low end of the classic 45–75ch
    band, so the sentence reads as the figure's caption rather than as a column of prose that happens

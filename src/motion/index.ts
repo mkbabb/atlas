@@ -37,7 +37,6 @@ export * from "./lean-catalog.js";
 export * from "./compileSegment.js";
 
 // — the reveal register: host-style + count-at-progress + the KEPT reveal bindings —
-export * from "./reveal-register.js";
 export * from "./reveal-score.js";
 
 // — the rank band: the lede/support/ancillary beat budget + reparameterization —

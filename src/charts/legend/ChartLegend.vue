@@ -300,7 +300,7 @@ const isDead = (count?: number): boolean => count == null || count === 0;
     align-items: center;
     gap: 0.5rem 0.625rem;
     margin: 0;
-    font-size: 0.6875rem;
+    font-size: var(--type-micro);
     color: var(--muted-foreground);
 }
 .chart-legend--discrete {
@@ -371,8 +371,7 @@ const isDead = (count?: number): boolean => count == null || count === 0;
     flex-basis: 100%;
     min-inline-size: 0;
     font-variant-numeric: tabular-nums;
-    color: var(--muted-foreground);
-    opacity: 0.9;
+    color: color-mix(in oklab, var(--muted-foreground) calc(0.9 * 100%), var(--background));
 }
 
 /* THE CLAMP LINE (A-29) — the ramp-cap statement, seated on its own row beneath the bar in the
@@ -381,8 +380,7 @@ const isDead = (count?: number): boolean => count == null || count === 0;
 .chart-legend__clamp-dt,
 .chart-legend__clamp {
     font-variant-numeric: tabular-nums;
-    color: var(--muted-foreground);
-    opacity: 0.9;
+    color: color-mix(in oklab, var(--muted-foreground) calc(0.9 * 100%), var(--background));
 }
 .chart-legend__clamp-dt {
     white-space: nowrap;
@@ -440,8 +438,8 @@ const isDead = (count?: number): boolean => count == null || count === 0;
     transform: translateX(-50%);
     inline-size: max-content;
     font-variant-numeric: tabular-nums;
-    color: var(--muted-foreground);
-    opacity: 0.9;
+    /* Recessed by ink, not opacity (U/B7): text stays at opacity 1. */
+    color: color-mix(in oklab, var(--muted-foreground) 90%, var(--background));
 }
 
 /* DISCRETE / NO-DATA — the verbatim swatch + its label. */
@@ -470,7 +468,7 @@ const isDead = (count?: number): boolean => count == null || count === 0;
 }
 .chart-legend__count {
     font-variant-numeric: tabular-nums;
-    opacity: 0.85;
+    color: color-mix(in oklab, currentColor calc(0.85 * 100%), var(--background));
 }
 
 /* THE TIER LEDGER — the atlas/banknote key: a swatch column, labels + dot-leaders, tnum
@@ -509,7 +507,7 @@ const isDead = (count?: number): boolean => count == null || count === 0;
 .chart-legend__ledger-count {
     font-variant-numeric: tabular-nums;
     text-align: end;
-    opacity: 0.9;
+    color: color-mix(in oklab, currentColor calc(0.9 * 100%), var(--background));
 }
 /* The hollow engraved swatch — a dead (zero-count) tier's rung: a 1px --engrave ring, no
    fill, so every rung of the ladder still shows but the dead ones read recessive. */
@@ -518,9 +516,9 @@ const isDead = (count?: number): boolean => count == null || count === 0;
     box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--engrave, currentColor), transparent 30%);
 }
 .chart-legend__ledger-row.is-dead .chart-legend__ledger-word {
-    opacity: 0.6;
+    color: color-mix(in oklab, currentColor calc(0.6 * 100%), var(--background));
 }
 .chart-legend__ledger-row.is-dead .chart-legend__ledger-count {
-    opacity: 0.55;
+    color: color-mix(in oklab, currentColor calc(0.55 * 100%), var(--background));
 }
 </style>

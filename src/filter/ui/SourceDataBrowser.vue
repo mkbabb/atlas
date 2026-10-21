@@ -493,7 +493,7 @@ function titleCase(value: string): string {
 }
 
 .source-browser__eyebrow {
-    font-size: 0.6875rem;
+    font-size: var(--type-micro);
     font-weight: 650;
     letter-spacing: 0.08em;
     color: var(--muted-foreground);
@@ -530,7 +530,7 @@ function titleCase(value: string): string {
 
 .source-browser__provenance dt {
     margin-block-end: 0.15rem;
-    font-size: 0.625rem;
+    font-size: var(--type-micro);
     font-weight: 650;
     letter-spacing: 0.09em;
     color: var(--muted-foreground);
@@ -611,7 +611,7 @@ function titleCase(value: string): string {
 }
 
 .source-browser__viewport :deep(.source-browser__head) {
-    font-size: 0.6875rem;
+    font-size: var(--type-micro);
     font-weight: 700;
     letter-spacing: 0.055em;
     color: var(--muted-foreground);

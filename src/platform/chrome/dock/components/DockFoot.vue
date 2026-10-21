@@ -194,7 +194,7 @@ const hasRouteControls = computed(() => routeHasFilter.value || hasYearScope.val
 }
 .usf-dock__sel-label {
     font-family: var(--font-mono);
-    font-size: 0.625rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.04em;
     line-height: 1;
     text-transform: lowercase;

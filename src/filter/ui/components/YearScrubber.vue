@@ -163,7 +163,7 @@ const emit = defineEmits<{
 }
 .year-scrubber__pip-year {
     font-family: var(--font-mono);
-    font-size: 0.58rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.01em;
     opacity: 0.7;
 }

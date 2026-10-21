@@ -134,7 +134,7 @@ const emit = defineEmits<{
 }
 .cp-drawer__freshness {
     font-family: var(--font-mono);
-    font-size: 0.7rem;
+    font-size: var(--type-micro);
     color: var(--muted-foreground);
     letter-spacing: 0.02em;
 }
@@ -158,7 +158,7 @@ const emit = defineEmits<{
     border: 1px solid var(--border);
     border-radius: var(--radius-plate-control);
     background: var(--background);
-    font-size: 0.72rem;
+    font-size: var(--type-micro);
     color: var(--foreground);
 }
 .cp-drawer__save-input:focus-visible {
@@ -182,7 +182,7 @@ const emit = defineEmits<{
         color-mix(in srgb, var(--accent, var(--primary)) 35%, var(--border));
     border-radius: var(--radius-pill);
     font-family: var(--font-mono);
-    font-size: 0.7rem;
+    font-size: var(--type-micro);
     color: var(--ink-primary); /* O-C7 D5 — the drawer crosslink as a readable primary ink */
     text-decoration: none;
 }
@@ -200,7 +200,7 @@ const emit = defineEmits<{
     opacity: 0.7;
 }
 .cp-drawer__crosslink-soon {
-    font-size: 0.6rem;
+    font-size: var(--type-micro);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     opacity: 0.8;

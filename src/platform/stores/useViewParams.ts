@@ -16,6 +16,7 @@
 // feed has loaded — before then `yearScope` is null and a reader shows no year UI.
 
 import { defineStore } from "pinia";
+import { useRoute } from "vue-router";
 import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from "vue";
 import { useUrlState } from "../composables/useUrlState.js";
 import { useYearScope, type UseYearScope } from "../../data/useYearScope.js";
@@ -135,6 +136,20 @@ export function parseAt(raw: string | undefined): NarrativeAnchor | null {
     return stepId ? { beatId, stepId } : { beatId };
 }
 
+/** A `#fragment` in the address as a narrative anchor: the element it names is where the reader
+    lands, exactly as `?at` (U §M M-5: `/usf-integrity#reform` stayed at y 0 in Chromium 8/8 and
+    Firefox 3/8, because the router's hash scroll ran before the essay body had mounted the beat).
+    Read, never written. Null for an empty or undecodable fragment. */
+export function parseFragment(hash: string): NarrativeAnchor | null {
+    const raw = hash.startsWith("#") ? hash.slice(1) : hash;
+    if (!raw) return null;
+    try {
+        return { beatId: decodeURIComponent(raw) };
+    } catch {
+        return null;
+    }
+}
+
 /** Encode a narrative anchor to its `?at` wire form (the `parseAt` inverse — round-trip identity). */
 export function encodeAt(a: NarrativeAnchor): string {
     return a.stepId ? `${a.beatId}.${a.stepId}` : a.beatId;
@@ -155,6 +170,7 @@ export function resolveSceneAnchor(
 
 export const useViewParams = defineStore("platform:viewParams", () => {
     const active = useActiveDashboard();
+    const route = useRoute();
 
     // The generic URL param bag. Keys are advisory strings (a dashboard's own vocab);
     // `useUrlState` narrows the reads (string / number / list) at the access site.
@@ -385,10 +401,12 @@ export const useViewParams = defineStore("platform:viewParams", () => {
         The reader's first settled scroll writes `?at` and retires it. */
     const linkedSceneAnchor = shallowRef<NarrativeAnchor | null>(null);
 
-    /** The narrative anchor the page restores to: a promoted `?scene` link, else the PARSED `?at`, or
-        null when absent / malformed. Reactive — a reload / route change re-reads the one URL bag. */
+    /** The narrative anchor the page restores to: a promoted `?scene` link, else the PARSED `?at`,
+        else the address's `#fragment`, or null. Reactive — a reload / route change re-reads the one
+        URL bag and the route's hash. */
     const narrativeAt: ComputedRef<NarrativeAnchor | null> = computed(
-        () => linkedSceneAnchor.value ?? parseAt(url.get(AT_KEY)),
+        () =>
+            linkedSceneAnchor.value ?? parseAt(url.get(AT_KEY)) ?? parseFragment(route.hash),
     );
 
     /** Write `?at=<beatId>[.<stepId>]` (a passive replaceState). `undefined` beat clears it. Its one

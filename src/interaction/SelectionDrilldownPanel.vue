@@ -616,7 +616,7 @@ function onPanelKeydown(e: KeyboardEvent): void {
 .drilldown__eyebrow {
     margin: 0;
     font-family: var(--font-mono, monospace);
-    font-size: 0.62rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--muted-foreground);
@@ -709,13 +709,13 @@ function onPanelKeydown(e: KeyboardEvent): void {
 .drilldown__aggregate-count {
     margin: 0;
     font-family: var(--font-mono, monospace);
-    font-size: 0.72rem;
+    font-size: var(--type-micro);
     color: var(--muted-foreground);
 }
 .drilldown__stat-label {
     margin: 0;
     font-family: var(--font-mono, monospace);
-    font-size: 0.6rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--muted-foreground);
@@ -749,7 +749,7 @@ function onPanelKeydown(e: KeyboardEvent): void {
 }
 .drilldown__dropdown-title {
     font-family: var(--font-mono, monospace);
-    font-size: 0.66rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted-foreground);
@@ -800,7 +800,7 @@ function onPanelKeydown(e: KeyboardEvent): void {
 .drilldown__overflow {
     margin: 0.2rem 0 0 1.9rem;
     font-family: var(--font-mono, monospace);
-    font-size: 0.62rem;
+    font-size: var(--type-micro);
     color: var(--muted-foreground);
     opacity: 0.7;
 }
@@ -820,7 +820,7 @@ function onPanelKeydown(e: KeyboardEvent): void {
 .drilldown__promote,
 .drilldown__unfilter {
     font-family: var(--font-mono, monospace);
-    font-size: 0.68rem;
+    font-size: var(--type-micro);
     letter-spacing: 0.03em;
 }
 </style>

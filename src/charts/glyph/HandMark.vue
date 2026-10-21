@@ -99,16 +99,5 @@ defineExpose({ play, snap });
     opacity: var(--attn-chrome);
 }
 
-/* THE SCROLL-SCRUB (clock="scroll") — the mark draws/un-draws BIDIRECTIONALLY under real scroll: the
-   atlas `crayon-wipe` clip (map-draw.css) on each mark frame's own `view()` timeline. Under PRM (or a
-   non-supporting engine) the wipe never attaches and the mark rests drawn. */
-@media (prefers-reduced-motion: no-preference) {
-    @supports ((animation-timeline: view()) and (animation-range: entry)) {
-        .hand-mark[data-mark-clock="scroll"] :deep(.hm-mark) {
-            animation: crayon-wipe auto linear both;
-            animation-timeline: view(block);
-            animation-range: entry 0% entry 26%;
-        }
-    }
-}
+/* clock="scroll" rests drawn (U/B7 · PLAN §4.2: no scroll-scrubbed draw). */
 </style>

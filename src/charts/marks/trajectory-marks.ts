@@ -231,3 +231,19 @@ export function overSubscriptionX(
 export function markerAttr(kind: TrajectoryMarkerKind): string {
     return `data-mark-${kind}`;
 }
+
+/** The trajectory plate's E1 description: the lead measure by year across its real span
+    ("Requests by year, 2016–2025."). The lead keeps its own casing; a span of one year reads as
+    that year, and a lead with no real years falls back to "across the years". The lead token is filled by the caller. */
+export function trajectoryDescription(
+    firstYear: number | undefined,
+    lastYear: number | undefined,
+): { prose: string; span: string } {
+    const span =
+        firstYear == null || lastYear == null
+            ? "across the years"
+            : firstYear === lastYear
+              ? String(firstYear)
+              : `${firstYear}–${lastYear}`;
+    return { prose: `{lead} by year, {span}.`, span };
+}

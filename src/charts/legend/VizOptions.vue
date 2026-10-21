@@ -358,7 +358,7 @@ function reset(): void {
 /* The mono-caps "Options" crest — the drawer-title register at popover scale. */
 .viz-options__crest {
     margin: 0;
-    font-size: 0.6875rem;
+    font-size: var(--type-micro);
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;

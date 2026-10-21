@@ -35,7 +35,8 @@ keeps its specifier; it now resolves to `dist/styles/design/foundations/breakpoi
 | `try { chart.convertToPixel(…) } catch {}` | project only while `settled` (in a lazy paint window it answers `undefined`) |
 | `chart.value.setOption(option, { notMerge: true, lazyUpdate: true })` for a view or scene change | `api.push(option)` |
 | a `StageMorphTarget` literal `{ chart, host, option }` | add `push(option)` (useEChart passes its own) |
-| a highlight held across a data change, replayed on the new data | superseded: the reader's next hover dispatches against the new data |
+| `highlight(key, keyToIndex.value)`: a snapshot of the key index | `highlight(key, keyToIndex)`: the live map as a ref, computed or getter (`KeyIndex`); the held key is replayed after every data push (§L D3-4) |
+| `downplay(seriesIndex)` | `downplay()`: the chart clears the series it raised |
 
 `EChartReadiness = Pick<UseEChart, "chart" | "settled" | "frame">` is the handle to pass to
 projecting components.
@@ -154,6 +155,26 @@ projecting components.
 | new `DataViewerRoute` (`./provenance`): the `/data`, `/data/:dataset` and `/data/:dataset/inputs/:file` view over glass `DataTable`, with props `datasets: DataViewerDataset[]` (`{ id, label, periodColumn?, load(): Promise<{ rows, columns, meta, sha? }> }`), `dataset`, `file`, `basePath`. A query key naming a served column filters to that value; CSV and JSON download through `serializeRows` (now exported, taking `{ key, label, value }` columns) | register the three routes with `props` mapping the params (sci `dashboards/router.ts`); list the datasets in `data-sources.ts`; usf-integrity is not listed |
 | `SourceLink`'s served tier reads "Data file (view)" and links to `<basePath>/<source id>` (default `/data`); "served here" is gone. It now needs the app router | a text match on "served here" moves to "Data file (view)" |
 | one key map for figure keyboard input: `KeyInput.shift` is `KeyInput.multi` (`isMultiSelect`: Shift, Cmd or Ctrl); Enter or Space with it adds to the selection. `SelectionRegion` reads the same `keyStep` map: arrows stop at the ends instead of wrapping, Escape clears | a caller of `keyStep` passes `multi: isMultiSelect(e)` |
+
+## 5g · U/B7: calm motion, a still background, lazy geometry, the dashboard sans
+
+| Change | Consumer edit |
+|---|---|
+| `useCountUp` deleted from `./platform/composables` | render the final value; a count-up is not replaced |
+| `reveal-register` (`countAt`, the reveal shapes) deleted from `./motion` | render the final value; drop `revealShape`/`scrollOut` stamps |
+| `completionSeal({ complete, label })`: `label` optional, `play` always false | drop the label when the seal is decorative |
+| the S-4 scroll scrubs and the S-5 root snap are gone from the atlas sheets | delete any route CSS that re-declares `scroll-snap-type` or a `view()` reveal on a beat |
+| `useAuroraConfig(theme, { scroll, tide, selectionActive, flatWash })` | `useAuroraConfig(theme, { flatWash })`; it returns `{ config, opacityCeiling, rung }` |
+| `nucleusAt(s, scroll, value)` | `nucleusAt(s)` |
+| `useAtmosphereTier()` returned `tide` | no `tide`; a phone is tier C |
+| `import { … } from "@mkbabb/atlas/data"` for `entityGeometry` exports | `import { … } from "@mkbabb/atlas/data/entity-geometry"`; every tier is lazy, so a synchronous reader watches `glyphRegistryVersion` |
+| `useComponentPointLoading(points, beatEls)` | `useComponentPointLoading(points, beatEls, { fragment })`; points take `eager` |
+| `reveal: { tier, shape, out }`, a title facet's `scrollIn`, `layout.scrollIn`, `rotateRevealShape` | delete them; nothing reads them (a type error names each site) |
+| `ChapterSpec.versal` defaulted to the plate's register | it defaults to `"off"`; declare it to show one |
+| `.page-title-wayfind` (the kicker revealed inside the sticky h1 on scroll) deleted | drop the span; the cover kicker renders once, above the title |
+| `--font-display`/`--font-serif` were serif | they are the system sans; mark serif surfaces (the SCI lead, VFT) with `data-type-face="serif"` |
+| the first figure beat reserves `--first-figure-cis` until it settles | declare `--first-figure-cis` beside `--beat-cis` on the route body |
+| a `#fragment` is a narrative anchor landed by the dock's restore | a router `scrollBehavior` returns `{ top: 0 }` for a hash on the first navigation or a cross-page link |
 
 ## 6 · glass-ui 10.1.0
 
