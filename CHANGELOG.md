@@ -21,7 +21,7 @@
 - **One readiness mechanism (J-1, CX-4).** `useEChart` returns `settled` (false from every
   structural act until the next `finished`), `frame` (counts every `finished`) and `push(option)`
   (the one structural write path), and exports `EChartReadiness` and `SETTLE_FRAME_MS`. A data act
-  or a push supersedes a held emphasis: no stale index is painted. The B3 `rendered` gate is gone.
+  or a push replays the held key on the new data: no stale index is painted. The B3 `rendered` gate is gone.
   `StageMorphTarget` requires `push(option)`; the stage-morph driver no longer calls `setOption`.
 - **Overlays ride the primitive (CX-5).** `VizTextOverlay` takes `:echart` (an `EChartReadiness`)
   instead of `:chart`; `useVizOverlay(echart, svgRef, leaves)` and `useEChartOrnament(echart, key)`
@@ -135,6 +135,56 @@
   `yearMode` or `sy` throws. `data-viz-scope` names the dial's scope (`global` or `period`).
 - FilterPanel's freshness chip names the period with the feed's noun ("2024–25", or the pooled set)
   instead of "FY{year}" / "all years".
+
+- **Calm motion (U/B7 · PLAN §4.2, O-12).** `useCountUp` (`./platform/composables`) and
+  `reveal-register` (`./motion`, with `countAt`) are deleted: hero figures, `PullFigure`,
+  `CrownFigure` and `RecordSeam` paint their final values at rest. The lede reveals, the per-beat
+  fade-and-lift, the S-4 scrubbed reveals (`reveal-beat`, `corridor-recede`, `title-in`, `scroll-out`,
+  the map draw, dot draw and crayon wipe, the scatter and series fans) and the S-5 root scroll snap
+  are deleted. `scroll-driven.css` keeps the `--scroll-tl` position clock only. The completion seal
+  is static (`completionSeal` returns `play: false`; its `label` is optional). The dock's year fade
+  runs at `--duration-fast`. Recessed text is ink mixed into the ground (`color-mix`), never
+  `opacity`. MIGRATION §5d.
+- **A still background (U/B7 · PLAN §5.6).** `useAuroraConfig(theme, { flatWash })` reads no
+  scroll and no selection (the `tide` and `selectionActive` options and `SELECTION_LEAN` are gone)
+  and returns `{ config, opacityCeiling, rung }` with `breathDepth: 0`. `nucleusAt(s)` returns the
+  rest nuclei for a theme step. `useAtmosphereTier` drops `tide` and returns tier C on phones. The
+  constellation paints once. `Atmosphere` mounts the field after `load` in an idle callback and
+  fades it in over 200 ms (cut under reduced motion). MIGRATION §5d.
+- **Entity geometry is lazy and has its own entry (U/B7 · F1).** Every `entityGeometry` tier loads
+  on demand, county coarse included. `./data` no longer re-exports it; import from
+  `@mkbabb/atlas/data/entity-geometry`. Consumers that read a tier synchronously re-render on
+  `glyphRegistryVersion`. MIGRATION §5d.
+- **System sans on dashboards (U/B7 · OD-6).** `--font-display`, `--font-serif` and the
+  `--font-stack-*` tokens resolve to the system UI sans (`--font-sans-ui`). Serif faces are opt-in
+  through `data-type-face="serif"` (the gallery wordmark carries it); `--font-serif-display`
+  (Fraunces) and `--font-serif-prose` (Newsreader) remain. The type steps floor at 12 px
+  (`--type-micro`); prose-muted is 16 px. The page and masthead title shrink is a `scale` with a
+  constant weight, so its layout box never changes while the reader scrolls. The scroll-revealed
+  `.page-title-wayfind` kicker is deleted.
+- **Eyebrows and the versal are off by default (U/B7 · §5.8).** `DashboardEssay` renders no beat
+  eyebrow; `ChapterSpec.versal` defaults to `"off"`; `DashboardHero` renders its eyebrow only when
+  one is passed.
+- **Beats mount ahead of the reader (U/B7 · F9).** `useComponentPointLoading(points, beatEls,
+  { fragment, aheadViewports, idleTimeoutMs })` mounts a beat in an idle callback once it is within
+  1.5 viewports, behind a skeleton at the reserved height; the cover, the first figure and a
+  `#fragment` target (with its predecessor) mount at once. `PlateSkeleton` no longer pulses.
+- **The first figure is its own height (§M M-2).** The first figure beat reserves the route's
+  `--first-figure-cis` (else `--beat-cis`) until its figure's boxes settle
+  (`data-first-figure="held" | "settled"`).
+- **`#fragment` deep links land (§M M-5).** `useViewParams().narrativeAt` reads the route hash
+  after `?scene` and `?at`; the dock's restore lands it instantly once the beat exists. An anchor
+  naming no element publishes an aborted restore settle.
+- **A held emphasis survives a data push (§L D3-4).** `useEChart().highlight(key, keyToIndex)`
+  takes the live key index (`KeyIndex`: a ref, computed or getter); a data paint or `push` replays
+  the held key once the chart settles, re-resolved against the new data. `downplay()` takes no
+  argument. A `finished` that arrives while a paint is queued no longer reopens `settled`.
+- **Escape on an enlarged figure never moves the page (§M M-3).** ChartFrame holds its
+  `.frame-expand` box at the resting height while the figure is enlarged, and returns focus after
+  the figure has closed, with `preventScroll`.
+- **The trajectory description reads plainly.** TrajectoryPlate's E1 sentence is
+  "{lead} by year, {first}–{last}." (`trajectoryDescription` in `trajectory-marks`), with the lead
+  label as declared.
 
 ### Added
 
