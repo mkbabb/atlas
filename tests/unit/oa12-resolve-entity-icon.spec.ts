@@ -127,10 +127,10 @@ describe("resolveEntityIcon — the generalized 4-variant resolver", () => {
         }
     });
 
-    it("falls a `hex` cell with no place resolver to its raw id (honest, never blank)", () => {
+    it("titles a `hex` cell with no place resolver by its kind, never its raw id (U/B7 O-13)", () => {
         const d = resolveEntityIcon("cell-123", "hex");
         expect(d.mark).toBe("hex");
-        if (d.mark === "hex") expect(d.label).toBe("cell-123");
+        if (d.mark === "hex") expect(d.label).toBe("Map cell");
     });
 
     it("resolves a `school` to a `point` mark — the district context + a seated dot", () => {
@@ -163,7 +163,8 @@ describe("resolveEntityIcon — the generalized 4-variant resolver", () => {
             "galaxy" as unknown as Parameters<typeof resolveEntityIcon>[1],
         );
         expect(d.mark).toBe("unknown");
-        if (d.mark === "unknown") expect(d.label).toBe("junk");
+        // U/B7 O-13: the title is never the raw key.
+        if (d.mark === "unknown") expect(d.label).toBe("Unit");
     });
 
     it("NEG: a Class-A grain whose silhouette does not resolve floors to `unknown` (never the void-ring)", () => {
@@ -321,5 +322,12 @@ describe("the school-point supply — `school-points.json` resolves the C1 dot",
         // so the geom is null and the dot degrades to the box-centre seed — never a floating pin.
         expect(d.mark).toBe("point");
         if (d.mark === "point") expect(d.seed).toBe("district-centroid");
+    });
+
+    it("U/B7 O-13: an unresolved charter (no baked silhouette) is titled by its kind, never its LEA code", () => {
+        expect(resolveEntityIcon("43C", "charter").label).toBe("Anderson Creek Academy");
+        const d = resolveEntityIcon("99Z", "charter");
+        expect(d.label).not.toBe("99Z");
+        expect(d.label).toBe("Charter school");
     });
 });

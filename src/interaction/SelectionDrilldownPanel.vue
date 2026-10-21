@@ -51,6 +51,7 @@ import {
 } from "../charts/glyph/resolveEntityIcon.js";
 import ReadoutFacts from "../charts/readout/ReadoutFacts.vue";
 import ReadoutDrill from "./ReadoutDrill.vue";
+import EntityDetail from "./EntityDetail.vue";
 import { boundedMinimapViewBox } from "./minimapExtent.js";
 import { markColorFor } from "../charts/scale/ColorScale.js";
 import type {
@@ -152,16 +153,10 @@ function describe(item: SelectionKey): Described {
 const projection = computed(() => projectDrilldown(selectedItems.value, describe, () => null));
 const mode = computed<"single" | "multi">(() => projection.value.mode === "multi" ? "multi" : "single");
 
-// ── SINGLE (n=1) — the hover card, docked (selection-drilldown §B.1). The one selected item's glyph +
-// name + its stat facts + the drill verbs; NO aggregate, NO dropdown, NO mini-map header. ──────────
-const single = computed<Described | null>(() => {
-    if (projection.value.mode !== "single") return null;
-    const primary = primaryItem.value;
-    return primary ? describe(primary) : projection.value.item;
-});
-const singleStat = computed(() =>
-    single.value ? stat.statFor(single.value.item, single.value.item.kind) : null,
-);
+/** The name index the detail falls back to when the route's describer does not cover a unit. */
+function nameOf(kind: SelectionKind, id: string): string {
+    return resolveEntityIconForSelection({ kind, id, key: `${kind}:${id}` }, iconOpts.value).label;
+}
 
 // ── MULTI (n≥2) — the per-GRAIN dropdown ladder (selection-drilldown §B.5). `groupBy(items,.kind)` in
 // geo-ladder order (state ▸ county ▸ district ▸ school ▸ cell ▸ firm); one dropdown per grain PRESENT.
@@ -318,8 +313,14 @@ function onPanelKeydown(e: KeyboardEvent): void {
          inert routes stay clean, the NEG control the gate asserts). A floating glass PAPER card over
          the focal viz; the `placement` data-attr carries the per-route corner (the route's CSS seats
          the fixed geometry — this component is geometry-agnostic, mounted where the route docks it). -->
+    <!-- One selected unit: the entity detail sheet (O-13). Two or more: the comparison panel. -->
+    <EntityDetail
+        v-if="mode === 'single'"
+        :name-of="nameOf"
+        @promote="(grain, ids) => emit('promote', grain, ids)"
+    />
     <section
-        v-if="n > 0"
+        v-else-if="n > 1"
         class="drilldown"
         :class="`drilldown--${placement}`"
         :data-placement="placement"
@@ -336,45 +337,7 @@ function onPanelKeydown(e: KeyboardEvent): void {
             :class="{ 'metal-gold-border': rimHue }"
             :style="rimStyle"
         >
-            <!-- ═══ SINGLE (n=1) — the hover card, docked. Glyph + name + stat facts + drill verbs.
-                 NO aggregate, NO dropdown, NO mini-map header (the owner's law; asserted by the gate). ═══ -->
-            <template v-if="mode === 'single' && single">
-                <div class="drilldown__single" data-testid="drilldown-single">
-                    <header class="drilldown__single-head">
-                        <EntityIcon
-                            :entity-key="single.item.id"
-                            :grain="single.grain"
-                            :size="48"
-                            fill-policy="data"
-                            :fill="single.fill"
-                            :label="single.title"
-                            selected
-                        />
-                        <h3 class="drilldown__title">{{ single.title }}</h3>
-                        <button
-                            type="button"
-                            class="drilldown__dismiss"
-                            aria-label="Clear selection"
-                            title="Clear"
-                            @click="onDismiss"
-                        >
-                            ×
-                        </button>
-                    </header>
-
-                    <template v-if="singleStat">
-                        <p class="drilldown__stat-label">{{ singleStat.label }}</p>
-                        <ReadoutFacts :facts="singleStat.facts" density="compact" />
-                    </template>
-
-                    <!-- [ANSWERS Q-46] the action verbs SURVIVE on the single panel (touch has no shift;
-                         [Compare] is the ONLY way to grow single → multi). -->
-                    <ReadoutDrill :selection-key="single.item.key" />
-                </div>
-            </template>
-
-            <!-- ═══ MULTI (n≥2) — mini-map + aggregate + per-grain dropdown ladder. ═══ -->
-            <template v-else>
+            <template v-if="mode === 'multi'">
                 <header class="drilldown__head">
                     <div class="drilldown__head-row">
                         <p class="drilldown__eyebrow">Selection</p>
@@ -584,23 +547,15 @@ function onPanelKeydown(e: KeyboardEvent): void {
    flow (the SelectionSetPane band + the ecf readout slot are positioned by their host). Map-primacy
    law: the panel FLOATS over the focal viz's dead-space corner, never a reserved column. */
 .drilldown {
-    --drilldown-w-single: 280px;
     --drilldown-w-multi: 340px;
     z-index: 20;
     max-width: min(92vw, var(--drilldown-w-multi));
-}
-.drilldown[data-mode="single"] {
-    max-width: min(92vw, var(--drilldown-w-single));
 }
 .drilldown--dock-br,
 .drilldown--dock-tr {
     position: absolute;
     inline-size: var(--drilldown-w-multi);
     max-inline-size: 92vw;
-}
-.drilldown--dock-br[data-mode="single"],
-.drilldown--dock-tr[data-mode="single"] {
-    inline-size: var(--drilldown-w-single);
 }
 .drilldown--dock-br {
     inset-block-end: 1rem;
@@ -629,16 +584,6 @@ function onPanelKeydown(e: KeyboardEvent): void {
 }
 
 /* ── SINGLE ─────────────────────────────────────────────────────────────────────────────────── */
-.drilldown__single {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-}
-.drilldown__single-head {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-}
 .drilldown__title {
     flex: 1 1 auto;
     min-width: 0;
@@ -709,9 +654,6 @@ function onPanelKeydown(e: KeyboardEvent): void {
     position: absolute;
     min-width: 44px;
     min-height: 44px;
-}
-.drilldown__single-head .drilldown__dismiss {
-    position: relative;
 }
 .drilldown__dismiss:hover {
     background: color-mix(in oklab, var(--muted-foreground), transparent 82%);

@@ -12,6 +12,9 @@
 - **Number formats (U/B7 · O-14, R-LABELS §5).** Bandwidth prints "Gbps"; `formatKbps` is deleted
   for `formatKbpsPerStudent` (integer kbps, never Mbps); new `formatPeriod`. The root action and
   heading names follow R-LABELS §3.9.
+- **The entity detail (U/B7 · O-13).** `EntityDetail` and the `describeEntity` contract
+  (`useEntityDetail().register`) replace the drill-down's single-select card and `ReadoutSheet`
+  (deleted). `resolveEntityIcon` titles an unnamed unit by its kind, never its key.
 
 ### Added
 

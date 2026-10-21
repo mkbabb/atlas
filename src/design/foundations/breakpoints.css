@@ -36,7 +36,7 @@
    ───────────────────────────────────────────────────────────────────────────────
      --phone    767.98px  the primary phone register (the ×18 product sites)
      --compact  640px     the dense-grid / fund-ledger @container seam
-     --narrow   430px     the sub-phone narrow-sheet seam (ReadoutSheet)
+     --narrow   430px     the sub-phone narrow-sheet seam (EntityDetail)
      --touch    coarse     the coarse-pointer reach register
      --no-hover  none      the hover-none reveal-path register
      --deck     700px     the gallery 3-up seam (min-width — J-STORY re-cuts the VALUE)

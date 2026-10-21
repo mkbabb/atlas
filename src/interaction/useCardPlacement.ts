@@ -38,7 +38,7 @@ export const RAIL_CARD_STRIDE = 8; // the gap between stacked rail cards
     likewise. The card hugs the hovered DATUM (the desktop pointer register), viewport-clamped.
 
     J-MOBILE §3 — the mobile `tapPeek` RIGHT-MARGIN fork is REMOVED. The coarse-pointer phone
-    register's readout is the platform `ReadoutSheet` bottom-sheet (the ONE thumb-reach answer),
+    register's readout is the platform `EntityDetail` bottom-sheet (the ONE thumb-reach answer),
     NOT a right-margin peek; HoverCard already suppresses its transient card on that register
     (`!tapPeek.value`), so this seat math is the desktop-pointer path ONLY — the dead right-margin
     branch is retired and the reach idiom has a single home. */

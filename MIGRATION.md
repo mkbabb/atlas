@@ -116,6 +116,11 @@ projecting components.
 | new `formatPeriod(key, "school-year" \| "funding-year" \| "year")` → "2025–26", "FY2026", "2024"; the school-year period noun reads it | print periods through it |
 | ReadoutDrill's verbs read "Show only this unit", "Add to comparison", "Zoom to this unit"; UnifiedFilterPanel's headings "Filter" and "Filter this dashboard"; ScrollTimeline's default label "Year" (R-LABELS §3.9) | update text selectors |
 | new `./chrome` seat API: `useSurfaceSeat(seat, owner)`, `useSeatedOpen(open, seat, owner)`, `useViewportSeat()`, `useSeatYield(fn)`, `useSurfaceSeats`. One open surface per seat (`right` at ≥ 768 px, `bottom` below); the filter drawer holds its seat through it | a sheet that shares the right or bottom edge binds its open model with `useSeatedOpen` (the dock's sheets in A4) |
+| new `describeEntity` contract in `./interaction`: `EntityDescription { name, kind, ids[{label,value,param}], place, measures[{id,label,value,unit,period,sourceId,sourceLabel?,stateMedian,peerMedian,rank,n}], series[{measureId,label,unit,points[{period,value,covered}]}] }`, registered once per route with `useEntityDetail().register(fn)`; helpers `formatMeasure`, `rankText`, `RANK_MIN_N` (5) | each route registers one describer beside its stat resolver, for every grain it plots (sci, usf, ecf, bead, speedtest, usf-integrity; S3) |
+| `EntityDetail` replaces the single-select branch of `SelectionDrilldownPanel`: one selected unit opens a non-modal glass Sheet (right, 26rem, at ≥ 768 px; bottom with half and full detents below). `SelectionDrilldownPanel` renders only for two or more units | none for the mount; the panel's `promote` event also fires from the detail's "Show only this unit" |
+| `ReadoutSheet` deleted (`./charts`); `EntityDetail` is the only phone readout sheet | delete the `<ReadoutSheet>` mount (sci `home/DashboardView.vue:261`) |
+| the hover card closes while the detail is open | none |
+| `resolveEntityIcon` never returns the raw key as a label: an unresolved unit is titled by its kind (`GRAIN_NOUN`: "District", "Charter school", "Map cell", …); a school is no longer titled with its district's name | pass `label` (the route's name index) where a name is known |
 
 ## 6 · glass-ui 10.1.0
 

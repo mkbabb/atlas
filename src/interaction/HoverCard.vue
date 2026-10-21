@@ -56,6 +56,7 @@ import { MQ } from "../design/foundations/breakpoints.js";
 import { transientSeat } from "./useCardPlacement.js";
 import { useDismissArbiter } from "../platform/interaction/useDismissArbiter.js";
 import { createHoverBridge } from "./hover-bridge.js";
+import { useEntityDetail } from "./describe-entity.js";
 
 /** A single labelled fact in the grid (the universal fact-row). */
 export interface Fact {
@@ -102,9 +103,14 @@ const peekFacts = computed<Fact[]>(() => {
     return r.facts.filter((f) => f.value.trim().toLowerCase() !== title).slice(0, PEEK_ROWS);
 });
 
+// The hover card closes while the entity detail is open, and stays closed under it (O-13).
+const entityDetail = useEntityDetail();
 const transientOpen = computed(
     () =>
-        readout.value !== null && readout.value.anchor !== null && !tapPeek.value,
+        readout.value !== null &&
+        readout.value.anchor !== null &&
+        !tapPeek.value &&
+        !entityDetail.open,
 );
 
 // The card element — clamped to its OWN measured footprint, never a magic 280 (H-5/B2).

@@ -149,6 +149,7 @@ describe("custom properties atlas reads resolve to atlas or the installed glass-
         "--beat-cis",
         "--beat-tl",
         "--brand",
+        "--dock-bar-reserve", // the phone bar reserve (PLAN §2.2); A1 defines it in the shell, EntityDetail reads it with a 0px fallback
         "--breath-depth",
         "--breath-period",
         "--dot-op",
