@@ -77,7 +77,7 @@ const SeatRoute = defineComponent({
                         h("h2", null, LABELS[0]),
                         h("div", { "data-viz-plate": "", style: "position:relative;block-size:360px;max-inline-size:340px;margin-block-start:96px" }, [
                             h("div", { style: "display:flex;justify-content:flex-end" }, [
-                                h(PlateDock, { id: "fig", title: "Bandwidth by unit", enlarge: () => {}, exportCsv: () => {}, exportImage: () => {} }),
+                                h(PlateDock, { id: "fig", title: "Bandwidth by unit", enlarge: () => {} }),
                             ]),
                             h("button", { type: "button", "data-testid": "mark", onClick: () => selection.select("district:93N") }, "Pine Springs"),
                         ]),

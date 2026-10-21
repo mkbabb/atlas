@@ -111,7 +111,7 @@ function onOpenAutoFocus(e: Event): void {
 function onCloseAutoFocus(e: Event): void {
     e.preventDefault();
     const active = document.activeElement;
-    const stranded = !active || active === document.body || Boolean(active.closest("[data-testid='entity-detail']"));
+    const stranded = !active || active === document.body || Boolean(active.closest(".entity-detail"));
     if (stranded && opener?.isConnected) opener.focus({ preventScroll: true });
     opener = null;
 }
