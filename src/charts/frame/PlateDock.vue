@@ -74,8 +74,9 @@ for (const [layer, open] of [
 arbiter.claim(() => (isOpen.value && !optionsOpen.value && !downloadOpen.value ? plateLayerClaim(props.id, "dock", close) : null));
 
 function handle(): HTMLElement | null {
-    // The collapsed summary is glass's disclosure (`role="button"`, `aria-expanded`).
-    return root.value?.querySelector<HTMLElement>("[aria-expanded][aria-controls]") ?? null;
+    // The handle is glass's collapsed summary: the focusable disclosure that holds our Ellipsis. A
+    // generic `[aria-expanded]` query would find the Options trigger first, an inert button.
+    return root.value?.querySelector("[data-plate-dock-handle]")?.closest<HTMLElement>("[tabindex]") ?? null;
 }
 function close(): void {
     optionsOpen.value = false;

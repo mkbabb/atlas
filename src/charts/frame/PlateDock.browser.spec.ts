@@ -59,7 +59,7 @@ async function mount(): Promise<HTMLElement> {
     return host;
 }
 const dockOf = (root: HTMLElement, id: string) => root.querySelector<HTMLElement>(`[data-plate-dock][data-subject="${id}"]`)!;
-const handleOf = (dock: HTMLElement) => dock.querySelector<HTMLElement>("[aria-expanded][aria-controls]")!;
+const handleOf = (dock: HTMLElement) => dock.querySelector("[data-plate-dock-handle]")!.closest<HTMLElement>("[tabindex]")!;
 const visible = (el: Element | null) => !!el && el.getClientRects().length > 0 && !el.closest("[inert]");
 
 describe("PlateDock: one handle per figure, press opens, Escape closes to the handle", () => {
@@ -67,7 +67,7 @@ describe("PlateDock: one handle per figure, press opens, Escape closes to the ha
         const root = await mount();
         for (const [id, title] of [["a", "Bandwidth per student"], ["b", "Cost per Mbps"]] as const) {
             const dock = dockOf(root, id);
-            expect(dock.querySelectorAll("[aria-expanded][aria-controls]")).toHaveLength(1);
+            expect(dock.querySelectorAll("[data-plate-dock-handle]")).toHaveLength(1);
             const controls = [...dock.querySelectorAll<HTMLElement>("[data-action]")];
             expect(controls.length).toBeGreaterThan(0);
             for (const c of controls) {
@@ -95,6 +95,36 @@ describe("PlateDock: one handle per figure, press opens, Escape closes to the ha
         await userEvent.keyboard("{Escape}");
         expect(await until(() => !dock.hasAttribute("data-expanded"), 1500)).toBe(true);
         expect(await until(() => document.activeElement === handle, 1000)).toBe(true);
+    });
+
+    it("with Options present, Escape still returns focus to the handle", async () => {
+        host = document.createElement("div");
+        host.style.width = "720px";
+        document.body.appendChild(host);
+        pinia = createPinia();
+        setActivePinia(pinia);
+        app = createApp(
+            defineComponent({
+                setup() {
+                    provideDismissArbiter();
+                    return () =>
+                        h(PlateDock, { id: "o", title: "Cost per Mbps", enlarge: () => {} }, { options: () => h("p", "Options") });
+                },
+            }),
+        );
+        app.use(pinia);
+        app.mount(host);
+        await nextTick();
+        await sleep(200);
+        const dock = dockOf(host, "o");
+        const handle = handleOf(dock);
+        expect(handle.getAttribute("role")).toBe("button");
+        handle.focus();
+        await userEvent.keyboard("{Enter}");
+        expect(await until(() => dock.hasAttribute("data-expanded"), 1500)).toBe(true);
+        await userEvent.keyboard("{Escape}");
+        expect(await until(() => !dock.hasAttribute("data-expanded"), 1500)).toBe(true);
+        expect(await until(() => document.activeElement === handle, 1000), "focus lands on the handle, not the inert Options button").toBe(true);
     });
 
     it("a sheet taking a screen seat closes an open dock", async () => {

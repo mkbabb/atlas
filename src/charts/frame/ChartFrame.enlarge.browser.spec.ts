@@ -88,7 +88,7 @@ async function mountFigure(html: string) {
     await nextTick();
     await sleep(150);
     const dock = host.querySelector<HTMLElement>(`[data-plate-dock][data-subject="${ID}"]`)!;
-    const handle = dock.querySelector<HTMLElement>("[aria-expanded][aria-controls]")!;
+    const handle = dock.querySelector("[data-plate-dock-handle]")!.closest<HTMLElement>("[tabindex]")!;
     async function enlarge(): Promise<void> {
         handle.focus({ preventScroll: true });
         await userEvent.keyboard("{Enter}");

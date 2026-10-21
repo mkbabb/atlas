@@ -52,7 +52,7 @@ describe("ChartFrame ?fig: Escape goes Back, the page stays put, focus returns t
                                 {
                                     default: () => h("div", { style: "height:240px" }, "chart"),
                                     dock: ({ enlarge }: { enlarge: () => void }) =>
-                                        h(PlateDock, { id: ID, title: "The figure", enlarge, browse: null }),
+                                        h(PlateDock, { id: ID, title: "The figure", enlarge, browse: null }, { options: () => h("p", "Options") }),
                                 },
                             );
                     },
@@ -70,7 +70,7 @@ describe("ChartFrame ?fig: Escape goes Back, the page stays put, focus returns t
                 await sleep(100);
                 const y0 = window.scrollY;
                 expect(y0).toBeGreaterThan(1000);
-                const handle = dockRoot.querySelector<HTMLElement>("[aria-expanded][aria-controls]")!;
+                const handle = dockRoot.querySelector("[data-plate-dock-handle]")!.closest<HTMLElement>("[tabindex]")!;
                 handle.focus();
                 await userEvent.keyboard("{Enter}");
                 const enlarge = await (async () => {

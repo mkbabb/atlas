@@ -27,6 +27,10 @@
 - **Enlarge covers the page; Escape leaves it in place (U/B7 · F-05, §M M-3).** The enlarged body
   paints the plate's paper over the scrim and scrolls inside the layer; the resting box holds its
   height while open, focus returns without scrolling, and the hover card rides above the layer.
+- **Menus stay in the viewport (U/B7 · O-11, atlas half).** A census test keeps every atlas menu a
+  glass primitive; a component spec holds the dock's Download menu, its Options popover and the
+  period Select inside the viewport at 1440 and 390 with `body` overflow visible. The dock's handle
+  is found by its own mark, so a figure with Options returns focus to the handle after Enlarge.
 - **The provenance strip is one line (U/B7 · O-17).** 36 px, the bar radius, sentence case, one
   "Source & method" action; "Browse & export" moved into the pane.
 - **One key map (U/B7).** `KeyInput.shift` is `KeyInput.multi`; Cmd or Ctrl adds to a selection like
