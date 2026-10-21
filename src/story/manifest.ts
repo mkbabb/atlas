@@ -55,8 +55,7 @@ export interface StoryPoint<Stage extends ChapterStage = ChapterStage> {
     readonly marquee?: boolean;
     readonly colorKind?: ColorKind;
     readonly hinge?: number;
-    /** A-20 · the illuminated numeral's REGISTER, overriding the occasional law the essay derives
-        from this point's POSITION. Omitted on every shipped point — the law is the default. */
+    /** A-20 · the illuminated numeral's REGISTER. Omit ⇒ no versal (off by default, U/B7 §5.8). */
     readonly versal?: Chapter["versal"];
     readonly viz: PointViz<Stage>;
     readonly transition?: EdgeSpec;
@@ -256,23 +255,14 @@ export function isPlateBeat(chapter: Chapter): boolean {
     overrides, `"off"` mounting no glyph at all. */
 export type VersalRegister = "off" | "route" | "atmosphere" | "legend";
 
-/** DIAL 1 · THE OCCASIONAL LAW — resolve each chapter's versal register off manifest POSITION.
-    A beat OPENS its section iff it is the FIRST plate beat under its ancestor `path` (A-16's one
-    recursion supplies the path; depth is its length), so a corridor restores exactly as many
-    versals as it has SECTIONS — one for a flat manifest, one more per nested group. Every other
-    beat recedes to the `atmosphere` floor, and a declared `Chapter.versal` overrides the law
-    outright. Position-derived, so no route can drift a versal count away from its own structure. */
+/** The versal (FigureInitial) register per chapter. Off by default (U/B7 · PLAN §5.8): a plate beat
+    shows a versal only when its chapter declares `versal`. Sentinels never carry one. */
 export function versalRegisters(
     chapters: readonly ManifestChapter[],
 ): VersalRegister[] {
-    const opened = new Set<string>();
-    return chapters.map((chapter) => {
-        if (!isPlateBeat(chapter)) return "off";
-        const section = (chapter.path ?? []).join(" ");
-        const opens = !opened.has(section);
-        opened.add(section);
-        return chapter.versal ?? (opens ? "route" : "atmosphere");
-    });
+    return chapters.map((chapter) =>
+        isPlateBeat(chapter) ? (chapter.versal ?? "off") : "off",
+    );
 }
 
 /** Every beat in the manifest, nested beats included — the recursion flattened once (A-16), so the

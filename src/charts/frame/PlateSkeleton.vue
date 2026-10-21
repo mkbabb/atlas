@@ -15,9 +15,8 @@
 // the gray web-skeleton dialect — the shapes are ENGRAVED-INK washes (`--foreground` at whisper
 // alpha, warm on both stocks: espresso wash on the peach paper, ivory wash on the dark stock), cut
 // print-crisp at `--radius-mark` (no pills), seated on a TRUE `--engrave` hairline baseline (the
-// structure holds steady; only the pending content breathes). The plot silhouette is NON-monotone so
-// it reads as a resting dataset, not a synthetic staircase; the breath is a compositor-only opacity
-// sweep staggered left→right across the columns (PRM = a static rest at the settled wash).
+// shapes hold still). The plot silhouette is NON-monotone so it reads as a resting dataset, not a
+// synthetic staircase.
 
 defineProps<{
     /** The skeleton's accessible label (the plate name) — the polite "loading" region names it. */
@@ -62,7 +61,7 @@ const SILHOUETTE = [0.62, 0.38, 0.74, 0.5, 0.88] as const;
                 v-for="(h, i) in SILHOUETTE"
                 :key="i"
                 class="plate-skeleton__col"
-                :style="{ '--h': String(h), '--i': i }"
+                :style="{ '--h': String(h) }"
             />
         </div>
         <p v-if="$slots.caption" class="plate-skeleton__caption text-prose-muted">
@@ -89,8 +88,7 @@ const SILHOUETTE = [0.62, 0.38, 0.74, 0.5, 0.88] as const;
     gap: 0.5rem;
 }
 /* THE PLOT SILHOUETTE — columns seated on a TRUE --engrave hairline (the plot's own baseline rule;
-   the axis-as-fat-pill is gone). The hairline does NOT breathe: structure holds steady while the
-   pending content pulses above it — the engraved frame's own discipline. */
+   the axis-as-fat-pill is gone). */
 .plate-skeleton__plot {
     display: flex;
     align-items: flex-end;
@@ -107,8 +105,7 @@ const SILHOUETTE = [0.62, 0.38, 0.74, 0.5, 0.88] as const;
     block-size: calc(var(--h, 0.6) * 6rem);
     /* Print-crisp: a micro-mark cut on the rising corners only; square-bottomed on the baseline. */
     border-radius: var(--radius-mark) var(--radius-mark) 0 0;
-    /* 16% ink (the --engrave weight) — browser-tuned: at 12% the columns sank into the plate
-       texture at the breath's low rest. Peak breath ≈ the engraved hairline's own presence. */
+    /* 16% ink (the --engrave weight): at 12% the columns sank into the plate texture. */
     background: color-mix(in oklab, var(--foreground) 16%, transparent);
 }
 /* The masthead lines — engraved-ink washes at the type rungs (title darker, dek quieter), cut at
@@ -136,28 +133,6 @@ const SILHOUETTE = [0.62, 0.38, 0.74, 0.5, 0.88] as const;
     max-inline-size: 44ch;
     font-size: 0.9375rem;
 }
-/* The quiet breath — a compositor-only opacity sweep (no layout, no paint of geometry). Each column
-   leads its neighbour by a beat (the --i stagger), so the pulse READS left→right across the
-   silhouette — a slow scan, never a whole-block blink. The masthead breathes unstaggered. */
-.plate-skeleton__col,
-.plate-skeleton__bar {
-    animation: plate-skeleton-breath 2.2s ease-in-out infinite;
-    animation-delay: calc(var(--i, 0) * 140ms);
-}
-@keyframes plate-skeleton-breath {
-    0%,
-    100% {
-        opacity: 0.55;
-    }
-    50% {
-        opacity: 1;
-    }
-}
-@media (prefers-reduced-motion: reduce) {
-    .plate-skeleton__col,
-    .plate-skeleton__bar {
-        animation: none;
-        opacity: 0.7;
-    }
-}
+/* No pulse (U/B7 · PLAN §4.2): a pending plate holds still at its reserved height. Beats below the
+   reader wait here until they mount, and a looping sweep would keep the compositor busy at rest. */
 </style>

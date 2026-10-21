@@ -512,13 +512,9 @@ export interface Chapter {
         `aria-hidden` decoration beside the separately-labelled `<h2>`, never a title treatment:
         `"off"` renders none; `"atmosphere"` the recessed watermark; `"legend"` the live-legend
         prominence, the one beat where the numeral IS the plate's key. The field is authored HERE;
-        the render + the omission default belong to the atmosphere family. OMIT ⇒ THE OCCASIONAL
-        LAW (dial 1, RULED): a beat that OPENS its section wears the route's `--versal-ink` rung,
-        every other beat recedes to the `--attn-atmosphere` floor. The default is derived from the
-        beat's POSITION in the manifest, so a corridor's restored-versal count is its SECTION count,
-        never its beat count — declaring this field is how a route overrides that, not how it
-        gets one. */
-    versal?: "off" | "atmosphere" | "legend";
+        `"route"` wears the route's `--versal-ink` rung. OMIT ⇒ none: the versal is off by default
+        (U/B7 · PLAN §5.8, FigureInitial off unless declared). */
+    versal?: "off" | "route" | "atmosphere" | "legend";
 }
 
 /** A chapter SPINE entry — a `Chapter` minus its `viz` (the heavy figure component). The

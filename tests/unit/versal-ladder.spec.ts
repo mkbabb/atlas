@@ -7,7 +7,7 @@ import {
     DEFAULT_INTENSITY,
     selectAtmosphere,
 } from "../../src/platform/chrome/background/composables/atmosphere";
-import { isPlateBeat, versalRegisters } from "../../src/story/manifest";
+import { versalRegisters } from "../../src/story/manifest";
 import type { ManifestChapter } from "../../src/story/manifest";
 import { AMERICA, EARTHTONE } from "../../src/contract/theme";
 
@@ -144,42 +144,28 @@ function corridor(n: number): ManifestChapter[] {
     ];
 }
 
-describe("the occasional law (dial 1 — versals per corridor = SECTION count)", () => {
-    it("restores exactly ONE versal in a flat corridor, whatever its beat count", () => {
+describe("the versal is off by default (U/B7 · PLAN §5.8: FigureInitial off unless declared)", () => {
+    it("mounts no versal in an undeclared corridor, whatever its beat count", () => {
         for (const n of [1, 5, 8]) {
-            const regs = versalRegisters(corridor(n));
-            expect(regs.filter((r) => r === "route")).toHaveLength(1);
-            expect(regs.filter((r) => r === "atmosphere")).toHaveLength(n - 1);
+            expect(versalRegisters(corridor(n)).every((r) => r === "off")).toBe(true);
         }
     });
 
-    it("counts SECTIONS, not beats, once the manifest nests (A-16)", () => {
-        const nested = [
-            chapter("cover", { viz: "hero", isBeat: false }),
-            chapter("lead"),
-            chapter("sub-a", { path: ["lead"] }),
-            chapter("sub-b", { path: ["lead"] }),
-            chapter("second"),
-            chapter("sub-c", { path: ["second"] }),
-        ];
-        // three sections: the top level, `lead`'s children, `second`'s children
-        expect(versalRegisters(nested).filter((r) => r === "route")).toHaveLength(3);
+    it("never mounts one on a sentinel, even when declared", () => {
+        const regs = versalRegisters([
+            chapter("cover", { viz: "hero", isBeat: false, versal: "route" }),
+            chapter("lead", { versal: "route" }),
+        ]);
+        expect(regs).toEqual(["off", "route"]);
     });
 
-    it("never mounts one on a sentinel", () => {
-        const regs = versalRegisters(corridor(3));
-        expect(regs[0]).toBe("off");
-        expect(regs.at(-1)).toBe("off");
-        expect(isPlateBeat(corridor(3)[0])).toBe(false);
-    });
-
-    it("lets a route override the law outright", () => {
+    it("mounts exactly what a route declares", () => {
         const declared = [
-            chapter("lead", { versal: "off" }),
+            chapter("lead", { versal: "route" }),
             chapter("key", { versal: "legend" }),
             chapter("rest"),
         ];
-        expect(versalRegisters(declared)).toEqual(["off", "legend", "atmosphere"]);
+        expect(versalRegisters(declared)).toEqual(["route", "legend", "off"]);
     });
 });
 
