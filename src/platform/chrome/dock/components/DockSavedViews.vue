@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // DockSavedViews — the site layer's Saved views (U/B7 §2.2): a glass Select of the views the reader
-// saved with "Save this view", newest first, across every dashboard. Choosing one opens it.
+// saved with "Save this view", newest first, across every dashboard. Choosing one opens it. The list's
+// open state is a model, so the dock can seat it or hold the rail open while it is open (PLAN §2.5).
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { Bookmark } from "@lucide/vue";
@@ -16,6 +17,9 @@ const { side = "right" } = defineProps<{
     side?: "right" | "top";
 }>();
 
+/** The list is open. */
+const open = defineModel<boolean>("open", { default: false });
+
 const router = useRouter();
 const { views } = useSavedViews();
 const model = computed({
@@ -27,7 +31,7 @@ const model = computed({
 </script>
 
 <template>
-    <Select v-model="model">
+    <Select v-model="model" v-model:open="open">
         <DockTrigger
             v-bind="$attrs"
             for="select"

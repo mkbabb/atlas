@@ -17,7 +17,13 @@
 //     and at the page end; the content reserve under it does not change, so hiding moves no layout.
 //
 // The dock carries no figure subject (§L D3-1): per-figure tools live on the figure.
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+//
+// Screen seats (PLAN §2.5). Each sheet the bar opens upward (Dashboards, Sections, Search, Saved
+// views, More) takes the bottom seat through `useSeatedOpen`, beside the filter drawer and the entity
+// detail's bottom sheet: opening one closes whichever surface held the seat. The rail's lists take no
+// seat; each holds the rail open while it is open (a dock-portal claim), and focus goes back to the
+// control that opened it when it closes.
+import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue";
 import { DarkModeToggle } from "@mkbabb/glass-ui/dark-mode-toggle";
 import { DockSeparator, GlassDock } from "@mkbabb/glass-ui/dock";
 import { ScrollProgressRim } from "@mkbabb/glass-ui/scroll-progress-rim";
@@ -43,7 +49,7 @@ import { useDocumentScrollProgress } from "../../../motion/useScrollProgress.js"
 import { useReducedMotion } from "../../../motion/useReducedMotion.js";
 import { useDockPortals } from "./composables/useDockPortals.js";
 import { revealReleasesOnLeave, revealPersists } from "./composables/coarse-reveal.js";
-import { useFilterPane } from "../../../filter/composables/useFilterPane.js";
+import { useSeatedOpen, useSurfaceSeats } from "../surfaces/useSurfaceSeat.js";
 import type { DashboardContext } from "../../../contract/index.js";
 import type { SiteSearchSource, SiteSubject } from "./site.js";
 
@@ -109,8 +115,8 @@ watch(
     { immediate: true },
 );
 
-// An open filter drawer (teleported outside the rail) pins the rail open while it is open.
-const { anyHeld: anyPortalOpen } = useDockPortals();
+// An open filter drawer or rail list (teleported outside the rail) pins the rail open while it is open.
+const { anyHeld: anyPortalOpen, claimOpen } = useDockPortals();
 watch(anyPortalOpen, (open) => setIntent("portal", open ? false : null), { immediate: true });
 
 // The bloom: a pointer or focus over the circle opens the rail; leaving releases it. A gesture
@@ -164,18 +170,64 @@ const { atTop } = useScrollChrome({ source: scrollProgress });
 /** The rail's site layer shows while the rail is open (the circle is the crest alone). */
 const railOpen = computed(() => !collapsed.value);
 
+/** A rail list's open model. While it is open it holds the rail open, so moving into its teleported
+    content does not collapse the rail and unmount its trigger. On close, focus left stranded (on the
+    body or in the closing list) goes back to the control that opened it, before the hold lets go. */
+function railList(key: string): Ref<boolean> {
+    const open = ref(false);
+    let invoker: HTMLElement | null = null;
+    watch(
+        open,
+        (next) => {
+            if (next) invoker = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        },
+        { flush: "sync" },
+    );
+    claimOpen(
+        () => ({ key, trigger: key, surface: "body-teleport", reason: "teleported-surface-fires-dock-leave" }),
+        open,
+        {
+            restoreFocus: () => {
+                const active = document.activeElement;
+                const stranded =
+                    !active || active === document.body || Boolean(active.closest("[role='listbox'],[role='dialog'],[role='menu']"));
+                if (stranded && invoker?.isConnected) invoker.focus({ preventScroll: true });
+                invoker = null;
+            },
+        },
+    );
+    return open;
+}
+const rail = {
+    dashboards: railList("dock-rail-dashboards"),
+    search: railList("dock-rail-search"),
+    saved: railList("dock-rail-saved"),
+};
+
 // ══ < 768 px: THE BAR ═══════════════════════════════════════════════════════════════════════════
 // The route controls the bar's More sheet carries (Compare years, Save this view) for this context.
 const dataState = useDockDataState(() => ctx.value);
-const gearOpen = ref(false);
-const { open: filterOpen } = useFilterPane();
-// One sheet at a time on the bottom edge: the filter drawer closes More, and More closes the drawer.
-watch(filterOpen, (open) => {
-    if (open) gearOpen.value = false;
+/** A bar sheet's open model: it holds the bottom seat while open. */
+function barSheet(owner: string): Ref<boolean> {
+    const open = ref(false);
+    useSeatedOpen(open, "bottom", owner);
+    return open;
+}
+const bar = {
+    dashboards: barSheet("dock-dashboards"),
+    sections: barSheet("dock-sections"),
+    search: barSheet("dock-search"),
+    saved: barSheet("dock-saved"),
+    more: barSheet("dock-more"),
+};
+// A register change unmounts the other register's controls: nothing they opened stays open.
+watch(isPhone, () => {
+    for (const open of [...Object.values(bar), ...Object.values(rail)]) open.value = false;
 });
-watch(gearOpen, (open) => {
-    if (open && filterOpen.value) filterOpen.value = false;
-});
+
+/** Some surface holds the bottom seat (a bar sheet, the filter drawer, the entity detail). */
+const seats = useSurfaceSeats();
+const bottomHeld = computed(() => seats.holders.bottom !== null);
 
 /** The bar is out (slid below the edge). Read once per `scrollend`; never under reduced motion. */
 const barOut = ref(false);
@@ -186,7 +238,7 @@ function onScrollEnd(): void {
     const dy = y - lastY;
     lastY = y;
     const atEnd = y + window.innerHeight >= document.documentElement.scrollHeight - 2;
-    if (reduced.value || !isPhone.value || dy < 0 || atEnd) {
+    if (reduced.value || !isPhone.value || dy < 0 || atEnd || bottomHeld.value) {
         travelled = 0;
         barOut.value = false;
         return;
@@ -202,8 +254,9 @@ onMounted(() => {
     window.addEventListener("scrollend", onScrollEnd, { passive: true });
 });
 onBeforeUnmount(() => window.removeEventListener("scrollend", onScrollEnd));
-watch(gearOpen, (open) => {
-    if (open) barOut.value = false;
+// The bar stays in under any surface in the bottom seat: the detail sheet sits on its reserve.
+watch(bottomHeld, (held) => {
+    if (held) barOut.value = false;
 });
 </script>
 
@@ -239,9 +292,9 @@ watch(gearOpen, (open) => {
             <template v-if="railOpen && !home">
                 <DockSeparator class="usf-dock__crest-rule" />
                 <div class="usf-dock__site" data-testid="dock-site-layer">
-                    <DockDashboardSelect :active="ctx?.id" side="right" />
-                    <DockSearch :sources="searchSources" />
-                    <DockSavedViews side="right" />
+                    <DockDashboardSelect v-model:open="rail.dashboards.value" :active="ctx?.id" side="right" />
+                    <DockSearch v-model:open="rail.search.value" :sources="searchSources" />
+                    <DockSavedViews v-model:open="rail.saved.value" side="right" />
                 </div>
             </template>
         </template>
@@ -264,8 +317,8 @@ watch(gearOpen, (open) => {
             />
             <div v-else class="usf-dock__site-foot" data-testid="dock-site-foot">
                 <template v-if="home">
-                    <DockSearch :sources="searchSources" />
-                    <DockSavedViews side="right" />
+                    <DockSearch v-model:open="rail.search.value" :sources="searchSources" />
+                    <DockSavedViews v-model:open="rail.saved.value" side="right" />
                 </template>
                 <DarkModeToggle
                     class="usf-dock__theme"
@@ -305,23 +358,33 @@ watch(gearOpen, (open) => {
         </template>
         <template #default>
             <template v-if="ctx">
-                <DockDashboardSelect :active="ctx.id" side="top" data-dock-cell="dashboards" />
-                <DockSectionSelect :stepper="stepper" variant="cell" data-dock-cell="sections" />
+                <DockDashboardSelect
+                    v-model:open="bar.dashboards.value"
+                    :active="ctx.id"
+                    side="top"
+                    data-dock-cell="dashboards"
+                />
+                <DockSectionSelect
+                    v-model:open="bar.sections.value"
+                    :stepper="stepper"
+                    variant="cell"
+                    data-dock-cell="sections"
+                />
             </template>
             <template v-else-if="home">
-                <DockSearch :sources="searchSources" data-dock-cell="search" />
-                <DockSavedViews side="top" data-dock-cell="saved" />
+                <DockSearch v-model:open="bar.search.value" :sources="searchSources" data-dock-cell="search" />
+                <DockSavedViews v-model:open="bar.saved.value" side="top" data-dock-cell="saved" />
             </template>
             <template v-else>
-                <DockDashboardSelect side="top" data-dock-cell="dashboards" />
-                <DockSearch :sources="searchSources" data-dock-cell="search" />
+                <DockDashboardSelect v-model:open="bar.dashboards.value" side="top" data-dock-cell="dashboards" />
+                <DockSearch v-model:open="bar.search.value" :sources="searchSources" data-dock-cell="search" />
             </template>
         </template>
         <template #persistent-end>
             <!-- Filters sits outside the run (its applied count is a second node), before More. -->
             <DockFilterTrigger v-if="ctx" :ctx="ctx" data-dock-cell="filters" />
             <DockSettings
-                v-model:open="gearOpen"
+                v-model:open="bar.more.value"
                 :has-year-scope="dataState.hasYearScope.value"
                 :year-mode-now="dataState.yearModeNow.value"
                 :save-flash="dataState.saveFlash.value"

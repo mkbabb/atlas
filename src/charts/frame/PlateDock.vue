@@ -78,11 +78,17 @@ function handle(): HTMLElement | null {
     // generic `[aria-expanded]` query would find the Options trigger first, an inert button.
     return root.value?.querySelector("[data-plate-dock-handle]")?.closest<HTMLElement>("[tabindex]") ?? null;
 }
+/** Close the dock. Focus goes to the handle when it is stranded (on the body or inside the closing
+    dock); a press that closed the dock on another control keeps focus there (PLAN §2.5). */
 function close(): void {
     optionsOpen.value = false;
     downloadOpen.value = false;
     dock.value?.collapse();
-    void nextTick(() => handle()?.focus({ preventScroll: true }));
+    void nextTick(() => {
+        const active = document.activeElement;
+        const stranded = !active || active === document.body || Boolean(root.value?.contains(active));
+        if (stranded) handle()?.focus({ preventScroll: true });
+    });
 }
 useSeatYield(() => {
     if (isOpen.value || optionsOpen.value || downloadOpen.value) {

@@ -106,9 +106,13 @@ function onOpenAutoFocus(e: Event): void {
     e.preventDefault();
     void nextTick(() => headingEl()?.focus({ preventScroll: true }));
 }
+/** On close, focus goes back to the opener only when it is stranded: on the body or still in the
+    closing sheet. A surface that took this sheet's seat keeps the focus it moved (PLAN §2.5). */
 function onCloseAutoFocus(e: Event): void {
     e.preventDefault();
-    if (opener && opener.isConnected) opener.focus({ preventScroll: true });
+    const active = document.activeElement;
+    const stranded = !active || active === document.body || Boolean(active.closest("[data-testid='entity-detail']"));
+    if (stranded && opener?.isConnected) opener.focus({ preventScroll: true });
     opener = null;
 }
 
@@ -309,7 +313,9 @@ const series = computed(() => described.value?.series.filter((s) => s.points.som
     </Dialog>
 </template>
 
-<style scoped>
+<!-- The sheet itself is glass's teleported SheetContent: its root carries no scope id, so its own
+     rules are global (the class names are this component's alone). -->
+<style>
 .entity-detail {
     display: flex;
     flex-direction: column;
@@ -324,9 +330,13 @@ const series = computed(() => described.value?.series.filter((s) => s.points.som
     max-inline-size: 26rem;
 }
 .entity-detail--bottom {
-    /* seated above the dock bar's reserve; the bar stays visible under the sheet */
+    /* Seated above the dock bar's reserve; the bar stays visible under the sheet. */
     inset-block-end: var(--dock-bar-reserve, 0px);
+    max-block-size: calc(100dvh - var(--dock-bar-reserve, 0px));
 }
+</style>
+
+<style scoped>
 .entity-detail__head {
     display: grid;
     gap: 0.25rem;

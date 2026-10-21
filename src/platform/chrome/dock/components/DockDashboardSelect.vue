@@ -3,7 +3,8 @@
 // dashboard in `rank` order (held entries are not listed; companions come last). Choosing one routes
 // there; the arriving page runs one view transition (`siteTransition`, 240 ms, a cut under PRM).
 // It is a single control (a Select trigger), so it can sit in the rail's site layer or as the phone
-// bar's Dashboards cell without becoming a container seat.
+// bar's Dashboards cell without becoming a container seat. Its list's open state is a model, so the
+// dock can seat it (the bar's bottom seat) or hold the rail open while it is open (PLAN §2.5).
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { LayoutGrid } from "@lucide/vue";
@@ -22,6 +23,9 @@ const { active, side = "right" } = defineProps<{
     side?: "right" | "top";
 }>();
 
+/** The list is open. */
+const open = defineModel<boolean>("open", { default: false });
+
 const router = useRouter();
 const { getDashboards } = useDashboardRegistry();
 const ranked = computed(() => getDashboards().filter((d) => typeof d.rank === "number"));
@@ -38,7 +42,7 @@ const model = computed({
 </script>
 
 <template>
-    <Select v-model="model">
+    <Select v-model="model" v-model:open="open">
         <DockTrigger
             v-bind="$attrs"
             for="select"

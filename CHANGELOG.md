@@ -38,6 +38,17 @@
 
 ### Added
 
+- **The dock joins the screen seats (U/B7 · PLAN §2.5).** The bar's sheets (Dashboards, Sections,
+  Search, Saved views, More) hold the bottom seat through `useSeatedOpen`, beside the filter drawer
+  and the detail's bottom sheet, so one surface is open on the bottom edge at a time. The hand-made
+  More/filter-drawer exclusion in `Dock.vue` is deleted. `DockDashboardSelect`, `DockSectionSelect`,
+  `DockSearch` and `DockSavedViews` take an optional `v-model:open`. The rail's Dashboards, Search
+  and Saved views hold the rail open while their list is open, so they can be used at ≥ 768 px. The
+  bar stays in while any surface holds the bottom seat. The detail's bottom sheet sits above the
+  bar's reserve (its sheet rules were scoped and never reached glass's teleported root). A surface
+  that loses its seat no longer pulls focus back to its own opener; the detail and the figure dock
+  return focus only when it is left on the body or in the closing surface.
+
 - **Per-measure provenance, atlas half (U/B7 · O-19).** `FeedDictionary` names each served column's
   label, unit, definition, source and coverage. `ProvenanceFacet.attributes` are column keys,
   named from the dictionary. The new `DataViewerRoute` shows a dataset over glass `DataTable` with
