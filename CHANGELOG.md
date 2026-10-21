@@ -143,8 +143,8 @@
   the map draw, dot draw and crayon wipe, the scatter and series fans) and the S-5 root scroll snap
   are deleted. `scroll-driven.css` keeps the `--scroll-tl` position clock only. The completion seal
   is static (`completionSeal` returns `play: false`; its `label` is optional). The dock's year fade
-  runs at `--duration-fast`. Recessed text is ink mixed into the ground (`color-mix`), never
-  `opacity`. MIGRATION §5d.
+  runs at `--duration-fast`. Recessed text mixes its ink into the ground (`color-mix`) and
+  keeps opacity 1. MIGRATION §5d.
 - **The reveal grammar is gone with the reveals (U/B7 · S-4).** `RevealSpec.tier`, `.shape` and
   `.out`, `TitleFacet.scrollIn`, `BeatLayout.scrollIn`, `ScrollDir`, `REVEAL_SHAPES`,
   `RevealShape`, `rotateRevealShape` and `ResolvedLayout.scrollIn` are deleted, with `Beat`'s and
