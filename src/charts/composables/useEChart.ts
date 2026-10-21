@@ -36,8 +36,10 @@
 // every `finished` (the re-projection clock). This composable owns the ONE `finished` subscription
 // in atlas: overlays and plates read `settled`/`frame` (`EChartReadiness`), never a private
 // `chart.on("finished")`. The emphasis verbs are held while unsettled as the reader's LATEST intent
-// and replayed once when it opens; a later paint supersedes a held intent (its data indices belong
-// to the superseded data), so no result of a superseded act is ever painted.
+// and replayed once when it opens. The intent is a KEY, never a data index: a paint closes the gate
+// and the held key is replayed after it, re-resolved against the new data through the caller's live
+// key index (§L D3-4, satisfying J-1 and CX-4). A pointer resting on a datum through a data refresh
+// stays raised, and no index of the superseded data is ever painted.
 
 import {
     inject,
@@ -47,6 +49,7 @@ import {
     onScopeDispose,
     shallowRef,
     watch,
+    toValue,
     type Ref,
     type ShallowRef,
 } from "vue";
@@ -119,23 +122,24 @@ export interface UseEChartOptions {
  */
 export const SETTLE_FRAME_MS = 250;
 
+/** A chart's live key → data-index map: a ref or getter the replay re-reads after every paint, never
+    a snapshot (a snapshot would replay a superseded index). */
+export type KeyIndex = Readonly<Ref<Readonly<Record<string, number>>>> | (() => Readonly<Record<string, number>>);
+
 export interface UseEChart {
     /** The live ECharts instance (null before mount / after dispose). */
     chart: ShallowRef<EChartsType | null>;
     /** True when a ChapterStage owns scene-boundary option pushes for this instance. */
     stageMorphOwned: boolean;
-    /** Raise a datum by key — the linked-highlight in (bridge folded in here). */
-    highlight: (
-        key: string,
-        keyToIndex: Record<string, number>,
-        seriesIndex?: number,
-    ) => void;
-    /** Drop any emphasis on this chart. */
-    downplay: (seriesIndex?: number) => void;
+    /** Raise a datum by key — the linked-highlight in (bridge folded in here). The key stays raised
+        through a data push: it is replayed against the new data via `keyToIndex`. */
+    highlight: (key: string, keyToIndex: KeyIndex, seriesIndex?: number) => void;
+    /** Drop any emphasis on this chart (the raised series is the one the chart recorded). */
+    downplay: () => void;
     /**
      * A structural push outside the data watch (a view-change morph): `setOption(option,
      * {notMerge, lazyUpdate})` through the same path as a data paint, so it closes `settled` and
-     * supersedes a held emphasis. Never call the instance's `setOption` for a structural push.
+     * replays the held key once it settles. Never call the instance's `setOption` for a structural push.
      */
     push: (option: EChartsOption) => void;
     /**
@@ -167,10 +171,10 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     const chart = shallowRef<EChartsType | null>(null);
     const settled = shallowRef(false);
     const frame = shallowRef(0);
-    /** The last key the reader asked to raise (null = cleared); see `highlight`. */
-    let lastKey: string | null = null;
-    /** The latest requested emphasis not yet dispatched (`dataIndex` undefined = clear). */
-    let heldEmphasis: { dataIndex: number | undefined; seriesIndex: number } | null = null;
+    /** The key the reader asks to have raised now (null = nothing); see `highlight`. */
+    let intent: { key: string; index: KeyIndex; seriesIndex: number } | null = null;
+    /** The intent (or its clearing) is not yet applied to the data the chart shows. */
+    let owed = false;
     /** The series index carrying a dispatched highlight, or null when nothing is raised. */
     let raisedSeries: number | null = null;
     const stageMorph = useOptionalStageMorphDriver();
@@ -217,9 +221,9 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
 
     /**
      * The ONE structural write path: the data paint above, a view-change morph, a stage-scene push.
-     * It closes `settled` until its `finished`, and SUPERSEDES any held emphasis: the held data index
-     * belongs to the data this push replaces (CX-4). `lastKey` resets so the reader's next hover
-     * dispatches against the new data, even on the same key.
+     * It closes `settled` until its `finished`, then REPLAYS the held key against the new data
+     * (§L D3-4): the key is re-resolved through its live index, so nothing of the replaced data is
+     * painted (CX-4) and a resting pointer stays raised (J-1).
      */
     function push(option: EChartsOption): void {
         const c = chart.value;
@@ -237,11 +241,10 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
         c.setOption(option, { notMerge: true, lazyUpdate: true });
     }
 
-    /** A structural act: close `settled` and drop the held emphasis it supersedes (see `push`). */
+    /** A structural act: close `settled` and owe the held key a replay on the new data (see `push`). */
     function supersede(): void {
         settled.value = false;
-        heldEmphasis = null;
-        lastKey = null;
+        if (intent || raisedSeries !== null) owed = true;
     }
 
     // THE ONE `finished` SITE. `finished` fires once ECharts has rendered with no lazy update, no
@@ -250,6 +253,9 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     function onFinished(): void {
         frame.value++;
         if (settled.value) return; // `finished` also follows a settled hover repaint or resize
+        // A data act has queued a paint the chart has not run yet: this `finished` belongs to the data
+        // being replaced, so the gate stays closed until the queued paint's own `finished` (CX-4).
+        if (paintPending) return;
         settled.value = true;
         applyEmphasis();
     }
@@ -475,7 +481,8 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     onBeforeUnmount(() => {
         // Dispose drops the instance AND the readiness state, so a held emphasis can never reach a
         // disposed instance (ECharts would only warn, but the held state must not outlive it).
-        heldEmphasis = null;
+        intent = null;
+        owed = false;
         raisedSeries = null;
         settled.value = false;
         chart.value?.dispose();
@@ -489,41 +496,39 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     // plate. `lastKey` guards same-key re-dispatch (a no-op) and skips the leading `downplay`
     // when nothing is currently raised, so a settled key costs AT MOST one `highlight`.
     //
-    // Every dispatch goes through `applyEmphasis`, which applies only the LATEST requested emphasis
-    // and only while `settled`. A request made before the chart exists (a `lazyMount` chart still
-    // below the fold) or inside a paint window is held, not dropped and not thrown, and replayed
-    // once by `onFinished`.
+    // Every dispatch goes through `applyEmphasis`, which applies the reader's LATEST intent, only
+    // while `settled`, and resolves its key to a data index at that moment. A request made before the
+    // chart exists (a `lazyMount` chart still below the fold) or inside a paint window is held, not
+    // dropped and not thrown, and applied once by `onFinished`; a paint re-owes the standing key, so
+    // it is replayed on the new data (§L D3-4). A key the new data no longer carries raises nothing.
     function applyEmphasis(): void {
         const c = chart.value;
-        if (!c || !settled.value || !heldEmphasis) return;
-        const { dataIndex, seriesIndex } = heldEmphasis;
-        heldEmphasis = null;
+        if (!c || !settled.value || !owed) return;
+        owed = false;
         if (raisedSeries !== null) {
             c.dispatchAction({ type: "downplay", seriesIndex: raisedSeries });
             raisedSeries = null;
         }
+        if (!intent) return;
+        const dataIndex = toValue(intent.index)[intent.key];
         if (dataIndex == null) return;
-        c.dispatchAction({ type: "highlight", seriesIndex, dataIndex });
-        raisedSeries = seriesIndex;
+        c.dispatchAction({ type: "highlight", seriesIndex: intent.seriesIndex, dataIndex });
+        raisedSeries = intent.seriesIndex;
     }
 
-    function highlight(
-        key: string,
-        keyToIndex: Record<string, number>,
-        seriesIndex = 0,
-    ): void {
-        if (key === lastKey) return; // same settled key — no re-dispatch
-        lastKey = key;
-        heldEmphasis = { dataIndex: keyToIndex[key], seriesIndex };
+    function highlight(key: string, keyToIndex: KeyIndex, seriesIndex = 0): void {
+        // The same key on the same series is already the intent — no re-dispatch.
+        if (intent?.key === key && intent.seriesIndex === seriesIndex) return;
+        intent = { key, index: keyToIndex, seriesIndex };
+        owed = true;
         applyEmphasis();
     }
 
-    function downplay(seriesIndex = 0): void {
-        // Nothing asked for and nothing raised — no redundant downplay. (A paint resets `lastKey`,
-        // so `raisedSeries` still answers for an emphasis dispatched before it.)
-        if (lastKey === null && raisedSeries === null) return;
-        lastKey = null;
-        heldEmphasis = { dataIndex: undefined, seriesIndex };
+    function downplay(): void {
+        // Nothing asked for and nothing raised — no redundant downplay.
+        if (intent === null && raisedSeries === null) return;
+        intent = null;
+        owed = true;
         applyEmphasis();
     }
 

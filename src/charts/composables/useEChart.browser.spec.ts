@@ -53,7 +53,10 @@ vi.mock("../frame/VizPlate.vue", async () => {
     };
 });
 
-const KEYS = { a: 0, b: 1 };
+// The live key index a figure hands `highlight`: re-read after every paint (§L D3-4). `tick` moves the
+// data and this map with it (key "a" moves to index 2; key "b" leaves).
+const index = { current: { a: 0, b: 1 } as Record<string, number> };
+const KEYS = () => index.current;
 type Run = {
     pending: boolean;
     thrown: string | null;
@@ -75,7 +78,13 @@ type Ctx = {
 };
 type Act = (api: UseEChart, ctx: Ctx) => void;
 
-function run(hostStyle: string, act: Act, waitMs: number): Promise<Run> {
+function run(
+    hostStyle: string,
+    act: Act,
+    waitMs: number,
+    ticked: Record<string, number> = { a: 0, b: 1 },
+): Promise<Run> {
+    index.current = { a: 0, b: 1 };
     return new Promise((resolve) => {
         const el = document.createElement("div");
         document.body.appendChild(el);
@@ -144,6 +153,7 @@ function run(hostStyle: string, act: Act, waitMs: number): Promise<Run> {
                                     }
                                 },
                                 tick: () => {
+                                    index.current = ticked;
                                     data.value = [
                                         [1, 2],
                                         [3, 4],
@@ -279,7 +289,7 @@ describe("useEChart readiness primitive: the emphasis verbs", () => {
         expect(dispatches(r)).toEqual([]);
     });
 
-    it("L6 a data re-paint supersedes a held highlight: its stale index is never painted", async () => {
+    it("L6 a data re-paint with a held highlight: the key is replayed once, on the new data", async () => {
         const r = await run(
             SIZED,
             (api, { tick }) => {
@@ -291,8 +301,43 @@ describe("useEChart readiness primitive: the emphasis verbs", () => {
         expect(r.thrown).toBeNull();
         expect(r.errors).toEqual([]);
         expect(r.log.filter((s) => s === "paint").length).toBe(1); // the tick (the mount paint precedes the log)
-        expect(dispatches(r)).toEqual([]);
+        expect(dispatches(r)).toEqual(["highlight0"]);
+        expect(r.emphasis0).toBe(true);
+    });
+
+    it("L7 a pointer resting on a key through a data push stays raised: the key replays at its new index", async () => {
+        const r = await run(
+            SIZED,
+            (api, { tick, onNextFinished }) => {
+                onNextFinished(() => {
+                    api.highlight("a", KEYS); // settled: dispatched at index 0
+                    tick(); // the push moves "a" to index 2
+                });
+            },
+            1200,
+            { a: 2, b: 1 },
+        );
+        expect(r.thrown).toBeNull();
+        expect(r.errors).toEqual([]);
+        expect(dispatches(r)).toEqual(["highlight0", "downplay", "highlight2"]);
         expect(r.emphasis0).toBe(false);
+    });
+
+    it("L8 a key the pushed data no longer carries raises nothing, and the stale raise is cleared", async () => {
+        const r = await run(
+            SIZED,
+            (api, { tick, onNextFinished }) => {
+                onNextFinished(() => {
+                    api.highlight("b", KEYS);
+                    tick();
+                });
+            },
+            1200,
+            { a: 0 },
+        );
+        expect(r.thrown).toBeNull();
+        expect(dispatches(r)).toEqual(["highlight1", "downplay"]);
+        expect(r.emphasis1).toBe(false);
     });
 
     it("L6c a highlight between a later re-paint and its finished is held, then lands once", async () => {
@@ -339,7 +384,7 @@ describe("useEChart readiness primitive: the emphasis verbs", () => {
         expect(r.emphasis1).toBe(true);
     });
 
-    it("E2 after a re-paint, the same key dispatches again against the new data", async () => {
+    it("E2 after a re-paint the standing key is replayed on the new data; the same key again is a no-op", async () => {
         const r = await run(
             SIZED,
             (api, { tick, afterNextPaint, onNextFinished }) => {
