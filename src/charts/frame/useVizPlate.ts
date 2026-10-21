@@ -26,7 +26,7 @@ import {
     type KeyboardNavSpec,
     type NavState,
 } from "../../interaction/keyboard.js";
-import { parseSelKey } from "../contract/selection-contract.js";
+import { isMultiSelect, parseSelKey } from "../contract/selection-contract.js";
 import { useVizOptions } from "../composables/useVizOptions.js";
 import {
     useFilterDimensions,
@@ -218,7 +218,7 @@ function scrollAnchorIntoView(y: number): void {
 function onFigureKey(e: KeyboardEvent): void {
     const spec = props.nav;
     if (!spec) return;
-    const res = keyStep(spec, navState.value, { key: e.key, shift: e.shiftKey });
+    const res = keyStep(spec, navState.value, { key: e.key, multi: isMultiSelect(e) });
     navState.value = res.state;
     if (res.intent.verb === "none") return;
     e.preventDefault();
