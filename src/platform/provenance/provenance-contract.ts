@@ -30,7 +30,8 @@ export interface ProvenanceFacet {
     dataset: string;
     /** The dataset SECTIONS / tables the viz draws from. */
     sections?: string[];
-    /** The ATTRIBUTES (columns) the viz reads. */
+    /** The columns the viz reads, as column KEYS of the served feed (U/B7 O-19). The render names
+        each from the feed's `meta.dictionary`; free text here is a defect the dictionary test finds. */
     attributes?: string[];
     /** The ANALYSIS applied (the transform from source rows to the rendered measure). */
     analysis?: string;
@@ -96,8 +97,11 @@ export interface ResolvedProvenance {
     dataset: string;
     /** the dataset sections / tables. */
     sections: string[];
-    /** the attributes (columns) read. */
+    /** the columns read, named from the feed's dictionary (a key the dictionary lacks stays as given). */
     attributes: string[];
+    /** the sources those columns come from ("NC SVF, FY2025; MCNC, June 2026"); `null` when the feed
+        carries no dictionary or the facet names no columns. */
+    sources: string | null;
     /** the analysis applied; `null` when undeclared. */
     analysis: string | null;
     /** the data span plotted; `null` when undeclared. */

@@ -34,6 +34,12 @@
 
 ### Added
 
+- **Per-measure provenance, atlas half (U/B7 · O-19).** `FeedDictionary` names each served column's
+  label, unit, definition, source and coverage. `ProvenanceFacet.attributes` are column keys,
+  named from the dictionary. The new `DataViewerRoute` shows a dataset over glass `DataTable` with
+  search, a period Select, entity filters from the address, CSV and JSON downloads that carry their
+  source, a dictionary sheet, and each published input with its sha. `SourceLink` links a served
+  record to it as "Data file (view)".
 - **Dark values (U/B7).** The dark sequential ramp is wider (ΔL 0.54) and `--ncsu-red` has a dark
   value at 3:1 or better on the dark card.
 - **One open surface per screen seat (U/B7 · PLAN §2.5).** `useSurfaceSeat`, `useSeatedOpen`,

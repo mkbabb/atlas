@@ -1,13 +1,15 @@
 <script setup lang="ts">
 // SourceLink.vue — ONE registry record, rendered at its own tier (W-21). A REFERENCE record links
-// out to the document it cites. An EXACT record links NOWHERE from here: what it names is a
-// snapshot we serve, and the way to read a served snapshot is the viz's own viewer — so the
-// record states what it is and the figure's whisper is the door. Rendering an external link for
-// an exact record is precisely the mis-citation the two tiers exist to make impossible.
+// out to the document it cites. An EXACT record names a snapshot we serve, so its link is our own
+// data viewer (`/data/<id>`, U/B7 O-19): "Data file (view)" opens the rows with every column's
+// source. An external link for an exact record is the mis-citation the two tiers exist to prevent.
+import { RouterLink } from "vue-router";
 import { isExact, type DataSource } from "./source-registry.js";
 
-const { source } = defineProps<{
+const { source, basePath = "/data" } = defineProps<{
     source: DataSource;
+    /** Where the host mounts the data viewer route. */
+    basePath?: string;
 }>();
 </script>
 
@@ -22,9 +24,9 @@ const { source } = defineProps<{
     >
         {{ source.label }} <span aria-hidden="true">↗</span>
     </a>
-    <span v-else class="source-link source-link--served" :data-source-id="source.id">
+    <span v-else class="source-link--served" :data-source-id="source.id">
         {{ source.label }}
-        <span class="source-link__tier">served here</span>
+        <RouterLink :to="`${basePath}/${source.id}`" class="source-link source-link__view">Data file (view)</RouterLink>
     </span>
 </template>
 
@@ -43,19 +45,12 @@ const { source } = defineProps<{
     text-decoration-color: currentColor;
 }
 
-/* The served tier is not a link, so it wears none of a link's affordance — the reader must not
-   aim at it. It keeps the record's ink and states its tier in the colophon register. */
+/* The served record keeps its ink; its link to the viewer follows the name. */
 .source-link--served {
     color: color-mix(in oklab, var(--foreground), transparent 8%);
-    text-decoration: none;
 }
 
-.source-link__tier {
+.source-link__view {
     margin-inline-start: 0.35rem;
-    font-family: var(--font-mono, inherit);
-    font-size: var(--type-micro);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: color-mix(in oklab, var(--foreground), transparent 42%);
 }
 </style>

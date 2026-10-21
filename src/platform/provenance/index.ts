@@ -11,6 +11,7 @@ export * from "./provenance-contract.js";
 export * from "./aggregate-contract.js";
 export * from "./source-registry.js";
 export * from "./data-scope.js";
+export * from "./feed-dictionary.js";
 
 // ── v1.0.4 (O-A9) — THE RENDER FAMILY lands: the seam is finally SERVED ─────────────────────────
 // The WG-A successor the B7 barrel named. `humanizePredicate` (the reader-facing formatter) +
@@ -32,4 +33,4 @@ export * from "./provenance-lines.js";
 export { default as ProvenanceAppendix } from "./ProvenanceAppendix.vue";
 export { default as SourceLink } from "./SourceLink.vue";
 export { default as VizAppendixDock } from "./VizAppendixDock.vue";
-
+export { default as DataViewerRoute } from "./DataViewerRoute.vue";

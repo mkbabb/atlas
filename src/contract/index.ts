@@ -12,3 +12,14 @@ export * from "./theme.js";
 export * from "./registry.js";
 export * from "./registry-inject.js";
 export * from "./site.js";
+
+// U/B7 O-19 (PLAN §5.4): the per-measure source record every snapshot's `meta` carries. The types
+// live with the provenance family; the contract subpath names them for the producers' readers.
+export type {
+    FeedCoverage,
+    FeedDictionary,
+    FeedDictionaryEntry,
+    FeedInputFile,
+    FeedVintage,
+    FeedVintageStatus,
+} from "../platform/provenance/feed-dictionary.js";
