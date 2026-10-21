@@ -138,10 +138,10 @@ useDismissArbiter(dismissArbiter).claim(() =>
              O-D3 PLAT-6 — THE BANNER LANDMARK. The dock is the ONE persistent site-chrome present
              at every route (the brand crest + the primary section nav), so it is the shell's
              `role=banner` (a11y.md: "no route exposes a banner … landmark"). `<header>` carries no
-             layout CSS of its own here — `.platform-shell__dock-slot` still owns the z-rung, and a
-             bare semantic wrapper does not create a new containing block, so the dock's OWN
-             `position:fixed` continues to size against the viewport, unchanged. -->
-        <header role="banner" class="platform-shell__dock-slot">
+             layout CSS of its own: the dock carries its own z rung (`--z-dock`, Dock.css;
+             REGISTRY 119), and a bare semantic wrapper creates no containing block or stacking
+             context, so the dock's own `position:fixed` sizes against the viewport. -->
+        <header role="banner">
             <slot name="dock"><Dock /></slot>
         </header>
 
@@ -175,13 +175,6 @@ useDismissArbiter(dismissArbiter).claim(() =>
 .platform-shell {
     position: relative;
     min-height: 100dvh;
-}
-
-/* The dock slot — a floating overlay container. The dock surface inside FLOATS
-   (C3.2's GlassDock is position:fixed); this slot reserves no layout space, it only
-   seats the z-rung so the dock rides above the content stage and below the panels. */
-.platform-shell__dock-slot {
-    z-index: var(--z-dock);
 }
 
 /* The content stage — the single full-width track. min-w-0 (utility) lets wide charts

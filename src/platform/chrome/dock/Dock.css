@@ -32,6 +32,10 @@
        to `auto` (both block insets pinned would over-constrain `height:auto` into a top↔bottom
        stretch). */
     position: fixed;
+    /* THE Z RUNG (REGISTRY 119). A fixed box at `z-index: auto` paints beneath the positioned
+       content stage (`main`, `--z-content`), so the stage took every pointer hit over the dock. The
+       dock carries its own rung; the phone sheet's `--z-overlay + 1` below lifts it over its scrim. */
+    z-index: var(--z-dock);
     inset-block-start: var(--cp-inset, 1.25rem);
     inset-block-end: auto;
     inset-inline-start: var(--cp-inset, 1.25rem);
