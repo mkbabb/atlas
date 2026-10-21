@@ -145,6 +145,10 @@
   is static (`completionSeal` returns `play: false`; its `label` is optional). The dock's year fade
   runs at `--duration-fast`. Recessed text is ink mixed into the ground (`color-mix`), never
   `opacity`. MIGRATION §5d.
+- **The reveal grammar is gone with the reveals (U/B7 · S-4).** `RevealSpec.tier`, `.shape` and
+  `.out`, `TitleFacet.scrollIn`, `BeatLayout.scrollIn`, `ScrollDir`, `REVEAL_SHAPES`,
+  `RevealShape`, `rotateRevealShape` and `ResolvedLayout.scrollIn` are deleted, with `Beat`'s and
+  `StoryCard`'s `reveal` prop. `RevealSpec` keeps `lift`, `aside`, `scrub` and `layout`. MIGRATION §5d.
 - **A still background (U/B7 · PLAN §5.6).** `useAuroraConfig(theme, { flatWash })` reads no
   scroll and no selection (the `tide` and `selectionActive` options and `SELECTION_LEAN` are gone)
   and returns `{ config, opacityCeiling, rung }` with `breathDepth: 0`. `nucleusAt(s)` returns the

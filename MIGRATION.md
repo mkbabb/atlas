@@ -119,6 +119,7 @@ projecting components.
 | `useAtmosphereTier()` returned `tide` | no `tide`; a phone is tier C |
 | `import { … } from "@mkbabb/atlas/data"` for `entityGeometry` exports | `import { … } from "@mkbabb/atlas/data/entity-geometry"`; every tier is lazy, so a synchronous reader watches `glyphRegistryVersion` |
 | `useComponentPointLoading(points, beatEls)` | `useComponentPointLoading(points, beatEls, { fragment })`; points take `eager` |
+| `reveal: { tier, shape, out }`, a title facet's `scrollIn`, `layout.scrollIn`, `rotateRevealShape` | delete them; nothing reads them (a type error names each site) |
 | `ChapterSpec.versal` defaulted to the plate's register | it defaults to `"off"`; declare it to show one |
 | `.page-title-wayfind` (the kicker revealed inside the sticky h1 on scroll) deleted | drop the span; the cover kicker renders once, above the title |
 | `--font-display`/`--font-serif` were serif | they are the system sans; mark serif surfaces (the SCI lead, VFT) with `data-type-face="serif"` |
