@@ -24,32 +24,12 @@
 // passed directly (the THREE LEA-null districts). The old step-3 county-proxy floor is GONE — no
 // grain falls to the dashed county outline; a charter LEA routes through `charterGlyph`, a non-NC /
 // junk key returns `null` (the caller paints no-data).
-// ── THE LOD-SPLIT IMPORT STRATEGY (J-PERF arm a — "load the geometry only where/when it is drawn") ──
-//
-// THE EAGER FLOOR. The COARSE + MED tiers of the routinely-drawn grains (us-state, nc-county,
-// nc-district) are STATIC imports — they are the cheap first-paint geometry the strip/dot (`sm`→coarse)
-// and scatter/legend (`md`/`lg`→med) render-paths resolve SYNCHRONOUSLY in `computed`s with ZERO
-// async wait, so the resting figures paint their silhouettes on first frame exactly as before. This is
-// the irreducible eager set every geo-bearing route legitimately pays.
-//
-// THE LAZY TAIL. The HEAVY, not-eagerly-universal tiers move to memoized dynamic `import()` so Rollup
-// emits them as on-demand async chunks OFF every route's first-nav static closure (the J-PERF
-// per-route budget):
-//   • the FINE tier of every grain (us-state.fine 113 KB · nc-county.fine 33 KB · nc-district.fine
-//     356 KB raw) — `fine` is the `hero` rung ONLY (the SelectionPreview hero card, drawn on SELECT,
-//     never on first paint), so it loads on demand;
-//   • the WHOLE charter grain (nc-charter.{coarse,med,fine} ~612 KB raw) — charters are drawn ONLY on
-//     a charter-bearing surface; NO live route draws a charter today (the resolver exists for the
-//     J-GLYPH facility), so the charter geometry must NEVER sit in a route's eager closure.
-// Because `entityGeometry` is pulled by the chrome's `SelectionPreview` on EVERY route, fusing all 12
-// registries here statically made every route pay ~343 KB-gz of geometry it never draws (the measured
-// per-route-budget breach). The split keeps the eager floor synchronous and defers the rest.
-import usStateCoarseJson from "./glyphs/us-state.coarse.json?raw";
-import usStateMedJson from "./glyphs/us-state.med.json?raw";
-import { countyGlyphRegistry } from "./countyGlyphRegistry.js";
-import ncCountyMedJson from "./glyphs/nc-county.med.json?raw";
-import ncDistrictCoarseJson from "./glyphs/nc-district.coarse.json?raw";
-import ncDistrictMedJson from "./glyphs/nc-district.med.json?raw";
+// ── EVERY TIER IS LAZY (U/B7 · PLAN §6.2 F1) ──────────────────────────────────────────────
+// Every grain×LOD registry is a memoized dynamic `import()`, so Rollup emits each as an async chunk
+// off every route's first-paint closure (the eager coarse + med floor cost 129 KB br before FCP on
+// 8 routes). A resolver that meets a tier not yet loaded starts its load and returns null; consumers
+// re-resolve on `glyphRegistryVersion` when it lands. This module is no longer re-exported by the
+// `@mkbabb/atlas/data` barrel: it has its own entry, `@mkbabb/atlas/data/entity-geometry`.
 import { shallowRef } from "vue";
 // The LEA name-joins are TOPOLOGY-FREE (read from `./leaJoin`, NOT `./geometry`) — so the glyph
 // resolver (which the chrome's SelectionPreview pulls on EVERY route) does NOT statically link the
@@ -173,33 +153,12 @@ function lodOf(size: GlyphSize | Lod): Lod {
 /** A grain label keyed into the registry tables. */
 type Grain = "state" | "county" | "district" | "charter";
 
-// ── THE EAGER TIERS (the synchronous first-paint floor) ──────────────────────────────────
-// The coarse + med tiers of the routinely-drawn grains, static-imported so the `sm`/`md`/`lg`
-// render-paths resolve with NO async wait. `fine` is absent here (it loads lazily, below), and the
-// charter grain is wholly absent (it loads lazily too). Pin to `Registry` at the boundary (the same
-// coercion `geometry.ts` applies to its topology imports), so callers see one type.
-const EAGER_TIERS: Readonly<Record<Grain, Partial<Record<Lod, Registry>>>> = {
-    state: {
-        coarse: parseRegistry(usStateCoarseJson),
-        med: parseRegistry(usStateMedJson),
-    },
-    county: {
-        coarse: countyGlyphRegistry as unknown as Registry,
-        med: parseRegistry(ncCountyMedJson),
-    },
-    district: {
-        coarse: parseRegistry(ncDistrictCoarseJson),
-        med: parseRegistry(ncDistrictMedJson),
-    },
-    charter: {}, // the whole charter grain is lazy (drawn on no live route).
-};
-
 // ── THE LAZY TIERS (the on-demand tail — memoized dynamic import()) ──────────────────────
 //
 // The HEAVY tiers (every grain's `fine`, plus the whole charter grain) are loaded by a memoized
 // `import()` so Rollup splits them into on-demand chunks OFF every route's eager closure. The
 // `LAZY_LOADERS` table is the ONE place the dynamic-import edge is declared per grain×LOD; absence of
-// an entry means the tier is eager (resolved from `EAGER_TIERS`). The `import()` specifiers are STATIC
+// an entry means the tier does not exist (an empty registry). The `import()` specifiers are STATIC
 // string literals so Rollup can see + split each registry into its own async chunk.
 type Loader = () => Promise<{ default: unknown }>;
 const loadRegistry = (load: Promise<{ default: string }>): Promise<{ default: unknown }> =>
@@ -211,14 +170,21 @@ const loadRegistry = (load: Promise<{ default: string }>): Promise<{ default: un
 const LAZY_LOADERS: Readonly<Partial<Record<Grain, Partial<Record<Lod, Loader>>>>> = {
     state: {
         icon: () => loadRegistry(import("./glyphs/us-state.icon.json?raw")),
+        coarse: () => loadRegistry(import("./glyphs/us-state.coarse.json?raw")),
+        med: () => loadRegistry(import("./glyphs/us-state.med.json?raw")),
         fine: () => loadRegistry(import("./glyphs/us-state.fine.json?raw")),
     },
     county: {
         icon: () => loadRegistry(import("./glyphs/nc-county.icon.json?raw")),
+        coarse: () =>
+            import("./countyGlyphRegistry.js").then((m) => ({ default: m.countyGlyphRegistry })),
+        med: () => loadRegistry(import("./glyphs/nc-county.med.json?raw")),
         fine: () => loadRegistry(import("./glyphs/nc-county.fine.json?raw")),
     },
     district: {
         icon: () => loadRegistry(import("./glyphs/nc-district.icon.json?raw")),
+        coarse: () => loadRegistry(import("./glyphs/nc-district.coarse.json?raw")),
+        med: () => loadRegistry(import("./glyphs/nc-district.med.json?raw")),
         fine: () => loadRegistry(import("./glyphs/nc-district.fine.json?raw")),
     },
     charter: {
@@ -229,8 +195,7 @@ const LAZY_LOADERS: Readonly<Partial<Record<Grain, Partial<Record<Lod, Loader>>>
     },
 };
 
-// The SYNC cache of LAZY tiers that have already resolved (the eager tiers are never cached here —
-// they read straight off `EAGER_TIERS`). Keyed `grain:lod`. A populated entry lets the sync resolvers
+// The SYNC cache of tiers that have already resolved. Keyed `grain:lod`. A populated entry lets the sync resolvers
 // return a lazy tier's geometry on a re-render with NO further await — the memo `loadGlyphRegistry`
 // fills.
 const lazyCache = new Map<string, Registry>();
@@ -247,25 +212,20 @@ const lazyInFlight = new Map<string, Promise<Registry>>();
  */
 export const glyphRegistryVersion = shallowRef(0);
 
-/** Read an ALREADY-RESOLVED tier synchronously: the eager floor, or a lazy tier the cache holds.
+/** Read an ALREADY-RESOLVED tier synchronously from the cache.
     Returns null for a not-yet-loaded lazy tier (the caller kicks the load + paints the placeholder). */
 function syncTier(grain: Grain, lod: Lod): Registry | null {
-    const eager = EAGER_TIERS[grain][lod];
-    if (eager) return eager;
     return lazyCache.get(`${grain}:${lod}`) ?? null;
 }
 
 /**
- * Load (or read from the memo) a registry tier — the clean lazy-registry seam. The eager tiers
- * resolve instantly; a lazy tier dynamic-imports ONCE (deduplicated via `lazyInFlight`), populates the
+ * Load (or read from the memo) a registry tier — the clean lazy-registry seam. A tier dynamic-imports ONCE (deduplicated via `lazyInFlight`), populates the
  * sync `lazyCache`, and bumps `glyphRegistryVersion` so reactive consumers re-resolve. A consumer that
  * needs a guaranteed-resolved tier (a test census, a producer that wants the silhouette before paint)
  * AWAITS this; the in-render resolvers do NOT await — they call it for its side effect (warm the memo)
  * and read `syncTier`, returning the placeholder until the memo fills.
  */
 export async function loadGlyphRegistry(grain: Grain, lod: Lod): Promise<Registry> {
-    const eager = EAGER_TIERS[grain][lod];
-    if (eager) return eager;
     const key = `${grain}:${lod}`;
     const cached = lazyCache.get(key);
     if (cached) return cached;

@@ -43,6 +43,7 @@ const entries = {
     editorial: src("editorial/index.ts"),
     interaction: src("interaction/index.ts"),
     data: src("data/index.ts"),
+    "entity-geometry": src("data/entityGeometry.ts"),
     stores: src("platform/stores/index.ts"),
     composables: src("platform/composables/index.ts"),
     lib: src("lib/index.ts"),

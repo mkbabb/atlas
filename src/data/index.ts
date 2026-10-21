@@ -16,9 +16,10 @@ export * from "./contract.js";
 export * from "./loadFeed.js";
 export * from "./dataSaver.js";
 
-// — the geometry projections —
+// — the geometry projections. The glyph resolver (`entityGeometry.ts`) is not re-exported here:
+//   it has its own entry, `@mkbabb/atlas/data/entity-geometry`, so no first-paint import of this
+//   barrel links it (U/B7 · PLAN §6.2 F1). —
 export * from "./geometry.js";
-export * from "./entityGeometry.js";
 
 // — O-A14: the school-point supply loader (the C1 point-in-district dot; the injected `schoolPoint` /
 //   `districtOf` resolvers the school grain consumes). The `glyphs/school-points.json` asset stays
