@@ -1,6 +1,6 @@
 // O-17 S3 strip and O-11 D-5 (PLAN §5.5, §5.7): the provenance strip is one sentence-case line, 36 px
 // tall, with a bar radius, no uppercase, mono or letter-spacing, and one "Source & method" action.
-// Opening the disclosure at 1440 moves the page by 0 px and its trigger by at most 1 px. Before B7
+// Opening the disclosure at 1440 or 390 moves the page by 0 px and its trigger by at most 1 px. Before B7
 // the strip was an uppercase mono capsule that read "<dataset> SOURCE & METHOD ⌄", wrapped to 11 lines
 // at 390, and the disclosure moved the page by up to 521 px (with the root snap, deleted in A3).
 import "../../../tests/browser/glass-root.css";
@@ -78,21 +78,29 @@ describe("the S3 strip (O-17)", () => {
         });
     }
 
-    it("1440: opening the disclosure moves the page 0 px and the trigger at most 1 px", async () => {
-        await page.viewport(1440, 900);
-        const host = mount("900px");
-        await nextTick();
-        const trigger = host.querySelector<HTMLElement>(".appendix-dock__control")!;
-        trigger.scrollIntoView({ block: "center" });
-        await new Promise((r) => setTimeout(r, 50));
-        const y = window.scrollY;
-        const top = trigger.getBoundingClientRect().top;
-        await userEvent.click(trigger);
-        await nextTick();
-        await new Promise((r) => setTimeout(r, 100));
-        expect(host.querySelector(".appendix-dock__pane:not([hidden])")).not.toBeNull();
-        expect(window.scrollY - y).toBe(0);
-        expect(Math.abs(trigger.getBoundingClientRect().top - top)).toBeLessThanOrEqual(1);
-        expect(host.querySelector('[data-testid="appendix-dock-browse"]')).not.toBeNull();
-    });
+    // D-5 (O-11): opening the written record never moves the page. At 1440 it opens in flow below the
+    // strip; at 390 it opens as a bottom sheet. Either way the page's scroll position is unchanged,
+    // the trigger stays where the reader pressed it, and the pane holds "Browse & export".
+    for (const [vw, vh, w] of [[1440, 900, "900px"], [390, 844, "358px"]] as const) {
+        it(`${vw}: opening the disclosure moves the page 0 px and the trigger at most 1 px`, async () => {
+            await page.viewport(vw, vh);
+            const host = mount(w);
+            await nextTick();
+            const trigger = host.querySelector<HTMLElement>(".appendix-dock__control")!;
+            trigger.scrollIntoView({ block: "center" });
+            await new Promise((r) => setTimeout(r, 50));
+            const y = window.scrollY;
+            const top = trigger.getBoundingClientRect().top;
+            await userEvent.click(trigger);
+            await nextTick();
+            await new Promise((r) => setTimeout(r, 400));
+            const pane = document.getElementById(trigger.getAttribute("aria-controls") ?? "");
+            expect(pane, "the pane opens").not.toBeNull();
+            expect(pane!.hidden).toBe(false);
+            expect(window.scrollY - y).toBe(0);
+            expect(Math.abs(trigger.getBoundingClientRect().top - top)).toBeLessThanOrEqual(1);
+            expect(pane!.querySelector('[data-testid="appendix-dock-browse"]')).not.toBeNull();
+            await userEvent.keyboard("{Escape}");
+        });
+    }
 });

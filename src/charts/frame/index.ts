@@ -13,4 +13,4 @@ export { default as PlateVoid } from "./PlateVoid.vue";
 export { default as VizPlate } from "./VizPlate.vue";
 export { default as WindowArcPlate } from "./WindowArcPlate.vue";
 export * from "./foot-anatomy.js";
-export * from "./plate-act.js";
+export * from "./plate-layer.js";

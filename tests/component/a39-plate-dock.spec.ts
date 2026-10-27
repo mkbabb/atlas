@@ -11,11 +11,8 @@ import { createPinia, setActivePinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { REGISTRY_KEY } from "../../src/contract/registry-inject";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-    FIGURE_ESCAPE_PRIORITY,
-    PLATE_ACTS,
-    figureEscapeClaim,
-} from "../../src/charts/frame/plate-act";
+import { FIGURE_ESCAPE_PRIORITY, figureEscapeClaim } from "../../src/charts/frame/plate-layer";
+import * as frameFamily from "../../src/charts/frame/index";
 import { createDismissArbiter } from "../../src/platform/interaction/dismiss-arbiter";
 import type { VizContract } from "../../src/charts/contract/viz-contract";
 
@@ -149,7 +146,13 @@ describe("O-18 · Escape and the frame", () => {
         expect(frame).toMatch(/<slot name="dock" :enlarge="enlarge"/);
         expect(frame).not.toMatch(/<slot name="act"/);
         expect(frame).toMatch(/returnFocusEl = \(document\.activeElement/);
-        expect(PLATE_ACTS).not.toContain("take");
         expect(() => readFileSync(join(SRC, "charts/frame/PlateAct.vue"), "utf8")).toThrow();
+    });
+
+    it("no PlateAct name survives: the act vocabulary and its leaf are gone from the frame family", () => {
+        expect(() => readFileSync(join(SRC, "charts/frame/plate-act.ts"), "utf8")).toThrow();
+        expect(Object.keys(frameFamily).filter((name) => /plate_?act/i.test(name))).toEqual([]);
+        const barrel = readFileSync(join(SRC, "charts/frame/index.ts"), "utf8");
+        expect(barrel).not.toMatch(/plate-act/);
     });
 });

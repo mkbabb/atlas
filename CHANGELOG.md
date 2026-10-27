@@ -23,7 +23,8 @@
 - **The figure's own dock (U/B7 · O-18, R-FIGDOCK §4–§7).** `PlateDock` replaces `PlateAct` and the
   plate's act row: one collapsed handle in the figure head's corner that opens on a press into
   Options, Download or View data, Enlarge and Close, each naming the figure. The dead J-VIZDOCK
-  members of `useVizPlate` and the `.viz-dock` CSS are deleted.
+  members of `useVizPlate` and the `.viz-dock` CSS are deleted, as are `PLATE_ACTS` and
+  `PlateActKind`; the leaf `plate-act.ts` is renamed `plate-layer.ts`.
 - **Enlarge covers the page; Escape leaves it in place (U/B7 · F-05, §M M-3).** The enlarged body
   paints the plate's paper over the scrim and scrolls inside the layer; the resting box holds its
   height while open, focus returns without scrolling, and the hover card rides above the layer.

@@ -1,5 +1,5 @@
 // PlateDock in a real engine (U/B7 O-18, PLAN §5.2, R-FIGDOCK §4–§7). Two figures on one page each
-// carry one handle; every control names its own figure; Enter on the handle opens the dock; Escape
+// carry one handle and one tab stop; every control names its own figure; Enter on the handle opens the dock; Escape
 // closes it and returns focus to the handle; a sheet taking a screen seat closes it. The pointer
 // sweep (hover opens nothing) needs glass's `expandOn: "press"`, so it runs once installed glass
 // declares that prop.
@@ -78,6 +78,30 @@ describe("PlateDock: one handle per figure, press opens, Escape closes to the ha
         expect(dockOf(root, "a").querySelector('[data-action="source"]')).toBeNull();
         expect(dockOf(root, "b").querySelector('[data-action="source"]')).not.toBeNull();
         expect(dockOf(root, "b").querySelector('[data-action="download"]')).toBeNull();
+    });
+
+    // R-FIGDOCK §4: a closed dock is one tab stop. Walk Tab from a sentinel before the figures to one
+    // after them and count the stops inside each figure's dock.
+    it("Tab stops once on each closed figure dock", async () => {
+        const root = await mount();
+        const before = document.createElement("button");
+        const after = document.createElement("button");
+        before.textContent = "before";
+        after.textContent = "after";
+        root.prepend(before);
+        root.append(after);
+        before.focus();
+        const stops: Element[] = [];
+        for (let i = 0; i < 40 && document.activeElement !== after; i++) {
+            await userEvent.keyboard("{Tab}");
+            if (document.activeElement !== after) stops.push(document.activeElement!);
+        }
+        expect(document.activeElement, "the walk reaches the sentinel after the figures").toBe(after);
+        for (const id of ["a", "b"]) {
+            const dock = dockOf(root, id);
+            expect(stops.filter((el) => dock.contains(el)), `stops in figure ${id}`).toEqual([handleOf(dock)]);
+        }
+        expect(stops).toHaveLength(2);
     });
 
     it("Enter opens the dock; Escape closes it and focus returns to the handle", async () => {
