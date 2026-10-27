@@ -27,6 +27,7 @@ import { createMemoryHistory, createRouter, useRoute } from "vue-router";
 import SiteShell from "../shell/SiteShell.vue";
 import PlatformShell from "../shell/PlatformShell.vue";
 import FilterPanel from "../../../filter/ui/FilterPanel.vue";
+import { useFilterPane } from "../../../filter/composables/useFilterPane.js";
 import SelectionDrilldownPanel from "../../../interaction/SelectionDrilldownPanel.vue";
 import PlateDock from "../../../charts/frame/PlateDock.vue";
 import { useSelection } from "../../stores/useSelection.js";
@@ -34,6 +35,7 @@ import { useEntityDetail, type EntityDescription } from "../../../interaction/de
 import { useSurfaceSeats } from "./useSurfaceSeat.js";
 import { DASHBOARD_KEY, installDashboardRegistry, type DashboardContext } from "../../../contract/index.js";
 import { makeRegistry } from "../../../../tests/browser/mount-site.js";
+import { atRest } from "../../../../tests/browser/at-rest.js";
 import "../../../design/tokens/elevation.css";
 import "../../../design/tokens/space.css";
 
@@ -97,6 +99,8 @@ afterEach(async () => {
     for (let i = 0; i < 4; i++) await userEvent.keyboard("{Escape}");
     unmount?.();
     unmount = null;
+    // The drawer's open request is a module singleton; it outlives the app.
+    useFilterPane().open.value = false;
     await userEvent.hover(document.body).catch(() => {});
 });
 
@@ -228,6 +232,9 @@ async function dismissList(s: Surface): Promise<void> {
     await sleep(300);
 }
 
+/** Every seated sheet: the filter drawer, the detail, and the dock's bottom sheets. */
+const SHEETS = "[data-slot='sheet-content'], [data-testid='entity-detail']";
+
 /** Press a surface's control the reader's way: the rail opens first, then a pointer press on the
     control. A control under a non-modal sheet (no press reaches it) is reached by keyboard. */
 async function openSurface(s: Surface): Promise<boolean> {
@@ -245,7 +252,9 @@ async function openSurface(s: Surface): Promise<boolean> {
         if (await until(() => s.isOpen(), 1500)) break;
         await sleep(200);
     }
-    await sleep(250);
+    // The next press samples the page, so the sheet must have finished moving in. A sheet that
+    // never settles fails here rather than letting the next press sample a moving page.
+    expect(await atRest(SHEETS), "every seated sheet comes to rest").toBe(true);
     return s.isOpen();
 }
 
@@ -313,6 +322,41 @@ for (const width of WIDTHS) {
         }
     });
 }
+
+// A dock list at 390 is modal, so the pairs above close it with a tap before the second surface opens.
+// A seated sheet can still open while a list is up without a tap: a selection lands (a history step,
+// a linked mark) and the detail opens; a plate's filter affordance opens the drawer through the shared
+// pane. The list must give up the bottom seat, and focus must not stay on its control.
+describe("a dock list held open loses the bottom seat at 390 px (PLAN §2.5)", () => {
+    const LISTS = ["more", "dashboards", "sections"] as const;
+    const arrivals = {
+        detail: (pinia: Pinia) => useSelection(pinia).select("district:93N"),
+        filters: () => void (useFilterPane().open.value = true),
+    } as const;
+    for (const a of LISTS) {
+        for (const b of Object.keys(arrivals) as (keyof typeof arrivals)[]) {
+            it(`${a} is open, then ${b} arrives`, async () => {
+                const pinia = await mount(390);
+                const table = surfaces(390);
+                const A = table[a]!;
+                const B = table[b]!;
+                expect(await openSurface(A), `${a} opens`).toBe(true);
+                expect(useSurfaceSeats(pinia).holders.bottom, `${a} holds the bottom seat`).toBe(`dock-${a}`);
+
+                arrivals[b](pinia);
+                expect(await until(() => B.isOpen(), 2000), `${b} opens`).toBe(true);
+                expect(await until(() => !A.isOpen(), 1500), `${a} closes when ${b} takes the seat`).toBe(true);
+                const holder = useSurfaceSeats(pinia).holders.bottom;
+                expect(holder, `${b} holds the bottom seat`).toBe(b === "detail" ? "entity-detail" : "filter-drawer");
+                const open = (Object.keys(table) as Name[]).filter((n) => table[n]!.seat === "bottom" && table[n]!.isOpen());
+                expect(open, "the bottom seat holds one surface").toEqual([b]);
+
+                await sleep(300);
+                expect(holdsFocus(A.invoker()), `focus stays off ${a}'s control (on ${focusName()})`).toBe(false);
+            });
+        }
+    }
+});
 
 describe("the bottom reserve at 390 px: the detail sheet sits above the bar", () => {
     it("the bar stays in place under the detail, and the sheet's foot clears the bar's top", async () => {

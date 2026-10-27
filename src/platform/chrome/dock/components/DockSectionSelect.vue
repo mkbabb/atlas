@@ -26,15 +26,23 @@ import type { UseDockStepper } from "../composables/useDockStepper.js";
 // caller's attributes land on that control, or on the pager's group.
 defineOptions({ inheritAttrs: false });
 
-const { stepper, variant = "pager" } = defineProps<{
+const { stepper, variant = "pager", returnFocus = true } = defineProps<{
     /** The dock's stepper: the beats, the active one, and the section jump. */
     stepper: UseDockStepper;
     /** `pager` (≥ 768 px, with ‹ ›) or `cell` (the phone bar's Sections cell). */
     variant?: "pager" | "cell";
+    /** Focus goes back to the trigger when the list closes. The dock clears it when the list
+        closed because another surface took its seat: that surface owns focus. */
+    returnFocus?: boolean;
 }>();
 
 /** The section list is open. */
 const open = defineModel<boolean>("open", { default: false });
+
+/** The list closed: keep focus where the surface that displaced it put it. */
+function onCloseAutoFocus(event: Event): void {
+    if (!returnFocus) event.preventDefault();
+}
 
 const total = computed(() => stepper.beatItems.value.length);
 const n = computed(() => stepper.activeStep.value);
@@ -66,7 +74,7 @@ const sections = computed(() =>
                 }}</span>
             </span>
         </SelectTrigger>
-        <SelectContent side="top" align="center">
+        <SelectContent side="top" align="center" @close-auto-focus="onCloseAutoFocus">
             <SelectItem
                 v-for="s in sections"
                 :key="s.id"
@@ -106,7 +114,7 @@ const sections = computed(() =>
                     }}</span>
                 </span>
             </SelectTrigger>
-            <SelectContent side="bottom" align="start">
+            <SelectContent side="bottom" align="start" @close-auto-focus="onCloseAutoFocus">
                 <SelectItem
                     v-for="s in sections"
                     :key="s.id"

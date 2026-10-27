@@ -12,13 +12,21 @@ import { useSavedViews } from "../../../composables/useSavedViews.js";
 // One control: the caller's attributes land on the trigger (a seat of the bar's run).
 defineOptions({ inheritAttrs: false });
 
-const { side = "right" } = defineProps<{
+const { side = "right", returnFocus = true } = defineProps<{
     /** Which side the list opens to: `right` beside the rail, `top` above the phone bar. */
     side?: "right" | "top";
+    /** Focus goes back to the trigger when the list closes. The dock clears it when the list
+        closed because another surface took its seat: that surface owns focus. */
+    returnFocus?: boolean;
 }>();
 
 /** The list is open. */
 const open = defineModel<boolean>("open", { default: false });
+
+/** The list closed: keep focus where the surface that displaced it put it. */
+function onCloseAutoFocus(event: Event): void {
+    if (!returnFocus) event.preventDefault();
+}
 
 const router = useRouter();
 const { views } = useSavedViews();
@@ -43,7 +51,7 @@ const model = computed({
             <Bookmark class="dock-saved__glyph" aria-hidden="true" />
             <template #icon><span hidden /></template>
         </DockTrigger>
-        <SelectContent :side="side" align="start">
+        <SelectContent :side="side" align="start" @close-auto-focus="onCloseAutoFocus">
             <SelectItem v-if="!views.length" value="none" disabled>No saved views yet</SelectItem>
             <SelectItem v-for="v in views" :key="v.id" :value="v.url">{{ v.name }}</SelectItem>
         </SelectContent>
