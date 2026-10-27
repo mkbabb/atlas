@@ -197,8 +197,8 @@ const hostRosterVersion = ref(0);
 
 /**
  * TRUE when the current route mounts ≥1 scrub host that WRITES the centre-grain `activeVizId` — a
- * host with a NON-EMPTY `vizId()` (a `StickyScene`/`ChapterStage` scene step), NOT a bare
- * `useSectionReveal` whose `vizId` is `""` (a pure page-clock reveal opts OUT of the argmin, §4.D).
+ * host with a NON-EMPTY `vizId()` (a `StickyScene`/`ChapterStage` scene step); a host whose
+ * `vizId` is `""` opts OUT of the argmin (§4.D).
  *
  * The membrane's plain-plate PRIMARY-viz fallback reads this (the A-19 route-gate): a SCRUB route
  * (`/sci`, `/usf`) resolves its facet-5 zone off `activeVizId` and rests EMPTY at the page top, so

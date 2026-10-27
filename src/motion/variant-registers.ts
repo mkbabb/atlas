@@ -59,7 +59,7 @@ const BEZIER = {
     overshoot: [0.34, 1.56, 0.64, 1], // ≡ --ease-overshoot (ease-out-back) — atlas-OWNED literal
 } as const;
 
-// The 3 spring presets. `soft` ≡ the lettering default (response .42, ζ .62).
+// The 3 spring presets. `soft` (response .42, ζ .62).
 const SPRING = {
     soft: { response: 0.42, dampingFraction: 0.62 },
     crisp: { response: 0.3, dampingFraction: 0.85 },
@@ -110,8 +110,7 @@ export const DURATION: Record<DurationToken, ResolvedDuration> = {
 export interface ResolvedStagger {
     /** The per-index delay (the keyframes.js `stagger({each})` register — the wall-clock tier). */
     eachMs: number;
-    /** The simultaneity BAND fraction for the scrubbed cascade (the useScrollLettering band width: the
-        fraction of the line revealing at once). A `tight` cadence packs items → a WIDE band; a `loose`
+    /** The simultaneity BAND fraction (the fraction of a line revealing at once). A `tight` cadence packs items → a WIDE band; a `loose`
         cadence separates them → a NARROW band. */
     bandFrac: number;
 }

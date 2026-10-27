@@ -15,7 +15,7 @@
 //     `DashboardHero` · `editorial-contract` — value-import charts leaves (FigureSlug/StickyScene/
 //     VizPlate/beat-title/HandMark/viz-contract/scene-contract → O-B4R), chrome
 //     (FigureInitial/SiteColophon → O-B8), the story facility (→ this wave's story defer), and the
-//     global composable residue (useRomanNumeral/useCountUp → O-B9).
+//     global composable residue (useRomanNumeral → O-B9).
 //   · **`DashboardHero` (574) re-homes AS-IS and stays >500 — its split is the named successor
 //     O-B18** (the god-split tail; the composite ban: B6 claims no split).
 // The monorepo import flip to this home is O-B11.
@@ -49,10 +49,6 @@ export * from "../design/recipes/completion.js";
 export { default as Beat } from "./Beat.vue";
 export { default as DashboardEssay } from "./DashboardEssay.vue";
 export * from "./editorial-contract.js";
-
-// ── O-A26 (DIR-5 ARM D) — the ONCE-classified typewriter title (demand/usf-integrity/vft-
-// germination's ScrollLetteringHeading-equivalent; the 4 lettering routes never mount it) ────────
-export { default as TypewriterTitle } from "./TypewriterTitle.vue";
 
 // ── W-LIFT (A-01/A-02) — the two P-03 lift primitives: the thesis crown + the edge-of-record seam.
 // Both are the ONE form of an idiom that stood hand-rolled six / three times across five dashboards;

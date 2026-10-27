@@ -55,9 +55,10 @@ async function fadedText(page: Page): Promise<Step["faded"]> {
             if (r.width <= 1 || r.height <= 1 || r.bottom <= 0 || r.top >= vh) continue;
             const cs = getComputedStyle(el);
             if (cs.visibility === "hidden" || cs.clipPath.startsWith("inset(50%")) continue;
-            // Hidden text, and the reader-act surfaces a wheel over a figure raises (the hover card
-            // and the dock's transient labels fade in on --duration-fast by design: PLAN §4.2).
-            if (el.closest("[aria-hidden='true'], .sr-only, [inert], [role='tooltip'], .hover-card, [data-hover-card]")) continue;
+            // Screen-reader-only text, and the reader-act surfaces a wheel over a figure raises (the
+            // hover card and the dock's transient labels fade in on --duration-fast by design: PLAN
+            // §4.2). Visible aria-hidden text counts: per-glyph title spans are aria-hidden.
+            if (el.closest(".sr-only, [inert], [role='tooltip'], .hover-card, [data-hover-card]")) continue;
             if ([...el.classList].some((c) => /-(enter|leave)-(active|from|to)$/.test(c))) continue;
             let o = 1;
             for (let a: Element | null = el; a && a !== document.documentElement; a = a.parentElement)

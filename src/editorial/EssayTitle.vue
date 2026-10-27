@@ -1,39 +1,30 @@
 <script setup lang="ts">
-// editorial/EssayTitle.vue — THE TITLE REGISTER (A-15 · spec-contract §a.1). The ONE host switch
-// that resolves a `TitleFacet` onto the extant title primitives — the 3-arm dispatch the 8 bespoke
-// per-route title carriers (ecf/sci/usf/usf-integrity/speedtest `MastheadTitle`/`LetteringTitle`/
-// `Title.vue`) collapse INTO. A route DECLARES `{ text, treatment, marginalia }`; this register
-// renders it, so the carriers retire as their story.ts sites remap (node-2, the touches).
+// editorial/EssayTitle.vue — THE TITLE REGISTER (A-15 · spec-contract §a.1). The one host switch
+// that resolves a `TitleFacet` onto the title primitives. A route declares `{ text, treatment,
+// marginalia }`; this register renders it.
 //
-// THE THREE ARMS (spec §a.1):
-//   · plain      → bare text (brackets literal-stripped) — the settled masthead string.
-//   · typewriter → <TypewriterTitle> (the ONCE type-in; its own role="img" + whole aria-label).
-//   · lettering  → the [bracket]-presence DISPATCH:
-//       – [bracket] present → <HandMark> picked-word underline (the clause stays plain text, the
-//         aria name whole; only the picked run wears the ink).
-//       – no bracket        → <EssayTitleCascade> whole-glyph cascade (role="img" + whole label).
+// THE TWO ARMS. Every arm paints its whole text at full opacity at rest (U/B7 · PLAN §4.2: no
+// typewriter titles, no scroll-scrubbed reveals, hand marks hold no text below full opacity).
+//   · plain     → bare text (brackets literal-stripped).
+//   · lettering → a `[bracket]` run wears <HandMark>; the clause stays plain text and the aria name
+//                 whole. Without a bracket the title is plain text.
 //
-// POSITION-DERIVED, NOT DECLARED (no `clock`/`seed`/`boil` field — the spec's title-law): the host
-// hands `lead` (the first masthead beat) + a hand `seed`. The lead beat inks on the `load`
-// one-shot clock (glass draws it on at mount); interior beats scrub the `scroll` clock
-// (bidirectional, free); the seed is a wobble constant, not data. The hero boil (the one living
-// line) retired with glass 9's HandMark re-cut: there is no boil to earn.
+// The mark clock is position-derived: the lead masthead beat draws its mark once on `load`;
+// interior beats rest drawn (`static`). The seed is a wobble constant, not data.
 //
 // marginalia (dial 10, owner-ruled — the typed prop-bag stands, un-folded to `ornament`): the
-// inline post-title device (the earned dagger) renders after the title on ANY arm; its glyph is the
-// component's own default, the bag carries the per-title `label` + `reveal`.
+// inline post-title device (the earned dagger) renders after the title on either arm; its glyph is
+// the component's own default, the bag carries the per-title `label` + `reveal`.
 import { computed } from "vue";
-import TypewriterTitle from "./TypewriterTitle.vue";
-import EssayTitleCascade from "./EssayTitleCascade.vue";
 import HandMark from "../charts/glyph/HandMark.vue";
 import type { TitleFacet } from "../contract/index.js";
 
 const props = withDefaults(
     defineProps<{
-        /** The resolved title facet (the 3-arm register). */
+        /** The resolved title facet (the 2-arm register). */
         facet: TitleFacet;
-        /** The LEAD masthead beat — inks on the `load` one-shot clock. Interior beats (false) scrub
-            the bidirectional `scroll` clock. */
+        /** The LEAD masthead beat — its mark draws once on the `load` clock. Interior beats
+            (false) rest drawn. */
         lead?: boolean;
         /** The hand's seed — a host constant (position-rotated); wobble determinism, not data. */
         seed?: number;
@@ -42,7 +33,7 @@ const props = withDefaults(
 );
 
 /** The picked-word split — a lone `[bracket]` span the `lettering` arm draws under. `null` when the
-    title carries no bracket (the whole-glyph cascade path). */
+    title carries no bracket (plain text). */
 const picked = computed(() => {
     const m = props.facet.text.match(/\[([^\]]+)\]/);
     if (!m || m.index === undefined) return null;
@@ -53,38 +44,28 @@ const picked = computed(() => {
     };
 });
 
-/** The whole accessible title with the bracket markers literal-stripped (the aria name + every arm
-    but the picked-word run). */
+/** The whole title with the bracket markers literal-stripped (the plain arm and the aria name). */
 const strippedText = computed(() => props.facet.text.replace(/[[\]]/g, ""));
 
 const treatment = computed(() => props.facet.treatment ?? "plain");
 const marginalia = computed(() => props.facet.marginalia);
 
-/** The load one-shot for the lead hero, the bidirectional scroll scrub for interiors (HandMark's
-    own view()-timeline clock drives scroll — no JS scalar). */
-const clock = computed<"load" | "scroll">(() => (props.lead ? "load" : "scroll"));
+/** The load one-shot for the lead hero; interior marks rest drawn. */
+const clock = computed<"load" | "static">(() => (props.lead ? "load" : "static"));
 </script>
 
 <template>
     <span class="essay-title">
-        <TypewriterTitle v-if="treatment === 'typewriter'" :text="strippedText" />
-
         <!-- lettering · picked word — the clause is plain text (aria name whole); only the [bracket]
              run wears the hand mark. -->
-        <template v-else-if="treatment === 'lettering' && picked"
+        <template v-if="treatment === 'lettering' && picked"
             >{{ picked?.pre }}<HandMark :clock="clock" :seed="seed">{{
                 picked?.marked
             }}</HandMark
             >{{ picked?.post }}</template
         >
 
-        <!-- lettering · whole-glyph cascade — the scoped-subscriber arm. -->
-        <EssayTitleCascade
-            v-else-if="treatment === 'lettering'"
-            :text="strippedText"
-        />
-
-        <!-- plain — bare text (brackets literal-stripped). -->
+        <!-- plain, or lettering without a bracket — bare text (brackets literal-stripped). -->
         <template v-else>{{ strippedText }}</template>
 
         <!-- marginalia (dial 10) — the inline post-title device; its glyph is the component's own

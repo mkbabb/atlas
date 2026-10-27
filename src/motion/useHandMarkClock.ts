@@ -7,11 +7,10 @@
 // whether the library draws the mark on:
 //   • `load`   → `draw: true` — the mark draws on at mount; the parent's load `Sequence` may re-fire
 //                it via the exposed `play()`.
-//   • `scroll` → `draw: false` — the mark rests DRAWN; the atlas `crayon-wipe` view()-timeline scrubs
-//                it bidirectionally under real scroll.
 //   • `static` → `draw: false` — present, at rest.
 // (The 4.x–8.x `appear`/`animation` modes and the `draw-then-boil` living line retired with the
-// brush continuum at glass 9.0.0; there is no boil to budget.)
+// brush continuum at glass 9.0.0; there is no boil to budget. The `scroll` clock, a bidirectional
+// view()-timeline wipe, is deleted: PLAN §4.2 allows no scroll-scrubbed draw.)
 //
 // THE DARK-LIFT — the library colours the ink with any CSS colour, so the dark-lift is resolved HERE,
 // never `#cc0000` on graphite (the muddy T-2 failure). `useThemeKey()` bumps on every `<html>`
@@ -22,7 +21,7 @@
 import { computed, type ComputedRef } from "vue";
 import { useThemeKey } from "../platform/composables/useThemeKey.js";
 
-export type MarkClock = "load" | "scroll" | "static";
+export type MarkClock = "load" | "static";
 
 /** A light/dark token pair the dark-lift resolver picks between. */
 export interface DarkLiftPair {

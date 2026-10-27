@@ -31,8 +31,8 @@ export type LeanMechanism =
     | "reveal" // css-view fade/lift/blur/scale/clip → the KEPT reveal register (revealHostStyle)
     | "draw" // stroke draw-in → keyframes.js DrawSVG (the single stroke engine; path folds here)
     | "path" // along-a-path trace → keyframes.js MotionPath (reserved fold-slot; no live preset)
-    | "type" // per-glyph write / weight → useScrollLettering + font-variation
-    | "count" // number dial → keyframes.js NumericAnimation / the KEPT useCountUp (countAt)
+    | "type" // per-glyph write / weight → font-variation (no title binds it: PLAN §4.2)
+    | "count" // number dial → keyframes.js NumericAnimation (no hero count-up: PLAN §4.2)
     | "morph" // data/shape re-shape → keyframes.js MorphSVG | ECharts setOption
     | "emphasis" // select/hover/active tint → CSS-var treatment + SpringProgress pulse
     | "flip" // layout / shared-element → keyframes.js flip / flipShared
@@ -197,7 +197,7 @@ export const LEAN_CATALOG = {
         subsumes: [],
     },
 
-    // ── TYPE (useScrollLettering + font-variation — the title/heading tier) ──────────────────────────
+    // ── TYPE (font-variation — the heading tier) ──────────────────────────────────────────────
     Typewriter: {
         mechanism: "type",
         on: ["scroll", "load"],
@@ -211,7 +211,7 @@ export const LEAN_CATALOG = {
         subsumes: ["ScrambleDecode"],
     },
 
-    // ── COUNT (keyframes.js NumericAnimation / the KEPT useCountUp — every figure number) ────────────
+    // ── COUNT (keyframes.js NumericAnimation — a figure number on a reader act) ────────────────────
     CountDial: {
         mechanism: "count",
         on: ["scroll", "load", "select"],

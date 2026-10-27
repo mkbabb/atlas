@@ -4,8 +4,8 @@
 // `intensity ∈ [0,1]` scales each facet's amplitude within its OWN per-facet max (the per-facet maxima
 // are the taste boundary, NOT a global scale). The seeded MICRO knobs are bounded + span-proportional
 // (the rough.js/handmark `offset ∝ span` law) — the seed NEVER touches macro structure. ONE module
-// carries `MICRO_BOUNDS`, `RANK_INTENSITY`/`Rank`, AND the `FacetRegister`/`VariantBundle` shapes + the
-// `TITLE_LETTERING_REGISTER` data (the phantom `variant-bounds-bundles.ts` is RETIRED, H8).
+// carries `MICRO_BOUNDS`, `RANK_INTENSITY`/`Rank`, AND the `FacetRegister`/`VariantBundle` shapes
+// (the phantom `variant-bounds-bundles.ts` is RETIRED, H8).
 
 import type { Direction, EaseToken, DurationToken, StaggerPace } from "./variant-spec.js";
 
@@ -53,15 +53,3 @@ export interface FacetRegister {
         declares > 6). The quiet voice is the implicit default via `defaults` when `variant` is unset. */
     bundles: Record<string, VariantBundle>;
 }
-
-/** The title-lettering facet register (generalizes `useScrollLettering`'s hardcoded params). The
-    `defaults.intensity 0.7` is the no-variant baseline: the facet's resting liftEm 0.5 / blurPx 6
-    (today's EXACT hardcoded values) render unchanged at intensity 0.7, scaling up to ~0.71 / ~8.6 at the
-    lede (intensity 1), down to ~0.29 / ~3.4 at the ancillary (intensity 0.4). */
-export const TITLE_LETTERING_REGISTER: FacetRegister = {
-    defaults: { direction: "up", ease: "soft", duration: "slow", stagger: "even", intensity: 0.7 },
-    bundles: {
-        crisp: { direction: "ltr", ease: "engrave", intensity: 1 },
-        bold: { direction: "edges", ease: "overshoot", intensity: 1, seed: 7 },
-    },
-};

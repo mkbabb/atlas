@@ -136,8 +136,8 @@ describe("the consumer's Lightning CSS pass loses no atlas declaration", () => {
 // names the rest, each with what it is. A new dead candidate fails the test until it is either
 // chased or named here.
 const NOT_UTILITIES: Record<string, string> = {
-    "text-anchor": "SVG attribute", "stroke-width": "SVG attribute / CSS property", "font-variation": "CSS property stem",
-    "cursor-visible": "state key", "fill-policy": "option key", "opacity-ceiling": "option key", "stroke-on-hover": "option key",
+    "text-anchor": "SVG attribute", "stroke-width": "SVG attribute / CSS property",
+    "fill-policy": "option key", "opacity-ceiling": "option key", "stroke-on-hover": "option key",
     "top-N": "prose", "right-gutter": "placement key",
     "row-header": "ARIA role", "row-name": "data key", "row-ref": "data key",
     "filter-aggregate-header": "test hook", "filter-drawer": "test hook", "filter-drawer-body": "test hook",
