@@ -2,6 +2,14 @@
 
 ## Unreleased (8.0.0 train)
 
+### Fixes
+
+- **The trajectory plate prints its years through `xFormat` everywhere (U/B7 · R-TAB26-PAGE M-6).**
+  The data table, the key-stat captions and the description span used the raw year key ("2014")
+  where the axis printed the consumer's period label ("2014–15"). New pure helper
+  `trajectoryExportRows`; `trajectoryDescription` takes an optional `label` and joins dashed period
+  labels with "to".
+
 ### Breaking changes
 
 - **The hover card is the peek (U/B7 · O-13).** `HoverReadout.eyebrow` is deleted and

@@ -24,7 +24,7 @@ import type { FilterResponse, VizContract } from "../contract/viz-contract.js";
 import { useVizPalette } from "../composables/useVizPalette.js";
 import { trajectory, type TrajectoryPoint } from "../../data/multiYear.js";
 import { trajectoryRivet } from "../../data/useYearScope.js";
-import { markPointRivet, markAreaBand, trajectoryDescription } from "./trajectory-marks.js";
+import { markPointRivet, markAreaBand, trajectoryDescription, trajectoryExportRows } from "./trajectory-marks.js";
 import type { Feed } from "../../data/contract.js";
 
 const props = withDefaults(
@@ -211,7 +211,8 @@ const contract = computed<VizContract>(() => {
     const real = points.value.filter((p) => p.values[lead0] != null);
     const first = real[0];
     const last = real[real.length - 1];
-    const sentence = trajectoryDescription(first?.year, last?.year);
+    const yearLabel = props.xFormat ?? String;
+    const sentence = trajectoryDescription(first?.year, last?.year, yearLabel);
     return {
         id: props.figId ?? "trajectory",
         title: props.ariaLabel,
@@ -241,23 +242,17 @@ const contract = computed<VizContract>(() => {
             if (first?.values[lead0] != null)
                 out.push({
                     value: fmt(first.values[lead0] as number),
-                    caption: `${leadLabel} · ${first.year}`,
+                    caption: `${leadLabel} · ${yearLabel(first.year)}`,
                 });
             if (last?.values[lead0] != null)
                 out.push({
                     value: fmt(last.values[lead0] as number),
-                    caption: `${leadLabel} · ${last.year}`,
+                    caption: `${leadLabel} · ${yearLabel(last.year)}`,
                 });
             return out;
         },
         export: {
-            rows: () =>
-                points.value
-                    .filter((p) => p.values[lead0] != null)
-                    .map((p) => ({
-                        name: String(p.year),
-                        value: fmt(p.values[lead0] as number),
-                    })),
+            rows: () => trajectoryExportRows(points.value, lead0, fmt, yearLabel),
             rowHeader: "Year",
             valueHeader: leadLabel,
         },
