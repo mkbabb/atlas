@@ -130,12 +130,10 @@ function onKeydown(e: KeyboardEvent): void {
 
 <style scoped>
 /* THE MARGIN MARK — a quiet Fira glyph the reader DISCOVERS (never load-loud). The rung ④ chrome
-   recession rides the host (the SUFFUSION contract). The resting glyph is paper-bound; the reveal
+   recession is the marker's ink (the SUFFUSION rung, mixed into the ground). The resting glyph is paper-bound; the reveal
    is the Popover glass (lawful floating chrome). */
 .easter-egg {
     display: inline-flex;
-    /* the rung ④ chrome recession — the margin aside recedes (the inversion law). */
-    opacity: var(--attn-chrome);
 }
 .easter-egg__marker {
     /* a ≥44px touch target from a compact glyph (WCAG 2.5.5 — the 2.75rem box IS the
@@ -148,7 +146,8 @@ function onKeydown(e: KeyboardEvent): void {
     min-width: 2.75rem;
     min-height: 2.75rem;
     padding: 0.2rem;
-    color: var(--muted-foreground);
+    /* the rung ④ chrome recession, as ink mixed into the ground at opacity 1 (U/B7 · PLAN §4.2). */
+    color: color-mix(in oklab, var(--muted-foreground) calc(var(--attn-chrome) * 100%), var(--background));
     background: transparent;
     border: 0;
     border-radius: var(--radius, 6px);
@@ -158,7 +157,7 @@ function onKeydown(e: KeyboardEvent): void {
 }
 .easter-egg__marker:hover,
 .easter-egg__marker:focus-visible {
-    color: var(--foreground);
+    color: color-mix(in oklab, var(--foreground) calc(var(--attn-chrome) * 100%), var(--background));
 }
 .easter-egg__marker:focus-visible {
     outline: 2px solid var(--focus-ring-color);
@@ -166,7 +165,7 @@ function onKeydown(e: KeyboardEvent): void {
 }
 /* The pinned state — a quiet tell the find is latched open (the F6.10 persist). */
 .easter-egg__marker[data-pinned] {
-    color: var(--foreground);
+    color: color-mix(in oklab, var(--foreground) calc(var(--attn-chrome) * 100%), var(--background));
 }
 .easter-egg__glyph {
     font-size: 0.85em;
