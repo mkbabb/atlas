@@ -1,20 +1,15 @@
-// charts/frame/plate-act.ts — THE PLATE'S ACT CONTRACT (A-39, the plate · U/B4 atlas-plate).
+// charts/frame/plate-layer.ts — the figure's dismiss claims (A-39 · U/B7 O-18).
 //
 // A-39 (RULINGS §I): a figure's own actions (Enlarge, export, options) live AT the figure, in its
-// dock (PlateDock, O-18), and page chrome carries none of them. This leaf holds the two facts the dock
-// and its frame share, so they are unit-testable without a DOM:
+// dock (PlateDock, O-18), and page chrome carries none of them. This leaf holds the dismiss claims the
+// dock and its frame share, so they are unit-testable without a DOM:
 //
-//   · the act vocabulary every dock control is stamped with (`data-action`), so a probe or a test
-//     reads WHICH act a control performs and ON WHICH figure (`data-subject`) from the markup alone;
+//   · an open dock layer's claim (the dock, its Options popover, its Download menu);
 //   · the enlarged figure's claim on Escape. While a figure is enlarged it is the topmost surface, so
 //     it outranks every page claim on the dismiss arbiter (selection 0, hover card 10, filter drawer
 //     30, dock sheet 40): one Escape closes the figure and nothing else (S2-1, the composition defect
 //     P2 located in atlas: the expanded figure never joined the page's arbiter).
 import type { DismissClaim } from "../../platform/interaction/dismiss-arbiter.js";
-
-/** Every control a figure's dock can carry (O-18, PLAN §5.2). */
-export const PLATE_ACTS = ["options", "download", "csv", "image", "source", "enlarge", "close"] as const;
-export type PlateActKind = (typeof PLATE_ACTS)[number];
 
 /** The enlarged figure's dismiss priority: above every page claim (the highest today is 40). */
 export const FIGURE_ESCAPE_PRIORITY = 100;

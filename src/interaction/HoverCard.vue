@@ -84,16 +84,6 @@ const readout = computed(() => bridgedReadout.value ?? sourceReadout.value);
 // HERE on the app-singleton readout surface so there is exactly ONE observer for the whole app (it
 // co-locates with the other discoverability surfaces); the composable owns its own IO + latch + fence.
 useAffordanceHint();
-// The transient card renders only when a hover is live AND it has a MEASURED datum anchor AND its
-// The card opens when a hover is LIVE and it has a MEASURED datum anchor (J-FILTER C32 — the
-// transient-only register; the pinned tier is retired). The `anchor != null` clause is the
-// Anchor|null contract's paint guard (H.W1.a): a payload with no settled geometry (the unmeasured
-// `{0,0}` floor the store nulls) carries `anchor: null` and is therefore UNREPRESENTABLE as a
-// painted card — the at-rest (16,16) sentinel ghost is gone at the source.
-// `!tapPeek.value` is the I-MOBILE §V suppression: on the coarse-pointer PHONE register the
-// transient card must NOT paint — the platform ReadoutSheet (a bottom sheet) takes over the
-// mobile readout, so the old right-margin tapPeek fork is retired by keeping the card HIDDEN
-// there. The DESKTOP pointer path is byte-unchanged (`tapPeek` is false off the coarse-phone media).
 /** At most four measures, and never a row whose value repeats the card's own title. */
 const PEEK_ROWS = 4;
 const peekFacts = computed<Fact[]>(() => {
@@ -105,6 +95,14 @@ const peekFacts = computed<Fact[]>(() => {
 
 // The hover card closes while the entity detail is open, and stays closed under it (O-13).
 const entityDetail = useEntityDetail();
+// The card opens when a hover is LIVE and it has a MEASURED datum anchor (J-FILTER C32 — the
+// transient-only register; the pinned tier is retired). The `anchor != null` clause is the
+// Anchor|null contract's paint guard (H.W1.a): a payload with no settled geometry (the unmeasured
+// `{0,0}` floor the store nulls) carries `anchor: null` and is therefore UNREPRESENTABLE as a
+// painted card — the at-rest (16,16) sentinel ghost is gone at the source.
+// `!tapPeek.value` is the I-MOBILE §V suppression: on the coarse-pointer PHONE register the
+// transient card does not paint; a tap opens EntityDetail's bottom sheet, the one phone readout.
+// The DESKTOP pointer path is byte-unchanged (`tapPeek` is false off the coarse-phone media).
 const transientOpen = computed(
     () =>
         readout.value !== null &&
@@ -196,10 +194,9 @@ watch(
 // On the phone there is NO hover — the readout is summoned by a TAP on a map mark, and
 // chasing the finger would seat the card UNDER the thumb. The OLD answer was a right-margin
 // peek (the forked idiom); J-MOBILE retires that fork: at the coarse-pointer phone register
-// the transient card does NOT paint at all (`!tapPeek.value` gates `transientOpen`), and the
-// platform `ReadoutSheet` bottom-sheet — the ONE thumb-reach answer, raised from the bottom
-// edge — owns the mobile readout. So `tapPeek` is now a pure SUPPRESSION flag (the card is
-// hidden on that register), not a placement fork. The desktop pointer path is byte-unchanged.
+// the transient card does NOT paint at all (`!tapPeek.value` gates `transientOpen`), and
+// EntityDetail's bottom sheet, raised above the bar reserve, owns the phone readout. So `tapPeek`
+// is a pure SUPPRESSION flag (the card is hidden on that register), not a placement fork. The desktop pointer path is byte-unchanged.
 const tapPeek = ref(false);
 let peekMql: MediaQueryList | null = null;
 function syncPeek(): void {

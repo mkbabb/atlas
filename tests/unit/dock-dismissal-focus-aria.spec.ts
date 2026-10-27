@@ -26,7 +26,7 @@ import {
     FIGURE_ESCAPE_PRIORITY,
     PLATE_LAYER_PRIORITY,
     plateLayerClaim,
-} from "../../src/charts/frame/plate-act";
+} from "../../src/charts/frame/plate-layer";
 import {
     createDockPortalRegistry,
     type PortalClaimSpec,

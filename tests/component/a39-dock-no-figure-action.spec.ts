@@ -1,5 +1,5 @@
 // A-39, THE PLATE (RULINGS §I · U/B4 atlas-plate): THE DOCK CARRIES NO PER-FIGURE ACTION. A figure's
-// Enlarge, export and options live in its own act row (`a39-plate-act.spec.ts`). Here: the membrane's
+// Enlarge, export and options live in its own dock (`a39-plate-dock.spec.ts`). Here: the membrane's
 // viz-context zone renders no Enlarge and no options band for the dial viz, the route filter panel
 // renders no options band, and no page-chrome source reaches a figure's enlarge/export/options seam.
 import { readFileSync, readdirSync, statSync } from "node:fs";

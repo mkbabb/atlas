@@ -20,7 +20,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@mkbabb/glass-ui/popover";
 import { useDismissArbiter } from "../../platform/interaction/useDismissArbiter.js";
 import { useSeatYield } from "../../platform/chrome/surfaces/useSurfaceSeat.js";
-import { PLATE_LAYER_ATTR, plateLayerClaim, type PlateLayer } from "./plate-act.js";
+import { PLATE_LAYER_ATTR, plateLayerClaim, type PlateLayer } from "./plate-layer.js";
 
 const props = defineProps<{
     /** The plate's id: the one subject every control acts on. */

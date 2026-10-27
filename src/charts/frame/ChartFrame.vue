@@ -74,7 +74,7 @@ import { ExpandableContainer } from "@mkbabb/glass-ui/expandable-container";
 import { useViewParams } from "../../platform/stores/useViewParams.js";
 import { useDismissArbiter } from "../../platform/interaction/useDismissArbiter.js";
 import { EXPAND_SETTLE_KEY } from "../scene/expand-settle.js";
-import { figureEscapeClaim } from "./plate-act.js";
+import { figureEscapeClaim } from "./plate-layer.js";
 import PlateError from "./PlateError.vue";
 import { STORY_CARD_KEY } from "./story-card-context.js";
 import { useHeadlineLift } from "./useHeadlineLift.js";
