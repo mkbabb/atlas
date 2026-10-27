@@ -4,6 +4,7 @@
 // opener and moves the page 0 px. At 390 the detail is a bottom sheet at half height with a title
 // and rows. Before B7 there is no EntityDetail; the single selection opened the 280 px drilldown card.
 import "../../tests/browser/glass-root.css";
+import { atRest } from "../../tests/browser/at-rest.js";
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { createApp, defineComponent, h, nextTick } from "vue";
@@ -151,6 +152,8 @@ describe("EntityDetail (O-13)", () => {
         expect(sheet.dataset.seat).toBe("bottom");
         expect(sheet.querySelector(".entity-detail__name")?.textContent?.trim()).toBe("Pine Springs Preparatory Academy");
         expect(sheet.querySelectorAll('[data-testid="entity-detail-measures"] tbody tr').length).toBeGreaterThanOrEqual(6);
+        // The sheet rises on a spring; measure its detent, not a frame of the rise.
+        expect(await atRest('[data-testid="entity-detail"]'), "the sheet comes to rest").toBe(true);
         const h = sheet.getBoundingClientRect().height;
         expect(h).toBeGreaterThan(844 * 0.35);
         expect(h).toBeLessThan(844 * 0.65);

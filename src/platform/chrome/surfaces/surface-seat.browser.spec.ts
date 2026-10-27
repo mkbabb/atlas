@@ -35,6 +35,7 @@ import { useEntityDetail, type EntityDescription } from "../../../interaction/de
 import { useSurfaceSeats } from "./useSurfaceSeat.js";
 import { DASHBOARD_KEY, installDashboardRegistry, type DashboardContext } from "../../../contract/index.js";
 import { makeRegistry } from "../../../../tests/browser/mount-site.js";
+import { atRest } from "../../../../tests/browser/at-rest.js";
 import "../../../design/tokens/elevation.css";
 import "../../../design/tokens/space.css";
 
@@ -231,6 +232,9 @@ async function dismissList(s: Surface): Promise<void> {
     await sleep(300);
 }
 
+/** Every seated sheet: the filter drawer, the detail, and the dock's bottom sheets. */
+const SHEETS = "[data-slot='sheet-content'], [data-testid='entity-detail']";
+
 /** Press a surface's control the reader's way: the rail opens first, then a pointer press on the
     control. A control under a non-modal sheet (no press reaches it) is reached by keyboard. */
 async function openSurface(s: Surface): Promise<boolean> {
@@ -248,7 +252,8 @@ async function openSurface(s: Surface): Promise<boolean> {
         if (await until(() => s.isOpen(), 1500)) break;
         await sleep(200);
     }
-    await sleep(250);
+    // The next press samples the page, so the sheet must have finished moving in.
+    await atRest(SHEETS);
     return s.isOpen();
 }
 
