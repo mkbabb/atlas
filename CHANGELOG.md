@@ -48,7 +48,11 @@
   bar stays in while any surface holds the bottom seat. The detail's bottom sheet sits above the
   bar's reserve (its sheet rules were scoped and never reached glass's teleported root). A surface
   that loses its seat no longer pulls focus back to its own opener; the detail and the figure dock
-  return focus only when it is left on the body or in the closing surface.
+  return focus only when it is left on the body or in the closing surface. `useSeatedOpen` returns
+  `displaced`, true when the surface last closed because another took its seat; the bar's
+  Dashboards, Sections and Saved views lists take it as `returnFocus` and leave focus where the new
+  surface put it. Before this, a Sections or Dashboards list displaced by the detail sent focus back
+  to its trigger, and the detail closed on that focus move.
 
 - **Per-measure provenance, atlas half (U/B7 · O-19).** `FeedDictionary` names each served column's
   label, unit, definition, source and coverage. `ProvenanceFacet.attributes` are column keys,

@@ -84,4 +84,32 @@ describe("useSurfaceSeat (PLAN §2.5)", () => {
         expect([drawerOpen.value, detailOpen.value]).toEqual([true, false]);
         scope.stop();
     });
+    it("displaced: set when another surface takes the seat, clear on a reader's own close and on reopen", async () => {
+        const moreOpen = ref(false);
+        const detailOpen = ref(false);
+        const scope = effectScope();
+        const more = scope.run(() => {
+            const h = useSeatedOpen(moreOpen, "bottom", "dock-more");
+            useSeatedOpen(detailOpen, "bottom", "entity-detail");
+            return h;
+        })!;
+        const settle = async () => {
+            await nextTick();
+            await nextTick();
+        };
+        moreOpen.value = true;
+        await settle();
+        moreOpen.value = false;
+        await settle();
+        expect(more.displaced.value, "the reader closed it").toBe(false);
+        moreOpen.value = true;
+        await settle();
+        detailOpen.value = true;
+        await settle();
+        expect([moreOpen.value, more.displaced.value], "the detail took the seat").toEqual([false, true]);
+        moreOpen.value = true;
+        await settle();
+        expect([more.displaced.value, detailOpen.value], "reopened").toEqual([false, false]);
+        scope.stop();
+    });
 });

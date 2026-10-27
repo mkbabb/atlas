@@ -218,11 +218,12 @@ const rail = {
 // ══ < 768 px: THE BAR ═══════════════════════════════════════════════════════════════════════════
 // The route controls the bar's More sheet carries (Compare years, Save this view) for this context.
 const dataState = useDockDataState(() => ctx.value);
-/** A bar sheet's open model: it holds the bottom seat while open. */
-function barSheet(owner: string): Ref<boolean> {
+/** A bar sheet's open model: it holds the bottom seat while open. `displaced` is true when it last
+    closed because another surface took the seat; that surface keeps focus. */
+function barSheet(owner: string): { open: Ref<boolean>; displaced: Readonly<Ref<boolean>> } {
     const open = ref(false);
-    useSeatedOpen(open, "bottom", owner);
-    return open;
+    const { displaced } = useSeatedOpen(open, "bottom", owner);
+    return { open, displaced };
 }
 const bar = {
     dashboards: barSheet("dock-dashboards"),
@@ -233,7 +234,7 @@ const bar = {
 };
 // A register change unmounts the other register's controls: nothing they opened stays open.
 watch(isPhone, () => {
-    for (const open of [...Object.values(bar), ...Object.values(rail)]) open.value = false;
+    for (const open of [...Object.values(bar).map((s) => s.open), ...Object.values(rail)]) open.value = false;
 });
 
 /** Some surface holds the bottom seat (a bar sheet, the filter drawer, the entity detail). */
@@ -370,32 +371,44 @@ watch(bottomHeld, (held) => {
         <template #default>
             <template v-if="ctx">
                 <DockDashboardSelect
-                    v-model:open="bar.dashboards.value"
+                    v-model:open="bar.dashboards.open.value"
+                    :return-focus="!bar.dashboards.displaced.value"
                     :active="ctx.id"
                     side="top"
                     data-dock-cell="dashboards"
                 />
                 <DockSectionSelect
-                    v-model:open="bar.sections.value"
+                    v-model:open="bar.sections.open.value"
+                    :return-focus="!bar.sections.displaced.value"
                     :stepper="stepper"
                     variant="cell"
                     data-dock-cell="sections"
                 />
             </template>
             <template v-else-if="home">
-                <DockSearch v-model:open="bar.search.value" :sources="searchSources" data-dock-cell="search" />
-                <DockSavedViews v-model:open="bar.saved.value" side="top" data-dock-cell="saved" />
+                <DockSearch v-model:open="bar.search.open.value" :sources="searchSources" data-dock-cell="search" />
+                <DockSavedViews
+                    v-model:open="bar.saved.open.value"
+                    :return-focus="!bar.saved.displaced.value"
+                    side="top"
+                    data-dock-cell="saved"
+                />
             </template>
             <template v-else>
-                <DockDashboardSelect v-model:open="bar.dashboards.value" side="top" data-dock-cell="dashboards" />
-                <DockSearch v-model:open="bar.search.value" :sources="searchSources" data-dock-cell="search" />
+                <DockDashboardSelect
+                    v-model:open="bar.dashboards.open.value"
+                    :return-focus="!bar.dashboards.displaced.value"
+                    side="top"
+                    data-dock-cell="dashboards"
+                />
+                <DockSearch v-model:open="bar.search.open.value" :sources="searchSources" data-dock-cell="search" />
             </template>
         </template>
         <template #persistent-end>
             <!-- Filters sits outside the run (its applied count is a second node), before More. -->
             <DockFilterTrigger v-if="ctx" :ctx="ctx" data-dock-cell="filters" />
             <DockSettings
-                v-model:open="bar.more.value"
+                v-model:open="bar.more.open.value"
                 :has-year-scope="dataState.hasYearScope.value"
                 :year-mode-now="dataState.yearModeNow.value"
                 :save-flash="dataState.saveFlash.value"

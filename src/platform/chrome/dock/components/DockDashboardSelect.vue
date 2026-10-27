@@ -16,15 +16,23 @@ import { siteTransition } from "../site-transition.js";
 // One control: the caller's attributes land on the trigger (a seat of the bar's run).
 defineOptions({ inheritAttrs: false });
 
-const { active, side = "right" } = defineProps<{
+const { active, side = "right", returnFocus = true } = defineProps<{
     /** The active dashboard's slug, or undefined off a dashboard route. */
     active?: string;
     /** Which side the list opens to: `right` beside the rail, `top` above the phone bar. */
     side?: "right" | "top";
+    /** Focus goes back to the trigger when the list closes. The dock clears it when the list
+        closed because another surface took its seat: that surface owns focus. */
+    returnFocus?: boolean;
 }>();
 
 /** The list is open. */
 const open = defineModel<boolean>("open", { default: false });
+
+/** The list closed: keep focus where the surface that displaced it put it. */
+function onCloseAutoFocus(event: Event): void {
+    if (!returnFocus) event.preventDefault();
+}
 
 const router = useRouter();
 const { getDashboards } = useDashboardRegistry();
@@ -54,7 +62,12 @@ const model = computed({
             <LayoutGrid class="dock-dashboards__glyph" aria-hidden="true" />
             <template #icon><span hidden /></template>
         </DockTrigger>
-        <SelectContent :side="side" align="start" data-testid="dock-dashboards-list">
+        <SelectContent
+            :side="side"
+            align="start"
+            data-testid="dock-dashboards-list"
+            @close-auto-focus="onCloseAutoFocus"
+        >
             <SelectItem
                 v-for="d in ranked"
                 :key="d.slug"

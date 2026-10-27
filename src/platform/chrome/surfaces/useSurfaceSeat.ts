@@ -86,6 +86,12 @@ export function useViewportSeat(): () => SurfaceSeat {
     return () => (wide.value ? "right" : "bottom");
 }
 
+export interface SeatedOpenHandle extends SurfaceSeatHandle {
+    /** True when the surface last closed because another surface took its seat. That surface owns
+        focus now, so the displaced one does not return focus to its own control. */
+    displaced: Readonly<Ref<boolean>>;
+}
+
 /**
  * Bind a surface's own `open` model to a seat: opening takes the seat, closing leaves it, and losing
  * the seat to another surface closes this one.
@@ -94,15 +100,21 @@ export function useSeatedOpen(
     open: Ref<boolean>,
     seat: SurfaceSeat | (() => SurfaceSeat),
     owner: string,
-): SurfaceSeatHandle {
+): SeatedOpenHandle {
     const handle = useSurfaceSeat(seat, owner);
+    const displaced = ref(false);
     watch(
         open,
-        (next) => (next ? handle.open() : handle.close()),
+        (next) => {
+            if (next) displaced.value = false;
+            next ? handle.open() : handle.close();
+        },
         { immediate: true },
     );
     watch(handle.isOpen, (held) => {
-        if (!held && open.value) open.value = false;
+        if (held || !open.value) return;
+        displaced.value = true;
+        open.value = false;
     });
-    return handle;
+    return { ...handle, displaced };
 }
