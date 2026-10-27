@@ -324,19 +324,20 @@ export type ProvenanceKind = (typeof PROVENANCE_KINDS)[number];
 /** THE TITLE REGISTER (A-15 · spec-contract §a.1) — a chapter's title as a CLOSED, typed carrier.
     The VNode `() => VNodeChild` arm is GONE (clean-break, no alias): a hand-rolled render factory —
     inline OR laundered through a named factory — has nowhere to type, so the whole title leak fails
-    `tsc`. The host (`DashboardEssay`'s title register) resolves the three lossless-remap treatment
-    arms onto the extant title primitives (`TypewriterTitle`/`HandMark`/`ScrollLetteringHeading`). */
+    `tsc`. The host (`DashboardEssay`'s title register) resolves the two treatment arms onto plain
+    text and `HandMark`; every arm paints whole at full opacity (U/B7 · PLAN §4.2). */
 export interface TitleFacet {
     /** The accessible title — ALWAYS whole across every arm (the aria name never mid-types, never
         fragments). May embed ONE `[bracket]` span the `lettering` treatment picks out as the
         HandMark run; the brackets are literal-stripped for the aria name and for every
         non-lettering treatment. WHICH word is marked is DATA, not render. */
     text: string;
-    /** The closed render register — THREE lossless-remap arms. Omit ⇒ "plain". The illuminated
+    /** The closed render register — two arms. Omit ⇒ "plain". `lettering` marks the `[bracket]`
+        run with a HandMark; without a bracket it renders as plain. The illuminated
         numeral is NOT here — it is D's `Chapter.versal` flank watermark. NO depth field lives here:
         sub-section depth is the point's POSITION in the manifest recursion (`StoryPoint.points`),
         never a second declaration. */
-    treatment?: "plain" | "typewriter" | "lettering";
+    treatment?: "plain" | "lettering";
     /** W-66/O-04 — the title shrinks-into-glass and PERSISTS through the viz. B renders the
         persistence; A carries the flag (default false). */
     sticky?: boolean;
@@ -445,8 +446,8 @@ export interface Chapter {
     icon: Component;
     /** The eyebrow kicker prose (the text beside the icon + Roman, e.g. "Per-capita ↔ per-area"). */
     eyebrow: string;
-    /** The `<h2>` title — a plain string OR a `TitleFacet` (the 3-arm register:
-        plain/typewriter/lettering + marginalia), resolved by the host title register. */
+    /** The `<h2>` title — a plain string OR a `TitleFacet` (the 2-arm register:
+        plain/lettering + marginalia), resolved by the host title register. */
     title: ChapterTitle;
     /** The dek prose under the title (the `text-prose-muted` paragraph). GOVERNED COPY —
         the copy-conformance gate's object-literal extractor reaches `dek:` here (I3 §7). */

@@ -3,10 +3,8 @@
 //
 // The chapter's ONE audacious lead figure, declared instead of hand-wired. Six sites across five
 // routes hand-rolled the SAME idiom — a MotionDeclaration carrying `RevealUp` + `CountDial`, a
-// `useVizContext`/`useMotionDirector` pair to resolve one cover scalar, `countAt` off that scalar,
-// a `FigureSlug` value, an eyebrow unit, an optional record pill, a gloss — and the duplication
-// self-documented (`ContractCliff.vue:166-168`: "the SAME `countAt` idiom `CrossoverPlate`'s
-// crown-count rides"). This is that idiom, once. Each adopting touch DELETES its hand-rolled twin.
+// `useVizContext`/`useMotionDirector` pair to resolve one cover scalar, a `FigureSlug` value, an
+// eyebrow unit, an optional record pill, a gloss. This is that idiom, once. Each adopting touch DELETES its hand-rolled twin.
 //
 // THE RUNG — ②, the thesis crown. It sits ABOVE the river `PullFigure` (rung ③½) and at or below
 // the page cover: the ladder reads hero ≥ thesis-crown > river (design-hierarchy FIC-3 / §13), and

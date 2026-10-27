@@ -23,10 +23,8 @@ const props = withDefaults(
         weight?: number;
         /** The hand's seed — same seed ⇒ the same stroke on every reload. */
         seed?: number;
-        /** `scroll` draws the ink on under a `view()` timeline (bidirectional); `static` rests drawn. */
-        clock?: "static" | "scroll";
     }>(),
-    { points: undefined, color: "currentColor", weight: 1, seed: 1, clock: "static" },
+    { points: undefined, color: "currentColor", weight: 1, seed: 1 },
 );
 
 const root = ref<SVGSVGElement | null>(null);
@@ -104,7 +102,6 @@ const d = computed(() => {
     <svg
         ref="root"
         class="ink-stroke"
-        :data-clock="clock"
         aria-hidden="true"
         focusable="false"
     >
@@ -122,5 +119,4 @@ const d = computed(() => {
     overflow: visible;
     pointer-events: none;
 }
-/* clock="scroll" rests drawn (U/B7 · PLAN §4.2: no scroll-scrubbed draw). */
 </style>

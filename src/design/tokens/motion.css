@@ -80,27 +80,6 @@
         0.35,
         1
     ); /* the symmetric in-out the morph mechanism reuses (D4.5 · SM-10) — draw/path reuse --ease-expo */
-    /* §MOTION (K-ANIM A4 · proto/A4-stack.md §6) — the lettering ζ-0.62 settle's CSS-tier twin: the
-       `springTimingFunction({response:0.42, dampingFraction:0.62})` curve, sampled to a linear() stop
-       list (springLinearStops, the keyframes.js export) so a CSS-tier consumer can reference it. The JS
-       tier resolves the SAME curve via the EASE_TOKENS register (motion-catalog.ts), the SM-10 one-locus
-       law. `useScrollLettering`'s inline spring retires into this one home. */
-    --motion-glyph-spring: linear(
-        0,
-        0.32154 4%,
-        0.77477 8%,
-        1.02484 12%,
-        1.08352 16%,
-        1.05598 20%,
-        1.01829 24%,
-        0.99773 28%,
-        0.99303 32%,
-        0.99538 36%,
-        0.99852 40%,
-        1.00021 44%,
-        1 48%,
-        1 100%
-    );
     /* §MOTION — THE CONTROL MICRO-TRANSITION (N.WG1 Arm D · SM-10). The ONE duration+ease the
        chrome CONTROL register's color/background/border-color fades collapse onto — the dock foot
        controls (`.usf-dock__ctl`, the selection chip + dot, the range/save/filter pills) and the

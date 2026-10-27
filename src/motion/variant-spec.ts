@@ -15,7 +15,7 @@ export type Direction = "ltr" | "rtl" | "up" | "down" | "center" | "edges";
     spring presets (`soft`/`crisp`/`bouncy`). NEVER a raw cubic-bezier (the SM-10 token law). */
 export type EaseToken = "expo" | "engrave" | "overshoot" | "soft" | "crisp" | "bouncy";
 
-/** §3.3 — the DURATION register — the glass-ui scale. NEVER a free ms (retunes `useCountUp`'s 1600). */
+/** §3.3 — the DURATION register — the glass-ui scale. NEVER a free ms. */
 export type DurationToken = "instant" | "fast" | "base" | "slow";
 
 /** §3.4 — the STAGGER pace register. `pace` sets the cadence density; `from` overrides the origin. */

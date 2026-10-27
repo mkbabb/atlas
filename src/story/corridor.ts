@@ -5,14 +5,9 @@
 // `Chapter.transition` facet — zero new authored layout state (D7's zero-per-beat-props law holds).
 // The PURE laws here (P2-B Ruling 2, values verbatim) are the single source the `--corridor-*` tokens
 // mirror and the `StoryCorridor` overlay + the `n0-render-corridor` gate arm read.
-//
-// Plus the P193 TITLE-before-centre timing offset (G-N13 · N.md §4.B1): the title reveal COMPLETES
-// before the count's cover-0.50 centre (the title leads the count). The count half is proven live
-// (`reveal-register.ts` `countAt`); THIS module lands the un-demonstrated title half.
 
 import { clamp } from "@mkbabb/value.js/math";
 import { smoothStep3 } from "@mkbabb/value.js/easing";
-import { COVER_CENTRE } from "./centreAxis.js";
 
 // ── The corridor register values (P2-B Ruling 2, verbatim) ────────────────────────────────────────
 
@@ -112,37 +107,6 @@ export function corridorSampleAt(
         clusterOpacity: recedeOpacity(t, floor),
         occlusionFloor: floor,
     };
-}
-
-// ── The P193 title-before-centre offset (G-N13 title arm) ─────────────────────────────────────────
-
-/** The cover progress the TITLE reveal COMPLETES at — STRICTLY BEFORE the count's 0.50 centre (the
-    title leads the count · P193). The title has read its terminal by the time the figure is a third
-    of the way to centre, so it settles ahead of the dial. `< COVER_CENTRE` by construction. */
-export const TITLE_COMPLETE_AT = 0.32;
-
-/** THE TITLE reveal progress off the cover scalar — AFFINE in cover so it COMPLETES at
-    `TITLE_COMPLETE_AT` (0.32), i.e. BEFORE cover 0.50. The count dial (`countAt`, reveal-register)
-    completes AT 0.50; the title leads it. This is the un-demonstrated half of P193, landed.
-
-    WHY LINEAR, not `easeOutExpo` (the N-batch3 consult tune, measured live): the lettering
-    cascade ALREADY carries its easing — `useScrollLettering`'s cap'd sliding band distributes
-    the glyphs across this span and springs each glyph individually. An exponential OUTER remap
-    double-eases: measured on the live /usf title, 31/45 glyphs had inked by cover 0.04 and all
-    45 by 0.12 — the write-on collapsed into the entry edge, never seen. The affine remap spreads
-    the band evenly across cover 0→0.32 (the cascade visibly writes as the beat rises); the
-    COUNT keeps its expo (a dial decelerating onto its terminal digits IS the count-up feel). */
-export function titleRevealProgress(
-    scroll: number,
-    { completeAt = TITLE_COMPLETE_AT }: { completeAt?: number } = {},
-): number {
-    return clamp(scroll / completeAt, 0, 1);
-}
-
-/** The P193 reveal-timing sample the `n0-timing-offsets` gate reads — the title completes at
-    `TITLE_COMPLETE_AT` (before centre), the count at `COVER_CENTRE` (the proven `countAt` law). */
-export function storyRevealTiming(): { titleAt: number; countAt: number } {
-    return { titleAt: TITLE_COMPLETE_AT, countAt: COVER_CENTRE };
 }
 
 // ── The corridor route coverage (the sweep binds the arm on EVERY essay route) ────────────────────

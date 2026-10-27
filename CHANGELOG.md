@@ -149,6 +149,13 @@
   `.out`, `TitleFacet.scrollIn`, `BeatLayout.scrollIn`, `ScrollDir`, `REVEAL_SHAPES`,
   `RevealShape`, `rotateRevealShape` and `ResolvedLayout.scrollIn` are deleted, with `Beat`'s and
   `StoryCard`'s `reveal` prop. `RevealSpec` keeps `lift`, `aside`, `scrub` and `layout`. MIGRATION §5d.
+- **Titles paint whole (U/B7 · PLAN §4.2).** `TitleFacet.treatment` is `"plain" | "lettering"`:
+  the `typewriter` arm is gone, and a `lettering` title without a `[bracket]` renders as plain text.
+  `TypewriterTitle`, `ScrollLetteringHeading`, `useScrollLettering`, `useSectionReveal`,
+  `TITLE_LETTERING_REGISTER`, `titleRevealProgress`, `storyRevealTiming`, `TITLE_COMPLETE_AT` and
+  the `--motion-glyph-spring` token are deleted. `MarkClock` is `"load" | "static"`: the `scroll`
+  clock is gone, interior title marks rest drawn and only the lead beat's mark draws once on load.
+  `InkStroke` takes no `clock`. MIGRATION §5d.
 - **A still background (U/B7 · PLAN §5.6).** `useAuroraConfig(theme, { flatWash })` reads no
   scroll and no selection (the `tide` and `selectionActive` options and `SELECTION_LEAN` are gone)
   and returns `{ config, opacityCeiling, rung }` with `breathDepth: 0`. `nucleusAt(s)` returns the

@@ -11,8 +11,7 @@
 // tiers + a `hero` tier (the page-cover rule below `<DashboardHero>`). The variants escalate
 // expression, restraint-first (most junctions stay the static `rule`):
 //   · rule    — the static drawn hand rule (today's default; boil FORBIDDEN — the frame-guard).
-//   · draw    — the rule draws-on on scroll-entry, un-draws on scroll-up (the bidirectional
-//               view() draw the underlines already use; clock="scroll" semantics).
+//   · draw    — paints as `rule` (U/B7 · PLAN §4.2 deleted the scroll-scrubbed draw).
 //
 // (The actual file MOVE — SectionDivider → editorial/, the call-site re-points — is a phase-2
 // integration edit OUTSIDE this lane's write-bound; SPEC'd in the lane's blockers. AnimatedRule
@@ -25,9 +24,7 @@
 // (the existing SectionDivider law). It binds --attn-chrome via the SUFFUSION contract.
 //
 // THE BOIL STAYS FORBIDDEN: a permanent structural mark costs ZERO rAF (the pencil-boil
-// frame-guard, the E1/E4 root law); the `draw` reveal is a ONE-SHOT scroll-scrub, not
-// continuous boil. PRM: BOTH render STATIC (the rule drawn, no wipe — the
-// library snaps it; token-register eases only, never a bespoke transition). a11y: role="separator"
+// frame-guard, the E1/E4 root law). Both variants render the rule drawn and still. a11y: role="separator"
 // (today's SectionDivider semantics); `aria-hidden` on the ink (the mark is decorative — the
 // chapter SEMANTICS live in the `<h2>` headings, not the rule).
 import { computed } from "vue";
@@ -66,10 +63,6 @@ const ink = computed<string>(() =>
         : "var(--foreground)",
 );
 
-// THE DRAW CLOCK — `rule` is static (drawn, still); `draw` scrubs the ink on under the rule's own
-// `view()` timeline, bidirectionally (InkStroke's `scroll` clock, the atlas `crayon-wipe`). PRM
-// collapses the draw arm to static (the wipe never attaches).
-const clock = computed<"static" | "scroll">(() => (props.variant === "draw" ? "scroll" : "static"));
 </script>
 
 <template>
@@ -89,10 +82,8 @@ const clock = computed<"static" | "scroll">(() => (props.variant === "draw" ? "s
         <!-- A StoryCard seam is literal chrome, irrespective of the authored chapter variant. -->
         <span v-if="isSeam" class="animated-rule__seam" />
 
-        <!-- variant="rule" | "draw" — the drawn hand rule. STATIC for `rule` (drawn-but-still,
-             no boil — the frame-guard); the bidirectional scroll draw for `draw` (Clock B, the
-             view() draw the word marks use). The centreline and the nib are glass's pen (no atlas
-             stroke cubic). -->
+        <!-- variant="rule" | "draw" — the drawn hand rule, still (no boil — the frame-guard). The
+             centreline and the nib are glass's pen (no atlas stroke cubic). -->
         <InkStroke
             v-else
             class="animated-rule__ink"
@@ -100,7 +91,6 @@ const clock = computed<"static" | "scroll">(() => (props.variant === "draw" ? "s
             :weight="nib"
             :color="ink"
             :seed="seed"
-            :clock="clock"
         />
     </div>
 </template>
@@ -123,13 +113,6 @@ const clock = computed<"static" | "scroll">(() => (props.variant === "draw" ? "s
 .animated-rule:not(.animated-rule--seam) {
     block-size: 1px;
 }
-/* The ink spans the full measure; InkStroke fits glass's centreline to this box and lets the
-   wobble overflow the 1px host (the stroke is never stretched taller). The scroll draw window is
-   the rule's own: it settles over `cover 40%`, later than a word mark. */
-.animated-rule .animated-rule__ink {
-    --ink-scrub-range: entry 0% cover 40%;
-}
-
 /* TIER ① the CHAPTER rule — the confident drawn `pen` line between beats (the wide margin parts
    whole story beats). */
 .animated-rule--full {

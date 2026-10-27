@@ -12,7 +12,7 @@
 // recedes UNDER the data it narrates (the inversion law — a verdict points at the figures, it
 // never out-shouts them). It reuses the existing Newsreader prose recipe — NO new type.
 //
-// THE ONE MARK — the picked word: ONE word wears `<HandMark clock="scroll">`
+// THE ONE MARK — the picked word: ONE word wears `<HandMark clock="static">`
 // (the hand reaches WORDS — DESIGN §7, lawful). NO other mark. The underline stays the law-red
 // (the component default `--ncsu-red`), never a data hue (the four-voice law). The slot carries
 // the LEAD prose; `pick` is the word the hand picks out (rendered after the lead); `tail` is the
@@ -20,18 +20,15 @@
 // Newsreader paragraph with one hand-drawn pick-out, exactly as the three bodies hand-wire today
 // (`<HandMark>Who pays in</HandMark>, who draws out`), now ONE component.
 //
-// THE REVEAL CLOCK — SCROLL: the prose reveals on the `<Beat>` scroll register (the assembler's
-// host); the picked-word underline rides `<HandMark clock="scroll">` — the native `view()`
-// bidirectional draw (draws on entry, un-draws on scroll-up, the proven Clock B). PRM: the
-// underline sets-not-drawn (the library collapses the wipe under reduce); the prose is simply
-// present. a11y: a `<p>` in the reading order; the picked word is a `<span>` the underline
+// AT REST: the prose and the picked-word underline paint drawn, with no scroll clock
+// (U/B7 · PLAN §4.2). a11y: a `<p>` in the reading order; the picked word is a `<span>` the underline
 // decorates (the SVG mark is `aria-hidden` inside HandMark — the word text reads plainly,
 // no pronunciation change).
 import HandMark from "../charts/glyph/HandMark.vue";
 
 withDefaults(
     defineProps<{
-        /** The ONE picked word that wears `<HandMark clock="scroll">` (the hand-mark). */
+        /** The ONE picked word that wears `<HandMark clock="static">` (the hand-mark). */
         pick?: string;
         /** The prose that closes the sentence after the picked word (one continuous paragraph). */
         tail?: string;
@@ -45,14 +42,14 @@ withDefaults(
 <template>
     <!-- The narrator's verdict — a Newsreader paragraph at the legend rung. It binds
          --attn-legend (the prose recedes under the data it narrates). The picked word wears the
-         ONE <HandMark> (clock="scroll" — the bidirectional view() draw). -->
+         ONE <HandMark>, resting drawn. -->
     <p
         class="story-beat text-prose"
         data-attn="legend"
         data-testid="story-beat"
     >
         <slot /><template v-if="pick"
-            ><HandMark clock="scroll" :seed="seed">{{ pick }}</HandMark
+            ><HandMark clock="static" :seed="seed">{{ pick }}</HandMark
             ><template v-if="tail">{{ tail }}</template></template
         >
     </p>

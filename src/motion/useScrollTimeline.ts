@@ -8,7 +8,7 @@
 //
 // ── ONE CLOCK, MANY FACES (the H-INV-3 one-convention rule, extended to motion) ──────────
 // A viz declares an ordered list of FACETS — `(from, to) → state` tracks on the ONE
-// timeline: `year`, `mark`, `lettering`, `figure`, `annotation`, `forecast`. Each facet is
+// timeline: `year`, `mark`, `figure`, `annotation`, `forecast`. Each facet is
 // a window `[from, to]` of the master 0..1 scroll position; the facet's local `t` is the
 // master position re-normalized into that window (and eased). No facet mints a second
 // timeline; the facets are READERS of the one `progress` scalar (the dual-path
@@ -71,7 +71,6 @@ import {
 export type FacetKind =
     | "year"
     | "mark"
-    | "lettering"
     | "figure"
     | "annotation"
     | "forecast"
@@ -184,8 +183,7 @@ function resolveWindow(spec: FacetSpec): [number, number] {
 // ── D30-LIB · THE STANDALONE-HOST REGISTRATION SEAM (the scroll-driven.css enumerated-allowlist
 // cure) ───────────────────────────────────────────────────────────────────────────────────────
 // `scroll-driven.css`'s standalone scrub-host rule binds the native `--scroll-tl` `view()`
-// animation ONLY to a hard-coded class enumeration (`.decade-beat`, `.sci-chase-beat`, the two
-// lettering titles — its own "I17 CLOSE" comment: "A FUTURE standalone scrub host must add BOTH
+// animation ONLY to a hard-coded class enumeration (`.decade-beat`, `.sci-chase-beat` — its own "I17 CLOSE" comment: "A FUTURE standalone scrub host must add BOTH
 // its `data-scroll-tl` attribute AND its root class to this enumerated list"). A consumer OUTSIDE
 // this published package cannot add its class to that list without a library edit — the D30
 // vft-germination find (`useFaultBeatScroll.ts`'s documented local substitute: "`@mkbabb/atlas` is
@@ -533,7 +531,3 @@ export function scrollYearFace(
         return clamp(y, first, last);
     });
 }
-
-// useSectionReveal (the thin page-clock subscriber) lives in its own module (O-B4R god-split);
-// re-exported so the `@/motion` surface is unchanged.
-export * from "./useSectionReveal.js";

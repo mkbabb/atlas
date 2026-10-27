@@ -10,10 +10,9 @@
 //
 // ── THE READER IS THE A8 SINGLE-SOURCE SEAM, NOT A SECOND --scroll-tl POLL (D1 refined) ───────────
 // The cover scalar is the host's master transit position [0,1] (0.50 ≡ viewport centre — the host's
-// geometric-centre crossing). On NATIVE Chromium the per-section JS reveal scalar (useSectionReveal's
-// `t`, via useScrollProgress) is a DEAD 0-floor (useScrollProgress.ts:87-91 — the section JS scalar
-// is the dead writer on the native path; the live reveal scrubs the compositor --scroll-tl). So this
-// reader does NOT re-point useSectionReveal. It reads the host's live cover position off the ONE
+// geometric-centre crossing). On NATIVE Chromium the per-section JS scalar (useScrollProgress) is a
+// DEAD 0-floor (useScrollProgress.ts:87-91 — the section JS scalar is the dead writer on the native
+// path). So this reader reads the host's live cover position off the ONE
 // activeViz registry --scroll-tl reader's per-frame cache (`readScrubHostProgress`, the A8 forward-
 // seam K-ACTIVE minted for exactly this walk) — NO second getComputedStyle(--scroll-tl) poll, so the
 // SINGLE-SOURCE law holds (activeViz.ts stays the sole --scroll-tl reader) and R-E stays CLOSED, not
@@ -43,7 +42,7 @@ import { readScrubHostProgress } from "../charts/composables/activeViz.js";
     already animates (the scroll-driven.css enumerated set). REUSED, never re-declared (verdict-B). */
 const COVER_HOST_SELECTOR = "[data-scroll-tl]";
 
-/** The reader's reactive surface — one 0..1 cover scalar (the exact peer shape of useSectionReveal). */
+/** The reader's reactive surface — one 0..1 cover scalar. */
 export interface UseCoverProgress {
     /** The nearest cover host's live cover scalar [0,1] — 0.50 ≡ viewport centre (the host's master
         transit midpoint). 1 under reduced motion, a host-less mount, or an un-registered host. */
@@ -54,8 +53,7 @@ export interface UseCoverProgress {
  * Resolve a plate's cover-fraction scalar by walking to its nearest [data-scroll-tl] scrub host and
  * reading that host's live cover position. `host` is the plate's figure-stage element; the returned
  * `t` is the cover scalar (0.50 = viewport centre) the re-parameterized REVEAL_BANDS window against.
- * The exact thin peer of `useSectionReveal` (one host Ref, one 0..1 `t`, PRM-pinned to 1) — but it
- * RESOLVES the windowing host by ancestor-walk and SAMPLES the page's live cover axis off the one
+ * One host Ref, one 0..1 `t`, PRM-pinned to 1. It RESOLVES the windowing host by ancestor-walk and SAMPLES the page's live cover axis off the one
  * activeViz registry reader, never a second standing binding and never a second --scroll-tl poll.
  */
 export function useCoverProgress(host: Ref<HTMLElement | null>): UseCoverProgress {

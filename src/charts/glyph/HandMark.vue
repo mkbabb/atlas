@@ -25,8 +25,8 @@ const props = withDefaults(
         color?: string;
         /** The nib as a dimensionless multiple (1 is the pen). */
         weight?: number;
-        /** Which clock drives the draw: `load` (draws on at mount; `play()` re-fires it), `scroll` (the
-         *  bidirectional view-timeline scrub), `static` (present, at rest). */
+        /** Which clock drives the draw: `load` (draws on once at mount; `play()` re-fires it) or
+         *  `static` (present, at rest). */
         clock?: MarkClock;
         /** The hand's seed — same seed ⇒ the same stroke on every reload. Omitted, glass derives it
          *  from the word and its position. */
@@ -51,7 +51,7 @@ const ink = computed<string | undefined>(() =>
 // The library instance — `play()` is exposed for the load `Sequence` chain.
 const mark = ref<{ play: () => void } | null>(null);
 
-/** CLOCK A — draw the mark once more (the load arrival). A no-op for scroll/static. Returns a
+/** CLOCK A — draw the mark once more (the load arrival). A no-op for static. Returns a
  *  Promise so `await`-shaped call sites keep their signature. */
 async function play(): Promise<void> {
     if (props.clock !== "load") return;
@@ -65,7 +65,7 @@ defineExpose({ play, snap });
 </script>
 
 <template>
-    <!-- `data-mark-*` attrs are the probe/gate hooks; the scroll clock's wipe keys off them. -->
+    <!-- `data-mark-*` attrs are the probe/gate hooks. -->
     <span class="hand-mark" :data-mark-clock="clock" :data-mark-shape="shape">
         <GlassHandMark
             ref="mark"
@@ -98,6 +98,4 @@ defineExpose({ play, snap });
 .hand-mark:not([data-mark-shape="highlight"]) :deep(.hm-mark) {
     opacity: var(--attn-chrome);
 }
-
-/* clock="scroll" rests drawn (U/B7 · PLAN §4.2: no scroll-scrubbed draw). */
 </style>

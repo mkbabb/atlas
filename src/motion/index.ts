@@ -45,12 +45,11 @@ export * from "./rankMotionBand.js";
 // — the dispersed scroll/reveal composables (§A.7) — the base tier (director/timeline defer) —
 export * from "./useReducedMotion.js";
 export * from "./useScrollProgress.js";
-export * from "./useScrollLettering.js";
 export * from "./useRankMotion.js";
 export * from "./useLoadSequence.js";
 
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
-// motion-director re-exports ./buildMarkAnimation; useScrollTimeline re-exports ./useSectionReveal.
+// motion-director re-exports ./buildMarkAnimation.
 export * from "./motion-director.js";
 export * from "./useCoverProgress.js";
 export * from "./usePinProgress.js";

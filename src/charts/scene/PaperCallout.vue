@@ -14,8 +14,7 @@
 //     `ResizeObserver`-self-measured (its OWN rendered box) and fed to the Cox
 //     solver BEFORE any `inside()`/no-clip verdict — never a hard-coded estimate.
 //   · THE LEADER — glass-ui's own hand pen (`strokeRibbon`, via the atlas `InkStroke` — NOT a
-//     parallel SVG draw engine; glass 9 retired `shape="path"`), drawn-on
-//     bidirectionally via `clock="scroll"` (the `AnimatedRule` draw-on precedent). The leader's `d` is
+//     parallel SVG draw engine; glass 9 retired `shape="path"`), resting drawn. The leader's `d` is
 //     the solver's `leaderPath` (tiers ③④), re-mapped from the host pixel frame into the brush's
 //     100×40 viewBox. `aria-hidden` + `pointer-events:none` — the leader is decorative; the chip carries
 //     the editorial text (itself supplementary to the chart's `role=img` label + the export table).
@@ -124,14 +123,13 @@ const leader = computed<{
          seat in the anchor-relative frame. `aria-hidden` — the leader is decorative + the chip is
          supplementary to the chart's role=img label and the export table. -->
     <div class="paper-callout" data-paper-callout aria-hidden="true">
-        <!-- THE LEADER — glass's hand pen over the leader polyline (InkStroke), drawn-on via
-             clock="scroll" (tiers ③④). -->
+        <!-- THE LEADER — glass's hand pen over the leader polyline (InkStroke), at rest
+             (tiers ③④). -->
         <div v-if="leader" class="paper-callout__leader" :style="leader.style">
             <InkStroke
                 kind="path"
                 :points="leader.points"
                 :color="ink"
-                clock="scroll"
                 :seed="seed"
             />
         </div>

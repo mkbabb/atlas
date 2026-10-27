@@ -125,6 +125,11 @@ projecting components.
 | `--font-display`/`--font-serif` were serif | they are the system sans; mark serif surfaces (the SCI lead, VFT) with `data-type-face="serif"` |
 | the first figure beat reserves `--first-figure-cis` until it settles | declare `--first-figure-cis` beside `--beat-cis` on the route body |
 | a `#fragment` is a narrative anchor landed by the dock's restore | a router `scrollBehavior` returns `{ top: 0 }` for a hash on the first navigation or a cross-page link |
+| `TitleFacet.treatment: "typewriter"` | `"plain"`; the title renders once, whole |
+| a `lettering` title with no `[bracket]` (the glyph cascade) | no edit; it renders as plain text |
+| `TypewriterTitle`, `ScrollLetteringHeading`, `useScrollLettering`, `useSectionReveal`, `TITLE_LETTERING_REGISTER`, `titleRevealProgress`, `storyRevealTiming`, `TITLE_COMPLETE_AT`, `--motion-glyph-spring` deleted | delete the import; render the text |
+| `<HandMark clock="scroll">` | `clock="static"` (rests drawn); `load` draws once at mount |
+| `<InkStroke clock>` | delete the prop; the stroke rests drawn |
 
 ## 6 · glass-ui 10.1.0
 
@@ -133,7 +138,7 @@ Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what cha
 | Surface | Change | Consumer edit |
 |---|---|---|
 | `HandMark` | glass 9 one-pen re-cut | keep `shape` (`underline`, `strike`, `circle`, `highlight`), `color`, `weight`, `clock`, `seed`; delete `variant`, `drawMs`, `boil`, `progress`; a `shape="path"` mark becomes `<InkStroke kind="path" :points>` |
-| `InkStroke` | new (`@mkbabb/atlas/charts`) | free rules, rings and paths: `kind`, `points`, `color`, `weight`, `seed`, `clock` (`static` or `scroll`) |
+| `InkStroke` | new (`@mkbabb/atlas/charts`) | free rules, rings and paths: `kind`, `points`, `color`, `weight`, `seed` (U/B7 removed `clock`; §5d) |
 | `useMarkMorphology`, `MarkVariant`, `BOIL_BUDGET`, `HIGHLIGHT_WEIGHT_VB`, `ENGINE_HAS_AMPLITUDE` | removed | delete the import; the pen has one register |
 | `clockAppear`, `clockAnimation`, `MarkAppear` | removed | `clockDraws(clock)` returns the boolean glass's `draw` prop takes |
 | `CompletionSeal` | atlas-owned (glass 8 deleted `@mkbabb/glass-ui/completion-seal`) | `import { CompletionSeal } from "@mkbabb/atlas/editorial"` |

@@ -9,8 +9,8 @@
 // The body becomes DATA. A route declares its narrative as one StoryManifest; THIS
 // host iterates it and renders the FULL beat scaffold ONCE per chapter — the `section-anchor beat`
 // wrapper (via the shared <Beat> shell), the <FigureInitial> drop-cap, the eyebrow (icon · Roman ·
-// kicker, SM-1 data-hue), the <h2> title (a plain string OR a live VNode — <HandMark> /
-// <ScrollLetteringHeading> — rendered identically), the dek, the chapter viz, and the trailing
+// kicker, SM-1 data-hue), the <h2> title (a plain string OR a `TitleFacet` the title register
+// paints whole), the dek, the chapter viz, and the trailing
 // <AnimatedRule> whose `:seed` cadence the host derives from the chapter INDEX (the SM-1/`:seed`
 // drift folds — the cadence is a function of position, never hand-incremented per body).
 //
@@ -297,9 +297,9 @@ function TitleSlot(props_: {
             <template v-if="hasMasthead(chapter)" #header>
                 <div class="essay-masthead-cluster space-y-3">
                     <h2 class="text-section-fluid">
-                        <!-- THE TITLE REGISTER (A-15) — a plain string or a `TitleFacet` (the 3-arm
-                             register: plain/typewriter/lettering + marginalia). `lead`/`seed` are
-                             position-derived (the first masthead beat inks on the load clock). -->
+                        <!-- THE TITLE REGISTER (A-15) — a plain string or a `TitleFacet` (the 2-arm
+                             register: plain/lettering + marginalia). `lead`/`seed` are
+                             position-derived (the first masthead beat's mark draws on the load clock). -->
                         <TitleSlot
                             :title="chapter.title"
                             :lead="phases[i] === 0"

@@ -77,21 +77,13 @@
            residual to 3–23 under contention; the ENUMERATED selector below holds it at the keyframes.js
            terminal residual (~1.8) — same matched hosts, far cheaper standing recalc.
 
-           So this rule is SCOPED to the four KNOWN intra-beat scrub hosts by their stable component
-           root classes (NOT the bare attribute) — the de-coupled crown roots (`.decade-beat`,
-           `.sci-chase-beat`) + the self-driven lettering titles (`.sci-lettering-title`,
-           `.ecf-lettering-title`, each a `useScrollTimeline` native `--scroll-tl` reader). Every one
-           STILL mints its `view()` scrub (the decade 2.73× + chase 7.36× crowns + the SCI/ECF
-           lettering scrub are UNCHANGED — verified live), but the binding no longer fans out as a
-           document-wide attribute match that thrashes the load-window main thread. NOTE: USF lettering
-           (`ScrollLetteringTitle.vue`) drives off the JS `useScrollScene` fallback (no `data-scroll-tl`,
-           no `--scroll-tl`), so it is correctly absent here. A FUTURE standalone scrub host must add
-           BOTH its `data-scroll-tl` attribute AND its root class to this enumerated list (the gate is
-           h11-scroll-timeline's per-route crown/lettering scrub assertion — a frozen new host fails it). */
+           So this rule is SCOPED to the two KNOWN intra-beat scrub hosts by their stable component
+           root classes (NOT the bare attribute): the de-coupled crown roots (`.decade-beat`,
+           `.sci-chase-beat`). The lettering-title hosts are deleted (U/B7 · PLAN §4.2: titles paint
+           whole). A FUTURE standalone scrub host must add BOTH its `data-scroll-tl` attribute AND its
+           root class to this enumerated list. */
         .decade-beat[data-scroll-tl]:not([data-reveal-beat]),
-        .sci-chase-beat[data-scroll-tl]:not([data-reveal-beat]),
-        .sci-lettering-title[data-scroll-tl]:not([data-reveal-beat]),
-        .ecf-lettering-title[data-scroll-tl]:not([data-reveal-beat]) {
+        .sci-chase-beat[data-scroll-tl]:not([data-reveal-beat]) {
             animation: scroll-tl-pos auto linear both;
             animation-timeline: view();
             animation-range: cover 0% cover 100%;
