@@ -4,13 +4,14 @@
 // there; the arriving page runs one view transition (`siteTransition`, 240 ms, a cut under PRM).
 // It is a single control (a Select trigger), so it can sit in the rail's site layer or as the phone
 // bar's Dashboards cell without becoming a container seat.
-import { computed } from "vue";
+import { computed, ref, useTemplateRef } from "vue";
 import { useRouter } from "vue-router";
 import { LayoutGrid } from "@lucide/vue";
 import { Select, SelectContent, SelectItem, SelectSeparator } from "@mkbabb/glass-ui/select";
 import { DockTrigger } from "@mkbabb/glass-ui/dock";
 import { useDashboardRegistry } from "../../../../contract/index.js";
 import { siteTransition } from "../site-transition.js";
+import { useDockSurfaceHold } from "../composables/useDockPortals.js";
 
 // One control: the caller's attributes land on the trigger (a seat of the bar's run).
 defineOptions({ inheritAttrs: false });
@@ -28,6 +29,11 @@ const ranked = computed(() => getDashboards().filter((d) => typeof d.rank === "n
 const companions = computed(() => getDashboards().filter((d) => d.rank === "companion"));
 const activeTitle = computed(() => getDashboards().find((d) => d.slug === active)?.title);
 
+// The list is teleported outside the rail, so while it is open it holds the rail open.
+const open = ref(false);
+const trigger = useTemplateRef<{ $el: HTMLElement }>("trigger");
+useDockSurfaceHold("dock-dashboards", open, () => trigger.value?.$el);
+
 const model = computed({
     get: () => active ?? "",
     set: (slug) => {
@@ -38,8 +44,9 @@ const model = computed({
 </script>
 
 <template>
-    <Select v-model="model">
+    <Select v-model="model" v-model:open="open">
         <DockTrigger
+            ref="trigger"
             v-bind="$attrs"
             for="select"
             class="dock-dashboards"

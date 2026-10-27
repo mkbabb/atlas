@@ -278,3 +278,23 @@ export function provideDockPortals(): DockPortalRegistry {
 export function useDockPortals(): DockPortalRegistry {
     return inject(DOCK_PORTALS_KEY, null) ?? createDockPortalRegistry();
 }
+
+/**
+ * Hold the rail open while a site-layer surface is open (U/B7 §2.2). Dashboards, Search and Saved
+ * views live in the rail's site layer, which renders only while the rail is open, and each opens a
+ * surface glass teleports to <body>. Moving focus or the pointer into that surface fires the rail's
+ * focusout and pointerleave; without this hold the rail collapses and unmounts the open control with
+ * its surface. On close, focus returns to `receiver` (the control's trigger) while the hold is still
+ * in place, so the trigger's own focusin keeps the rail open after the hold lets go.
+ */
+export function useDockSurfaceHold(
+    key: string,
+    open: MaybeRefOrGetter<boolean>,
+    receiver: () => HTMLElement | null | undefined,
+): void {
+    useDockPortals().claimOpen(
+        { key, trigger: key, surface: "body-teleport", reason: "teleported-surface-fires-dock-leave" },
+        open,
+        { restoreFocus: () => receiver()?.focus({ preventScroll: true }) },
+    );
+}

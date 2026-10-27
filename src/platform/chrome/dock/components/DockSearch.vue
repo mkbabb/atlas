@@ -2,7 +2,7 @@
 // DockSearch — the site layer's Search (U/B7 §2.2). A glass command palette over the dashboards and
 // any instance search source (sci: the school units, by name). A source loads on the first open of
 // Search, once, so no route's first paint carries it. A result routes to its page.
-import { computed, ref, shallowRef } from "vue";
+import { computed, ref, shallowRef, useTemplateRef } from "vue";
 import { useRouter } from "vue-router";
 import { Search } from "@lucide/vue";
 import { DockControl } from "@mkbabb/glass-ui/dock";
@@ -16,6 +16,7 @@ import {
 } from "@mkbabb/glass-ui/command";
 import { useDashboardRegistry } from "../../../../contract/index.js";
 import type { SiteSearchItem, SiteSearchSource } from "../site.js";
+import { useDockSurfaceHold } from "../composables/useDockPortals.js";
 
 // One control: the caller's attributes land on the button (a seat of the bar's run).
 defineOptions({ inheritAttrs: false });
@@ -34,6 +35,9 @@ const dashboards = computed<SiteSearchItem[]>(() =>
 );
 
 const open = ref(false);
+// The dialog is teleported outside the rail, so while it is open it holds the rail open.
+const button = useTemplateRef<{ $el: HTMLElement }>("button");
+useDockSurfaceHold("dock-search", open, () => button.value?.$el);
 const loaded = shallowRef<{ group: string; items: readonly SiteSearchItem[] }[]>([]);
 let loading: Promise<void> | null = null;
 function loadSources(): void {
@@ -57,6 +61,7 @@ function go(to: string): void {
 
 <template>
     <DockControl
+        ref="button"
         v-bind="$attrs"
         compact
         class="dock-search"
