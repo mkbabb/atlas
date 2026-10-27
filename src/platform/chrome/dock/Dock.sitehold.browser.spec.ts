@@ -72,6 +72,32 @@ describe("each site-layer control holds the rail open at 1440 (U/B7 §2.2)", () 
         }
     }
 
+    it("/usf: with focus inside the rail, the pointer leaving does not collapse it", async () => {
+        site = await mountSite("/usf", 1440);
+        await openRail();
+        await expect.poll(() => trigger("dock-dashboards"), { timeout: 3000 }).not.toBeNull();
+        await userEvent.click(trigger("dock-dashboards")!);
+        await settle(600);
+        await userEvent.keyboard("{Escape}");
+        await settle(400);
+        expect(document.activeElement).toBe(trigger("dock-dashboards"));
+        await userEvent.hover(document.querySelector<HTMLElement>("h2")!);
+        await settle(700);
+        expect(dock()!.classList.contains("collapsed"), "rail stays open while it holds focus").toBe(false);
+        expect(document.activeElement, "focus stays on the trigger").toBe(trigger("dock-dashboards"));
+    });
+
+    it("/usf: a pointer resting on the rail keeps it open when focus leaves for the page", async () => {
+        site = await mountSite("/usf", 1440);
+        await openRail();
+        await expect.poll(() => trigger("dock-search"), { timeout: 3000 }).not.toBeNull();
+        trigger("dock-search")!.focus();
+        await settle(200);
+        document.querySelector<HTMLElement>("main")!.focus();
+        await settle(700);
+        expect(dock()!.classList.contains("collapsed"), "rail stays open under the pointer").toBe(false);
+    });
+
     it("/usf: choosing a dashboard from the open list routes there", async () => {
         site = await mountSite("/usf", 1440);
         await openRail();

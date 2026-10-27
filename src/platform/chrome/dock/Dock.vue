@@ -122,12 +122,23 @@ function bindBloom(inst: DockExposed | null): void {
     detachBloom = null;
     const el = (inst as unknown as { $el?: HTMLElement } | null)?.$el;
     if (!el) return;
+    // The bloom has two holders, a hovering pointer and keyboard focus inside the rail. Either one
+    // leaving releases it only when the other is gone too: a pointer drifting off does not collapse
+    // the rail under keyboard focus (which would drop focus to BODY), and focus leaving does not
+    // collapse it under a resting pointer. Focus a mouse click left behind does not hold it.
+    let hovered = false;
     const bloom = (): void => setIntent("bloom", false);
+    const enterFromPointer = (e: PointerEvent): void => {
+        hovered = revealReleasesOnLeave(e.pointerType, canHover.value);
+        bloom();
+    };
     const restFromPointer = (e: PointerEvent): void => {
-        if (revealReleasesOnLeave(e.pointerType, canHover.value)) setIntent("bloom", null);
+        if (!revealReleasesOnLeave(e.pointerType, canHover.value)) return;
+        hovered = false;
+        if (!el.querySelector(":focus-visible")) setIntent("bloom", null);
     };
     const onFocusOut = (e: FocusEvent): void => {
-        if (!el.contains(e.relatedTarget as Node | null)) setIntent("bloom", null);
+        if (!el.contains(e.relatedTarget as Node | null) && !hovered) setIntent("bloom", null);
     };
     const onOutsidePointerDown = (e: PointerEvent): void => {
         if (!revealPersists(e.pointerType, canHover.value) || anyPortalOpen.value) return;
@@ -138,7 +149,7 @@ function bindBloom(inst: DockExposed | null): void {
         if (!revealPersists(e.pointerType, canHover.value) || anyPortalOpen.value) return;
         setIntent("bloom", null);
     };
-    el.addEventListener("pointerenter", bloom);
+    el.addEventListener("pointerenter", enterFromPointer);
     el.addEventListener("pointerleave", restFromPointer);
     el.addEventListener("pointercancel", onGestureInterrupt);
     el.addEventListener("lostpointercapture", onGestureInterrupt);
@@ -146,7 +157,7 @@ function bindBloom(inst: DockExposed | null): void {
     el.addEventListener("focusout", onFocusOut);
     document.addEventListener("pointerdown", onOutsidePointerDown, true);
     detachBloom = (): void => {
-        el.removeEventListener("pointerenter", bloom);
+        el.removeEventListener("pointerenter", enterFromPointer);
         el.removeEventListener("pointerleave", restFromPointer);
         el.removeEventListener("pointercancel", onGestureInterrupt);
         el.removeEventListener("lostpointercapture", onGestureInterrupt);
