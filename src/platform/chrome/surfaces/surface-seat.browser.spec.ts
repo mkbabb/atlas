@@ -252,8 +252,9 @@ async function openSurface(s: Surface): Promise<boolean> {
         if (await until(() => s.isOpen(), 1500)) break;
         await sleep(200);
     }
-    // The next press samples the page, so the sheet must have finished moving in.
-    await atRest(SHEETS);
+    // The next press samples the page, so the sheet must have finished moving in. A sheet that
+    // never settles fails here rather than letting the next press sample a moving page.
+    expect(await atRest(SHEETS), "every seated sheet comes to rest").toBe(true);
     return s.isOpen();
 }
 
