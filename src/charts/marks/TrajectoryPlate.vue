@@ -192,12 +192,6 @@ const columns = computed<ColumnDatum[]>(() =>
     })),
 );
 
-/** The full span years — the SAME x-axis domain the canvas renders, surfaced as DOM TEXT so the
-    gate's multi-year axis-count (which reads `textContent`, not the canvas bitmap) sees the span.
-    The canvas axis paints no `<text>` (the CanvasRenderer is a bitmap), so the belt-and-suspenders
-    year-axis below mirrors the tick years as aria-hidden `echarts-axis-label` text nodes. */
-const axisYears = computed<number[]>(() => points.value.map((p) => p.year));
-
 // ── THE VIZ CONTRACT (I2.a re-point) ──────────────────────────────────────────────────────────
 // TrajectoryPlate is the lone shared body-engine SFC that mounted ChartFrame directly; it now
 // routes through VizPlate (the host). The contract is BUILT from the plate's props — the E1
@@ -323,31 +317,6 @@ const contract = computed<VizContract>(() => {
                     data-trajectory-point
                     :data-point-year="y"
                 ></span>
-                <!-- THE BELT-AND-SUSPENDERS YEAR AXIS. The CanvasRenderer paints the tick years to
-                     a bitmap (no DOM text), so the multi-year axis-count reads 0 off the canvas. The
-                     span years are mirrored as an aria-hidden, zero-weight inline <svg> of <text>
-                     tick labels — SVG `<text>` (inside an `axis`-classed group, classed
-                     `echarts-axis-label`) so the year-axis surfaces off the DOM under EVERY renderer-
-                     blind axis-year selector (the year-axis twin of the mark / data-point markers
-                     above). It paints nothing — zero-size, clipped, aria-hidden. -->
-                <svg
-                    class="trajectory-crown__axis"
-                    width="0"
-                    height="0"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <g class="echarts-axis trajectory-axis">
-                        <text
-                            v-for="y in axisYears"
-                            :key="`axis-${y}`"
-                            class="echarts-axis-label"
-                            :data-axis-year="y"
-                        >
-                            {{ y }}
-                        </text>
-                    </g>
-                </svg>
             </div>
         </div>
     </VizPlate>
