@@ -156,6 +156,40 @@ describe("HoverCard: the peek (O-13)", () => {
         expect(card.textContent).toContain("Click for detail");
     });
 
+    it("mounts while a hover is already live (the lazy chunk lands under the pointer)", async () => {
+        // U/B7b: the card's open state read the phone flag before its declaration, so a card that
+        // mounted with a readout already in the store threw in setup and took the route down (/bead,
+        // /usf, /ecf at 1440 in Firefox: the pointer rested on a map when the chunk arrived).
+        const pinia = createPinia();
+        setActivePinia(pinia);
+        const router = createRouter({ history: createMemoryHistory(), routes: [{ path: "/", component: { render: () => null } }] });
+        const el = document.createElement("div");
+        document.body.appendChild(el);
+        const errors: unknown[] = [];
+        const app = createApp(defineComponent({ setup: () => () => h(HoverCard) }));
+        app.config.errorHandler = (e) => void errors.push(e);
+        app.use(pinia).use(router);
+        installDashboardRegistry(app, { getDashboards: () => [], findDashboard: () => undefined });
+        app.runWithContext(() => {
+            useHoverReadout(pinia).readout = {
+                origin: "sci-map",
+                title: "Burke County Schools",
+                facts: FACTS_93N.slice(0, 2),
+                anchor: { x: 400, y: 300 },
+                density: "compact",
+            };
+        });
+        app.mount(el);
+        cleanups.push(() => {
+            app.unmount();
+            el.remove();
+        });
+        await nextTick();
+        await nextTick();
+        expect(errors.map(String)).toEqual([]);
+        expect(document.querySelector('[data-testid="hover-card"]')).not.toBeNull();
+    });
+
     it("no first row repeats the title", async () => {
         const store = mountCard();
         store.readout = {

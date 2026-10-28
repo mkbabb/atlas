@@ -103,6 +103,9 @@ const entityDetail = useEntityDetail();
 // `!tapPeek.value` is the I-MOBILE §V suppression: on the coarse-pointer PHONE register the
 // transient card does not paint; a tap opens EntityDetail's bottom sheet, the one phone readout.
 // The DESKTOP pointer path is byte-unchanged (`tapPeek` is false off the coarse-phone media).
+// Declared before `transientOpen` reads it: a card that mounts while a hover is already live (its
+// lazy chunk lands under the pointer) evaluates `transientOpen` during setup (U/B7b).
+const tapPeek = ref(false);
 const transientOpen = computed(
     () =>
         readout.value !== null &&
@@ -197,7 +200,6 @@ watch(
 // the transient card does NOT paint at all (`!tapPeek.value` gates `transientOpen`), and
 // EntityDetail's bottom sheet, raised above the bar reserve, owns the phone readout. So `tapPeek`
 // is a pure SUPPRESSION flag (the card is hidden on that register), not a placement fork. The desktop pointer path is byte-unchanged.
-const tapPeek = ref(false);
 let peekMql: MediaQueryList | null = null;
 function syncPeek(): void {
     tapPeek.value = peekMql?.matches ?? false;

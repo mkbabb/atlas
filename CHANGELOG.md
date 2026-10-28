@@ -4,6 +4,10 @@
 
 ### Fixes
 
+- **The hover card mounts under a live hover (U/B7b).** `HoverCard`'s open state read its phone flag
+  before the flag was declared, so a card whose lazy chunk landed while the pointer already rested on
+  a figure threw in setup and the route rendered its error state (on the B7b clone in Firefox at
+  1440: /usf, /ecf and /bead scrolled back to the top with the page gone).
 - **The cover reserves `--hero-cis` while it resolves (U/B7b · F11).** A cover that is a component
   point is stamped `data-cover="held"` and reserves the route's declared `--hero-cis` until its own
   boxes hold still, then `settled`, the same release as the first figure. A route that declares no
