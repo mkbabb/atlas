@@ -13,6 +13,7 @@ import { computed, inject, nextTick, onBeforeUnmount, ref, watch, type Component
 import { Dialog, DialogTitle, DialogDescription } from "@mkbabb/glass-ui/dialog";
 import { SheetContent } from "@mkbabb/glass-ui/sheet";
 import { useSeatedOpen, useViewportSeat } from "../../platform/chrome/surfaces/useSurfaceSeat.js";
+import { useMobileRegister } from "../../platform/composables/useMobileRegister.js";
 import { Button } from "@mkbabb/glass-ui/button";
 import { Filter, SlidersHorizontal } from "@lucide/vue";
 import { DASHBOARD_KEY, useDashboardRegistry } from "../../contract/index.js";
@@ -59,6 +60,9 @@ const { label: freshnessLabel } = useFreshness();
 const { open } = useFilterPane();
 // One open surface per seat (PLAN §2.5): the drawer shares its edge with the entity detail.
 useSeatedOpen(open, useViewportSeat(), "filter-drawer");
+// D-6: on the phone the drawer is a sheet over the page, so it takes glass's opaque rung (the
+// solid --card plate); at ≥ 768 px it stays the glass drawer beside the page.
+const { isPhone } = useMobileRegister();
 const { clearPin } = useFilterPanel();
 const { appliedCount } = useFilterLedger();
 
@@ -410,6 +414,7 @@ function cancelSave(): void {
             v-model:detent="activeSnapPoint"
             class="cp-drawer"
             :data-register="register"
+            :surface="isPhone ? 'opaque' : 'glass'"
             data-filter-continuum
             data-testid="filter-panel"
             aria-label="Filters"
