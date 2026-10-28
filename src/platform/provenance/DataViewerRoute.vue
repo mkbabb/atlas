@@ -5,11 +5,12 @@
 // named from the feed's own dictionary. The host registers `/data`, `/data/:dataset` and
 // `/data/:dataset/inputs/:file` and passes the route params as props. A query key that names a
 // served column filters to that value (`/data/sci?lea=93N`, the entity detail's "All rows" link);
-// the period Select writes its column the same way. Downloads go through `serializeRows`, so the
-// file opens with its source, filter and date.
+// the period Select writes its column the same way. The query is read and written through the view
+// store's one URL bag (`useViewParams`), never by a router write of its own (U-F60 cl. 4).
+// Downloads go through `serializeRows`, so the file opens with its source, filter and date.
 import { computed, ref, shallowRef, watch, type FunctionalComponent } from "vue";
 import { h } from "vue";
-import { RouterLink, useRoute, useRouter } from "vue-router";
+import { RouterLink } from "vue-router";
 import { Button } from "@mkbabb/glass-ui/button";
 import { DataTable, type DataTableColumn, type DataTableSort } from "@mkbabb/glass-ui/data-table";
 import { Dialog, DialogDescription, DialogTitle } from "@mkbabb/glass-ui/dialog";
@@ -20,6 +21,7 @@ import { useVirtualWindow, type VirtualItem } from "../../filter/composables/use
 import { serializeRows, type SerializedColumn } from "../../filter/engine/browser-from-scope.js";
 import { triggerDownload } from "../../charts/lib/vizExport.js";
 import { useSeatedOpen, useViewportSeat } from "../chrome/surfaces/useSurfaceSeat.js";
+import { useViewParams } from "../stores/useViewParams.js";
 import {
     columnHeading,
     coverageText,
@@ -63,8 +65,7 @@ const props = withDefaults(
     { dataset: undefined, file: undefined, basePath: "/data" },
 );
 
-const route = useRoute();
-const router = useRouter();
+const view = useViewParams();
 const COUNT = new Intl.NumberFormat("en-US");
 
 const current = computed(() => props.datasets.find((d) => d.id === props.dataset) ?? null);
@@ -112,7 +113,7 @@ const sources = computed(() => sourcesLine(feed.value?.meta, feed.value?.columns
 const search = ref("");
 const queryFilters = computed<[string, string][]>(() => {
     const served = new Set(feed.value?.columns ?? []);
-    return Object.entries(route.query)
+    return Object.entries(view.params)
         .filter(([k, v]) => served.has(k) && typeof v === "string" && v !== "")
         .map(([k, v]) => [k, v as string]);
 });
@@ -125,24 +126,15 @@ const periods = computed<string[]>(() => {
 const ALL = "__all__";
 const periodValue = computed(() => {
     const col = periodColumn.value;
-    const v = col ? route.query[col] : undefined;
-    return typeof v === "string" && v ? v : ALL;
+    return (col && view.param(col)) || ALL;
 });
-function setQuery(key: string, value: string | undefined): void {
-    const query = { ...route.query };
-    if (value === undefined) delete query[key];
-    else query[key] = value;
-    void router.replace({ query });
-}
 function choosePeriod(v: unknown): void {
-    const col = periodColumn.value;
-    if (col) setQuery(col, v === ALL || v == null ? undefined : String(v));
+    const column = periodColumn.value;
+    if (column) view.setParam(column, v === ALL || v == null ? undefined : String(v));
 }
 function clearFilters(): void {
     search.value = "";
-    const served = new Set(feed.value?.columns ?? []);
-    const query = Object.fromEntries(Object.entries(route.query).filter(([k]) => !served.has(k)));
-    void router.replace({ query });
+    for (const [column] of queryFilters.value) view.setParam(column, undefined);
 }
 
 const filtered = computed<Row[]>(() => {

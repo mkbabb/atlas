@@ -175,6 +175,8 @@ export const useViewParams = defineStore("platform:viewParams", () => {
     // The generic URL param bag. Keys are advisory strings (a dashboard's own vocab);
     // `useUrlState` narrows the reads (string / number / list) at the access site.
     const url = useUrlState<string>();
+    // A router navigation moves the address without an event; the bag re-reads it (never writes).
+    if (route) watch(() => route.fullPath, () => url.sync());
 
     /** The param keys a dashboard has declared it owns (for introspection / a reset). */
     const registeredKeys = ref<Set<string>>(new Set());

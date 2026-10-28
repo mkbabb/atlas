@@ -13,7 +13,10 @@
 // `location.search` BEFORE its write-back watch exists, so reading the link never writes it.
 // (@vueuse `useUrlSearchParams` armed its deep watch first and then seeded the state, so every
 // load with a query wrote it straight back, re-encoded: `?sel=state:06` became `state%3A06`.)
-// Back and Forward re-read the bag and never write.
+// Back and Forward re-read the bag and never write. So does a router navigation (`sync`): vue-router
+// moves the address with `pushState`, which fires no event, so the view store re-reads the bag on
+// every route change; without it an in-app link carrying a query (`/data/sci?lea=…`, a saved view)
+// left the bag on the previous route's keys, and its next write put them back.
 
 import { onScopeDispose, reactive, watch } from "vue";
 
@@ -36,6 +39,9 @@ export interface UseUrlState<Keys extends string> {
     getList: (key: Keys) => string[];
     /** Write a list param as a comma-joined token string (empty clears it). */
     setList: (key: Keys, values: readonly string[]) => void;
+    /** Re-read the bag from `location.search` without writing it: the host calls this after a
+        router navigation, which moves the address by `pushState` and fires no event. */
+    sync: () => void;
 }
 
 /**
@@ -47,7 +53,7 @@ export interface UseUrlState<Keys extends string> {
  */
 export function useUrlState<Keys extends string>(): UseUrlState<Keys> {
     const params = reactive({}) as UrlState<Keys>;
-    if (typeof window === "undefined") return helpers(params);
+    if (typeof window === "undefined") return helpers(params, () => {});
 
     const bag = params as Record<string, string | undefined>;
     /** Mirror `location.search` into the bag (a key repeated in the query keeps its last value). */
@@ -74,19 +80,20 @@ export function useUrlState<Keys extends string>(): UseUrlState<Keys> {
         { deep: true, flush: "sync" },
     );
 
-    const onPopState = (): void => {
+    /** Re-read the address into the bag; the write-back watch is muted, so a read never writes. */
+    const sync = (): void => {
         reading = true;
         read();
         reading = false;
     };
-    window.addEventListener("popstate", onPopState);
-    onScopeDispose(() => window.removeEventListener("popstate", onPopState), true);
+    window.addEventListener("popstate", sync);
+    onScopeDispose(() => window.removeEventListener("popstate", sync), true);
 
-    return helpers(params);
+    return helpers(params, sync);
 }
 
 /** The typed read/write helpers over one bag. */
-function helpers<Keys extends string>(params: UrlState<Keys>): UseUrlState<Keys> {
+function helpers<Keys extends string>(params: UrlState<Keys>, sync: () => void): UseUrlState<Keys> {
     function get(key: Keys, fallback?: string): string | undefined {
         const v = params[key];
         return v == null || v === "" ? fallback : v;
@@ -122,5 +129,5 @@ function helpers<Keys extends string>(params: UrlState<Keys>): UseUrlState<Keys>
         set(key, cleaned.length > 0 ? cleaned.join(",") : undefined);
     }
 
-    return { params, get, set, getNumber, setNumber, getList, setList };
+    return { params, get, set, getNumber, setNumber, getList, setList, sync };
 }

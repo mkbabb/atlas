@@ -57,4 +57,18 @@ describe("useUrlState reads the link without writing it (K-3)", () => {
         expect(url.get("year")).toBe("2019");
         expect(location.href).toBe(before);
     });
+
+    it("sync re-reads a pushState navigation (a router move) and writes nothing", async () => {
+        const url = bind();
+        url.set("grain", "county");
+        history.pushState(history.state, "", `${location.pathname}${startSearch}&lea=0003`);
+        const before = location.href;
+        const length = history.length;
+        url.sync();
+        await nextTick();
+        expect(url.get("lea")).toBe("0003");
+        expect(url.get("grain")).toBeUndefined();
+        expect(location.href).toBe(before);
+        expect(history.length).toBe(length);
+    });
 });

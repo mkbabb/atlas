@@ -4,6 +4,13 @@
 
 ### Fixes
 
+- **The data viewer writes its query through the view store (U/B7b · U-F60 cl. 4).**
+  `DataViewerRoute` reads and writes its column filters and period through `useViewParams`
+  (`params`, `param`, `setParam`) instead of `route.query` and `router.replace({ query })`. The URL
+  bag gains `sync()`, and the view store calls it on every route change, so an in-app link that
+  carries a query (`/data/sci?lea=…`, a saved view) lands in the bag instead of leaving the previous
+  route's keys there to be written back. The viewer now needs the host's dashboard registry
+  (`installDashboardRegistry`), which every host installs at bootstrap.
 - **The trajectory plate prints its years through `xFormat` everywhere (U/B7 · R-TAB26-PAGE M-6).**
   The data table, the key-stat captions and the description span used the raw year key ("2014")
   where the axis printed the consumer's period label ("2014–15"). New pure helper

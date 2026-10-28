@@ -6,8 +6,9 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { createApp, h, nextTick, type App } from "vue";
 import { createPinia } from "pinia";
-import { createMemoryHistory, createRouter, RouterView, type Router } from "vue-router";
+import { createRouter, createWebHistory, RouterView, type Router } from "vue-router";
 import DataViewerRoute, { type DataViewerDataset } from "./DataViewerRoute.vue";
+import { installDashboardRegistry } from "../../contract/registry-inject";
 import { FIXTURE_COLUMNS, FIXTURE_DICTIONARY, FIXTURE_ROWS } from "../../../tests/fixtures/feed-dictionary";
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -34,6 +35,9 @@ beforeAll(async () => {
     await page.viewport(1280, 900);
 });
 
+// The viewer reads and writes the address through the view store's bag (U-F60 cl. 4), so the router
+// runs on the real History; each spec restores the runner's own address afterwards.
+const runnerUrl = location.href;
 let app: App | null = null;
 let host: HTMLElement | null = null;
 afterEach(() => {
@@ -41,6 +45,7 @@ afterEach(() => {
     host?.remove();
     app = null;
     host = null;
+    history.replaceState(history.state, "", runnerUrl);
 });
 
 async function mount(path: string): Promise<{ root: HTMLElement; router: Router }> {
@@ -48,7 +53,7 @@ async function mount(path: string): Promise<{ root: HTMLElement; router: Router 
     host.style.width = "1200px";
     document.body.appendChild(host);
     const router = createRouter({
-        history: createMemoryHistory(),
+        history: createWebHistory(),
         routes: [
             { path: "/data", component: DataViewerRoute, props: () => ({ datasets: DATASETS }) },
             { path: "/data/:dataset", component: DataViewerRoute, props: (r) => ({ datasets: DATASETS, dataset: r.params.dataset }) },
@@ -62,6 +67,8 @@ async function mount(path: string): Promise<{ root: HTMLElement; router: Router 
     app = createApp({ render: () => h(RouterView) });
     app.use(createPinia());
     app.use(router);
+    // The view store resolves the active dashboard; a host always installs its registry at bootstrap.
+    installDashboardRegistry(app, { getDashboards: () => [], findDashboard: () => undefined });
     await router.push(path);
     await router.isReady();
     app.mount(host);
@@ -95,11 +102,42 @@ describe("DataViewerRoute", () => {
         await userEvent.click(option);
         const in2024 = FIXTURE_ROWS.filter((r) => r.year === "2024").length;
         expect(await until(() => text(root, "data-viewer-count") === `Showing ${fmt(in2024)} of ${fmt(FIXTURE_ROWS.length)} rows`, 1500)).toBe(true);
-        expect(router.currentRoute.value.query.year).toBe("2024");
+        expect(new URLSearchParams(location.search).get("year")).toBe("2024");
 
         await router.replace({ path: "/data/sci", query: { lea: "0003" } });
         const forLea = FIXTURE_ROWS.filter((r) => r.lea === "0003").length;
         expect(await until(() => text(root, "data-viewer-count") === `Showing ${fmt(forLea)} of ${fmt(FIXTURE_ROWS.length)} rows`, 1500)).toBe(true);
+    });
+
+    it("writes the period through the view store's bag, never a router write (U-F60 cl. 4)", async () => {
+        const { root, router } = await mount("/data/sci");
+        const routerWrites: string[] = [];
+        const push = router.push.bind(router);
+        const replace = router.replace.bind(router);
+        router.push = (to) => (routerWrites.push(`push ${JSON.stringify(to)}`), push(to));
+        router.replace = (to) => (routerWrites.push(`replace ${JSON.stringify(to)}`), replace(to));
+        const length = history.length;
+        await until(() => !!root.querySelector('[data-testid="data-viewer-period"]'), 2000);
+        await userEvent.click(root.querySelector<HTMLElement>('[data-testid="data-viewer-period"]')!);
+        expect(await until(() => !!document.querySelector('[role="option"]'), 1500)).toBe(true);
+        await userEvent.click([...document.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => o.textContent?.trim() === "2025")!);
+        expect(await until(() => new URLSearchParams(location.search).get("year") === "2025", 1500)).toBe(true);
+        expect(routerWrites).toEqual([]);
+        expect(history.length).toBe(length);
+    });
+
+    it("an in-app link with a query filters the viewer it lands on, and Clear drops only served keys", async () => {
+        const { root, router } = await mount("/data");
+        await router.push("/data/sci?lea=0003&keep=1");
+        const forLea = FIXTURE_ROWS.filter((r) => r.lea === "0003").length;
+        expect(await until(() => text(root, "data-viewer-count") === `Showing ${fmt(forLea)} of ${fmt(FIXTURE_ROWS.length)} rows`, 2000)).toBe(true);
+        await userEvent.type(root.querySelector<HTMLInputElement>('input[type="search"]')!, "no such district");
+        expect(await until(() => !!root.querySelector('[data-testid="data-viewer-empty"]'), 1500)).toBe(true);
+        await userEvent.click(root.querySelector<HTMLElement>('[data-testid="data-viewer-empty"] button')!);
+        expect(await until(() => text(root, "data-viewer-count") === `${fmt(FIXTURE_ROWS.length)} rows`, 1500)).toBe(true);
+        const query = new URLSearchParams(location.search);
+        expect(query.has("lea")).toBe(false);
+        expect(query.get("keep")).toBe("1");
     });
 
     it("downloads a CSV that opens with its source and filter, and a JSON with its meta", async () => {
