@@ -38,11 +38,11 @@ describe("EX-44 · figureLabelFor — the cover figure-label (D21 residue 3, pur
     };
 
     it("a cover with a declared hero facet names ITSELF off the facet's own title", () => {
-        expect(figureLabelFor(coverWithHero, 0)).toBe("USF Dashboard — cover");
+        expect(figureLabelFor(coverWithHero, 0)).toBe("USF Dashboard: cover");
     });
 
     it("a cover with no facet falls back to the chapter's own (non-empty) eyebrow", () => {
-        expect(figureLabelFor(coverNoFacetWithEyebrow, 0)).toBe("USFI — cover");
+        expect(figureLabelFor(coverNoFacetWithEyebrow, 0)).toBe("USFI: cover");
     });
 
     it("a cover with NEITHER a facet title NOR an eyebrow renders the bare 'Cover' label", () => {

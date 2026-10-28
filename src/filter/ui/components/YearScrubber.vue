@@ -82,7 +82,7 @@ const emit = defineEmits<{
                 }"
                 role="radio"
                 :aria-checked="mode !== 'aggregate' && y === activeYear"
-                :aria-label="dimYearSet.has(y) ? `${y} — no data` : String(y)"
+                :aria-label="dimYearSet.has(y) ? `${y}, no data` : String(y)"
                 :aria-disabled="dimYearSet.has(y) ? 'true' : undefined"
                 :data-testid="`year-pip-${y}`"
                 :data-year-absent="dimYearSet.has(y) ? '' : undefined"
