@@ -1,11 +1,9 @@
 // tests/unit/oa15-beat-template.spec.ts — O-A15 ACCEPTANCE teeth at the pure-mechanism layer:
-//   · resolveBeatTemplate — authored poles WIN, cadence fills the rest; the rule is authored ??
-//     tier-rotated.
+//   · resolveBeatTemplate — authored poles WIN, cadence fills the rest.
 //   · the RESEED determinism — a route reseed drifts the MICRO-GRAIN but NOT the authored poles (E1).
 //   · figureLadderScalar (Q-27) — index=0.5, value-scaled clamps, degenerate domain ⇒ 0.5 (no NaN).
 //   · the center pole through resolveLayout (useBeatLayout) — the third pole resolves L/C/R + dock.
 //   · SuperlativeRegister (Q-48) — the ceiling guard passes a ceiling verb, FAILS a forbidden one; opt-in.
-//   · rotateRuleVariant — restraint-first (`rule` dominant), tier-offset cadence.
 import { describe, it, expect } from "vitest";
 import {
     resolveBeatTemplate,
@@ -14,7 +12,6 @@ import {
     type BeatVariationPolicy,
 } from "../../src/story/beat-template";
 import { resolveLayout } from "../../src/editorial/useBeatLayout";
-import { rotateRuleVariant, RULE_VARIANTS } from "../../src/editorial/rule-register";
 import {
     SuperlativeRegister,
     isWithinCeiling,
@@ -27,7 +24,7 @@ const policy: BeatVariationPolicy = {
     id: "test-route",
     seed: 1234,
     beats: [
-        { title: "left", signature: false, rule: "rule" },
+        { title: "left", signature: false },
         { title: "center", numbers: "bottom" }, // authored center + authored numbers
         { title: "left", signature: true }, // the ONE signature (left, so phase-3's cadence-right never clashes)
         {}, // unauthored → cadence (phase 3, odd ⇒ right)
@@ -40,7 +37,6 @@ describe("O-A15 · resolveBeatTemplate — authored poles win, cadence fills the
         expect(t.title).toBe("left");
         expect(t.reveal.layout?.title).toBe("left");
         expect(t.numbers).toBe("top"); // phase 0 cadence (even ⇒ top)
-        expect(t.rule).toBe("rule"); // authored
     });
 
     it("the CENTER pole resolves as authored", () => {
@@ -53,7 +49,6 @@ describe("O-A15 · resolveBeatTemplate — authored poles win, cadence fills the
         const t = resolveBeatTemplate(policy, 3, 1234);
         expect(t.title).toBe("right");
         expect(t.numbers).toBe("bottom");
-        expect(RULE_VARIANTS).toContain(t.rule); // tier-rotated, in the closed register
     });
 
     it("the signature flag reads through; the rest default false", () => {
@@ -69,7 +64,6 @@ describe("O-A15 · the RESEED determinism (E1) — poles FIXED, micro-grain DRIF
         // poles fixed
         expect(a.map((r) => r.title)).toEqual(b.map((r) => r.title));
         expect(a.map((r) => r.numbers)).toEqual(b.map((r) => r.numbers));
-        expect(a.map((r) => r.rule)).toEqual(b.map((r) => r.rule));
         // grain drifts (at least one beat's delay jitter differs across the two seeds)
         const drift = a.some((r, i) => r.grain.delayFrac !== b[i]!.grain.delayFrac);
         expect(drift).toBe(true);
@@ -128,16 +122,3 @@ describe("O-A15 · SuperlativeRegister (Q-48) — the never-incriminate ceiling 
     });
 });
 
-describe("O-A15 · rotateRuleVariant — restraint-first, tier-offset cadence", () => {
-    it("`rule` dominates the register (restraint-first — most junctions stay static)", () => {
-        const seq = Array.from({ length: 8 }, (_, i) => rotateRuleVariant("support", i));
-        const rules = seq.filter((v) => v === "rule").length;
-        expect(rules).toBeGreaterThanOrEqual(4); // ≥ half stay the static rule
-        expect(seq.every((v) => (RULE_VARIANTS as readonly string[]).includes(v))).toBe(true);
-    });
-    it("the tier OFFSETS the cadence (lede vs ancillary escalate on different beats)", () => {
-        const lede = Array.from({ length: 4 }, (_, i) => rotateRuleVariant("lede", i));
-        const anc = Array.from({ length: 4 }, (_, i) => rotateRuleVariant("ancillary", i));
-        expect(lede).not.toEqual(anc);
-    });
-});

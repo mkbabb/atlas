@@ -97,8 +97,6 @@ export interface DashboardMeta {
         scale-conditional contents-page axis (funds → connectivity → outcomes). Omit ⇒ the route
         falls to the 'More' section. A STRUCTURE facet (a closed union), not a copy register. */
     category?: DashboardCategory;
-    /** Optional route-authored inline SVG crest; the platform falls back to the TIL mark. */
-    crest?: Component;
 }
 
 /** The heavy half — each dashboard's `dashboard.ts` lazily resolves to the body

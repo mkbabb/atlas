@@ -233,17 +233,41 @@ export function markerAttr(kind: TrajectoryMarkerKind): string {
 }
 
 /** The trajectory plate's E1 description: the lead measure by year across its real span
-    ("Requests by year, 2016–2025."). The lead keeps its own casing; a span of one year reads as
-    that year, and a lead with no real years falls back to "across the years". The lead token is filled by the caller. */
+    ("Requests by year, 2016–2025."). The span prints each year through the consumer's `label` (the
+    plate's `xFormat`); labelled periods that carry their own dash join with "to" ("2014–15 to
+    2025–26"). A span of one year reads as that year, and a lead with no real years falls back to
+    "across the years". The lead token is filled by the caller. */
 export function trajectoryDescription(
     firstYear: number | undefined,
     lastYear: number | undefined,
+    label: (year: number) => string = String,
 ): { prose: string; span: string } {
-    const span =
-        firstYear == null || lastYear == null
-            ? "across the years"
-            : firstYear === lastYear
-              ? String(firstYear)
-              : `${firstYear}–${lastYear}`;
+    let span: string;
+    if (firstYear == null || lastYear == null) span = "across the years";
+    else if (firstYear === lastYear) span = label(firstYear);
+    else {
+        const a = label(firstYear);
+        const b = label(lastYear);
+        span = a.includes("–") || b.includes("–") ? `${a} to ${b}` : `${a}–${b}`;
+    }
     return { prose: `{lead} by year, {span}.`, span };
+}
+
+/** One trajectory point as the plate holds it. */
+export interface TrajectoryExportPoint {
+    year: number;
+    values: Record<string, number | null | undefined>;
+}
+
+/** The plate's E3 export rows: one per year with a lead value, the year printed through the same
+    `label` the axis uses (R-TAB26-PAGE M-6: "2014–15", never the raw key "2014"). */
+export function trajectoryExportRows(
+    points: readonly TrajectoryExportPoint[],
+    lead: string,
+    format: (value: number) => string,
+    label: (year: number) => string = String,
+): { name: string; value: string }[] {
+    return points
+        .filter((p) => p.values[lead] != null)
+        .map((p) => ({ name: label(p.year), value: format(p.values[lead] as number) }));
 }

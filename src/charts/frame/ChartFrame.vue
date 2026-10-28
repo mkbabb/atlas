@@ -272,17 +272,30 @@ const open = computed<boolean>({
 // that had moved. The resting box is measured as the figure opens (a `pre` flush: the body is still
 // in flow) and held while it is open; the hold drops in the patch that brings the body back. A figure
 // opened from the address on load was never in flow, so there is nothing to hold.
+// The hold is written to the element before the patch runs. Vue patches an element's children
+// before its style, so a bound style landed after the teleport, and WebKit laid the page out in
+// between: a figure near the end of the page still moved the page 700 px there.
 const expandEl = ref<HTMLElement | null>(null);
-const restingBlockSize = ref<number | null>(null);
 watch(
     open,
     (now) => {
-        restingBlockSize.value = now ? (expandEl.value?.getBoundingClientRect().height ?? null) : null;
+        const el = expandEl.value;
+        if (!now || !el) return;
+        const height = el.getBoundingClientRect().height;
+        if (!(height > 0)) return;
+        el.style.minBlockSize = `${height}px`;
+        // Commit the hold to layout before the teleport. WebKit otherwise clamps the scroll against
+        // the 200 px floor while it removes the body, though the hold is already set.
+        void el.offsetHeight;
     },
     { flush: "pre" },
 );
-const expandHold = computed(() =>
-    restingBlockSize.value ? { minBlockSize: `${restingBlockSize.value}px` } : undefined,
+watch(
+    open,
+    (now) => {
+        if (!now && expandEl.value) expandEl.value.style.minBlockSize = "";
+    },
+    { flush: "post" },
 );
 
 // Focus returns when the figure has closed, not inside the close call: `closeFig` goes Back and
@@ -485,7 +498,7 @@ watch(open, (value) => {
                  is the two-way `?fig=` URL model; the chart slot is passed THROUGH unchanged so
                  every existing chart renders byte-identically at rest (the trigger is quiet —
                  opacity 0 — until the plate is hovered/focused). -->
-            <div ref="expandEl" class="frame-expand relative" :style="expandHold">
+            <div ref="expandEl" class="frame-expand relative">
                 <!-- NO EXPAND MORPH. The 3.10.0 `view-transition-name` prop (the `gl-expand`
                  shared-element morph) is gone from ExpandableContainer: glass 10.1.0 declares
                  `buttonPosition`, `expandLabel`, `collapseLabel`, `surface` and `open` only, and

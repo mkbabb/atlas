@@ -50,29 +50,41 @@ export const useActiveDashboard = defineStore("platform:activeDashboard", () => 
     /** The active feed's tidy-long rows (one per key×year), or the empty list. */
     const rows = computed<FeedRow[]>(() => feed.value?.rows ?? []);
 
+    /** The load in flight per slug: a second caller before the first resolves shares it (U/B7b). */
+    const inFlight = new Map<string, Promise<void>>();
+
     /**
      * Load the active slug's feed through `loadFeed`, honouring the per-slug memo
      * unless `force` is set. Resolves silently when there is no active slug (the
-     * gallery) or the feed is already cached. Errors land on `error` rather than
-     * throwing, so a binding shows a state instead of crashing the route.
+     * gallery) or the feed is already cached; a call made while that slug's load is in
+     * flight shares it, so two callers on one route fetch and parse the snapshot once.
+     * Errors land on `error` rather than throwing, so a binding shows a state instead
+     * of crashing the route.
      */
-    async function ensureLoaded(force = false): Promise<void> {
+    function ensureLoaded(force = false): Promise<void> {
         const s = slug.value;
-        if (!s) return;
-        if (!force && feeds.value.has(s)) return;
-        loading.value = true;
-        error.value = null;
-        try {
-            const loaded = await loadFeed(s);
-            // Replace the Map (a new reference) so the `feed` computed re-evaluates.
-            const next = new Map(feeds.value);
-            next.set(s, loaded);
-            feeds.value = next;
-        } catch (e) {
-            error.value = e instanceof Error ? e.message : String(e);
-        } finally {
-            loading.value = false;
-        }
+        if (!s) return Promise.resolve();
+        const pending = inFlight.get(s);
+        if (pending) return pending;
+        if (!force && feeds.value.has(s)) return Promise.resolve();
+        const run = (async () => {
+            loading.value = true;
+            error.value = null;
+            try {
+                const loaded = await loadFeed(s);
+                // Replace the Map (a new reference) so the `feed` computed re-evaluates.
+                const next = new Map(feeds.value);
+                next.set(s, loaded);
+                feeds.value = next;
+            } catch (e) {
+                error.value = e instanceof Error ? e.message : String(e);
+            } finally {
+                loading.value = false;
+                inFlight.delete(s);
+            }
+        })();
+        inFlight.set(s, run);
+        return run;
     }
 
     /** Force a refetch of the active slug, bypassing the memo (e.g. a manual retry). */

@@ -3,6 +3,7 @@
 // re-exports, the .ts leaves whole). Split-internal helpers stay family-internal.
 
 export * from "./trajectory-marks.js";
+export * from "./scatter-compare.js";
 export { default as DiscreteColumns } from "./DiscreteColumns.vue";
 export { default as MultiYearFigure } from "./MultiYearFigure.vue";
 export { default as RankedBar } from "./RankedBar.vue";

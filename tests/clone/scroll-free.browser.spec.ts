@@ -1,7 +1,8 @@
 // Scrolling only scrolls (U/B7 · PLAN §5.1 S-4, S-5; R-INTERACT §3.2 `probes/scroll.mjs`), on a sci
 // clone. 80 wheel steps of 300 px, 260 ms apart, on every route at 390 and 1440:
 // - every step moves scrollY by 300 ± 2 px until the page end (the S-5 root snap held /usf and
-//   /demand at 390 for 80 of 80 steps in Chromium);
+//   /demand at 390 for 80 of 80 steps in Chromium), and the document never collapses under the
+//   page (a route that dies mid-walk reads scrollY 0 and an end of 0: scroll-walk.ts);
 // - the address does not change (no scroll-driven `?at`, `?year`, `?scene` writes);
 // - `html` and `body` compute `scroll-snap-type: none`;
 // - no visible text sits below opacity 1 at rest (the scrubbed reveals held up to 29–100 % of
@@ -12,6 +13,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Browser, Page } from "playwright";
 import { CLONE_URL, cells, inCell, launch, record } from "./harness";
+import { ScrollWalk, type Collapse, type Stuck } from "./scroll-walk";
 
 const STEPS = 80;
 const STEP_PX = 300;
@@ -32,7 +34,11 @@ interface Cell {
     snap: { html: string; body: string };
     steps: Step[];
     end: number;
-    stuck: { k: number; moved: number; sy: number }[];
+    stuck: Stuck[];
+    /** Steps after which the document could not hold the page's position (the route died). */
+    collapsed: Collapse[];
+    /** Uncaught page errors and console errors (Vue reports a setup throw there), for attributing a collapse. */
+    pageErrors: string[];
     urlChanges: string[];
     faded: number;
     overprint?: { figure: string; title: string } | null;
@@ -82,6 +88,11 @@ afterAll(async () => {
 describe("scrolling only scrolls (PLAN §5.1)", () => {
     it.each(cells())("$route at $width", async ({ route, width }) => {
         const cell = await inCell(browser, width, async (page) => {
+            const pageErrors: string[] = [];
+            page.on("pageerror", (e) => pageErrors.push(e.message.slice(0, 200)));
+            page.on("console", (m) => {
+                if (m.type() === "error") pageErrors.push(m.text().slice(0, 200));
+            });
             await page.goto(CLONE_URL + route, { waitUntil: "load", timeout: 90_000 });
             await page.waitForTimeout(SETTLE_MS);
             const startUrl = await page.evaluate(() => location.pathname + location.search);
@@ -89,7 +100,7 @@ describe("scrolling only scrolls (PLAN §5.1)", () => {
                 html: getComputedStyle(document.documentElement).scrollSnapType,
                 body: getComputedStyle(document.body).scrollSnapType,
             }));
-            const c: Cell = { route, width, snap, steps: [], end: 0, stuck: [], urlChanges: [], faded: 0, missingFromInnerText: [] };
+            const c: Cell = { route, width, snap, steps: [], end: 0, stuck: [], collapsed: [], pageErrors, urlChanges: [], faded: 0, missingFromInnerText: [] };
 
             if (route === "/usf" && width === 1440) {
                 await page.evaluate(() => scrollTo(0, 300));
@@ -111,7 +122,7 @@ describe("scrolling only scrolls (PLAN §5.1)", () => {
             }
 
             await page.mouse.move(width / 2, 400);
-            let last = await page.evaluate(() => scrollY);
+            const walk = new ScrollWalk(await page.evaluate(() => scrollY), STEP_PX);
             c.end = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
             for (let k = 0; k < STEPS; k++) {
                 await page.mouse.wheel(0, STEP_PX);
@@ -122,37 +133,30 @@ describe("scrolling only scrolls (PLAN §5.1)", () => {
                     end: document.documentElement.scrollHeight - innerHeight,
                 }));
                 c.end = end;
-                const moved = Math.round(sy - last);
+                const { moved, done } = walk.step({ sy, end });
                 const faded = await fadedText(page);
                 c.steps.push({ k, sy: Math.round(sy), moved, url, faded });
                 c.faded += faded.length;
                 if (url !== startUrl && !c.urlChanges.includes(url)) c.urlChanges.push(url);
-                const remaining = end - last;
-                const expected = Math.min(STEP_PX, remaining);
-                if (Math.abs(moved - expected) > 2) c.stuck.push({ k, moved, sy: Math.round(sy) });
-                last = sy;
-                if (sy >= end - 1) break;
+                if (done) break;
             }
-            // Firefox can deliver a wheel event late: a 0 px step and a 600 px step within three
-            // steps of each other are one input arriving late (the page position catches up), not a
-            // held or jumped page. Pair each such 0 with the nearest later 600 and drop both.
-            const late = new Set<number>();
-            for (const x of c.stuck) {
-                if (x.moved !== 0 || late.has(x.k)) continue;
-                const y = c.stuck.find((z) => z.k > x.k && z.k <= x.k + 3 && !late.has(z.k) && Math.abs(z.moved - 2 * STEP_PX) <= 2);
-                if (y) late.add(x.k).add(y.k);
-            }
-            c.stuck = c.stuck.filter((x) => !late.has(x.k));
+            c.stuck = walk.settle();
+            c.collapsed = walk.collapsed;
+            // Compared without whitespace or case: `innerText` applies `text-transform` (the appendix
+            // heading is set in capitals) and breaks a line before a block-level mark (a title's dagger),
+            // which `textContent` does not. Neither drops text.
             c.missingFromInnerText = await page.evaluate(() => {
-                const inner = document.body.innerText.replace(/\s+/g, " ");
+                const fold = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+                const inner = fold(document.body.innerText);
                 return [...document.querySelectorAll<HTMLElement>(".essay-beat h2")]
                     .map((h) => (h.textContent ?? "").replace(/\s+/g, " ").trim())
-                    .filter((t) => t && !inner.includes(t));
+                    .filter((t) => t && !inner.includes(fold(t)));
             });
             return c;
         });
         rows.push(cell);
         expect(cell.snap).toEqual({ html: "none", body: "none" });
+        expect(cell.collapsed).toEqual([]);
         expect(cell.stuck).toEqual([]);
         expect(cell.urlChanges).toEqual([]);
         expect(cell.steps.flatMap((s) => s.faded)).toEqual([]);

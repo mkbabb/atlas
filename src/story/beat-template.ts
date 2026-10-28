@@ -1,14 +1,14 @@
 // story/beat-template.ts — THE VARIATION-AXES ORCHESTRATOR (O-A15 · template-as-data algebra).
 //
-// "Cohesive but never uniform" GUARANTEED BY CONSTRUCTION: title L/C/R, reveal direction, rule variant,
-// numbers pole vary within CLOSED registers by a phase cadence + a route seed — and ONE template
-// declaration drives placement + reveal + rule + numbers + figure ladder + viz type, the beat read from
-// ONE resolved facet, not three modules (`useBeatLayout` / `AnimatedRule` / `resolveVariant`).
+// "Cohesive but never uniform" GUARANTEED BY CONSTRUCTION: title L/C/R, reveal direction and numbers
+// pole vary within CLOSED registers by a phase cadence + a route seed — and ONE template declaration
+// drives placement + reveal + numbers + figure ladder + viz type, the beat read from ONE resolved
+// facet, not two modules (`useBeatLayout` / `resolveVariant`).
 //
-// THE ORCHESTRATION LAW (story-sota §4.1): `resolveBeatTemplate` ORCHESTRATES the three scattered seams
-// — it does NOT replace them. `useBeatLayout` still resolves the concrete grid sides; `AnimatedRule`
-// still renders the divider; `resolveVariant` still folds the micro-grain. This resolver AUTHORS the
-// per-beat tuple `(title-pole, reveal, rule-variant, numbers-pole, signature)` those seams consume.
+// THE ORCHESTRATION LAW (story-sota §4.1): `resolveBeatTemplate` ORCHESTRATES the scattered seams — it
+// does NOT replace them. `useBeatLayout` still resolves the concrete grid sides; `resolveVariant` still
+// folds the micro-grain. This resolver AUTHORS the per-beat tuple `(title-pole, reveal, numbers-pole,
+// signature)` those seams consume. (U/B7b retired the rule variant: one divider expression is left.)
 //
 // THE POLES ARE AUTHORED (animation-taxonomy §E1): the E3 per-route `BeatVariationPolicy.beats[]` tables
 // ARE the design — a RESEED never changes them. The SEED owns ONLY the MICRO-GRAIN (stagger jitter,
@@ -18,7 +18,6 @@
 // `ResolvedBeatTemplate`, unit-testable without mounting.
 
 import type { RevealSpec, TitlePole } from "../contract/index.js";
-import { rotateRuleVariant, type RuleVariant } from "../editorial/rule-register.js";
 import { microGrain, hashSeed, type MicroGrain } from "../motion/seededVariety.js";
 import type { Rank } from "../motion/variant-bounds.js";
 import type { Superlative } from "./superlative.js";
@@ -60,8 +59,6 @@ export interface AuthoredBeat {
     title?: TitlePole;
     /** The authored reveal register. Omit ⇒ the reveal FOLLOWS the resolved title pole (Q-21). */
     reveal?: RevealSpec;
-    /** The authored rule variant. Omit ⇒ the tier-rotated fallback (`rotateRuleVariant`). */
-    rule?: RuleVariant;
     /** The authored numbers pole. Omit ⇒ the cadence (even=top, odd=bottom). */
     numbers?: NumbersPole;
     /** Marks this beat the route SIGNATURE — the ONE distinctive treatment per route (E2: exactly 1). */
@@ -74,7 +71,7 @@ export interface AuthoredBeat {
     viz?: string;
     /** The optional superlative register (Q-48) — a deft per-item badge/caption. Omit ⇒ none. */
     superlative?: Superlative;
-    /** The beat's motion RANK (drives the rule-variant tier + the resolveVariant intensity). Omit ⇒
+    /** The beat's motion RANK (drives the resolveVariant intensity). Omit ⇒
         `support`. */
     rank?: Rank;
 }
@@ -100,8 +97,6 @@ export interface ResolvedBeatTemplate {
     /** The resolved beat facet — the pole-following layout merged UNDER the authored one. Its
         `layout.title` carries the pole so `resolveLayout` produces the same sides. */
     reveal: RevealSpec;
-    /** The resolved rule variant — `AnimatedRule` renders it (authored ?? tier-rotated). */
-    rule: RuleVariant;
     /** The resolved numbers pole. */
     numbers: NumbersPole;
     /** The route SIGNATURE flag (exactly one per route — E2). */
@@ -122,13 +117,12 @@ export interface ResolvedBeatTemplate {
 }
 
 /**
- * THE RESOLVER — `resolveBeatTemplate(policy, phase, routeSeed, rank)`. Reads the AUTHORED beat for a
+ * THE RESOLVER — `resolveBeatTemplate(policy, phase, routeSeed)`. Reads the AUTHORED beat for a
  * masthead phase and fills each unauthored pole from the cadence, then attaches the seed micro-grain.
  * PURE + TOTAL: a phase past the authored table ({} ⇒ pure cadence) still yields a concrete template.
  *
  *   · title  — authored ?? zebra cadence (even=left, odd=right; center is authored-only)
  *   · reveal — the pole-following layout MERGED UNDER the authored reveal (authored overrides win)
- *   · rule   — authored ?? tier-rotated (`rotateRuleVariant`, restraint-first)
  *   · numbers— authored ?? cadence (even=top, odd=bottom)
  *   · grain  — `microGrain(routeSeed, "<id>:beat", phase)` — the reseed-varying MICRO texture only
  */
@@ -136,14 +130,11 @@ export function resolveBeatTemplate(
     policy: BeatVariationPolicy,
     phase: number,
     routeSeed: number,
-    rank?: Rank,
 ): ResolvedBeatTemplate {
     const authored: AuthoredBeat = policy.beats[phase] ?? {};
-    const tier: Rank = rank ?? authored.rank ?? "support";
 
     const title: TitlePole = authored.title ?? (phase % 2 === 0 ? "left" : "right");
     const numbers: NumbersPole = authored.numbers ?? (phase % 2 === 0 ? "top" : "bottom");
-    const rule: RuleVariant = authored.rule ?? rotateRuleVariant(tier, phase);
 
     // The pole-derived layout is the FLOOR; the authored facet (and its own `layout`) overrides on
     // top, field by field.
@@ -161,7 +152,6 @@ export function resolveBeatTemplate(
     return {
         title,
         reveal,
-        rule,
         numbers,
         signature: authored.signature ?? false,
         marquee: authored.marquee ?? false,
@@ -179,8 +169,7 @@ export function resolveBeatTemplate(
 export function resolveBeatTemplates(
     policy: BeatVariationPolicy,
     routeSeed?: number,
-    rank?: Rank,
 ): ResolvedBeatTemplate[] {
     const seed = (routeSeed ?? policy.seed ?? hashSeed(policy.id)) >>> 0;
-    return policy.beats.map((_, phase) => resolveBeatTemplate(policy, phase, seed, rank));
+    return policy.beats.map((_, phase) => resolveBeatTemplate(policy, phase, seed));
 }

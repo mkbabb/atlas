@@ -7,7 +7,6 @@ import type { HeroFacet } from "../editorial/editorial-contract.js";
 import type { EditorialChapter } from "../editorial/editorial-contract.js";
 import type { StoryCardFacet } from "../editorial/story-card.js";
 import type { Colophon } from "../platform/chrome/masthead/SiteColophon.vue";
-import type { RuleVariant } from "../editorial/rule-register.js";
 import type { Rank } from "../motion/variant-bounds.js";
 import type { SkinId } from "../skin/index.js";
 import type { FigureLadder } from "./beat-template.js";
@@ -47,7 +46,6 @@ export interface StoryPoint<Stage extends ChapterStage = ChapterStage> {
     readonly dek?: string;
     readonly pole?: TitlePole;
     readonly reveal?: RevealSpec;
-    readonly rule?: RuleVariant;
     readonly superlative?: Superlative;
     readonly figure?: FigureLadder;
     readonly rank?: Rank;
@@ -218,7 +216,6 @@ export function chaptersOf<Stage extends ChapterStage>(
             dek: point.dek ?? "",
             ...figure,
             reveal: revealOf(point),
-            rule: point.rule,
             superlative: point.superlative,
             figure: point.figure,
             rank: point.rank,

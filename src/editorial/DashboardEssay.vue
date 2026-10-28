@@ -37,7 +37,7 @@
 // component point mounts in idle time once the beat comes within 1.5 viewports (F9), behind a
 // reserve at the route's beat height; a cold `#fragment` mounts its target and the beat before it
 // at setup, so the restore lands on settled content.
-import { computed, h, ref, watch, type Component, type VNodeChild } from "vue";
+import { computed, h, ref, watch, type Component, type Ref, type VNodeChild } from "vue";
 import { useRoute } from "vue-router";
 import Beat from "./Beat.vue";
 import EssayTitle from "./EssayTitle.vue";
@@ -107,6 +107,15 @@ const layouts = chapterShape.map((c, i) => resolveLayout(c, phases[i]!));
 const firstFigureIndex = chapterShape.findIndex((c) => isPlateBeat(c));
 const firstFigureHeld = ref(firstFigureIndex >= 0);
 
+// ── U/B7b · CLS RESERVE — THE COVER (F11, the `--hero-cis` hook) ─────────────────────────────────
+// A route whose cover is a component point (/speedtest, /vft-germination) paints an empty cover at
+// first paint and the component then pushes the whole column down (Z0 phone: 0.727 and 0.852 of
+// the 0.772 and 0.867 CLS). While the cover resolves it is stamped `held` and reserves the route's
+// declared `--hero-cis`; once its own boxes hold still it is `settled` and is its own height, the
+// same release as the first figure. A route that declares no `--hero-cis` reserves nothing.
+const coverIndex = chapterShape.findIndex((c, i) => isCoverChapter(c, i));
+const coverHeld = ref(coverIndex >= 0);
+
 // ── THE VERSAL (FigureInitial) — off unless a chapter declares it (U/B7 · PLAN §5.8). A declared
 // `route` versal carries the route's `--versal-ink`; `atmosphere`/`legend` re-point the token. ──
 const VERSAL_OVERRIDE_INK: Record<"atmosphere" | "legend", string> = {
@@ -125,17 +134,21 @@ function setBeatEl(el: HTMLElement | null, i: number): void {
     if (beatEls[i]) beatEls[i].value = el;
 }
 
-// The first-figure floor's release (see `firstFigureHeld` above): one watch on that beat's element.
-if (firstFigureIndex >= 0) {
+// The first-figure and cover floors' release (see `firstFigureHeld` and `coverHeld` above): one watch
+// on each beat's element.
+function releaseOnSettle(index: number, held: Ref<boolean>): void {
+    if (index < 0) return;
     watch(
-        beatEls[firstFigureIndex]!,
+        beatEls[index]!,
         (beat, _was, onCleanup) => {
-            if (!beat || !firstFigureHeld.value) return;
-            onCleanup(watchFigureSettle(beat, () => (firstFigureHeld.value = false)));
+            if (!beat || !held.value) return;
+            onCleanup(watchFigureSettle(beat, () => (held.value = false)));
         },
         { immediate: true, flush: "post" },
     );
 }
+releaseOnSettle(firstFigureIndex, firstFigureHeld);
+releaseOnSettle(coverIndex, coverHeld);
 
 // ── N.WB1 · THE STORY DIRECTOR + THE CORRIDOR RECEDE (the T1 primitives, LIVE — guarded) ──────────
 // The essay is the story host. When ANY chapter declares a `transition` facet, it mounts the ONE
@@ -287,6 +300,7 @@ function TitleSlot(props_: {
             :data-first-figure="
                 i === firstFigureIndex ? (firstFigureHeld ? 'held' : 'settled') : undefined
             "
+            :data-cover="i === coverIndex ? (coverHeld ? 'held' : 'settled') : undefined"
             :data-point-pending="pointPending(chapter) ? '' : undefined"
             :data-title="hasMasthead(chapter) ? layouts[i]!.title : undefined"
             :data-dock="hasMasthead(chapter) ? layouts[i]!.dock : undefined"
@@ -405,7 +419,6 @@ function TitleSlot(props_: {
         <!-- The divider treatment projects directly from the authored story point. -->
         <AnimatedRule
             v-if="i < chapters.length - 1 && chapter.card?.seamRule !== false"
-            :variant="storyChapters[i]?.rule"
             :weight="chapter.card ? 'seam' : isCoverChapter(chapter, i) ? 'hero' : 'full'"
             :seed="(props.story.seed ?? 0) + i + 1"
         />
@@ -445,6 +458,13 @@ function TitleSlot(props_: {
    trailing chapter rule never sits under a band of empty paper. */
 .essay-beat[data-first-figure="held"] {
     min-block-size: var(--first-figure-cis, var(--beat-cis, 720px));
+}
+
+/* U/B7b · CLS RESERVE — THE COVER (F11). While a component cover resolves (`held`) it reserves the
+   route's declared `--hero-cis`; a route that declares none reserves nothing. Released once the cover
+   has settled, like the first figure. */
+.essay-beat[data-cover="held"] {
+    min-block-size: var(--hero-cis, auto);
 }
 
 /* F9 · A beat whose point waits for its idle mount reserves the route's beat height, so the mount

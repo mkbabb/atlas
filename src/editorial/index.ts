@@ -22,9 +22,6 @@
 
 export { default as EasterEgg } from "./EasterEgg.vue";
 
-// ── O-A15 · the AnimatedRule bounded rule-variant register (the tier-rotated resolver) ────────
-export * from "./rule-register.js";
-
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
 export * from "./useBeatLayout.js";
 export * from "./title-align.js";

@@ -2,8 +2,52 @@
 
 ## Unreleased (8.0.0 train)
 
+### Fixes
+
+- **The hover card mounts under a live hover (U/B7b).** `HoverCard`'s open state read its phone flag
+  before the flag was declared, so a card whose lazy chunk landed while the pointer already rested on
+  a figure threw in setup and the route rendered its error state (on the B7b clone in Firefox at
+  1440: /usf, /ecf and /bead scrolled back to the top with the page gone).
+- **The cover reserves `--hero-cis` while it resolves (U/B7b · F11).** A cover that is a component
+  point is stamped `data-cover="held"` and reserves the route's declared `--hero-cis` until its own
+  boxes hold still, then `settled`, the same release as the first figure. A route that declares no
+  `--hero-cis` reserves nothing. On the B7b clone at 390 the late cover moved the page body by
+  0.727 on /speedtest and 0.852 on /vft-germination.
+- **`useActiveDashboard.ensureLoaded` shares a load in flight (U/B7b).** A second call for the same
+  slug before the first resolves returns the same promise, so two callers on one route fetch and
+  parse the snapshot once. /sci itself fetched once at the B7 head (one server request per load).
+- **The section pager enters without a fade (U/B7b · PLAN §4.2).** `MembraneTitleLozenge` re-enters
+  each time a heading leaves its band; its enter transition now reveals by clip and translate only,
+  so the section name is never painted below full opacity while the reader scrolls.
+- **A beat the reader has passed stays in `innerText` (U/B7b · PLAN §8.1 R-TAB26-PAGE).** An
+  interior `Beat` skips its rendering (`content-visibility: auto`) only until it first enters the
+  viewport; `.beat--rendered` then drops the skip for good. Chromium left a skipped beat's text out
+  of `innerText` (every dashboard route missed 2 to 8 headings after a full scroll).
+- **Map value labels are hidden or painted whole (U/B7b · PLAN §4.2).** `.geo-value-label` rests at
+  `visibility: hidden` instead of opacity 0.04, the redundant channel paints at full ink instead of
+  0.6, and a label that fails the X10 gate stays hidden. Forced colours still show every label. The
+  X10 contrast gate now measures the ink that is painted.
+- **The data viewer writes its query through the view store (U/B7b · U-F60 cl. 4).**
+  `DataViewerRoute` reads and writes its column filters and period through `useViewParams`
+  (`params`, `param`, `setParam`) instead of `route.query` and `router.replace({ query })`. The URL
+  bag gains `sync()`, and the view store calls it on every route change, so an in-app link that
+  carries a query (`/data/sci?lea=…`, a saved view) lands in the bag instead of leaving the previous
+  route's keys there to be written back. The viewer now needs the host's dashboard registry
+  (`installDashboardRegistry`), which every host installs at bootstrap.
+- **The trajectory plate prints its years through `xFormat` everywhere (U/B7 · R-TAB26-PAGE M-6).**
+  The data table, the key-stat captions and the description span used the raw year key ("2014")
+  where the axis printed the consumer's period label ("2014–15"). New pure helper
+  `trajectoryExportRows`; `trajectoryDescription` takes an optional `label` and joins dashed period
+  labels with "to".
+
 ### Breaking changes
 
+- **The rule variant is retired (U/B7b).** PLAN §4.2 deleted the scroll-scrubbed draw, so `draw`
+  painted as `rule`. `RuleVariant`, `RULE_VARIANTS`, `rotateRuleVariant`, `rule-register`,
+  `AnimatedRule`'s `variant` prop, the story `rule` field and `resolveBeatTemplate`'s `rank` argument
+  are deleted. See MIGRATION.md §5g.
+- **`DashboardMeta.crest` is deleted (U/B7b).** Nothing read it; the dock takes the crest from the
+  lazy `DashboardContext`.
 - **The hover card is the peek (U/B7 · O-13).** `HoverReadout.eyebrow` is deleted and
   `HoverReadout.sources` added. The card is 20rem wide and shows the name, one context line, at most
   four facts (none repeating the title), the sources and "Click for detail". `ReadoutFacts` uses a
@@ -39,6 +83,11 @@
 
 ### Added
 
+- **The scatter pre/post compare mark (U/B7b · PLAN §8.1 E6).** `scatterCompareSeries(pairs,
+  options)` returns two ECharts series a scatter's option builder appends: the earlier period as a
+  hollow ring in each entity's colour and one hairline from it to the later dot. Only entities with
+  both ends pair (`comparablePairs`); both series are `silent`, so hover stays on the later dot. The
+  consumer registers `ScatterChart` and `LineChart`.
 - **The dock joins the screen seats (U/B7 · PLAN §2.5).** The bar's sheets (Dashboards, Sections,
   Search, Saved views, More) hold the bottom seat through `useSeatedOpen`, beside the filter drawer
   and the detail's bottom sheet, so one surface is open on the bottom edge at a time. The hand-made

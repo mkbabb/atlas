@@ -7,7 +7,7 @@
 // and full height, above the bar's reserve, below. It holds its screen seat through useSeatedOpen
 // (PLAN §2.5). Opening moves focus to the name; Escape or the close button clears the selection and
 // returns focus to the control that opened it, without scrolling the page.
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { Dialog, DialogTitle, DialogDescription } from "@mkbabb/glass-ui/dialog";
 import { SheetContent } from "@mkbabb/glass-ui/sheet";
@@ -79,12 +79,33 @@ const isBottom = computed(() => seat() === "bottom");
 const detents = [0.5, 1];
 const detent = ref<number | null>(0.5);
 
+// The opener is the control the reader used. A keyboard press leaves focus on it. A pointer press
+// on a button in WebKit does not focus the button (focus goes to the nearest focusable container),
+// so the control the press landed on is recorded and used when focus is not on a control.
+const CONTROL = "button, a[href], input, select, textarea, [tabindex]:not([tabindex='-1'])";
 let opener: HTMLElement | null = null;
+/** Where focus sat when the sheet opened. Focus still there at close was never moved by anyone. */
+let focusAtOpen: Element | null = null;
+let pressed: HTMLElement | null = null;
+const recordPress = (e: PointerEvent): void => {
+    pressed = e.target instanceof Element ? e.target.closest<HTMLElement>(CONTROL) : null;
+};
+onMounted(() => document.addEventListener("pointerdown", recordPress, true));
+onBeforeUnmount(() => document.removeEventListener("pointerdown", recordPress, true));
+function currentOpener(): HTMLElement | null {
+    const active = document.activeElement as HTMLElement | null;
+    const onControl = !!active && active !== document.body && active.matches(CONTROL);
+    return !onControl && pressed?.isConnected ? pressed : active;
+}
 watch(
     () => item.value?.key ?? null,
     (key, was) => {
         if (key && key !== was) {
-            if (!open.value) opener = (document.activeElement as HTMLElement | null) ?? null;
+            if (!open.value) {
+                opener = currentOpener();
+                focusAtOpen = document.activeElement;
+            }
+            pressed = null;
             detent.value = 0.5;
             open.value = true;
         } else if (!key) {
@@ -106,14 +127,17 @@ function onOpenAutoFocus(e: Event): void {
     e.preventDefault();
     void nextTick(() => headingEl()?.focus({ preventScroll: true }));
 }
-/** On close, focus goes back to the opener only when it is stranded: on the body or still in the
-    closing sheet. A surface that took this sheet's seat keeps the focus it moved (PLAN §2.5). */
+/** On close, focus goes back to the opener only when it is stranded: on the body, still in the
+    closing sheet, or where it sat when the sheet opened (WebKit leaves a pointer press's focus on
+    the page container). A surface that took this sheet's seat keeps the focus it moved (PLAN §2.5). */
 function onCloseAutoFocus(e: Event): void {
     e.preventDefault();
     const active = document.activeElement;
-    const stranded = !active || active === document.body || Boolean(active.closest(".entity-detail"));
+    const stranded =
+        !active || active === document.body || active === focusAtOpen || Boolean(active.closest(".entity-detail"));
     if (stranded && opener?.isConnected) opener.focus({ preventScroll: true });
     opener = null;
+    focusAtOpen = null;
 }
 
 const dialogOpen = computed<boolean>({
