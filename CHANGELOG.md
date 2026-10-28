@@ -4,6 +4,14 @@
 
 ### Fixes
 
+- **A section control's leg ends when it lands (U/B7b M1 · O-12, repair round 1).** The leg that
+  lets a second quick PageDown move on was never cleared, so whenever the page later lay inside an old
+  leg's span PageDown answered from that leg's section: after PageDown from the cover and a scroll back
+  onto it, PageDown skipped the first section; after a Sections jump to the last section and a scroll
+  back to the third, PageUp went to the third and not the second. The leg now ends when the page rests at its
+  endpoint, when a scroll runs against it, or on a wheel or touch drag. Witness: two cases in
+  `section-pager.browser.spec.ts` (2 of 2 red before in Chromium and Firefox: `two` for `one`, `three` for `two`).
+
 - **PageDown reads where the reader is (U/B7b M1 · O-12, K-3).** `stepSection` stepped from the
   observer's rung. On a route that opens on a cover (every sci dashboard) the reading line starts
   above the first section, so PageDown skipped it (/sci landed on its second section, /usf and /ecf

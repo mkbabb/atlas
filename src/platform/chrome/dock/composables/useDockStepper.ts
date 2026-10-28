@@ -176,14 +176,42 @@ export function useDockStepper(
 
     /** A scroll within this many px of a leg's start or end counts as at it (scroll-anchor's epsilon). */
     const ANCHOR_SLACK_PX = 4;
-    /** The last section control's leg: where the page was and where it is going. */
-    let leg: { id: string; from: number; to: number } | null = null;
+    /** The section control's leg in flight: where the page was, where it is going, and the last
+        scroll position seen on the way. It lives only while the page travels toward `to`: it ends
+        when the page rests at `to`, when a scroll runs against the leg, or when the reader wheels
+        or drags. A leg left behind would answer PageDown long after it landed (U/B7b M1, repair 1). */
+    let leg: { id: string; from: number; to: number; last: number } | null = null;
+    const legListen: AddEventListenerOptions = { capture: true, passive: true };
+
+    function endLeg(): void {
+        if (!leg) return;
+        leg = null;
+        window.removeEventListener("scroll", onLegScroll, true);
+        window.removeEventListener("wheel", endLeg, true);
+        window.removeEventListener("touchmove", endLeg, true);
+    }
+
+    function onLegScroll(): void {
+        if (!leg) return;
+        const y = document.scrollingElement?.scrollTop ?? 0;
+        const run = Math.sign(leg.to - leg.from);
+        const step = y - leg.last;
+        leg.last = y;
+        if (Math.abs(y - leg.to) <= ANCHOR_SLACK_PX || (step !== 0 && Math.sign(step) !== run)) endLeg();
+    }
 
     function goToSection(id: string): void {
         if (!beatIds().includes(id)) return;
         const target = document.getElementById(id);
         const from = document.scrollingElement?.scrollTop ?? 0;
-        leg = target ? { id, from, to: sectionScrollEndpoint(target) } : null;
+        endLeg();
+        const to = target ? sectionScrollEndpoint(target) : from;
+        if (target && Math.abs(to - from) > ANCHOR_SLACK_PX) {
+            leg = { id, from, to, last: from };
+            window.addEventListener("scroll", onLegScroll, legListen);
+            window.addEventListener("wheel", endLeg, legListen);
+            window.addEventListener("touchmove", endLeg, legListen);
+        }
         activeBeatId.value = id;
         scrollTo(id);
         if (view.narrativeAt?.beatId !== id || view.narrativeAt?.stepId) view.setNarrativeAt(id);
@@ -473,6 +501,7 @@ export function useDockStepper(
 
     onBeforeUnmount(() => {
         window.removeEventListener("keydown", onPageKey);
+        endLeg();
         cancelSectionScroll?.();
         if (observeFrame) cancelAnimationFrame(observeFrame);
         observer?.disconnect();
