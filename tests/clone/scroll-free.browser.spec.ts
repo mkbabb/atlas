@@ -12,6 +12,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Browser, Page } from "playwright";
 import { CLONE_URL, cells, inCell, launch, record } from "./harness";
+import { ScrollWalk, type Stuck } from "./scroll-walk";
 
 const STEPS = 80;
 const STEP_PX = 300;
@@ -32,7 +33,7 @@ interface Cell {
     snap: { html: string; body: string };
     steps: Step[];
     end: number;
-    stuck: { k: number; moved: number; sy: number }[];
+    stuck: Stuck[];
     urlChanges: string[];
     faded: number;
     overprint?: { figure: string; title: string } | null;
@@ -111,7 +112,7 @@ describe("scrolling only scrolls (PLAN §5.1)", () => {
             }
 
             await page.mouse.move(width / 2, 400);
-            let last = await page.evaluate(() => scrollY);
+            const walk = new ScrollWalk(await page.evaluate(() => scrollY), STEP_PX);
             c.end = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
             for (let k = 0; k < STEPS; k++) {
                 await page.mouse.wheel(0, STEP_PX);
@@ -122,27 +123,14 @@ describe("scrolling only scrolls (PLAN §5.1)", () => {
                     end: document.documentElement.scrollHeight - innerHeight,
                 }));
                 c.end = end;
-                const moved = Math.round(sy - last);
+                const { moved, done } = walk.step({ sy, end });
                 const faded = await fadedText(page);
                 c.steps.push({ k, sy: Math.round(sy), moved, url, faded });
                 c.faded += faded.length;
                 if (url !== startUrl && !c.urlChanges.includes(url)) c.urlChanges.push(url);
-                const remaining = end - last;
-                const expected = Math.min(STEP_PX, remaining);
-                if (Math.abs(moved - expected) > 2) c.stuck.push({ k, moved, sy: Math.round(sy) });
-                last = sy;
-                if (sy >= end - 1) break;
+                if (done) break;
             }
-            // Firefox can deliver a wheel event late: a 0 px step and a 600 px step within three
-            // steps of each other are one input arriving late (the page position catches up), not a
-            // held or jumped page. Pair each such 0 with the nearest later 600 and drop both.
-            const late = new Set<number>();
-            for (const x of c.stuck) {
-                if (x.moved !== 0 || late.has(x.k)) continue;
-                const y = c.stuck.find((z) => z.k > x.k && z.k <= x.k + 3 && !late.has(z.k) && Math.abs(z.moved - 2 * STEP_PX) <= 2);
-                if (y) late.add(x.k).add(y.k);
-            }
-            c.stuck = c.stuck.filter((x) => !late.has(x.k));
+            c.stuck = walk.settle();
             // Compared without whitespace or case: `innerText` applies `text-transform` (the appendix
             // heading is set in capitals) and breaks a line before a block-level mark (a title's dagger),
             // which `textContent` does not. Neither drops text.
