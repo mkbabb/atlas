@@ -74,3 +74,53 @@ describe("the section pager writes ?at=, scrolling writes nothing (S-6)", () => 
         );
     });
 });
+
+// PageDown reads where the reader is, not a stale rung (U/B7b M1, found by the served K-3 walk).
+// sci routes open on a cover that is not a section, so the reading line starts above the first
+// section; and a jump from the page end back to the top (Home, a program scroll) leaves no section
+// in the band, so the observer never moves the rung off the last one. Before the fix PageDown from
+// the cover skipped the first section (/sci landed on `map`, /usf on `retention`, /ecf on
+// `item-mix`), and after End then a jump to the top it stepped past the LAST section's index.
+describe("PageDown from above the first section", () => {
+    function addCover(): void {
+        const cover = document.createElement("div");
+        cover.id = "cover-not-a-section";
+        cover.style.blockSize = "900px";
+        document.getElementById("one")!.before(cover);
+    }
+
+    it("from the cover, PageDown lands on the first section", async () => {
+        site = await mountSite("/sci", 1440);
+        addCover();
+        window.scrollTo(0, 0);
+        await settle(600);
+        document.body.focus();
+        await userEvent.keyboard("{PageDown}");
+        await settle(1200);
+        expect(at()).toBe("one");
+        expect(Math.abs(top("one") - reserve())).toBeLessThan(4);
+    });
+
+    it("after the page end and a jump back to the top, PageDown lands on the first section", async () => {
+        site = await mountSite("/sci", 1440);
+        addCover();
+        window.scrollTo(0, document.documentElement.scrollHeight);
+        await settle(800);
+        window.scrollTo(0, 0);
+        await settle(800);
+        document.body.focus();
+        await userEvent.keyboard("{PageDown}");
+        await settle(1200);
+        expect(at()).toBe("one");
+    });
+
+    it("two quick PageDowns move two sections", async () => {
+        site = await mountSite("/sci", 1440);
+        document.body.focus();
+        await userEvent.keyboard("{PageDown}");
+        await settle(120);
+        await userEvent.keyboard("{PageDown}");
+        await settle(1500);
+        expect(at()).toBe("three");
+    });
+});

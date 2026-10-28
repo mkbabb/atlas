@@ -4,6 +4,16 @@
 
 ### Fixes
 
+- **PageDown reads where the reader is (U/B7b M1 · O-12, K-3).** `stepSection` stepped from the
+  observer's rung. On a route that opens on a cover (every sci dashboard) the reading line starts
+  above the first section, so PageDown skipped it (/sci landed on its second section, /usf and /ecf
+  too); and after the page end and a jump to the top no section crosses the band, so the rung stayed
+  on the last section and PageDown on /usf went to the section after it (y 0 to 10,368). The step now
+  reads the section under the reading line once at the key press (-1 above the first section, the
+  last in the end zone), or the section of a section control's leg still in flight, so two quick
+  presses still move two sections. `sectionScrollEndpoint` is exported from `scroll-anchor.ts` for it.
+  Witness: three cases in `section-pager.browser.spec.ts` (2 of 3 red before).
+
 - **The dock's phone sheets and its Search palette are opaque (U/B7b M1 · D-6).** At 390 the More
   menu, the Filters sheet and the Search palette painted glass at α 0.18–0.26, so the page read
   through their rows (and in the light scheme the palette's ink sat on the dark scrim). They take

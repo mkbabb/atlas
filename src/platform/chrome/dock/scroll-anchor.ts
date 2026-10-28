@@ -9,7 +9,8 @@ function cssPixels(value: string): number {
     return Number.isFinite(pixels) ? pixels : 0;
 }
 
-function sectionScrollEndpoint(target: HTMLElement): number {
+/** The scroll position at which `target` rests under the shell head (its scroll margin). */
+export function sectionScrollEndpoint(target: HTMLElement): number {
     const scroller = document.scrollingElement!;
     const marginTop = cssPixels(
         window.getComputedStyle(target).scrollMarginTop,

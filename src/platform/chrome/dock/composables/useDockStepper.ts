@@ -33,7 +33,7 @@ import { useActiveBeat } from "../../../stores/useActiveBeat.js";
 import { useViewParams } from "../../../stores/useViewParams.js";
 import type { NarrativeAnchor } from "../../../stores/useViewParams.js";
 import { toRoman } from "../../../composables/useRomanNumeral.js";
-import { scrollToSection } from "../scroll-anchor.js";
+import { scrollToSection, sectionScrollEndpoint } from "../scroll-anchor.js";
 import type { DashboardContext } from "../../../../contract/index.js";
 
 /** The stepper's reactive surface — the dock composes this into its template. */
@@ -174,17 +174,48 @@ export function useDockStepper(
     const beatIds = (): string[] =>
         beatItems.value.flatMap((i) => (i.kind === "beat" ? [i.id] : []));
 
+    /** A scroll within this many px of a leg's start or end counts as at it (scroll-anchor's epsilon). */
+    const ANCHOR_SLACK_PX = 4;
+    /** The last section control's leg: where the page was and where it is going. */
+    let leg: { id: string; from: number; to: number } | null = null;
+
     function goToSection(id: string): void {
         if (!beatIds().includes(id)) return;
+        const target = document.getElementById(id);
+        const from = document.scrollingElement?.scrollTop ?? 0;
+        leg = target ? { id, from, to: sectionScrollEndpoint(target) } : null;
         activeBeatId.value = id;
         scrollTo(id);
         if (view.narrativeAt?.beatId !== id || view.narrativeAt?.stepId) view.setNarrativeAt(id);
     }
 
+    /** The section the reader is in, read once at the key press (U/B7b M1). While the page is on
+        a section control's leg (between where it started and where it rests) that leg's section
+        is the answer, so a second key press mid-flight moves on from it. Otherwise it is the last
+        section whose top has crossed the reading line, -1 above the first section (a cover), and
+        the last section in the end zone. The observer's rung is not read: it never moves when a
+        jump lands where no section crosses the band (the top of a page that opens on a cover). */
+    function sectionHere(ids: string[]): number {
+        const y = document.scrollingElement?.scrollTop ?? 0;
+        if (leg && ids.includes(leg.id)) {
+            const run = leg.to - leg.from;
+            const done = y - leg.from;
+            if (Math.abs(done) > ANCHOR_SLACK_PX && Math.sign(done) === Math.sign(run) && Math.abs(done) <= Math.abs(run) + ANCHOR_SLACK_PX)
+                return ids.indexOf(leg.id);
+        }
+        if (readProgress() >= END_EPSILON) return ids.length - 1;
+        const line = window.innerHeight * 0.35;
+        let here = -1;
+        ids.forEach((id, i) => {
+            const el = document.getElementById(id);
+            if (el && el.getBoundingClientRect().top <= line) here = i;
+        });
+        return here;
+    }
+
     function stepSection(delta: -1 | 1): boolean {
         const ids = beatIds();
-        const here = Math.max(0, ids.indexOf(activeBeatId.value));
-        const next = ids[here + delta];
+        const next = ids[sectionHere(ids) + delta];
         if (!next) return false;
         goToSection(next);
         return true;
