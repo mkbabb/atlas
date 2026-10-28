@@ -4,6 +4,11 @@
 
 ### Fixes
 
+- **The cover reserves `--hero-cis` while it resolves (U/B7b · F11).** A cover that is a component
+  point is stamped `data-cover="held"` and reserves the route's declared `--hero-cis` until its own
+  boxes hold still, then `settled`, the same release as the first figure. A route that declares no
+  `--hero-cis` reserves nothing. On the B7b clone at 390 the late cover moved the page body by
+  0.727 on /speedtest and 0.852 on /vft-germination.
 - **`useActiveDashboard.ensureLoaded` shares a load in flight (U/B7b).** A second call for the same
   slug before the first resolves returns the same promise, so two callers on one route fetch and
   parse the snapshot once. /sci itself fetched once at the B7 head (one server request per load).

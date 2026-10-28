@@ -175,6 +175,7 @@ projecting components.
 | `.page-title-wayfind` (the kicker revealed inside the sticky h1 on scroll) deleted | drop the span; the cover kicker renders once, above the title |
 | `--font-display`/`--font-serif` were serif | they are the system sans; mark serif surfaces (the SCI lead, VFT) with `data-type-face="serif"` |
 | the first figure beat reserves `--first-figure-cis` until it settles | declare `--first-figure-cis` beside `--beat-cis` on the route body |
+| a component cover reserves `--hero-cis` until it settles (U/B7b) | declare `--hero-cis` (the cover's settled height at 390 and at 1440) on a route body whose cover is a component |
 | a `#fragment` is a narrative anchor landed by the dock's restore | a router `scrollBehavior` returns `{ top: 0 }` for a hash on the first navigation or a cross-page link |
 | `TitleFacet.treatment: "typewriter"` | `"plain"`; the title renders once, whole |
 | a `lettering` title with no `[bracket]` (the glyph cascade) | no edit; it renders as plain text |

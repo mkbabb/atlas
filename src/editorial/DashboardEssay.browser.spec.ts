@@ -44,8 +44,11 @@ function plate(height: number) {
 
 type Plate = ReturnType<typeof defineComponent>;
 
-function story(plates: Plate[], extra: Record<string, unknown> = {}): StoryManifest {
-    const cover = defineComponent({ render: () => h("div", { style: "height:200px" }, "cover") });
+function story(
+    plates: Plate[],
+    extra: Record<string, unknown> = {},
+    cover: Plate = defineComponent({ render: () => h("div", { style: "height:200px" }, "cover") }),
+): StoryManifest {
     const slugs = ["fig", "next", "third", "fourth", "fifth"];
     return {
         id: "floor",
@@ -147,6 +150,38 @@ describe("M-2 · the first-figure floor reserves while the plate resolves, then 
         }
         expect(essay.beat().getAttribute("data-first-figure")).toBe("settled");
         expect([...heights]).toEqual([own]);
+    });
+});
+
+describe("F11 · the cover reserves the route's --hero-cis while it resolves (U/B7b)", () => {
+    it("a late cover fills its reserve: the first figure beat never moves", async () => {
+        const probe = await mountEssay(story([plate(400)], {}, latePlate(500, 300)));
+        await sleep(2000);
+        const own = probe.beat("cover").offsetHeight;
+        unmount?.();
+        unmount = null;
+        const essay = await mountEssay(story([plate(400)], {}, latePlate(500, 300)), {
+            tokens: `--beat-cis: 1200px; --hero-cis: ${own}px`,
+        });
+        await frame();
+        await frame();
+        expect(essay.beat("cover").getAttribute("data-cover")).toBe("held");
+        const tops = new Set<number>();
+        const t0 = performance.now();
+        while (performance.now() - t0 < 2200) {
+            tops.add(Math.round(essay.beat("fig").getBoundingClientRect().top + window.scrollY));
+            await frame();
+        }
+        expect(essay.beat("cover").getAttribute("data-cover")).toBe("settled");
+        expect(tops.size).toBe(1);
+    });
+
+    it("a route that declares no --hero-cis reserves nothing", async () => {
+        const essay = await mountEssay(story([plate(400)], {}, latePlate(500, 300)));
+        await frame();
+        await frame();
+        expect(essay.beat("cover").getAttribute("data-cover")).toBe("held");
+        expect(essay.band("cover").band).toBe(0);
     });
 });
 
