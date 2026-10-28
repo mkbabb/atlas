@@ -79,6 +79,11 @@
 
 ### Added
 
+- **The scatter pre/post compare mark (U/B7b · PLAN §8.1 E6).** `scatterCompareSeries(pairs,
+  options)` returns two ECharts series a scatter's option builder appends: the earlier period as a
+  hollow ring in each entity's colour and one hairline from it to the later dot. Only entities with
+  both ends pair (`comparablePairs`); both series are `silent`, so hover stays on the later dot. The
+  consumer registers `ScatterChart` and `LineChart`.
 - **The dock joins the screen seats (U/B7 · PLAN §2.5).** The bar's sheets (Dashboards, Sections,
   Search, Saved views, More) hold the bottom seat through `useSeatedOpen`, beside the filter drawer
   and the detail's bottom sheet, so one surface is open on the bottom edge at a time. The hand-made
