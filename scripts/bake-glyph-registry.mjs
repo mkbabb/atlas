@@ -442,6 +442,13 @@ function bakeGrain(grain, args) {
         for (const k of Object.keys(entries).sort()) sorted[k] = entries[k];
         const outPath = resolve(OUT_DIR, `${registryName(grain)}.${tierName}.json`);
         writeFileSync(outPath, JSON.stringify(sorted) + "\n");
+        // The county NAME table (FIPS → name), apart from the outlines: the LEA→county join reads
+        // names on every route, and must not carry the coarse outlines into the entry (B7b M3).
+        if (grain === "county" && tierName === "coarse") {
+            const names = {};
+            for (const k of Object.keys(sorted)) names[k] = sorted[k].name;
+            writeFileSync(resolve(OUT_DIR, `${registryName(grain)}.names.json`), JSON.stringify(names) + "\n");
+        }
 
         tierReports[tierName] = {
             count: feats.length,

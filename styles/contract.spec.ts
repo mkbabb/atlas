@@ -81,6 +81,15 @@ async function consumerCompiled(): Promise<string> {
     const compiler = await compile(ROOT, { base, onDependency: () => {} });
     return compiler.build([]);
 }
+/** The SFC sheets that ship beside their modules (vite.sfc-sheets.mts): the consumer's bundler, not
+    its root, takes them in, and its Lightning CSS pass runs over them the same way. */
+function sfcSheets(): string {
+    const dist = dirname(shipped());
+    return walk(dist, /\.css$/)
+        .filter((f) => !f.startsWith(DIST_STYLES + "/"))
+        .map((f) => readFileSync(f, "utf8"))
+        .join("\n");
+}
 /** Every child of an atlas layer block, each optimized on its own (so no cross-rule merge hides a loss). */
 function atlasItemLosses(compiled: string): { checked: number; findings: string[] } {
     const findings: string[] = [];
@@ -114,7 +123,7 @@ describe("the consumer's Lightning CSS pass loses no atlas declaration", () => {
         expect(lostProps(["color"], [])).toEqual(["color"]);
     });
     it("every atlas-layer item keeps every authored property", async () => {
-        const compiled = await consumerCompiled();
+        const compiled = `${await consumerCompiled()}\n${sfcSheets()}`;
         expect(compiled).toMatch(/@layer atlas\.components/);
         const { checked, findings } = atlasItemLosses(compiled);
         console.log(`styles-contract: ${checked} atlas-layer items optimized, ${findings.length} losses`);
@@ -154,7 +163,7 @@ describe("every utility candidate in the shipped modules renders", () => {
         const ds = await __unstable__loadDesignSystem(ROOT, { base });
         const css = ds.candidatesToCss(candidates);
         const glassDist = dirname(dirname(fileURLToPath(import.meta.resolve("@mkbabb/glass-ui/styles"))));
-        const sheets = [...walk(base, /\.css$/), ...walk(glassDist, /\.(css|js)$/)].map((f) => readFileSync(f, "utf8")).join("\n");
+        const sheets = [...walk(dist, /\.css$/), ...walk(glassDist, /\.(css|js)$/)].map((f) => readFileSync(f, "utf8")).join("\n");
         const defined = new Set([...sheets.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)].map((m) => m[1]));
         const namedFunctional = (c: string) =>
             [...ds.parseCandidate(c)].some((p) => p.kind === "functional" && p.value?.kind === "named");

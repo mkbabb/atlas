@@ -87,7 +87,7 @@ describe("filter continuum register", () => {
 });
 
 describe("bounded narrative restore", () => {
-    it("re-anchors only after target movement and stops on quiet", () => {
+    it("re-anchors each target movement after the settle and stops on quiet", () => {
         vi.useFakeTimers();
         let deliver: ResizeObserverCallback = () => undefined;
         const disconnect = vi.fn();
@@ -120,9 +120,11 @@ describe("bounded narrative restore", () => {
         top = 180;
         deliver([], {} as ResizeObserver);
         expect(reanchor).toHaveBeenCalledOnce();
+        // A second movement (Firefox 1440 /sci#map: the first figure beat collapsed 1505 -> 906 px,
+        // then grew to 1407 px when its chart mounted) is corrected too (U/B7b M3 repair 1).
         top = 260;
         deliver([], {} as ResizeObserver);
-        expect(reanchor).toHaveBeenCalledOnce();
+        expect(reanchor).toHaveBeenCalledTimes(2);
         vi.advanceTimersByTime(40);
         expect(stopped).toHaveBeenCalledWith("quiet");
         expect(disconnect).toHaveBeenCalledOnce();
@@ -152,6 +154,71 @@ describe("bounded narrative restore", () => {
         deliver([], {} as ResizeObserver);
         expect(reanchor).not.toHaveBeenCalled();
         heal.settle();
+        expect(reanchor).toHaveBeenCalledOnce();
+    });
+
+    it("a placed settle does not re-anchor movement the caller already cured, and still corrects later movement (U/B7b M3 repair 1)", () => {
+        // Firefox 390 /demand#crossover: the cover grew before the settle, the dock's settle
+        // re-landed the beat, and the heal spent its one correction on that already-cured move.
+        // The first figure beat then shrank 216 px and nothing corrected it (top -136).
+        vi.useFakeTimers();
+        let deliver: ResizeObserverCallback = () => undefined;
+        vi.stubGlobal(
+            "ResizeObserver",
+            class {
+                constructor(callback: ResizeObserverCallback) { deliver = callback; }
+                observe() {}
+                disconnect() {}
+            },
+        );
+        vi.stubGlobal("window", { scrollY: 0 });
+        let top = 100;
+        const reanchor = vi.fn();
+        const heal = watchNarrativeAnchorLayout({
+            target: { getBoundingClientRect: () => ({ top }) } as unknown as HTMLElement,
+            root: {} as HTMLElement,
+            reanchor,
+            onStop: () => undefined,
+        });
+        top = 671;
+        deliver([], {} as ResizeObserver);
+        heal.settle({ placed: true });
+        expect(reanchor).not.toHaveBeenCalled();
+        top = 455;
+        deliver([], {} as ResizeObserver);
+        expect(reanchor).toHaveBeenCalledOnce();
+    });
+
+    it("checks the target on the quiet edge, so a move behind a long task is corrected, not dropped (U/B7b M3 repair 1)", () => {
+        // Under load the quiet timer fires right after a long task, before the observer delivers
+        // the layout that task produced. The quiet edge reads the target itself before it stops.
+        vi.useFakeTimers();
+        vi.stubGlobal(
+            "ResizeObserver",
+            class {
+                observe() {}
+                disconnect() {}
+            },
+        );
+        vi.stubGlobal("window", { scrollY: 0 });
+        let top = 100;
+        const reanchor = vi.fn();
+        const stopped = vi.fn();
+        const heal = watchNarrativeAnchorLayout({
+            target: { getBoundingClientRect: () => ({ top }) } as unknown as HTMLElement,
+            root: {} as HTMLElement,
+            reanchor,
+            onStop: stopped,
+            quietMs: 40,
+            deadlineMs: 1_000,
+        });
+        heal.settle({ placed: true });
+        top = 601;
+        vi.advanceTimersByTime(40);
+        expect(reanchor).toHaveBeenCalledOnce();
+        expect(stopped).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(40);
+        expect(stopped).toHaveBeenCalledWith("quiet");
         expect(reanchor).toHaveBeenCalledOnce();
     });
 });

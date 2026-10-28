@@ -176,6 +176,7 @@ projecting components.
 | `--font-display`/`--font-serif` were serif | they are the system sans; mark serif surfaces (the SCI lead, VFT) with `data-type-face="serif"` |
 | the first figure beat reserves `--first-figure-cis` until it settles | declare `--first-figure-cis` beside `--beat-cis` on the route body |
 | a component cover reserves `--hero-cis` until it settles (U/B7b) | declare `--hero-cis` (the cover's settled height at 390 and at 1440) on a route body whose cover is a component |
+| `dist/styles/components.css` (every SFC `<style>` in `@layer atlas.components`, compiled by the consumer root) deleted (U/B7b M3, F15) | no edit when the bundler resolves CSS imports from JS (Vite does): each component module imports its own sheet (`dist/**/X.css`, already layered in `atlas.components` with its `@custom-media` resolved), so the entry sheet carries only the components the entry renders. A test runner that externalizes `@mkbabb/atlas` must inline it (vitest `server.deps.inline`) |
 | a `#fragment` is a narrative anchor landed by the dock's restore | a router `scrollBehavior` returns `{ top: 0 }` for a hash on the first navigation or a cross-page link |
 | `TitleFacet.treatment: "typewriter"` | `"plain"`; the title renders once, whole |
 | a `lettering` title with no `[bracket]` (the glyph cascade) | no edit; it renders as plain text |

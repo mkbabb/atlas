@@ -15,8 +15,9 @@
    Every atlas-authored rule sits inside `@layer atlas`, so unlayered consumer CSS always wins. Plain
    sheets import with layer(...); the sheets that hold @utility / @custom-variant / @custom-media
    (which cannot nest) import top-level and layer their own plain rules in source. The order is the
-   retired aggregate's (src/design/index.css), verbatim, then the editorial title register, then the
-   SFC <style> aggregate. atlas.tokens stays in the order statement and is empty: the token sheets
+   retired aggregate's (src/design/index.css), verbatim, then the editorial title register. The SFC
+   <style> blocks are not in this sheet: each ships beside its module, which imports it, wrapped in
+   `@layer atlas.components` (vite.sfc-sheets.mts, F15). atlas.tokens stays in the order statement and is empty: the token sheets
    sit in atlas.recipes, after the glass-ui they override, as the retired aggregate's winning copy did. */
 
 @layer atlas, atlas.tokens, atlas.recipes, atlas.components;
@@ -55,4 +56,3 @@
 @import "./design/overlays/measure.css" layer(atlas.recipes);
 @import "./design/overlays/chrome-overlays.css" layer(atlas.recipes);
 @import "./editorial/title-align.css" layer(atlas.recipes);
-@import "./components.css" layer(atlas.components);

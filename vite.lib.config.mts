@@ -13,9 +13,10 @@
 // inside the graph as native-ESM-safe JavaScript modules. The
 // Relative imports stay IN the graph (preserveModulesRoot: src). `base: "./"` makes the
 // feed-worker URL module-relative so it survives off-origin-root. `copyPublicDir: false` keeps any
-// instance public/ out of the lib dist. `cssCodeSplit: false` collapses per-component SFC <style>
-// chunks into ONE dist/assets/core.css aggregate (shipped as dist/styles/components.css by
-// build-styles.mjs). No Tailwind pass runs here: the consumer's one Tailwind root compiles atlas's
+// instance public/ out of the lib dist. `cssCodeSplit: true` emits one sheet per module that owns an
+// SFC <style> block, beside that module, and `sfcSheets` (vite.sfc-sheets.mts) makes the module
+// import it, so a consumer loads component CSS with the chunk that renders the component (F15).
+// No Tailwind pass runs here: the consumer's one Tailwind root compiles atlas's
 // styles (the styles contract, styles/index.css), so no published atlas byte depends on the glass-ui
 // or Tailwind present at atlas's build.
 import { fileURLToPath, URL } from "node:url";
@@ -23,6 +24,7 @@ import { resolve } from "node:path";
 import { builtinModules } from "node:module";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
+import { BREAKPOINTS_CSS, sfcSheets } from "./vite.sfc-sheets.mts";
 
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
 const OUT = resolve(ROOT, "dist");
@@ -67,7 +69,7 @@ export default defineConfig({
     base: "./", // module-relative worker/asset URLs (survive off-origin-root)
     cacheDir: resolve(ROOT, ".vite-cache"),
     logLevel: "info",
-    plugins: [vue()],
+    plugins: [vue(), sfcSheets(BREAKPOINTS_CSS(ROOT))],
     build: {
         outDir: OUT,
         emptyOutDir: true,
@@ -75,7 +77,7 @@ export default defineConfig({
         target: "es2022",
         minify: false,
         sourcemap: false,
-        cssCodeSplit: false, // per-component SFC <style> chunks collapse into ONE core.css
+        cssCodeSplit: true, // one sheet per SFC module, imported by that module (vite.sfc-sheets.mts)
         lib: {
             entry: entries,
             formats: ["es"],
@@ -86,16 +88,12 @@ export default defineConfig({
                 preserveModules: true,
                 preserveModulesRoot: resolve(ROOT, "src"),
                 entryFileNames: "[name].js",
-                // The single `cssCodeSplit:false` SFC aggregate MUST land at the documented
-                // `assets/core.css` (build-styles.mjs ships THAT path as dist/styles/components.css).
-                // Vite otherwise names the lib CSS after the package (`atlas.css`), so the fold silently
-                // missed the 68 SFC <style> blocks (232 KB of scoped component CSS never reached
-                // dist/style.css → consumer plates rendered unstyled). Pin the CSS name so the stated
-                // core.css contract holds; every other asset keeps its `[name]` (the worker rides its
-                // own hashed worker-pipeline naming, untouched by this asset rule).
+                // Each SFC sheet sits beside its module: `platform/chrome/dock/Dock.css` next to
+                // `platform/chrome/dock/Dock.vue.js`. Every other asset keeps its `[name]` (the worker
+                // rides its own hashed worker-pipeline naming, untouched by this asset rule).
                 assetFileNames: (info): string => {
                     const name = info.names?.[0] ?? info.name ?? "";
-                    return name.endsWith(".css") ? "assets/core.css" : "assets/[name][extname]";
+                    return name.endsWith(".css") ? "[name][extname]" : "assets/[name][extname]";
                 },
             },
         },
