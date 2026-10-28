@@ -181,6 +181,11 @@ projecting components.
 | `TypewriterTitle`, `ScrollLetteringHeading`, `useScrollLettering`, `useSectionReveal`, `TITLE_LETTERING_REGISTER`, `titleRevealProgress`, `storyRevealTiming`, `TITLE_COMPLETE_AT`, `--motion-glyph-spring` deleted | delete the import; render the text |
 | `<HandMark clock="scroll">` | `clock="static"` (rests drawn); `load` draws once at mount |
 | `<InkStroke clock>` | delete the prop; the stroke rests drawn |
+| `RuleVariant`, `RULE_VARIANTS`, `rotateRuleVariant` and `rule-register` deleted (U/B7b) | delete the import |
+| `<AnimatedRule variant>` (U/B7b) | delete the prop; every rule is the static drawn rule |
+| a story point's or authored beat's `rule: "rule" \| "draw"` (U/B7b) | delete the field (a type error names each site) |
+| `resolveBeatTemplate(policy, phase, seed, rank)` / `resolveBeatTemplates(policy, seed, rank)` (U/B7b) | drop the `rank` argument |
+| `DashboardMeta.crest` (U/B7b) | delete it; the dock reads the crest from `DashboardContext.crest` |
 
 ## 6 · glass-ui 10.1.0
 

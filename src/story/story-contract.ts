@@ -13,7 +13,6 @@
 // cross-viz highlight lifts).
 
 import type { Chapter } from "../contract/index.js";
-import type { RuleVariant } from "../editorial/rule-register.js";
 // ── The mark identity — the object-constancy key (REUSED, never re-minted) ────────────────────────
 
 /** A stable mark identity — the object-constancy key. REUSES the selection-contract codec
@@ -136,8 +135,6 @@ export interface ChapterChoreography {
     transition?: EdgeSpec;
     /** The beat's declarative focus effects. Omit ⇒ none. */
     focus?: FocusEffect[];
-    /** The point-owned divider treatment; omitted points retain the restrained static rule. */
-    rule?: RuleVariant;
 }
 
 /** The spine-carried form consumed by the director and essay host. */

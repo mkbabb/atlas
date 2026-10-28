@@ -405,7 +405,6 @@ function TitleSlot(props_: {
         <!-- The divider treatment projects directly from the authored story point. -->
         <AnimatedRule
             v-if="i < chapters.length - 1 && chapter.card?.seamRule !== false"
-            :variant="storyChapters[i]?.rule"
             :weight="chapter.card ? 'seam' : isCoverChapter(chapter, i) ? 'hero' : 'full'"
             :seed="(props.story.seed ?? 0) + i + 1"
         />

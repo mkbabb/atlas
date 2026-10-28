@@ -27,6 +27,12 @@
 
 ### Breaking changes
 
+- **The rule variant is retired (U/B7b).** PLAN §4.2 deleted the scroll-scrubbed draw, so `draw`
+  painted as `rule`. `RuleVariant`, `RULE_VARIANTS`, `rotateRuleVariant`, `rule-register`,
+  `AnimatedRule`'s `variant` prop, the story `rule` field and `resolveBeatTemplate`'s `rank` argument
+  are deleted. See MIGRATION.md §5g.
+- **`DashboardMeta.crest` is deleted (U/B7b).** Nothing read it; the dock takes the crest from the
+  lazy `DashboardContext`.
 - **The hover card is the peek (U/B7 · O-13).** `HoverReadout.eyebrow` is deleted and
   `HoverReadout.sources` added. The card is 20rem wide and shows the name, one context line, at most
   four facts (none repeating the title), the sources and "Click for detail". `ReadoutFacts` uses a

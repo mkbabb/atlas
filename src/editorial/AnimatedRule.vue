@@ -2,24 +2,23 @@
 // platform/editorial/AnimatedRule.vue — ⑤ the animated divider (SUBSUMES SectionDivider). F3a /
 // design-interstitial-system §3.5 · f6-hero-interstitials §2.B-⑤.
 //
-// THE SUBSUMPTION (the R-SUBSUME decision): `<AnimatedRule variant="rule">` IS today's
+// THE SUBSUMPTION (the R-SUBSUME decision): `<AnimatedRule>` IS today's
 // `<SectionDivider>` — a static hand-drawn rule inked with glass-ui's own pen (the atlas authors NO
 // stroke cubic: the centreline is glass's `handLine`, the nib its `strokeRibbon`, via `InkStroke`).
 // glass 9 re-cut `<HandMark>` into a pen that marks SLOTTED TEXT and retired the free-standing
 // `strikethrough` rule and the brush continuum, so a wordless rule inks through `InkStroke`.
 // It carries SectionDivider's `full`/`short` weight
-// tiers + a `hero` tier (the page-cover rule below `<DashboardHero>`). The variants escalate
-// expression, restraint-first (most junctions stay the static `rule`):
-//   · rule    — the static drawn hand rule (today's default; boil FORBIDDEN — the frame-guard).
-//   · draw    — paints as `rule` (U/B7 · PLAN §4.2 deleted the scroll-scrubbed draw).
+// tiers + a `hero` tier (the page-cover rule below `<DashboardHero>`). It has one expression: the
+// static drawn hand rule (boil FORBIDDEN — the frame-guard). U/B7b retired the `variant` prop and its
+// `draw` name: PLAN §4.2 deleted the scroll-scrubbed draw, which left `draw` painting as `rule`.
 //
 // (The actual file MOVE — SectionDivider → editorial/, the call-site re-points — is a phase-2
 // integration edit OUTSIDE this lane's write-bound; SPEC'd in the lane's blockers. AnimatedRule
 // composes the SAME glass pen here, so the subsumption is real, not a fork: one divider
-// component, escalating variants, the `clock` precedent — two divider components
+// component — two divider components
 // would be a seam that drifts.)
 //
-// THE RUNG — ④ chrome (rule/draw). The ink is the
+// THE RUNG — ④ chrome. The ink is the
 // PAGE ink (`--foreground` for full, `--engrave` for short) — L1 frame chrome, NEVER a data color
 // (the existing SectionDivider law). It binds --attn-chrome via the SUFFUSION contract.
 //
@@ -29,20 +28,16 @@
 // chapter SEMANTICS live in the `<h2>` headings, not the rule).
 import { computed } from "vue";
 import InkStroke from "../charts/glyph/InkStroke.vue";
-import type { RuleVariant } from "./rule-register.js";
 
 const props = withDefaults(
     defineProps<{
-        /** The escalating expression (default "rule" — the static drawn divider). The CLOSED register
-            is `rule-register.ts`'s `RuleVariant`; the beat-template orchestrator resolves it per beat. */
-        variant?: RuleVariant;
         /** The demarcation tier — `full` (chapter rule) · `short` (figure rule) · `hero`
             (the page-cover rule below the DashboardHero). */
         weight?: "full" | "short" | "hero" | "seam";
         /** The hand's seed (the SectionDivider seed law — pixel-identical reloads). */
         seed?: number;
     }>(),
-    { variant: "rule", weight: "full", seed: 1 },
+    { weight: "full", seed: 1 },
 );
 
 const isShort = computed(() => props.weight === "short");
@@ -76,13 +71,12 @@ const ink = computed<string>(() =>
         aria-hidden="true"
         data-attn="chrome"
         :data-weight="weight"
-        :data-variant="variant"
         data-testid="animated-rule"
     >
-        <!-- A StoryCard seam is literal chrome, irrespective of the authored chapter variant. -->
+        <!-- A StoryCard seam is literal chrome. -->
         <span v-if="isSeam" class="animated-rule__seam" />
 
-        <!-- variant="rule" | "draw" — the drawn hand rule, still (no boil — the frame-guard). The
+        <!-- The drawn hand rule, still (no boil — the frame-guard). The
              centreline and the nib are glass's pen (no atlas stroke cubic). -->
         <InkStroke
             v-else
