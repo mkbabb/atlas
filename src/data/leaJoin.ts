@@ -12,31 +12,23 @@
 //
 // THE FIX. The name joins move HERE, topology-free. The ONE topology-derived datum a join needs is
 // the county-name→FIPS table `leaToCountyFips` matches against — and that is just 100 county NAMES,
-// NOT the polygon arcs. We read those names from the COMMITTED county-glyph registry
-// (`glyphs/nc-county.coarse.json`, FIPS→{name, …}), which `entityGeometry.ts` ALREADY ships and
-// which is byte-identical to the topology's county names (the bake derives both from the same TIGER
-// source). So the join is decoupled from the polygon geometry with ZERO data duplication: the
-// glyph registry IS the single committed name source, and `geometry.ts` (the topology) is reached
-// ONLY by components that actually mount a map (the lazy `geo-*.js` chunk now rides only the four
-// geo-bearing routes' bodies).
+// NOT the polygon arcs. We read those names from the committed county NAME table
+// (`glyphs/nc-county.names.json`, FIPS→name), which the glyph bake writes beside the coarse registry
+// from the same entries. The coarse registry itself carries every county's outline (`d`, 32.8 KB):
+// importing it here put those outlines in every consumer's entry chunk, through the dock's
+// `useViewParams`, and defeated `entityGeometry`'s lazy import of the same registry (B7b M3).
 
-import { countyGlyphRegistry } from "./countyGlyphRegistry.js";
+import countyNamesJson from "./glyphs/nc-county.names.json?raw";
 import leaToGeoidCrosswalkJson from "./glyphs/lea-to-geoid.json?raw";
 
-// ── The county name→FIPS table (read from the committed glyph registry, NOT the topology) ──
-// The county-glyph registry is FIPS-keyed `{ name, d, abbr, … }`; we invert the name→FIPS half it
-// already carries. Lower-cased, matching the `bareLeaName` normalization below. Built once (a 100-
-// entry map), memoized — the registry is a static import so this is synchronous + topology-free.
-const COUNTY_REGISTRY = countyGlyphRegistry;
+// ── The county name→FIPS table (the committed name table, NOT the topology or the outlines) ──
+// FIPS-keyed names, inverted to name→FIPS. Lower-cased, matching the `bareLeaName` normalization
+// below. Built once (a 100-entry map), memoized; a static import, so synchronous + topology-free.
+const COUNTY_NAMES = JSON.parse(countyNamesJson) as Record<string, string>;
 let _fipsByName: Map<string, string> | null = null;
 function fipsByCountyName(): Map<string, string> {
     if (_fipsByName) return _fipsByName;
-    _fipsByName = new Map(
-        Object.entries(COUNTY_REGISTRY).map(([fips, e]) => [
-            (e.name ?? "").toLowerCase(),
-            fips,
-        ]),
-    );
+    _fipsByName = new Map(Object.entries(COUNTY_NAMES).map(([fips, name]) => [name.toLowerCase(), fips]));
     return _fipsByName;
 }
 
