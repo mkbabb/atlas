@@ -4,6 +4,14 @@
 
 ### Fixes
 
+- **A beat the reader has passed stays in `innerText` (U/B7b · PLAN §8.1 R-TAB26-PAGE).** An
+  interior `Beat` skips its rendering (`content-visibility: auto`) only until it first enters the
+  viewport; `.beat--rendered` then drops the skip for good. Chromium left a skipped beat's text out
+  of `innerText` (every dashboard route missed 2 to 8 headings after a full scroll).
+- **Map value labels are hidden or painted whole (U/B7b · PLAN §4.2).** `.geo-value-label` rests at
+  `visibility: hidden` instead of opacity 0.04, the redundant channel paints at full ink instead of
+  0.6, and a label that fails the X10 gate stays hidden. Forced colours still show every label. The
+  X10 contrast gate now measures the ink that is painted.
 - **The data viewer writes its query through the view store (U/B7b · U-F60 cl. 4).**
   `DataViewerRoute` reads and writes its column filters and period through `useViewParams`
   (`params`, `param`, `setParam`) instead of `route.query` and `router.replace({ query })`. The URL

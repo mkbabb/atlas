@@ -63,14 +63,17 @@
 }
 
 /* GAP-5 · THE FORCED-COLORS VALUE-LABEL CHANNEL (I9.c) — at REST the colour ramp is the magnitude
-   channel, so the per-feature word recedes to a near-invisible engraved overlay (it must not clutter
-   the resting map). It is hit-test-transparent (the path beneath owns the pointer). The DOM node is
-   always present (the channel exists), so the meaning is one media-query away. */
+   channel, so the per-feature word is not painted (it must not clutter the resting map). The DOM node
+   is always present (the channel exists), so the meaning is one media-query away. It is
+   hit-test-transparent (the path beneath owns the pointer).
+   U/B7b · PLAN §4.2: a painted label is painted whole. The labels used to rest at opacity 0.04 and
+   lift to 0.6, which held visible text below full opacity; now a label is either hidden or painted
+   at full ink, and the X10 contrast gate measures exactly the ink it paints. */
 .geo-value-label {
     font-family: var(--font-mono);
     font-size: var(--type-micro);
     fill: var(--foreground);
-    opacity: 0.04;
+    visibility: hidden;
     pointer-events: none;
     paint-order: stroke;
     stroke: var(--background);
@@ -78,23 +81,22 @@
 }
 /* O-A22 · THE SIGHTED-COLORBLIND VALUE-LABEL CHANNEL — when the density decision routes a frame to
    the value-label channel (a continuous / sparse district set), the words are the RESTING redundant
-   channel and must be legible without hue, so the layer lifts off the near-invisible GAP-5 rest
-   opacity to a quiet-but-readable engraving (the paper halo below keeps it seated on any fill). The
-   forced-colors rule still wins over this where the OS flattens the palette. */
+   channel and must be legible without hue, so the layer paints them (the paper halo below keeps each
+   seated on any fill). The forced-colors rule still wins over this where the OS flattens the palette. */
 .geo-value-labels--redundant .geo-value-label {
-    opacity: 0.6;
+    visibility: visible;
 }
 /* X10-LIB · THE PER-REGION DECLUTTER (the label-vs-A22 reconcile, design-usf-sci-ecf.md §X10). A
    region whose label FAILS the size (≥48px minor axis) + contrast (≥3:1 vs its own fill) gate does
-   NOT inherit the group's resting-visible lift above — it reverts to the base near-invisible GAP-5
-   rest opacity (its region carries the pattern texture instead, GeoChoropleth's `usesPatternFill`
-   fallback — the redundant channel changes FORM for that region, it never drops). Three classes beat
-   the two-class rule above without an `!important`. Scoped OUT of `forced-colors: active` — there the
-   fill is flattened by the OS and the word is the ONLY surviving channel, so GAP-5 completeness must
-   win regardless of the resting declutter (every feature keeps its word under forced-colors). */
+   NOT inherit the group's resting paint above — its word stays hidden (its region carries the pattern
+   texture instead, GeoChoropleth's `usesPatternFill` fallback — the redundant channel changes FORM for
+   that region, it never drops). Three classes beat the two-class rule above without an `!important`.
+   Scoped OUT of `forced-colors: active` — there the fill is flattened by the OS and the word is the
+   ONLY surviving channel, so GAP-5 completeness must win regardless of the resting declutter (every
+   feature keeps its word under forced-colors). */
 @media not (forced-colors: active) {
     .geo-value-labels--redundant .geo-value-label.geo-value-label--gate-fail {
-        opacity: 0.04;
+        visibility: hidden;
     }
 }
 
@@ -103,7 +105,7 @@
    forced to a fully-legible CanvasText. The H7 ContractCliff guarantee, applied per feature. */
 @media (forced-colors: active) {
     .geo-value-label {
-        opacity: 1;
+        visibility: visible;
         fill: CanvasText;
         stroke: Canvas;
         forced-color-adjust: none;

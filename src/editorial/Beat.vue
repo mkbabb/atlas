@@ -19,7 +19,7 @@
 // a11y: a `<section>` with the anchor id (the dock `kind:"beat"` scroll target). The optional
 // `<FigureInitial>` is `role="img"` (the library wrapper); the `#header` slot carries the
 // eyebrow + `<h2>` + dek triplet the plate header owns (interstitials omit it).
-import { provide } from "vue";
+import { onBeforeUnmount, onMounted, provide, ref, useTemplateRef } from "vue";
 import FigureInitial from "../platform/chrome/masthead/FigureInitial.vue";
 import { BEAT_TITLE_KEY } from "../charts/legend/beat-title.js";
 import type { ColorKind } from "../charts/scale/colorKind.js";
@@ -72,13 +72,34 @@ const props = withDefaults(
 // title-ownership is STATIC across its life, so the provide is a plain constant, not a Ref (KISS).
 provide(BEAT_TITLE_KEY, { owned: props.titleOwned });
 
+// THE RENDER SKIP HOLDS ONLY UNTIL FIRST SIGHT (U/B7b · PLAN §8.1 R-TAB26-PAGE). An interior beat
+// skips its rendering (`content-visibility: auto`, below) until it first enters the viewport, and
+// then renders for good. A beat the reader has scrolled past stays in `innerText`, which is what a
+// copy of the page, a reader extension and the R-TAB26-PAGE test read; Chromium leaves a skipped
+// beat's text out of `innerText` while `textContent` keeps it. The skip's job is the first load,
+// where most beats sit below the fold.
+const root = useTemplateRef<HTMLElement>("root");
+const rendered = ref(false);
+let sight: IntersectionObserver | null = null;
+onMounted(() => {
+    if (!props.lift || props.sticky || typeof IntersectionObserver === "undefined" || !root.value) return;
+    sight = new IntersectionObserver((entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        rendered.value = true;
+        sight?.disconnect();
+        sight = null;
+    });
+    sight.observe(root.value);
+});
+onBeforeUnmount(() => sight?.disconnect());
 </script>
 
 <template>
     <section
         :id="id"
+        ref="root"
         class="beat section-anchor"
-        :class="{ 'beat--lead': !lift, 'beat--sticky': sticky }"
+        :class="{ 'beat--lead': !lift, 'beat--sticky': sticky, 'beat--rendered': rendered }"
         data-reveal-beat
         :data-testid="testid ? `beat-${testid}` : undefined"
     >
@@ -146,8 +167,12 @@ provide(BEAT_TITLE_KEY, { owned: props.titleOwned });
    already do this on their figure mounts: `auto 1050px`/`auto 1960px`). Each route's DashboardBody sets
    the measured value (mobile) with a `@media (min-width:1024px)` desktop override; the generic 720px is
    the un-tuned fallback. The `auto` keyword means the browser caches the REAL size after first paint, so
-   the reservation only governs the pre-paint estimate (kills anchor drift + CLS on the first visit). */
-.beat:not(.beat--lead):not(.beat--sticky) {
+   the reservation only governs the pre-paint estimate (kills anchor drift + CLS on the first visit).
+
+   ── U/B7b · THE SKIP ENDS AT FIRST SIGHT ──────────────────────────────────────────────────────────
+   `.beat--rendered` (set once the beat has entered the viewport) drops the skip for good, so a beat
+   the reader has passed keeps its text in `innerText` (R-TAB26-PAGE). The skip serves the first load. */
+.beat:not(.beat--lead):not(.beat--sticky):not(.beat--rendered) {
     content-visibility: auto;
     contain-intrinsic-size: auto var(--beat-cis, 720px);
 }
