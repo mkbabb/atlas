@@ -72,12 +72,12 @@ export function beatPhases(chapters: readonly Chapter[]): number[] {
     is not numbered, and an unmigrated cover may carry no eyebrow — so it names
     ITSELF, not an ordinal: the declared `hero` facet's own title (the most authoritative name for
     the page this cover fronts), falling back to the chapter's own `eyebrow` for a route that has
-    not adopted the facet yet, reads as `"<name> — cover"`. PURE + TOTAL, unit-testable without
+    not adopted the facet yet, reads as `"<name>: cover"`. PURE + TOTAL, unit-testable without
     mounting (the `resolveLayout`/`beatPhases` precedent above). */
 export function figureLabelFor(chapter: EditorialChapter, figure: number): string {
     if (chapter.viz === "hero") {
         const name = chapter.hero?.title || chapter.eyebrow;
-        return name ? `${name} — cover` : "Cover";
+        return name ? `${name}: cover` : "Cover";
     }
     return `Chapter ${toRoman(figure)}, ${chapter.eyebrow}`;
 }

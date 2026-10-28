@@ -164,8 +164,8 @@ describe("VizPlate source-grid capability (CD-09)", () => {
 
     it("mounts the passive data table and binds no aria-details when no source grid is declared", async () => {
         const html = await render(baseContract());
-        // the passive off-screen table (ChartDataTable's `<caption> — data table` aria-label) is present
-        expect(html).toContain("Grid plate — data table");
+        // the passive off-screen table (ChartDataTable's `Data table: <caption>` aria-label) is present
+        expect(html).toContain("Data table: Grid plate");
         // no aria-details ATTRIBUTE bound on the figure (the bare word appears in template comments)
         expect(html).not.toContain("aria-details=");
     });
@@ -174,7 +174,7 @@ describe("VizPlate source-grid capability (CD-09)", () => {
         const contract = baseContract({ sourceData: scopeStub() });
         const html = await render(contract);
         // PA-9 stands: the capability suppresses the passive table even at rest (no resurrection)
-        expect(html).not.toContain("Grid plate — data table");
+        expect(html).not.toContain("Data table: Grid plate");
         // at rest the grid <aside> is unmounted, so the figure binds NO aria-details…
         expect(html).not.toContain("aria-details=");
         // …and there is no region id anywhere for a stale IDREF to dangle at
@@ -186,7 +186,7 @@ describe("VizPlate source-grid capability (CD-09)", () => {
         const contract = baseContract({ sourceData: scopeStub() });
         const html = await render(contract);
         // the passive table stays suppressed (capability-keyed, unaffected by open state)
-        expect(html).not.toContain("Grid plate — data table");
+        expect(html).not.toContain("Data table: Grid plate");
         // the figure binds aria-details to the grid region id…
         expect(html).toContain('aria-details="viz-source-data-grid-plate"');
         // …and the region carrying that id is present in the SAME render (no dangling reference)

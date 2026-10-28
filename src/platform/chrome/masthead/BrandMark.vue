@@ -52,7 +52,7 @@ const props = withDefaults(
     {
         variant: "crest",
         to: "/",
-        label: "The Connectivity Atlas — home",
+        label: "The Connectivity Atlas home page",
         as: "link",
     },
 );
@@ -187,7 +187,7 @@ button.brand-mark {
 }
 
 /* ── C7.c · THE MOBILE TAP-TARGET HARDENING (G2 / WCAG 2.5.5) ─────────────────────────
-   The crest is a STANDALONE home link (the dock home affordance + the colophon "… — home"
+   The crest is a STANDALONE home link (the dock home affordance + the colophon "… home page"
    mark) — a genuine control, NOT an inline-in-a-sentence link, so it IS gated at the 44px
    WCAG 2.5.5 floor. At rest it renders 2.5rem = 40×40px (below the floor). This @media is a
    MOBILE PROPERTY: at the phone register the crest's OWN box reaches 44px; the crest raster

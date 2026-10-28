@@ -150,7 +150,7 @@ const brandHref = computed(() => props.colophon?.brandHref ?? "https://www.fi.nc
              crest instead of a monogram text, keeping the home link. The freshness date + the
              external brand wordmark follow on the same row. -->
         <div class="til-mark mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <BrandMark variant="crest" to="/" :label="`${site.short} — home`" data-testid="colophon-crest" />
+            <BrandMark variant="crest" to="/" :label="`${site.short} home page`" data-testid="colophon-crest" />
             <span v-if="colophon?.asOf" class="text-caption">Data as of {{ colophon.asOf }}</span>
             <a
                 :href="brandHref"

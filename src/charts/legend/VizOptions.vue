@@ -118,7 +118,7 @@ function reset(): void {
                 type="button"
                 class="viz-options__trigger"
                 :class="{ 'viz-options__trigger--dirty': !isDefault }"
-                :aria-label="`Chart options${ariaLabel ? ` — ${ariaLabel}` : ''}`"
+                :aria-label="`Chart options${ariaLabel ? `: ${ariaLabel}` : ''}`"
                 aria-haspopup="dialog"
                 :aria-expanded="open"
                 :data-testid="`viz-options-trigger-${c.vizId}`"

@@ -94,7 +94,6 @@ defineExpose({
             <!-- THE STRIP (O-17, PLAN §5.7): one 36 px line at every width. The source names itself
                  in sentence case and ellipsizes; one trailing action opens the written record. -->
             <div class="appendix-dock__strip" data-appendix-strip>
-                <span class="appendix-dock__crest" aria-hidden="true">Σ</span>
                 <span class="appendix-dock__source" :title="`Source: ${label}`">Source: {{ label }}</span>
                 <Button
                     class="appendix-dock__control"
@@ -187,10 +186,6 @@ defineExpose({
     /* one type step above the caption (PV-03) */
     font-size: var(--type-small, 0.875rem);
     line-height: 1;
-}
-.appendix-dock__crest {
-    flex: none;
-    color: color-mix(in oklab, var(--foreground), transparent 30%);
 }
 .appendix-dock__source {
     flex: 1 1 auto;

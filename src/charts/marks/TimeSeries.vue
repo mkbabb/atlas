@@ -472,7 +472,7 @@ useEChart({
             :chips="legendChips"
             class="time-series__legend"
             :class="{ 'sr-only': directLabels }"
-            :aria-label="`${ariaLabel} — series key`"
+            :aria-label="`Series key: ${ariaLabel}`"
             data-testid="time-series-legend"
         />
         <!-- A fixed-height host — the canvas collapses to 0 without it (chart-h-lg, the

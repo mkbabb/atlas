@@ -69,7 +69,7 @@ withDefaults(
          where a `<table>` ignores it). The inner table grows only inside this clipped block,
          contributing 1px to the scroll region — the whole of the §2.1 overscroll fix. -->
     <div class="sr-only">
-        <table :aria-label="`${caption} — data table`">
+        <table :aria-label="`Data table: ${caption}`">
             <caption>
                 {{ caption }}
             </caption>

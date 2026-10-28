@@ -31,7 +31,7 @@ const { appliedCount } = useFilterLedger();
 /** The accessible name is the human contract: the route's Filters dialog, never a technical slug.
     The applied count is spoken with it, since the counter badge is only paint. */
 const name = computed(() => {
-    const base = ctx.title ? `Filters — ${ctx.title}` : "Filters";
+    const base = ctx.title ? `Filters: ${ctx.title}` : "Filters";
     return appliedCount.value > 0 ? `${base}, ${appliedCount.value} applied` : base;
 });
 
