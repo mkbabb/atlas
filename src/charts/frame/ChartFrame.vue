@@ -293,7 +293,7 @@ watch(
 watch(
     open,
     (now) => {
-        if (!now) expandEl.value?.style.removeProperty("min-block-size");
+        if (!now && expandEl.value) expandEl.value.style.minBlockSize = "";
     },
     { flush: "post" },
 );
