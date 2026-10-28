@@ -5,21 +5,17 @@
 //   dist/styles/index.css        the Tailwind v4 source entry (styles/index.css, verbatim)
 //   dist/styles/design/**        the design sheets the entry names (src/design/**, verbatim)
 //   dist/styles/editorial/*.css  the editorial sheets the entry names (verbatim)
-//   dist/styles/components.css   the SFC <style> aggregate from the JS lib build (no Tailwind pass
-//                                touched it), layered by the entry as atlas.components
+// The SFC <style> blocks are not here: each ships beside its module and the module imports it
+// (vite.sfc-sheets.mts, F15), so the consumer's entry carries only the components it renders.
 // `./styles/breakpoints` resolves to dist/styles/design/foundations/breakpoints.css, the raw
 // @custom-media author surface a consumer's PostCSS glue reads.
-// A missing SFC aggregate is a build failure, never a warning.
-import { readFile, writeFile, rm, mkdir, copyFile } from "node:fs/promises";
+import { readFile, rm, mkdir, copyFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = resolve(ROOT, "dist");
 const OUT = resolve(DIST, "styles");
-
-const sfc = resolve(DIST, "assets/core.css");
-const components = await readFile(sfc, "utf8"); // throws when build:js has not run: no masked fallback
 
 // Ship exactly the sheets the entry names: `./design/…` and `./editorial/…` map to src/.
 const entry = await readFile(resolve(ROOT, "styles/index.css"), "utf8");
@@ -32,8 +28,4 @@ for (const rel of named) {
     await copyFile(resolve(ROOT, "src", rel), dst);
 }
 await copyFile(resolve(ROOT, "styles/index.css"), resolve(OUT, "index.css"));
-await writeFile(resolve(OUT, "components.css"), components);
-await rm(sfc);
-console.log(
-    `build-styles: dist/styles (${named.length} source sheets + entry + components.css ${components.length}B)`,
-);
+console.log(`build-styles: dist/styles (${named.length} source sheets + entry)`);
