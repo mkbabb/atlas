@@ -30,8 +30,14 @@ export function settleNarrativeRestore(
 
 export type NarrativeLayoutStop = "quiet" | "deadline" | "abort";
 
+export interface NarrativeLayoutSettle {
+    /** The caller has just placed the target itself (the restore's settle re-land), so movement
+        seen before the settle is already cured and the one correction stays for later movement. */
+    readonly placed?: boolean;
+}
+
 export interface NarrativeLayoutHeal {
-    settle: () => void;
+    settle: (options?: NarrativeLayoutSettle) => void;
     abort: () => void;
 }
 
@@ -48,6 +54,8 @@ export interface NarrativeLayoutHealOptions {
  * Correct a semantic restore only while its first layout is still settling. The target and
  * document root share one bounded ResizeObserver; the first target movement consumes the sole
  * correction and disconnects observation, while quiet, deadline, or reader input ends the lifecycle.
+ * A settle that the caller `placed` (it re-landed the target itself) takes the target's position
+ * as the new baseline, so the correction is kept for movement after the settle.
  */
 export function watchNarrativeAnchorLayout({
     target,
@@ -98,9 +106,13 @@ export function watchNarrativeAnchorLayout({
     if (root !== target) observer?.observe(root);
     const deadlineTimer = setTimeout(() => stop("deadline"), deadlineMs);
     return {
-        settle() {
+        settle({ placed = false } = {}) {
             if (stopped) return;
             settled = true;
+            if (placed) {
+                movedBeforeSettle = false;
+                lastOffset = target.getBoundingClientRect().top + window.scrollY;
+            }
             inspect();
             if (!observer) stop("quiet");
         },

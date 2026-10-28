@@ -154,6 +154,38 @@ describe("bounded narrative restore", () => {
         heal.settle();
         expect(reanchor).toHaveBeenCalledOnce();
     });
+
+    it("keeps its one correction for later movement when the caller placed the target at settle (U/B7b M3 repair 1)", () => {
+        // Firefox 390 /demand#crossover: the cover grew before the settle, the dock's settle
+        // re-landed the beat, and the heal spent its one correction on that already-cured move.
+        // The first figure beat then shrank 216 px and nothing corrected it (top -136).
+        vi.useFakeTimers();
+        let deliver: ResizeObserverCallback = () => undefined;
+        vi.stubGlobal(
+            "ResizeObserver",
+            class {
+                constructor(callback: ResizeObserverCallback) { deliver = callback; }
+                observe() {}
+                disconnect() {}
+            },
+        );
+        vi.stubGlobal("window", { scrollY: 0 });
+        let top = 100;
+        const reanchor = vi.fn();
+        const heal = watchNarrativeAnchorLayout({
+            target: { getBoundingClientRect: () => ({ top }) } as unknown as HTMLElement,
+            root: {} as HTMLElement,
+            reanchor,
+            onStop: () => undefined,
+        });
+        top = 671;
+        deliver([], {} as ResizeObserver);
+        heal.settle({ placed: true });
+        expect(reanchor).not.toHaveBeenCalled();
+        top = 455;
+        deliver([], {} as ResizeObserver);
+        expect(reanchor).toHaveBeenCalledOnce();
+    });
 });
 
 describe("dismiss and hover interaction cores", () => {

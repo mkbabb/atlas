@@ -255,14 +255,18 @@ export function useDockStepper(
             () => {
                 const aborted = restoreAborted;
                 const stepConsumed = settleNarrativeRestore(anchor, { aborted });
-                if (!aborted && !stepConsumed) {
+                const placed = !aborted && !stepConsumed;
+                if (placed) {
                     document.getElementById(anchor.beatId)?.scrollIntoView({
                         behavior: "auto",
                         block: "start",
                     });
                 }
                 restoreSettled = true;
-                layoutHeal?.settle();
+                // The re-land above cured any movement before the settle; the heal keeps its one
+                // correction for a beat that settles later (U/B7b M3 repair 1: Firefox 390
+                // /demand#crossover, the first figure beat shrinking after the re-land).
+                layoutHeal?.settle({ placed });
                 finishRestore();
             },
             reduced.value ? 0 : RESTORE_SETTLE_MS,
