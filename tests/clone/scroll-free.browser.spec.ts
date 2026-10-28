@@ -143,11 +143,15 @@ describe("scrolling only scrolls (PLAN §5.1)", () => {
                 if (y) late.add(x.k).add(y.k);
             }
             c.stuck = c.stuck.filter((x) => !late.has(x.k));
+            // Compared without whitespace or case: `innerText` applies `text-transform` (the appendix
+            // heading is set in capitals) and breaks a line before a block-level mark (a title's dagger),
+            // which `textContent` does not. Neither drops text.
             c.missingFromInnerText = await page.evaluate(() => {
-                const inner = document.body.innerText.replace(/\s+/g, " ");
+                const fold = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+                const inner = fold(document.body.innerText);
                 return [...document.querySelectorAll<HTMLElement>(".essay-beat h2")]
                     .map((h) => (h.textContent ?? "").replace(/\s+/g, " ").trim())
-                    .filter((t) => t && !inner.includes(t));
+                    .filter((t) => t && !inner.includes(fold(t)));
             });
             return c;
         });
