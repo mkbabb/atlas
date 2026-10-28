@@ -71,7 +71,9 @@ function go(to: string): void {
     >
         <Search aria-hidden="true" />
     </DockControl>
-    <CommandDialog :open="open" @update:open="onOpen">
+    <!-- D-6: the palette sits on a dark scrim, so it takes the opaque rung; on glass it took the
+         scrim's colour and the light scheme's ink read dark on near-black. -->
+    <CommandDialog :open="open" surface="opaque" @update:open="onOpen">
         <CommandInput placeholder="Search dashboards and school units" data-testid="dock-search-input" />
         <CommandList>
             <CommandEmpty>No match.</CommandEmpty>
