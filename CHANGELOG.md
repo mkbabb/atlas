@@ -25,8 +25,8 @@
 - **The dock's phone sheets and its Search palette are opaque (U/B7b M1 · D-6).** At 390 the More
   menu, the Filters sheet and the Search palette painted glass at α 0.18–0.26, so the page read
   through their rows (and in the light scheme the palette's ink sat on the dark scrim). They take
-  glass's opaque surface rung: `DropdownMenuContent surface="opaque"` (needs the glass 10.2.0
-  `surface` prop), `SheetContent :surface` on the phone register, and `CommandDialog surface="opaque"`.
+  glass's opaque surface rung: the More menu through glass's register (below 30rem a dock menu
+  is opaque at the glass root, u/b7-glass 87494c6d4; no `surface` prop), `SheetContent :surface` on the phone register, and `CommandDialog surface="opaque"`.
   The Dashboards and Sections lists are glass Selects, whose sheet form is opaque at the glass root.
   At ≥ 768 px the filter drawer stays glass. Witness: `Dock.sheet-plate.browser.spec.ts`.
 

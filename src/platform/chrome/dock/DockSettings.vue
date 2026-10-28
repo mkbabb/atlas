@@ -83,7 +83,6 @@ const emit = defineEmits<{
             side="top"
             align="end"
             :side-offset="8"
-            surface="opaque"
             class="usf-dock-settings"
         >
             <!-- The year-range compare toggle (the third arm of the year grammar). -->

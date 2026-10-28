@@ -3,7 +3,8 @@
 // census on the served sci build measured each one translucent (plate alpha 0.18 to 0.26 with a
 // 20 px backdrop blur, /sci at 390, light and dark), so the page's figures read through the rows.
 // The cure is glass's opaque rung of the surface axis: the Select sheet form wears it at the glass
-// root, and the dock asks for it on the More menu and on the phone Filters sheet.
+// root, as does a dock menu below 30rem (the More menu), and the dock asks for it on the phone
+// Filters sheet.
 import { afterEach, describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { createApp, defineComponent, h, provide } from "vue";
