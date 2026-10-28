@@ -4,6 +4,9 @@
 
 ### Fixes
 
+- **`useActiveDashboard.ensureLoaded` shares a load in flight (U/B7b).** A second call for the same
+  slug before the first resolves returns the same promise, so two callers on one route fetch and
+  parse the snapshot once. /sci itself fetched once at the B7 head (one server request per load).
 - **The section pager enters without a fade (U/B7b · PLAN §4.2).** `MembraneTitleLozenge` re-enters
   each time a heading leaves its band; its enter transition now reveals by clip and translate only,
   so the section name is never painted below full opacity while the reader scrolls.
