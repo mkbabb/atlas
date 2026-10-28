@@ -14,8 +14,18 @@ export interface Stuck {
     sy: number;
 }
 
+/** A step after which the document can no longer hold the position the page already had. */
+export interface Collapse {
+    k: number;
+    sy: number;
+    end: number;
+    /** scrollY before the step. */
+    from: number;
+}
+
 export class ScrollWalk {
     readonly stuck: Stuck[] = [];
+    readonly collapsed: Collapse[] = [];
     private k = 0;
 
     constructor(
@@ -23,14 +33,25 @@ export class ScrollWalk {
         private readonly stepPx: number,
     ) {}
 
-    /** Judge one step. Returns the rounded movement and whether the walk is over. */
+    /**
+     * Judge one step. Returns the rounded movement and whether the walk is over.
+     *
+     * A page whose route dies mid-walk (an error state, an emptied document) reads scrollY 0 and an
+     * end of 0. Judged against that end, the jump to the top looks like reaching the end. So the
+     * end is checked against where the page already was: an end that falls below it is a collapse,
+     * which fails the cell and ends the walk. Otherwise a step moves 300 px, or what is left.
+     */
     step({ sy, end }: Sample): { moved: number; done: boolean } {
         const k = this.k++;
-        const moved = Math.round(sy - this.last);
-        const remaining = end - this.last;
-        const expected = Math.min(this.stepPx, remaining);
-        if (Math.abs(moved - expected) > 2) this.stuck.push({ k, moved, sy: Math.round(sy) });
+        const from = this.last;
+        const moved = Math.round(sy - from);
         this.last = sy;
+        if (end < from - 1) {
+            this.collapsed.push({ k, sy: Math.round(sy), end: Math.round(end), from: Math.round(from) });
+            return { moved, done: true };
+        }
+        const expected = Math.min(this.stepPx, end - from);
+        if (Math.abs(moved - expected) > 2) this.stuck.push({ k, moved, sy: Math.round(sy) });
         return { moved, done: sy >= end - 1 };
     }
 
