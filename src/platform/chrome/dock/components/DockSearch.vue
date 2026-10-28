@@ -3,18 +3,12 @@
 // any instance search source (sci: the school units, by name). A source loads on the first open of
 // Search, once, so no route's first paint carries it. A result routes to its page. The palette's open
 // state is a model, so the dock can seat it or hold the rail open while it is open (PLAN §2.5).
-import { computed, shallowRef } from "vue";
+// The palette is an async chunk (DockSearchPalette), fetched when the pointer or focus reaches the
+// button and mounted on the first open, so the entry carries only the button (B7b M3, O-7).
+import { computed, defineAsyncComponent, shallowRef, watch } from "vue";
 import { useRouter } from "vue-router";
 import { Search } from "@lucide/vue";
 import { DockControl } from "@mkbabb/glass-ui/dock";
-import {
-    CommandDialog,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from "@mkbabb/glass-ui/command";
 import { useDashboardRegistry } from "../../../../contract/index.js";
 import type { SiteSearchItem, SiteSearchSource } from "../site.js";
 
@@ -46,9 +40,22 @@ function loadSources(): void {
     });
 }
 
+const loadPalette = () => import("./DockSearchPalette.vue");
+const DockSearchPalette = defineAsyncComponent(loadPalette);
+/** The palette mounts on the first open and stays mounted (its close animation, its focus return). */
+const mounted = shallowRef(false);
+watch(
+    open,
+    (next) => {
+        if (!next) return;
+        mounted.value = true;
+        loadSources();
+    },
+    { immediate: true },
+);
+
 function onOpen(next: boolean): void {
     open.value = next;
-    if (next) loadSources();
 }
 
 function go(to: string): void {
@@ -68,35 +75,17 @@ function go(to: string): void {
         :aria-expanded="open"
         data-testid="dock-search"
         @click="onOpen(true)"
+        @pointerenter="loadPalette"
+        @focus="loadPalette"
     >
         <Search aria-hidden="true" />
     </DockControl>
-    <CommandDialog :open="open" @update:open="onOpen">
-        <CommandInput placeholder="Search dashboards and school units" data-testid="dock-search-input" />
-        <CommandList>
-            <CommandEmpty>No match.</CommandEmpty>
-            <CommandGroup heading="Dashboards">
-                <CommandItem
-                    v-for="item in dashboards"
-                    :key="item.to"
-                    :value="item.to"
-                    :textValue="item.label"
-                    @select="go(item.to)"
-                >
-                    {{ item.label }}
-                </CommandItem>
-            </CommandGroup>
-            <CommandGroup v-for="g in loaded" :key="g.group" :heading="g.group">
-                <CommandItem
-                    v-for="item in g.items"
-                    :key="item.to"
-                    :value="item.to"
-                    :textValue="item.label"
-                    @select="go(item.to)"
-                >
-                    {{ item.label }}
-                </CommandItem>
-            </CommandGroup>
-        </CommandList>
-    </CommandDialog>
+    <DockSearchPalette
+        v-if="mounted"
+        :open="open"
+        :dashboards="dashboards"
+        :groups="loaded"
+        @update:open="onOpen"
+        @go="go"
+    />
 </template>
