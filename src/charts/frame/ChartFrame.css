@@ -283,7 +283,7 @@
    that DOES set a fixed host is byte-identical (its host out-measures the floor — the floor is
    inert there); only a not-yet-sized / content-driven body is held off 0. While enlarged, glass 10
    teleports the whole container to <body>, so this wrapper would fall to the floor: ChartFrame holds
-   it at its measured resting height while the figure is open (`expandHold`, U §M M-3), and the page
+   it at its measured resting height while the figure is open (the `open` watchers, U §M M-3), and the page
    behind the enlarged figure never reflows.
 
    T-PERF-4 (I-PERF-DATA.c) — THIS reserve is what makes `useEChart({ lazyMount: true })` CLS-safe.
