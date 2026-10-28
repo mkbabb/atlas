@@ -4,6 +4,9 @@
 
 ### Fixes
 
+- **The section pager enters without a fade (U/B7b · PLAN §4.2).** `MembraneTitleLozenge` re-enters
+  each time a heading leaves its band; its enter transition now reveals by clip and translate only,
+  so the section name is never painted below full opacity while the reader scrolls.
 - **A beat the reader has passed stays in `innerText` (U/B7b · PLAN §8.1 R-TAB26-PAGE).** An
   interior `Beat` skips its rendering (`content-visibility: auto`) only until it first enters the
   viewport; `.beat--rendered` then drops the skip for good. Chromium left a skipped beat's text out

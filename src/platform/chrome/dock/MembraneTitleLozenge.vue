@@ -26,7 +26,7 @@
 // ── THE CHOREOGRAPHY (§a.3, bi-directional) ──────────────────────────────────────────────────────
 // The pill MATERIALISES from the disc when `!atTop` (clip grow + fade) and RE-COLLAPSES to the bare
 // disc at the crown (`atTop`), as the in-content title re-reveals — the mirror composition, not 87
-// transforms. On an `activeBeatId` change the label CROSS-FADES (keyed out-in). PRM hard-cuts both
+// transforms. PRM hard-cuts it
 // (curve ceded to Family C). Phone is fenced: the phone register's readout is the O-03 bottom bar's
 // centre (dial-13, un-shipped) — the lozenge is desktop wayfinding only, never a second phone chrome.
 //
@@ -184,26 +184,26 @@ const visible = computed<boolean>(
     background: var(--route-accent, var(--cp-accent, currentColor));
 }
 
-/* ── THE MATERIALISE (§a.3) — the pager grows from the disc: a left-anchored clip reveal + fade.
-   It leaves at once: a heading is arriving under it, and a leave fade would draw over that heading. */
+/* ── THE MATERIALISE (§a.3) — the pager grows from the disc: a left-anchored clip reveal. Its text is
+   painted whole from the first frame (U/B7b · PLAN §4.2: no visible text below full opacity); the
+   clip uncovers it. The pager re-enters each time a heading leaves its band, so a fade here held the
+   section name translucent through the reader's scroll. It leaves at once: a heading is arriving
+   under it, and a leave transition would draw over that heading. */
 .lozenge-enter-active {
     transition:
         clip-path var(--duration-normal, 260ms) var(--ease-out, ease),
-        opacity var(--duration-normal, 260ms) var(--ease-out, ease),
         transform var(--duration-normal, 260ms) var(--ease-out, ease);
 }
 .lozenge-enter-from {
-    opacity: 0;
     clip-path: inset(0 100% 0 0 round 0.75rem);
     transform: translateX(-0.375rem);
 }
 .lozenge-enter-to {
-    opacity: 1;
     clip-path: inset(0 0 0 0 round 0.75rem);
     transform: none;
 }
 
-/* PRM — both morphs hard-cut to opacity-only (the curve ceded to Family C; information parity). */
+/* PRM — the reveal hard-cuts (the curve ceded to Family C; information parity). */
 @media (prefers-reduced-motion: reduce) {
     .lozenge-enter-active {
         transition: none;

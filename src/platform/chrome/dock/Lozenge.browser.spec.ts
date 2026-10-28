@@ -72,6 +72,29 @@ describe("the section pager (U/B7 §2.1 D-7)", () => {
         if (el) expect(overlaps(el.getBoundingClientRect(), late.getBoundingClientRect())).toBe(false);
     });
 
+    it("at 1440 its text is painted at full opacity from the first frame it enters (§4.2)", async () => {
+        site = await mountSite("/sci", 1440);
+        const frame = () => new Promise((r) => requestAnimationFrame(() => r(null)));
+        const faded: string[] = [];
+        let entered = 0;
+        for (let y = 0; y <= 4400; y += 120) {
+            const before = lozenge();
+            window.scrollTo(0, y);
+            for (let f = 0; f < 6; f++) {
+                await frame();
+                const el = lozenge();
+                if (!el) continue;
+                if (!before && f === 0) entered++;
+                let o = 1;
+                for (let a: Element | null = el.querySelector("[data-testid='dock-section-label']"); a; a = a.parentElement)
+                    o *= Number(getComputedStyle(a).opacity);
+                if (o < 1) faded.push(`y=${y} frame ${f} opacity ${o.toFixed(3)}`);
+            }
+        }
+        expect(entered).toBeGreaterThan(0);
+        expect(faded).toEqual([]);
+    });
+
     it("at 390 no lozenge renders and the Sections cell prints the active section", async () => {
         site = await mountSite("/sci", 390);
         window.scrollTo(0, 1500);
