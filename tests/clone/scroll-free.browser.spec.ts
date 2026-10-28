@@ -37,7 +37,7 @@ interface Cell {
     stuck: Stuck[];
     /** Steps after which the document could not hold the page's position (the route died). */
     collapsed: Collapse[];
-    /** Uncaught page errors, for attributing a collapse. */
+    /** Uncaught page errors and console errors (Vue reports a setup throw there), for attributing a collapse. */
     pageErrors: string[];
     urlChanges: string[];
     faded: number;
@@ -90,6 +90,9 @@ describe("scrolling only scrolls (PLAN §5.1)", () => {
         const cell = await inCell(browser, width, async (page) => {
             const pageErrors: string[] = [];
             page.on("pageerror", (e) => pageErrors.push(e.message.slice(0, 200)));
+            page.on("console", (m) => {
+                if (m.type() === "error") pageErrors.push(m.text().slice(0, 200));
+            });
             await page.goto(CLONE_URL + route, { waitUntil: "load", timeout: 90_000 });
             await page.waitForTimeout(SETTLE_MS);
             const startUrl = await page.evaluate(() => location.pathname + location.search);
