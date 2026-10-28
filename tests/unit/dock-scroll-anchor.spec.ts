@@ -91,7 +91,7 @@ afterEach(() => {
 });
 
 describe("dock semantic section scroll", () => {
-    it("re-anchors once at scroll end when hydration moved the target during smooth scroll", () => {
+    it("re-anchors at scroll end when hydration moved the target during smooth scroll, and again for each later move", () => {
         vi.useFakeTimers();
         const fixture = anchorFixture();
         const remove = vi.spyOn(fixture.document, "removeEventListener");
@@ -104,15 +104,17 @@ describe("dock semantic section scroll", () => {
         fixture.setTop(3200);
         fixture.deliver();
 
-        expect(fixture.scrollIntoView).toHaveBeenCalledTimes(2);
+        // Every move after the settle is corrected until the layout is quiet (U/B7b M3 repair 1).
+        expect(fixture.scrollIntoView).toHaveBeenCalledTimes(3);
         expect(fixture.scrollIntoView.mock.calls).toEqual([
             [{ behavior: "smooth", block: "start" }],
+            [{ behavior: "auto", block: "start" }],
             [{ behavior: "auto", block: "start" }],
         ]);
         expect(remove).toHaveBeenCalledOnce();
     });
 
-    it("re-anchors once when hydration moves the target just after scroll end", () => {
+    it("re-anchors each move when hydration moves the target after scroll end", () => {
         const fixture = anchorFixture();
 
         scrollToSection("scatter");
@@ -124,7 +126,7 @@ describe("dock semantic section scroll", () => {
         fixture.setTop(3200);
         fixture.deliver();
 
-        expect(fixture.scrollIntoView).toHaveBeenCalledTimes(2);
+        expect(fixture.scrollIntoView).toHaveBeenCalledTimes(3);
     });
 
     it("ignores stale scrollend until the requested anchor endpoint is reached", () => {
