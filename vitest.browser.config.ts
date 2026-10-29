@@ -39,6 +39,9 @@ export default defineConfig({
     resolve: { dedupe: ["vue"] },
     test: {
         include: ["src/**/*.browser.spec.ts"],
+        // Each file starts with no motion preference: the page, and so its emulated media, is shared
+        // by the files a worker runs (tests/browser/engine-setup.ts).
+        setupFiles: ["tests/browser/engine-setup.ts"],
         browser: {
             enabled: true,
             headless: true,
