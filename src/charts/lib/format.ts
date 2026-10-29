@@ -240,10 +240,14 @@ export function formatMultiplier(v: number | null | undefined): string {
 
 // ── count ─────────────────────────────────────────────────────────────────────────────────────
 
+/** The grouped whole-number face, built once: `toLocaleString("en-US")` builds a new Intl
+    formatter on every call, and a dashboard renders hundreds of counts at mount (U/B7c M1). */
+const GROUPED_INT = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+
 /** A whole count, grouped, never abbreviated below 1M: `160429 → "160,429"`, `297 → "297"`. */
 export function formatCount(v: number | null | undefined): string {
     if (v == null || !Number.isFinite(v)) return "—";
-    return Math.round(v).toLocaleString("en-US");
+    return GROUPED_INT.format(Math.round(v));
 }
 
 /**
@@ -333,7 +337,7 @@ export function formatUsdAbbrev(v: number | null | undefined): string {
     if (abs >= 1e9) return `${sign}$${sig1(abs / 1e9)}B`;
     if (abs >= 1e6) return `${sign}$${sig1(abs / 1e6)}M`;
     if (abs >= 1e3) return `${sign}$${sig1(abs / 1e3)}K`;
-    if (abs >= 1) return `${sign}$${Math.round(abs).toLocaleString("en-US")}`;
+    if (abs >= 1) return `${sign}$${GROUPED_INT.format(Math.round(abs))}`;
     if (abs === 0) return "$0";
     return `${sign}$${abs.toFixed(2)}`;
 }
@@ -366,6 +370,6 @@ export function formatNumberAbbrev(v: number | null | undefined): string {
     if (abs >= 1e9) return `${sign}${sig1(abs / 1e9)}B`;
     if (abs >= 1e6) return `${sign}${sig1(abs / 1e6)}M`;
     if (abs >= 1e3) return `${sign}${sig1(abs / 1e3)}K`;
-    if (abs >= 100 || Number.isInteger(v)) return Math.round(v).toLocaleString("en-US");
+    if (abs >= 100 || Number.isInteger(v)) return GROUPED_INT.format(Math.round(v));
     return v.toFixed(2);
 }

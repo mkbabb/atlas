@@ -58,12 +58,14 @@ function route(all: Chunk[], slug: string) {
 }
 
 describe("the route cut, compiled", () => {
-    it("loads each dashboard route in fewer files, and the same modules, as the default cut", async () => {
+    it("loads each dashboard route in fewer files than the default cut, every module it needs, and beyond those only effect-free parts", async () => {
         const [plain, cut] = await Promise.all([chunks([vue()]), chunks(atlasCorePreset())]);
         for (const slug of ["a", "b", "c"]) {
             const before = route(plain, slug);
             const after = route(cut, slug);
-            expect([...after.modules].sort(), slug).toEqual([...before.modules].sort());
+            for (const m of before.modules) expect(after.modules.has(m), `${slug}: ${m}`).toBe(true);
+            // the small set chunks fold into a wider route set's chunk (MIN_SET_CHUNK)
+            for (const m of after.modules) if (!before.modules.has(m)) expect(m, slug).toMatch(/\/lib\/p\d+\.ts$/);
             expect(after.files.size, `${slug}: ${[...before.files].join(", ")} → ${[...after.files].join(", ")}`).toBeLessThan(before.files.size);
         }
     }, 900_000);
@@ -137,5 +139,69 @@ describe("the route cut's reach", () => {
         expect(names.get("barrel")).toBe("lazy-barrel");
         expect(names.get("a")).toBe("route-x");
         expect(names.get("entry")).toBe("index");
+    });
+
+    // U/B7c M1 (O-7): a phone dashboard route loaded 34–37 route files before its hero, most of
+    // them a module or two of 0–2 KB (an icon, a helper) shared by a different set of routes. On
+    // HTTP/1.1's six connections at 150 ms each, the count, not the bytes, set the hero's paint.
+    it("folds a small, effect-free set chunk into the smallest chunk of a wider route set", async () => {
+        const big = `export const big = [${"1,".repeat(6000)}];`;
+        const body = (route: string, names: string[], more = "") =>
+            [`/d/${route}/DashboardBody.vue`, `${names.map((n) => `import { ${n} } from "${n}";`).join(" ")} export default [${names}];${more}`] as const;
+        const bodies = [
+            body("w", ["big"]),
+            body("x", ["big", "icon", "fx", "lz"]),
+            body("y", ["big", "icon", "sheet"], ' export const later = () => import("fig");'),
+            body("z", ["big", "fx", "sheet"]),
+        ];
+        const shapes = new Map<string, Shape>([
+            ["entry", await shape("export const go = () => 1;", true)],
+            ...(await Promise.all(bodies.map(async ([id, code]) => [id, await shape(code, true)] as const))),
+            ["fig", await shape('import { lz } from "lz"; export default lz;', true)],
+            ["big", await shape(big)],
+            ["icon", await shape("export const icon = 1;")],
+            ["fx", await shape("export const fx = 1; globalThis.fx = fx;", true)],
+            ["sheet", await shape('import "./sheet.css"; export const sheet = 1;', true)],
+            ["./sheet.css", await shape("export default 1;", true)],
+            ["lz", await shape("export const lz = 1;")],
+        ]);
+        const dyn: Record<string, string[]> = { entry: bodies.map(([id]) => id), "/d/y/DashboardBody.vue": ["fig"] };
+        const names = assignChunks(["entry"], (id) => dyn[id] ?? [], shapes, (id) => /\/d\/(\w)\//.exec(id)?.[1]);
+        expect(names.get("big")).toBe("route-shared-4");
+        // {x, y} holds only `icon`, effect-free: it rides the {w, x, y, z} chunk
+        expect(names.get("icon")).toBe("route-shared-4");
+        // a module that runs code, or brings a sheet, stays where only its own routes load it
+        expect(names.get("fx")).toBe("route-x+z");
+        expect(names.get("sheet")).toBe("route-y+z");
+        // {x} at once and a lazy figure hosted on y: it can load on x and y, both of which load the
+        // {w, x, y, z} chunk at once
+        expect(names.get("lz")).toBe("route-shared-4");
+        expect(names.get("fig")).not.toBe("route-shared-4");
+    });
+
+    // The dock's on-demand menus are lazy imports of the entry, so a helper a menu shares with some
+    // routes got a chunk of its own on each of those routes (U/B7c M1: 7 more /sci files once the
+    // More menu loaded on demand).
+    it("folds a small effect-free chunk into an effect-free chunk that loads late on some of its routes", async () => {
+        const body = (route: string, names: string[], more = "") =>
+            [`/d/${route}/DashboardBody.vue`, `${names.map((n) => `import { ${n} } from "${n}";`).join(" ")} export default [${names}];${more}`] as const;
+        // `wide` loads at once on x and y and late (through the menu) on z; `small` at once on x
+        const bodies = [
+            body("x", ["wide", "small"]),
+            body("y", ["wide"]),
+            body("z", ["zed"], ' export const later = () => import("menu");'),
+        ];
+        const wide = `export const wide = [${"1,".repeat(6000)}];`;
+        const shapes = new Map<string, Shape>([
+            ["entry", await shape("export const go = () => 1;", true)],
+            ...(await Promise.all(bodies.map(async ([id, code]) => [id, await shape(code, true)] as const))),
+            ["menu", await shape('import { wide } from "wide"; import { small } from "small"; export default [wide, small];', true)],
+            ["wide", await shape(wide)],
+            ["small", await shape("export const small = 1;")],
+            ["zed", await shape("export const zed = 1;")],
+        ]);
+        const dyn: Record<string, string[]> = { entry: bodies.map(([id]) => id), "/d/z/DashboardBody.vue": ["menu"] };
+        const names = assignChunks(["entry"], (id) => dyn[id] ?? [], shapes, (id) => /\/d\/(\w)\//.exec(id)?.[1]);
+        expect(names.get("small")).toBe(names.get("wide"));
     });
 });

@@ -2,7 +2,7 @@
 // <select>, and none builds its own menu or listbox (role="menu", "menuitem", "listbox", "option" or
 // aria-haspopup="menu"/"listbox"). The exemptions are named: SelectionRegion's roving listbox is
 // the keyboard model of a map's regions, not a dropdown; DockSelectSeat is the glass Select's
-// trigger, seated until the Select loads.
+// trigger, seated until the Select loads; DockSettings is the More menu's trigger, seated the same way.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -14,6 +14,10 @@ const EXEMPT = new Map([
     // the glass SelectTrigger's ARIA so the accessibility tree does not change when the Select swaps
     // in; it renders no list, and the list it opens is glass's.
     ["platform/chrome/dock/components/DockSelectSeat.vue", "the glass Select's trigger, seated until first open"],
+    // U/B7c M1: the More gear's face until the live menu (DockSettingsMenu, a glass DropdownMenu)
+    // loads on first use. It carries the menu trigger's ARIA so the accessibility tree does not change
+    // when the menu swaps in; it renders no menu, and the menu it opens is glass's.
+    ["platform/chrome/dock/DockSettings.vue", "the glass DropdownMenu's trigger, seated until first open"],
 ]);
 
 function vueFiles(dir: string): string[] {
