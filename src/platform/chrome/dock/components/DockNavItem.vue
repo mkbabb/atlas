@@ -41,6 +41,7 @@ const emit = defineEmits<{
         v-if="item.kind === 'beat'"
         type="button"
         class="usf-dock__step figure"
+        data-glass-dock-seat
         :class="{ 'usf-dock__step--active': active }"
         :style="{ '--rivet-hue': rivetHue, '--rivet-i': index }"
         :aria-current="active ? 'true' : undefined"
@@ -60,6 +61,7 @@ const emit = defineEmits<{
         v-else
         :to="item.to"
         class="usf-dock__step figure"
+        data-glass-dock-seat
         active-class="usf-dock__step--active"
         :style="{ '--rivet-hue': rivetHue, '--rivet-i': index }"
         :aria-label="`${roman}. ${item.label}`"

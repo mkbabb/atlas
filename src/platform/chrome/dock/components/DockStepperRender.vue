@@ -8,7 +8,8 @@
 // (`useDockRun`): one Tab stop per run (the `aria-current` seat, else the first), ArrowUp/Down/Home/End
 // seat to seat, a reach-scroll that brings the focused seat into the run's view, and a status line
 // that speaks the seat's name. So this component's template is a FRAGMENT of single controls — every
-// root node is one rung (a `<button>` beat or a `<RouterLink>` view). Nothing else may be a root element here: a wrapper would be one container seat that
+// root node is one rung (a `<button>` beat or a `<RouterLink>` view), and each rung declares itself with
+// `data-glass-dock-seat` (glass 10.1.2 roves only declared seats; DockNavItem sets it). Nothing else may be a root element here: a wrapper would be one container seat that
 // glass roves as a single stop, and a decorative element would be a seat with no control the arrows
 // stall on. The spine is therefore paint on the run (Dock.css), and the live "step N of M" readout is
 // teleported out of the run.

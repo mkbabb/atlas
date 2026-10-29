@@ -63,4 +63,22 @@ describe("the dock at 1440 px (U/B7 §2.2)", () => {
         await settle(500);
         expect(dock()!.classList.contains("collapsed")).toBe(false);
     });
+
+    // glass 10.1.2 roves a run child only when it carries `data-glass-dock-seat`, and claims the
+    // toolbar only when every child does (MIGRATION 10.1.2). The roster rows and the By subject seat
+    // are atlas's own seats, so each declares itself: one Tab stop, and the arrows walk the roster.
+    it("the roster is one toolbar run: every row a declared seat, one Tab stop, arrows walk it", async () => {
+        site = await mountSite("/", 1440);
+        await settle(400);
+        const run = dock()!.querySelector<HTMLElement>("[role='toolbar']");
+        expect(run).not.toBeNull();
+        const seats = [...run!.children].filter((el) => !el.matches("[role='separator']")) as HTMLElement[];
+        expect(seats.length).toBe(rows().length + 1);
+        expect(seats.filter((el) => !el.hasAttribute("data-glass-dock-seat")).map((el) => el.dataset.testid)).toEqual([]);
+        expect(seats.filter((el) => el.tabIndex >= 0).length).toBe(1);
+        const first = seats.find((el) => el.tabIndex >= 0)!;
+        first.focus();
+        await userEvent.keyboard("{ArrowDown}");
+        expect(document.activeElement).toBe(seats[seats.indexOf(first) + 1]);
+    });
 });

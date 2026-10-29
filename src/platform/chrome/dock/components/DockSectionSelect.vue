@@ -65,6 +65,7 @@ const sections = computed(() =>
         <SelectTrigger
             v-bind="$attrs"
             class="dock-sections__face dock-sections__face--cell"
+            data-glass-dock-seat
             :aria-label="`${position}: ${stepper.activeLabel.value}`"
             data-testid="dock-section-select"
         >

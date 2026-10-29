@@ -68,6 +68,7 @@ function arm(): void {
         aria-autocomplete="none"
         data-state="closed"
         data-dock-select-seat=""
+        data-glass-dock-seat
         @click="arm"
         @pointerenter="fetchLive"
         @focus="fetchLive"

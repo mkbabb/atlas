@@ -42,6 +42,7 @@ const loadSubjects = () => import("./DockRosterSubjectsLive.vue");
         :key="d.slug"
         :to="`/${d.slug}`"
         class="dock-roster__row"
+        data-glass-dock-seat
         :style="{ '--row-accent': d.accent ?? 'var(--route-accent, var(--foreground))' }"
         :data-testid="`dock-roster-${d.slug}`"
         :data-rank="d.rank"
@@ -59,6 +60,7 @@ const loadSubjects = () => import("./DockRosterSubjectsLive.vue");
         :key="d.slug"
         :to="`/${d.slug}`"
         class="dock-roster__row dock-roster__row--companion"
+        data-glass-dock-seat
         :class="{ 'dock-roster__row--ruled': i === 0 }"
         :data-testid="`dock-roster-${d.slug}`"
         data-rank="companion"
