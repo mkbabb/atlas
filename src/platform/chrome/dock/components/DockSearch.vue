@@ -58,6 +58,15 @@ function onOpen(next: boolean): void {
     open.value = next;
 }
 
+/** The button opens the palette. It takes focus first: the palette is a dialog with no trigger of its
+    own, so its focus scope returns focus on close to whatever held it at open. WebKit does not focus
+    a button on a click, so that was <body>; focus then left the rail on Escape and the rail collapsed
+    under the reader. */
+function onClick(event: MouseEvent): void {
+    (event.currentTarget as HTMLElement).focus({ preventScroll: true });
+    onOpen(true);
+}
+
 function go(to: string): void {
     open.value = false;
     void router.push(to);
@@ -74,7 +83,7 @@ function go(to: string): void {
         aria-haspopup="dialog"
         :aria-expanded="open"
         data-testid="dock-search"
-        @click="onOpen(true)"
+        @click="onClick"
         @pointerenter="loadPalette"
         @focus="loadPalette"
     >

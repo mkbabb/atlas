@@ -7,7 +7,8 @@
 // surface with it, and focus falls to BODY. Each control must open, stay open, and on close hand focus
 // back to its trigger with the rail still open.
 import { afterEach, describe, expect, it } from "vitest";
-import { server, userEvent } from "vitest/browser";
+import { userEvent } from "vitest/browser";
+import { walkKey } from "../../../../tests/browser/walk-key.js";
 import { dock, mountSite, settle, type MountedSite } from "../../../../tests/browser/mount-site.js";
 
 let site: MountedSite | null = null;
@@ -15,9 +16,6 @@ afterEach(() => {
     site?.unmount();
     site = null;
 });
-
-// WebKit's Tab skips buttons unless Option is held (the B6 tabWalk note).
-const walkKey = server.browser === "webkit" ? "{Alt>}{Tab}{/Alt}" : "{Tab}";
 
 const CONTROLS = [
     { tid: "dock-dashboards", surface: "[data-testid^='dock-dashboard-option-']" },
@@ -71,6 +69,25 @@ describe("each site-layer control holds the rail open at 1440 (U/B7 §2.2)", () 
             });
         }
     }
+
+    // WebKit does not focus a button on a click, so the palette's focus scope recorded <body> as the
+    // element to return to; on Escape focus left the rail and the rail collapsed under the reader
+    // (B7b M1 open item 1). A click dispatched from script focuses nothing in any engine, so this
+    // case reproduces WebKit's order in Chromium and Firefox too.
+    it("/usf: dock-search opened by a click that does not focus it returns focus to it on Escape", async () => {
+        site = await mountSite("/usf", 1440);
+        await openRail();
+        await expect.poll(() => trigger("dock-search"), { timeout: 3000 }).not.toBeNull();
+        (document.activeElement as HTMLElement | null)?.blur();
+        trigger("dock-search")!.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+        await settle(600);
+        expect(document.querySelectorAll("[data-testid='dock-search-input']").length, "surface open").toBeGreaterThan(0);
+        await userEvent.keyboard("{Escape}");
+        await settle(500);
+        expect(document.querySelectorAll("[data-testid='dock-search-input']").length, "surface closed").toBe(0);
+        expect(document.activeElement, "focus back on Search").toBe(trigger("dock-search"));
+        expect(dock()!.classList.contains("collapsed"), "rail stays open").toBe(false);
+    });
 
     it("/usf: with focus inside the rail, the pointer leaving does not collapse it", async () => {
         site = await mountSite("/usf", 1440);

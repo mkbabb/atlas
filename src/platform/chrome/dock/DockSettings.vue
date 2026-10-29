@@ -29,7 +29,7 @@ import {
 // One control: the caller's attributes land on the gear (the bar's end cell).
 defineOptions({ inheritAttrs: false });
 
-defineProps<{
+const { returnFocus = true } = defineProps<{
     /** The gear-sheet open model (the `v-model:open` from the dock's `useDockGear().gearOpen`). */
     open: boolean;
     /** Show the year-range compare control (a multi-year dashboard whose scope landed). */
@@ -42,6 +42,11 @@ defineProps<{
     disableTransitions: boolean;
     /** Offer "Save this view": only on a dashboard route (a view is a dashboard's URL state). */
     canSave?: boolean;
+    /** Return focus to the gear on close. False when another surface took the seat: that surface
+        moved focus into itself, and a return to the gear would pull it back out (in WebKit the
+        entity detail then reads focus leaving its dialog and closes). The sibling bar sheets
+        take the same prop. */
+    returnFocus?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -52,6 +57,11 @@ const emit = defineEmits<{
     /** ⤓-save the current view — handler stays `useDockDataState.saveCurrentView`. */
     (e: "save-view"): void;
 }>();
+
+/** The sheet closed: keep focus where the surface that displaced it put it. */
+function onCloseAutoFocus(event: Event): void {
+    if (!returnFocus) event.preventDefault();
+}
 </script>
 
 <template>
@@ -84,6 +94,7 @@ const emit = defineEmits<{
             align="end"
             :side-offset="8"
             class="usf-dock-settings"
+            @close-auto-focus="onCloseAutoFocus"
         >
             <!-- The year-range compare toggle (the third arm of the year grammar). -->
             <Button

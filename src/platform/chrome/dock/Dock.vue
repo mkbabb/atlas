@@ -414,6 +414,7 @@ watch(bottomHeld, (held) => {
             <DockFilterTrigger v-if="ctx" :ctx="ctx" data-dock-cell="filters" />
             <DockSettings
                 v-model:open="bar.more.open.value"
+                :return-focus="!bar.more.displaced.value"
                 :has-year-scope="dataState.hasYearScope.value"
                 :year-mode-now="dataState.yearModeNow.value"
                 :save-flash="dataState.saveFlash.value"
