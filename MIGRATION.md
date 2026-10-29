@@ -202,6 +202,7 @@ projecting components.
 | A chart's echarts `init` and first `setOption` run as a job of the paint pump, one frame after the host mounts or scrolls in; `useEChart().chart` is null until then | none for sci plates (they read `settled` / `frame`); code that reads `chart.value` in a microtask after mount waits for it (`watch(api.chart, …)`) |
 | `useDocumentScrollProgress` callers share one scroll listener that reads `scrollY` only | none |
 | The motion `scroll` trigger is retired: `MotionTrigger`, `MOTION_TRIGGERS`, `MotionDrivers.scroll`, `MotionDriverSources.scroll` and `VizContextSources.scroll` are gone, and `useVizContext` no longer runs a cover-progress clock per plate. The scroll-only presets `BarRise`, `ClipWipe` and `DrawIn` are deleted (their K-names fold into `RevealUp` and `CurvePersist`); `CurvePersist` fires on `select` only. 13 presets | none for sci (no segment declares `scroll`); a consumer declaring `on: "scroll"` moves the reveal to the reveal register (`revealHostStyle`) |
+| `atlas:route-chunks` folds each chunk that two or more routes load and whose modules hold under `MIN_SET_CHUNK` (8,192) characters into the smallest chunk of a covering route set, when every module in it is free of side effects, imports no sheet, and imports only what that set already loads (U/B7c M1). A route outside the small set fetches the folded bytes and evaluates nothing new. sci: 71 route script files → 48; /sci requests before the hero 48 → 36 | none |
 
 ## 6 · glass-ui 10.1.0
 

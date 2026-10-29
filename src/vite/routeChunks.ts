@@ -59,6 +59,8 @@ export interface Shape {
     /** Rollup's `moduleSideEffects`: when true, importing the module runs its effects even if no
         name is used; when false, the module runs only for a used name. */
     sideEffects: boolean;
+    /** The module's code length, in characters, as Rollup holds it after the transforms. */
+    size: number;
 }
 
 const name = (n: unknown): string => {
@@ -318,6 +320,7 @@ export async function shapeOf(
         statements: [],
         bare: [],
         sideEffects,
+        size: code.length,
     };
     if (!ast) return { ...shape, sideEffects: true };
     for (const node of ast.body) {
@@ -503,6 +506,7 @@ export function assignChunks(
     for (const [key, roots] of routes) for (const r of roots) tally(byRoute, r, key);
     for (const r of innerRoots) tally(byInner, r, r);
     const names = new Map<string, string>();
+    const routeSets = new Map<string, RouteSet>();
     for (const id of inEntry) names.set(id, "index");
     // Rollup merges manual chunks by name, so each key set gets its own: a readable label, and a
     // count when two sets read alike (route `c` and a lazy `figs/c.ts`).
@@ -540,8 +544,76 @@ export function assignChunks(
         const at = byRoute.get(id) ?? new Set<string>();
         const lazy = [...(byInner.get(id) ?? [])].filter((r) => ![...(hosts.get(r) ?? [ENTRY])].every((h) => at.has(h)));
         names.set(id, nameFor([...at, ...lazy], at.size ? "route-" : "lazy-"));
+        // The routes where this chunk can load: its own, and every host of a lazy import that needs
+        // it. A lazy import the entry can load reaches past every route chunk, so that one stays.
+        const where = new Set([...at, ...lazy.flatMap((r) => [...(hosts.get(r) ?? [ENTRY])])]);
+        if (at.size && !where.has(ENTRY)) routeSets.set(names.get(id)!, { keys: where, exact: !lazy.length });
     }
+    foldSmallSets(names, routeSets, shapes);
     return names;
+}
+
+/** A set chunk whose modules hold fewer characters than this rides a wider route set's chunk. */
+export const MIN_SET_CHUNK = 8192;
+
+const STYLE_ID = /\.(css|scss|sass|less|styl)($|\?)|[?&]type=style/;
+
+/** A route chunk's reach: the routes where it can load, and whether each of them loads it at once
+    (exact) or some only through a lazy import. Only an exact chunk can take a fold. */
+interface RouteSet {
+    keys: Set<string>;
+    exact: boolean;
+}
+
+/**
+ * Fold each small chunk that two or more routes can load into the smallest exact chunk of a route
+ * set that covers them (U/B7c M1, O-7). The exact-set cut gave a phone dashboard route 34–37 files
+ * before its hero, most of them an icon or a helper of 0–2 KB; on HTTP/1.1's six connections the
+ * file count set the paint. A chunk folds only when every module in it is free of side effects,
+ * imports no sheet, and imports only modules that every route of the wider set already loads, so a
+ * route outside the small set evaluates nothing and fetches nothing more than the folded bytes.
+ */
+function foldSmallSets(names: Map<string, string>, routeSets: Map<string, RouteSet>, shapes: Map<string, Shape>) {
+    const members = new Map<string, string[]>();
+    for (const [id, n] of names) if (routeSets.has(n)) members.set(n, [...(members.get(n) ?? []), id]);
+    const pure = (id: string) => {
+        const shape = shapes.get(id);
+        if (!shape || STYLE_ID.test(id) || shape.bare.length) return false;
+        return !shape.sideEffects || !shape.statements.some((st) => st.effect);
+    };
+    const depsOf = (id: string) => {
+        const shape = shapes.get(id)!;
+        return [...shape.stars, ...[...shape.imports.values(), ...shape.reexports.values()].map((x) => x.from)];
+    };
+    const within = (narrow: Set<string>, wide: Set<string>) => [...narrow].every((k) => wide.has(k));
+    const into = new Map<string, string>();
+    const final = (n: string): string => (into.has(n) ? final(into.get(n)!) : n);
+    const order = [...routeSets.keys()].sort((a, b) => routeSets.get(b)!.keys.size - routeSets.get(a)!.keys.size);
+    for (const n of order) {
+        const ids = members.get(n) ?? [];
+        const { keys, exact } = routeSets.get(n)!;
+        // a one-route set is that route's own chunk, which the route fetches anyway
+        if (keys.size < 2 || ids.reduce((sum, id) => sum + shapes.get(id)!.size, 0) >= MIN_SET_CHUNK || !ids.every(pure)) continue;
+        const wider = order
+            .filter((m) => {
+                const t = routeSets.get(m)!;
+                return m !== n && !into.has(m) && t.exact && within(keys, t.keys) && (!exact || t.keys.size > keys.size);
+            })
+            .sort((a, b) => routeSets.get(a)!.keys.size - routeSets.get(b)!.keys.size);
+        const target = wider.find((m) => {
+            const there = routeSets.get(m)!.keys;
+            return ids.every((id) =>
+                depsOf(id).every((d) => {
+                    const dn = names.get(d);
+                    if (dn === undefined || dn === "index" || dn === n) return true;
+                    const ds = routeSets.get(final(dn));
+                    return ds !== undefined && ds.exact && within(there, ds.keys);
+                }),
+            );
+        });
+        if (target) into.set(n, target);
+    }
+    for (const [id, n] of names) if (into.has(n)) names.set(id, final(n));
 }
 
 /**
