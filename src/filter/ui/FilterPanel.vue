@@ -538,6 +538,22 @@ function cancelSave(): void {
 :global(.cp-drawer[data-filter-continuum][data-register="pip"])::before {
     display: none;
 }
+/* FI-02 (U/B7c M2) · THE FLOATING DRAWER at ≥ 768 px. Glass sizes a detented side sheet as its rung
+   times 100dvw (glass sheet styles, "THE DETENT IS A SIZE"), so the continuum's drawer rung of 1
+   spanned the whole viewport (1440 × 900 measured on the served PL head) and covered the dock, whose
+   Filters control could then not be pressed to close it. The drawer floats from the top right
+   instead: no wider than the entity detail's 26rem (the seat's other tenant), inset from the top,
+   right and bottom edges by the family space, every corner rounded at the sheet's room radius. The
+   rung still drives the width (the pip's door rides the same lens), and the cap is the drawer. */
+@media (min-width: 768px) {
+    :global(.cp-drawer[data-filter-continuum]) {
+        max-inline-size: 26rem;
+        inset-block: var(--space-family);
+        inset-inline-end: var(--space-family);
+        height: auto;
+        border-radius: var(--radius-3xl);
+    }
+}
 .cp-drawer[data-register="pip"] .cp-continuum__door {
     pointer-events: auto;
     border-start-start-radius: var(--radius-pill);

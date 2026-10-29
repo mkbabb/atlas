@@ -23,8 +23,12 @@ const props = withDefaults(
         weight?: number;
         /** The hand's seed — same seed ⇒ the same stroke on every reload. */
         seed?: number;
+        /** Ink the hand's centreline as an EVEN stroke of the nib's width (no entry or release
+            taper), with `pathLength` 1 so a consumer can draw it on with `stroke-dashoffset`. The
+            divider's register (T-10: thin, untapered); the default stays glass's tapered ribbon. */
+        even?: boolean;
     }>(),
-    { points: undefined, color: "currentColor", weight: 1, seed: 1 },
+    { points: undefined, color: "currentColor", weight: 1, seed: 1, even: false },
 );
 
 const root = ref<SVGSVGElement | null>(null);
@@ -79,13 +83,26 @@ function fit(points: Point[], width: number, height: number, pad: number, fill: 
     return points.map((p) => ({ x: pad + (p.x - x0) * sx, y: oy + (p.y - y0) * sy }));
 }
 
+// glass's L1 nib law (`nib(weight, fs) = weight · 0.2 · fs^0.75`), so a rule inks at the same nib
+// the text marks beside it do.
+const nib = computed(() => props.weight * 0.2 * Math.pow(box.value.fs, 0.75));
+
+/** A polyline as an SVG path, rounded to the thousandth. */
+function polyline(points: Point[]): string {
+    const r = (n: number) => Math.round(n * 1000) / 1000;
+    return points.map((p, i) => `${i ? "L" : "M"}${r(p.x)} ${r(p.y)}`).join(" ");
+}
+
 const d = computed(() => {
     const { width, height, fs } = box.value;
     if (width <= 0 || height <= 0) return "";
-    // glass's L1 nib law (`nib(weight, fs) = weight · 0.2 · fs^0.75`), so a rule inks at the
-    // same nib the text marks beside it do.
     const nib = props.weight * 0.2 * Math.pow(fs, 0.75);
     const frame = { x: 0, y: 0, width, height: fs * 1.25 };
+    if (props.even && props.kind === "line") {
+        // The even stroke's half-width overhangs the centreline, so the fit pads by it.
+        const line = handLine(frame, { fs, seed: props.seed, kind: "strike" });
+        return polyline(fit(line, width, height, nib / 2, false));
+    }
     if (props.kind === "path") {
         const pts = (props.points ?? []).map((p) => ({ x: p.x * width, y: p.y * height }));
         return pts.length >= 2 ? strokeRibbon(densify(pts), nib) : "";
@@ -107,7 +124,13 @@ const d = computed(() => {
     >
         <!-- The ink rides `style`, not the `fill` presentation attribute: a presentation attribute
              does not resolve `var()` / `light-dark()` in every engine, a declaration does. -->
-        <path v-if="d" :d="d" :style="{ fill: color }" />
+        <path
+            v-if="d && even && kind === 'line'"
+            :d="d"
+            pathLength="1"
+            :style="{ fill: 'none', stroke: color, strokeWidth: `${nib}px`, strokeLinecap: 'butt', strokeLinejoin: 'round' }"
+        />
+        <path v-else-if="d" :d="d" :style="{ fill: color }" />
     </svg>
 </template>
 
