@@ -1,15 +1,14 @@
 // src/vite/preset.ts — @atlas/core/vite, THE PUBLISHABLE BUILD PRESET (L5-CORE-BOUNDARY §4.F).
 //
-// The build-config half of the `@atlas/core` boundary: the core-owned plugins + the shared-dep
-// vendor cuts every instance needs. The instance `vite.config.ts` COMPOSES this preset and layers
-// its own instance-only plugins on top (`apiSnapshotPreview` reads `./public/data`; `criticalCssPlugin`;
-// the geo/vendor `manualChunks`; the `dashboard-<slug>` chunkFileNames that scan `/src/dashboards`)
-// — those stay instance-side. The preset carries only what the core owns: Vue, Tailwind, and
-// shared-dependency vendor cuts.
+// The build-config half of the `@atlas/core` boundary: the core-owned plugins. The instance
+// `vite.config.ts` COMPOSES this preset and layers its own instance-only plugins on top
+// (`criticalCssPlugin`; the `dashboard-<slug>` chunkFileNames) — those stay instance-side. The
+// preset carries only what the core owns: Vue, the cascade contract, Tailwind, and the route cut.
 
 import type { Plugin } from "vite";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
+import { atlasRouteChunks } from "./routeChunks";
 
 // THE CASCADE CONTRACT, KEPT IN THE CONSUMER'S COMPILE (U · D5A-W1). atlas ships Tailwind source
 // (`@mkbabb/atlas/styles`) that the shell's ONE root compiles after tailwindcss and glass-ui:
@@ -168,20 +167,12 @@ export function atlasLayers(): Plugin[] {
     ];
 }
 
-/** The shared-dep vendor cut every instance inherits: glass-ui / keyframes / echarts each ride their
-    own named async chunk. Returns `undefined` for everything else so the instance can layer its own
-    geo/vendor cuts on top (the instance `manualChunks` calls this first, then adds its own rules). */
-export function coreManualChunks(id: string): string | undefined {
-    if (id.includes("@mkbabb/glass-ui")) return "glass-ui";
-    if (id.includes("echarts") || id.includes("zrender")) return "echarts";
-    return undefined;
-}
-
-/** The `@atlas/core` build preset — the core-owned Vue, cascade-contract and Tailwind plugins. The
-    instance composes
-    `[...atlasCorePreset(), ...instancePlugins]`
-    and folds `coreManualChunks` into its own `manualChunks` rollup output. */
+/** The `@atlas/core` build preset — the core-owned Vue, cascade-contract, Tailwind and route-chunk
+    plugins. The instance composes `[...atlasCorePreset(), ...instancePlugins]`. The route cut
+    (routeChunks.ts) owns `output.manualChunks`; an instance that sets its own is refused. */
 export function atlasCorePreset() {
     // atlas:root-order must read the root's source before Tailwind compiles it.
-    return [vue(), ...atlasLayers(), tailwindcss()];
+    return [vue(), ...atlasLayers(), tailwindcss(), atlasRouteChunks()];
 }
+
+export { atlasRouteChunks, dashboardRouteOf } from "./routeChunks";

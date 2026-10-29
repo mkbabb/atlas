@@ -189,6 +189,13 @@ projecting components.
 | `resolveBeatTemplate(policy, phase, seed, rank)` / `resolveBeatTemplates(policy, seed, rank)` (U/B7b) | drop the `rank` argument |
 | `DashboardMeta.crest` (U/B7b) | delete it; the dock reads the crest from `DashboardContext.crest` |
 
+## 5h · U/B7c: route chunks, seated dock Selects, period hover
+
+| Change | Consumer edit |
+|---|---|
+| `atlasCorePreset()` adds `atlas:route-chunks`, which owns `build.rollupOptions.output.manualChunks` (U/B7c C1). A dashboard route loads its modules in one chunk per set of routes that need them, with `dashboards/<slug>/DashboardBody.vue` and `context.ts` counted as one route; the entry keeps what it needs. sci /sci: 87 files before the body → 42, the same modules | none for sci (its config sets no `manualChunks`; chunk file names change). A consumer that sets `output.manualChunks` is refused (`atlas:route-chunks: the consumer sets output.manualChunks`); delete it |
+| `coreManualChunks` deleted from `@mkbabb/atlas/vite` (no consumer read it) | delete the import |
+
 ## 6 · glass-ui 10.1.0
 
 Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.
