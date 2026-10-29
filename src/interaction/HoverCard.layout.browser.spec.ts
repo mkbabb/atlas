@@ -30,13 +30,16 @@ const BREAKDOWN = [
     { label: "Lifeline", value: "$2.4M", share: 0.05, color: "#777" },
 ];
 
-/** Line count of an element's text: the distinct line boxes its text ranges occupy. */
+/** Line count of an element's text: the distinct line boxes its text ranges occupy. Rects on one
+    line box can sit a fraction of a pixel apart (Firefox puts a number and its lighter unit 0.4 px
+    apart, 22.5 and 22.9), so tops within 2 px are one line; a wrapped line sits a full line lower. */
 function lines(el: Element): number {
     const range = document.createRange();
     range.selectNodeContents(el);
-    const tops = new Set<number>();
-    for (const r of range.getClientRects()) if (r.width > 0) tops.add(Math.round(r.top));
-    return tops.size;
+    const tops: number[] = [];
+    for (const r of range.getClientRects())
+        if (r.width > 0 && !tops.some((t) => Math.abs(t - r.top) < 2)) tops.push(r.top);
+    return tops.length;
 }
 
 const cleanups: Array<() => void> = [];
