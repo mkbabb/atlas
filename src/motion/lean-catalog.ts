@@ -13,12 +13,15 @@
 // under `ActiveRim.subsumes` — the names are preserved for the cover proof, NEVER folded into a LIVE
 // preset (F8 is parked design-gated settle-once, not revived). `path` stays in the union as the
 // reserved DrawSVG fold-slot (no preset binds it live — the path-family folds into `draw`, cf.
-// `DrawIn.subsumes`).
+// `CurvePersist.subsumes`).
 //
 // W-MOTION-CORE (spec-motion §a.2) COMPLETES the catalog with the two spec-C additions and NOTHING
 // else: mechanism `breath` (compositor-idle, net-new — never the cut `oscillate` JS loop), preset
 // `CurvePersist` (W-64) and preset `Breath` (W-71). 14 → 16 presets, 8 → 9 mechanism names (8 live +
 // `path` reserved). The grammar is completed here, never expanded.
+//
+// U/B7c retires the `scroll` trigger and the three presets that fired only on it (BarRise, ClipWipe,
+// DrawIn): 16 → 13 presets. Their K-names fold into RevealUp and CurvePersist; the cover stays total.
 
 import type { MotionTrigger } from "./triggers.js"; // the KEPT closed taxonomy — reused
 import { ATMOSPHERE_PRESETS } from "../platform/chrome/background/composables/atmosphere.js";
@@ -76,17 +79,14 @@ export const BREATH_ENVELOPE = {
     periodS: QUIET_GROUND.breathPeriodMin * 2,
 } as const;
 
-/** A lean-catalog PRESET name — the 16 tasteful defaults the 7 dashboards genuinely use (the census's
-    14 + the two spec-C completions). A preset resolves to `{ mechanism, on, defaults, subsumes }`; the
+/** A lean-catalog PRESET name — the 13 tasteful defaults the dashboards genuinely use (the census's
+    14 + the two spec-C completions, less the three scroll-only presets U/B7c retired). A preset resolves to `{ mechanism, on, defaults, subsumes }`; the
     design vocabulary lives here, the engine count stays 8 live. Closed (`satisfies Record<…>`). */
 export type LeanPresetName =
     | "RevealUp"
     | "RevealBlur"
-    | "RevealScale"
-    | "BarRise"
-    | "ClipWipe" // reveal family (5)
-    | "DrawIn" // draw (1) — lines/geo/axes/rules
-    | "CurvePersist" // draw (1) — the traced curve that LATCHES on click (W-64)
+    | "RevealScale" // reveal family (3)
+    | "CurvePersist" // draw (1) — lines/geo/axes/rules; the curve that LATCHES on click (W-64)
     | "Typewriter"
     | "Scramble" // type (2)
     | "CountDial" // count (1)
@@ -129,45 +129,49 @@ export interface LeanPreset {
 const EXPO = "--ease-expo";
 const OVERSHOOT = "--ease-overshoot";
 
-/** THE LEAN CATALOG — 16 presets over 8 live mechanisms. `satisfies Record<LeanPresetName, LeanPreset>`
+/** THE LEAN CATALOG — 13 presets over 8 live mechanisms. `satisfies Record<LeanPresetName, LeanPreset>`
     keeps it closed (omit a name → tsc RED, the born-RED discipline at 1/4 the surface). */
 export const LEAN_CATALOG = {
-    // ── REVEAL (the KEPT reveal register — revealHostStyle; scroll/load scrubbed) ────────────────────
+    // ── REVEAL (the KEPT reveal register — revealHostStyle; load scrubbed) ──────────────────────────
     RevealUp: {
         mechanism: "reveal",
-        on: ["scroll", "load"],
+        on: ["load"],
         defaults: { direction: "up", ease: EXPO, liftEm: 0.5, intensity: 1 },
-        subsumes: ["FadeUp", "SlideMask", "UnitReveal", "SlideInFromSide", "AreaRise"],
+        // BarRise and ClipWipe fired only on the retired `scroll` trigger (U/B7c); their names fold here.
+        subsumes: [
+            "FadeUp",
+            "SlideMask",
+            "UnitReveal",
+            "SlideInFromSide",
+            "AreaRise",
+            "BarRise",
+            "GeoFillCascade",
+            "HexCascade",
+            "ChartDrawMask",
+            "ClipReveal",
+            "KineticEmphasis",
+        ],
     },
     RevealBlur: {
         mechanism: "reveal",
-        on: ["scroll", "load"],
+        on: ["load"],
         defaults: { ease: EXPO, blurPx: 6, intensity: 1 },
         subsumes: ["BlurIn", "GradientSweep", "HighlightWipe"],
     },
     RevealScale: {
         mechanism: "reveal",
-        on: ["scroll", "load", "active"],
+        on: ["load", "active"],
         defaults: { ease: OVERSHOOT, fromScale: 0.86, intensity: 1 },
         subsumes: ["ScaleIn", "MarkerDrop", "GeoMarkerDrop", "ScatterFan", "BeeswarmSettle"],
     },
-    BarRise: {
-        mechanism: "reveal",
-        on: ["scroll"],
-        defaults: { direction: "up", ease: EXPO, intensity: 1 },
-        subsumes: ["BarRise", "GeoFillCascade", "HexCascade", "ChartDrawMask"],
-    },
-    ClipWipe: {
-        mechanism: "reveal",
-        on: ["scroll"],
-        defaults: { direction: "up", ease: EXPO },
-        subsumes: ["ClipReveal", "KineticEmphasis"],
-    },
-
     // ── DRAW (keyframes.js DrawSVG — the single stroke engine for EVERY line/outline/rule/axis) ──────
-    DrawIn: {
+    CurvePersist: {
         mechanism: "draw",
-        on: ["scroll"],
+        // The W-64 affordance (spec-motion §g): the curve LATCHES on click (`compileTarget(draw,
+        // select)` = director-spring — the persistent annotated read). Its scroll trace and the
+        // scroll-only DrawIn retired with the `scroll` trigger (U/B7c); DrawIn's names fold here, the
+        // one draw preset left.
+        on: ["select"],
         defaults: { ease: EXPO },
         subsumes: [
             "LineDraw",
@@ -185,28 +189,17 @@ export const LEAN_CATALOG = {
             "RibbonFlow", // path-family folded into draw (MotionPath is a draw variant)
         ],
     },
-    CurvePersist: {
-        mechanism: "draw",
-        // The W-64 affordance in ONE preset (spec-motion §g): the curve TRACES on scroll
-        // (`compileTarget(draw, scroll)` = compositor, bi-directional for free) and LATCHES on
-        // click (`compileTarget(draw, select)` = director-spring — the persistent annotated read).
-        // Two triggers over one mechanism is why the row's compile target reads "compositor +
-        // director-spring"; the declaring segment picks the `compose` policy.
-        on: ["scroll", "select"],
-        defaults: { ease: EXPO },
-        subsumes: [],
-    },
 
     // ── TYPE (font-variation — the heading tier) ──────────────────────────────────────────────
     Typewriter: {
         mechanism: "type",
-        on: ["scroll", "load"],
+        on: ["load"],
         defaults: { direction: "up", ease: EXPO },
         subsumes: ["TitleTypewriter", "WeightMorph"],
     },
     Scramble: {
         mechanism: "type",
-        on: ["scroll", "load", "active"],
+        on: ["load", "active"],
         defaults: { ease: EXPO },
         subsumes: ["ScrambleDecode"],
     },
@@ -214,7 +207,7 @@ export const LEAN_CATALOG = {
     // ── COUNT (keyframes.js NumericAnimation — a figure number on a reader act) ────────────────────
     CountDial: {
         mechanism: "count",
-        on: ["scroll", "load", "select"],
+        on: ["load", "select"],
         defaults: { ease: EXPO },
         subsumes: ["CountUp", "OdometerRoll", "Tick", "DecimalSettle", "MagnitudePop", "DeltaSign"],
     },
@@ -304,9 +297,9 @@ export const K_CATALOG_NAMES = Object.freeze([
     "RaiseOnly", "ActiveRim", "DragGrip", "DisabledVeil", "FocusHalo", "AffordanceHint",
 ] as const);
 
-/** The count that matters. 16 presets / 9 mechanism names — down from 57 names / 11 declared mechanisms. */
+/** The count that matters. 13 presets / 9 mechanism names — down from 57 names / 11 declared mechanisms. */
 export const LEAN_METRICS = {
-    presetCount: Object.keys(LEAN_CATALOG).length, // 16
+    presetCount: Object.keys(LEAN_CATALOG).length, // 13
     mechanismCount: LEAN_MECHANISMS.length, // 9 (the union; the catalog binds 8 live, `path` reserved)
     kNamesSubsumed: new Set(Object.values(LEAN_CATALOG).flatMap((p) => p.subsumes)).size, // 57
 } as const;

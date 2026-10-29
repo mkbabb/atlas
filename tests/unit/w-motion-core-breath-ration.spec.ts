@@ -55,7 +55,7 @@ const stageMotion: MotionDeclaration<ChapterStage> = {
 
 /** The ration narrows `Breath` and NOTHING else — every other preset stays declarable everywhere. */
 const proseReveal: MotionDeclaration<{ kind: "prose" }> = {
-    segments: [{ id: "prose-in", use: "RevealUp", target: host, on: "scroll" }],
+    segments: [{ id: "prose-in", use: "RevealUp", target: host, on: "load" }],
 };
 
 describe("the A-21 breath ration", () => {

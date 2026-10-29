@@ -44,15 +44,12 @@ function walk(dir: string, out: string[] = []): string[] {
     return out;
 }
 
-describe("the catalog union — exactly 16 over the completed mechanism set", () => {
-    it("the preset union is the census 14 plus CurvePersist plus Breath", () => {
+describe("the catalog union — exactly 13 over the completed mechanism set", () => {
+    it("the preset union is the census 14 plus CurvePersist plus Breath, less the scroll-only three", () => {
         expect(PRESETS).toEqual([
             "RevealUp",
             "RevealBlur",
             "RevealScale",
-            "BarRise",
-            "ClipWipe",
-            "DrawIn",
             "CurvePersist",
             "Typewriter",
             "Scramble",
@@ -64,7 +61,7 @@ describe("the catalog union — exactly 16 over the completed mechanism set", ()
             "Reorder",
             "Breath",
         ]);
-        expect(LEAN_METRICS.presetCount).toBe(16);
+        expect(LEAN_METRICS.presetCount).toBe(13);
     });
 
     it("the mechanism roster gains `breath` and nothing else; `oscillate` stays cut", () => {
@@ -74,8 +71,8 @@ describe("the catalog union — exactly 16 over the completed mechanism set", ()
         expect(new Set(Object.values(LEAN_CATALOG).map((p) => p.mechanism)).size).toBe(8);
     });
 
-    it("the trigger taxonomy is untouched — the sealed six plus `pin`", () => {
-        expect(MOTION_TRIGGERS).toHaveLength(7);
+    it("the trigger taxonomy is the sealed five plus `pin`", () => {
+        expect(MOTION_TRIGGERS).toHaveLength(6);
         for (const use of PRESETS)
             for (const on of PRESET_TRIGGERS[use]) expect(MOTION_TRIGGERS).toContain(on);
     });
@@ -126,9 +123,8 @@ describe("the two additions compile where the spec says they do", () => {
         expect(consultedDrops).toEqual(["Breath:load"]);
     });
 
-    it("CurvePersist is the W-64 pair in one preset: compositor trace + director-spring latch", () => {
-        expect(PRESET_TRIGGERS.CurvePersist).toEqual(["scroll", "select"]);
-        expect(compileSegment(seg("CurvePersist", "scroll")).target).toBe("compositor");
+    it("CurvePersist is the W-64 latch: a director spring on select", () => {
+        expect(PRESET_TRIGGERS.CurvePersist).toEqual(["select"]);
         expect(compileSegment(seg("CurvePersist", "select")).target).toBe("director-spring");
     });
 });

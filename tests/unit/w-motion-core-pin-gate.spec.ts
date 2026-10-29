@@ -38,15 +38,14 @@ const plateMotion: MotionDeclaration = {
     ],
 };
 
-/** The sealed six remain declarable on every surface — the gate narrows `pin` and nothing else. */
-const sceneScroll: MotionDeclaration<ChapterScene> = {
-    segments: [{ id: "fill", use: "BarRise", target: marks, on: "scroll" }],
+/** The sealed five remain declarable on every surface — the gate narrows `pin` and nothing else. */
+const sceneLoad: MotionDeclaration<ChapterScene> = {
+    segments: [{ id: "fill", use: "RevealUp", target: marks, on: "load" }],
 };
 
 describe("the W-50 type-keyed pin gate", () => {
-    it("the trigger roster is the sealed six plus pin", () => {
+    it("the trigger roster is the sealed five plus pin (scroll retired in U/B7c)", () => {
         expect(MOTION_TRIGGERS).toEqual([
-            "scroll",
             "select",
             "hover",
             "active",
@@ -54,12 +53,12 @@ describe("the W-50 type-keyed pin gate", () => {
             "load",
             "pin",
         ]);
-        expect(new Set<MotionTrigger>(MOTION_TRIGGERS).size).toBe(7);
+        expect(new Set<MotionTrigger>(MOTION_TRIGGERS).size).toBe(6);
     });
 
     it("a stage declares the jack; a scene and a plate do not (the declarations above are the proof)", () => {
         expect(stageMotion.segments[0]!.on).toBe("pin");
-        expect(sceneScroll.segments[0]!.on).toBe("scroll");
+        expect(sceneLoad.segments[0]!.on).toBe("load");
         // The scene/plate declarations only compile behind an `@ts-expect-error`; they are held here so
         // the gate has a live witness rather than a comment.
         expect(sceneMotion.segments).toHaveLength(1);

@@ -27,7 +27,6 @@ import {
     type LeanPreset,
     type LeanPresetName,
 } from "./lean-catalog.js";
-import { useCoverProgress } from "./useCoverProgress.js";
 import { useReducedMotion } from "./useReducedMotion.js";
 import { compileSegment } from "./compileSegment.js";
 
@@ -38,7 +37,7 @@ const clamp01 = (x: number): number => clamp(x, 0, 1);
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 /** The universal shape a resolved trigger presents to a mechanism: ONE scalar ∈ [0,1]. Scrubbed for
-    `scroll` (position IS the value; reverses on scroll-up); a spring/one-shot output for the impulse
+    `pin` (position IS the value; reverses on scroll-up); a spring/one-shot output for the impulse
     triggers. Mechanism code never knows which trigger it rode — it reads a number. */
 export type DriverEdge = () => number;
 
@@ -47,10 +46,8 @@ export type DriverEdge = () => number;
     + unit-testable (`createDirectorCore` takes these directly; `useMotionDrivers` wires them from the
     KEPT primitives until WD1's `useVizContext` lands — the §10 coordination seam). */
 export interface MotionDrivers {
-    /** `useCoverProgress(host).t` — the ONE page-clock cover band [0,1] (0.50 ≡ viewport centre). */
-    readonly scroll: () => number;
     /** `usePinProgress(deck).pinT` — the pinned stage's composed step clock [0,1]. POSITION-derived
-        like `scroll` (no spring, no rAF); 1 off a stage (the un-pinned terminal). */
+        (no spring, no rAF); 1 off a stage (the un-pinned terminal). */
     readonly pin: () => number;
     /** `useSelection`: is the host's key ∈ selectedKeys (or its child mark's key)? */
     readonly selected: () => boolean;
@@ -96,7 +93,7 @@ export type ComposePolicy = "add" | "multiply" | "max" | "replace";
     `kind` discriminant rather than any channel, it is not evadable by perturbing one. */
 export type PinnableSurface = { readonly kind: "stage" };
 
-/** The triggers a segment declared on surface `S` may pick: the sealed six everywhere, plus `pin` on a
+/** The triggers a segment declared on surface `S` may pick: the sealed five everywhere, plus `pin` on a
     `ChapterStage` alone. `on: "pin"` on a `ChapterScene` (or a plain plate) is UNREPRESENTABLE — `tsc`
     refuses it, so the /sci map's year-walk cannot take a jack and must use a direct control. */
 export type SurfaceTrigger<S> = S extends PinnableSurface
@@ -152,7 +149,7 @@ export type AnyMotionDeclaration = MotionDeclaration<PinnableSurface | Breathabl
 
 export interface MotionDirector {
     /** The resolved scalar for a trigger (reactive) — the DriverEdge as a Vue signal. Scrubbed for
-        `scroll`; the live spring/one-shot value for impulse triggers. The CANVAS plate reads this and
+        `pin`; the live spring/one-shot value for impulse triggers. The CANVAS plate reads this and
         rebuilds its ECharts option (`optionAt(scalars)`); an SVG plate scrubs `buildMarkAnimation`. */
     scalarFor(on: MotionTrigger): ComputedRef<number>;
     /** The COMPOSED host style (O-A1 · replaces per-segment `styleFor`): every `host`-target segment's
@@ -312,8 +309,8 @@ const IMPULSE_TRIGGERS = ["select", "hover", "active", "filter"] as const;
 export interface DirectorCore {
     /** Advance every live impulse spring one frame (dt in ms). No-op under reduced motion. */
     step(dt: number): void;
-    /** The resolved scalar for a trigger — `scroll` scrubbed, impulse the live spring value, `load` the
-        one-shot. Under reduced motion (O-DIR-1): REVEAL/progress triggers (`scroll`/`filter`/`load`)
+    /** The resolved scalar for a trigger — `pin` scrubbed, impulse the live spring value, `load` the
+        one-shot. Under reduced motion (O-DIR-1): REVEAL/progress triggers (`pin`/`filter`/`load`)
         settle at `1` (terminal — information parity); INTERACTION triggers (`select`/`hover`/`active`)
         bind the LIVE driver edge (0 at rest, 1 while genuinely engaged — a state change, not a tween). */
     scalarFor(on: MotionTrigger): number;
@@ -322,7 +319,7 @@ export interface DirectorCore {
 }
 
 /** Build the director core for a set of ACTIVE triggers (the declaration's `segment.on` set). Only the
-    active impulse springs are polled for `idle`; a plate with only `scroll` segments is idle immediately
+    active impulse springs are polled for `idle`; a plate with only `pin` segments is idle immediately
     (the composable never starts a rAF for it). */
 export function createDirectorCore(
     drivers: MotionDrivers,
@@ -374,14 +371,12 @@ export function createDirectorCore(
                 case "active":
                     return drivers.active() ? 1 : 0;
                 default:
-                    return 1; // scroll / pin / filter / load — the reveal/progress terminal
+                    return 1; // pin / filter / load — the reveal/progress terminal
             }
         }
         switch (on) {
-            case "scroll":
-                return clamp01(drivers.scroll()); // RAW position — the mechanism eases (no double-ease)
             case "pin":
-                return clamp01(drivers.pin()); // the composed step clock — position, like scroll
+                return clamp01(drivers.pin()); // RAW position — the mechanism eases (no double-ease)
             case "select":
                 return impulse.select.value;
             case "hover":
@@ -417,12 +412,11 @@ export * from "./buildMarkAnimation.js";
 // 6 · THE DRIVER BUILDER + THE COMPOSABLE
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** The plate-supplied driver overrides (each an OPTIONAL edge; `scroll`/`reducedMotion` default to the
-    KEPT primitives, `pin` to the un-pinned terminal 1, the rest to an inert `false`/`0`). A plate wires
-    only the edges its declaration rides — e.g. a scroll-only plate passes nothing; a hover/select plate
+/** The plate-supplied driver overrides (each an OPTIONAL edge; `reducedMotion` defaults to the KEPT
+    primitive, `pin` to the un-pinned terminal 1, the rest to an inert `false`/`0`). A plate wires
+    only the edges its declaration rides — e.g. a load-only plate passes nothing; a hover/select plate
     passes `hovered`/`selected`; a plate on a pinned stage passes `pin`. */
 export interface MotionDriverSources {
-    readonly scroll?: () => number;
     readonly pin?: () => number;
     readonly selected?: () => boolean;
     readonly hovered?: () => boolean;
@@ -430,18 +424,16 @@ export interface MotionDriverSources {
     readonly filterEpoch?: () => number;
 }
 
-/** Wire `MotionDrivers` from the KEPT reveal register + the plate's supplied edges. `scroll` reads
-    `useCoverProgress(host).t` (0.50 ≡ centre); `reducedMotion` reads `useReducedMotion`. The §10 seam:
+/** Wire `MotionDrivers` from the plate's supplied edges; `reducedMotion` reads `useReducedMotion`. The §10 seam:
     when WD1's `useVizContext(vizId)` lands, it supersedes this by supplying all six edges — the director
     signature is unchanged (it takes `MotionDrivers`, not a hub). */
 export function useMotionDrivers(
     host: Ref<HTMLElement | null>,
     sources: MotionDriverSources = {},
 ): MotionDrivers {
-    const cover = useCoverProgress(host);
+    void host; // reserved: the anchor a host-scoped edge resolves within
     const reduced = useReducedMotion();
     return {
-        scroll: sources.scroll ?? ((): number => cover.t.value),
         // No deck ⇒ the un-pinned terminal 1 (the missing-stage-terminal law); a pinned host passes
         // `usePinProgress(deck).pinT`.
         pin: sources.pin ?? ((): number => 1),
@@ -455,10 +447,10 @@ export function useMotionDrivers(
 
 /**
  * Wire a viz's declared motion. `host` is the plate element (the reserved primitive-runtime anchor for a
- * `marks` target's selector resolution + the cover clock the drivers read). `decl` is the declared
+ * `marks` target's selector resolution). `decl` is the declared
  * segments. `drivers` are the six injected edges. The impulse springs advance on a plain-rAF loop that
- * SELF-SUSPENDS when idle (no standing rAF at rest — G-N2); an edge change re-arms it. A scroll-only
- * declaration needs NO rAF (the `scroll` scalar is reactive off the cover clock).
+ * SELF-SUSPENDS when idle (no standing rAF at rest — G-N2); an edge change re-arms it. A pin-only
+ * declaration needs NO rAF (the `pin` scalar is reactive off the stage clock).
  */
 export function useMotionDirector(
     host: Ref<HTMLElement | null>,
@@ -474,13 +466,13 @@ export function useMotionDirector(
         decl.segments.flatMap((s) => compileSegment(s).directorBind ?? []),
     );
     const core = createDirectorCore(drivers, activeTriggers);
-    // `scroll` AND `pin` are POSITION-derived (reactive off their clocks) — neither opens a spring, so
-    // a declaration made only of them never arms the rAF loop (the F-20 no-new-scroll-rAF budget).
-    const hasImpulse = [...activeTriggers].some((t) => t !== "scroll" && t !== "pin");
+    // `pin` is POSITION-derived (reactive off its clock) — it opens no spring, so a declaration made
+    // only of it never arms the rAF loop (the F-20 no-new-scroll-rAF budget).
+    const hasImpulse = [...activeTriggers].some((t) => t !== "pin");
     const canRaf = typeof requestAnimationFrame === "function";
 
     // The reactive tick — bumped each rAF frame so the impulse `scalarFor` computeds re-evaluate. The
-    // `scroll` scalar tracks the cover clock directly (reactive), so a scroll-only plate never ticks.
+    // `pin` scalar tracks the stage clock directly (reactive), so a pin-only plate never ticks.
     const tick = ref(0);
     let raf = 0;
     let last = 0;
@@ -513,7 +505,7 @@ export function useMotionDirector(
         let c = scalarCache.get(on);
         if (!c) {
             c = computed(() => {
-                void tick.value; // impulse re-eval dep; `scroll` tracks the cover clock inside core
+                void tick.value; // impulse re-eval dep; `pin` tracks the stage clock inside core
                 return core.scalarFor(on);
             });
             scalarCache.set(on, c);

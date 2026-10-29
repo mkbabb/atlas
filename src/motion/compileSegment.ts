@@ -7,15 +7,15 @@
 //
 // THE BOUNDARY (spec-motion :443, verbatim):
 //   compileTarget(mechanism, trigger) →
-//     "compositor"      if trigger ∈ {scroll, pin}  and mechanism ∈ {reveal, draw}
+//     "compositor"      if trigger == pin  and mechanism ∈ {reveal, draw}
 //     "compositor-idle" if mechanism == breath
-//     "director-scalar" if trigger ∈ {scroll, pin}  and mechanism ∈ {count, type, morph}
+//     "director-scalar" if trigger == pin  and mechanism ∈ {count, type, morph}
 //     "director-spring" if trigger ∈ {select, hover, active, filter, load}
 //
-// Why it matters: position-derived motion (`scroll`/`pin`) — where the whole volume lives — resolves to
-// the COMPOSITOR (0 JS per frame) or to a DIRECTOR SCALAR that reads the ONE cached `--scroll-tl`. So
-// the grammar adds no new scroll rAF and no new `--scroll-tl` poll however many segments are declared;
-// only the genuine interaction edges take a spring.
+// Why it matters: position-derived motion (`pin`, the pinned stage's step clock) resolves to the
+// COMPOSITOR (0 JS per frame) or to a DIRECTOR SCALAR that reads the one cached clock. So the grammar
+// adds no new scroll rAF however many segments are declared; only the genuine interaction edges take a
+// spring. (The `scroll` trigger was retired in U/B7c; the reveal register owns scroll-scrubbed reveals.)
 
 import type { MotionTrigger } from "./triggers.js";
 import { LEAN_CATALOG, type LeanMechanism } from "./lean-catalog.js";
@@ -41,8 +41,8 @@ export interface CompiledSegment {
     readonly directorBind?: MotionTrigger;
 }
 
-/** The POSITION-derived triggers — the two that read a scroll clock rather than an impulse edge. */
-const POSITION_TRIGGERS = new Set<MotionTrigger>(["scroll", "pin"]);
+/** The POSITION-derived triggers — those that read a clock rather than an impulse edge. */
+const POSITION_TRIGGERS = new Set<MotionTrigger>(["pin"]);
 
 /**
  * The compile boundary as a pure total function over the two closed unions. Every `(mechanism ×
