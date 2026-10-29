@@ -148,7 +148,6 @@ function measureEl(): HTMLElement | null {
     return (c.$el as HTMLElement | undefined) ?? null;
 }
 
-let pointer = { x: Number.NaN, y: Number.NaN };
 const hoverBridge = createHoverBridge({
     anchor: () => {
         const anchor = bridgedReadout.value?.anchor;
@@ -159,14 +158,18 @@ const hoverBridge = createHoverBridge({
     card: () => measureEl()?.getBoundingClientRect() ?? null,
     // The release edge re-checks THIS pointer against the hull (β-gate F6): dwelling in the transit
     // holds the card past the grace; leaving it releases. Pre-move (NaN) reads as no pointer.
-    pointer: () => (Number.isNaN(pointer.x) ? null : [pointer.x, pointer.y]),
+    pointer: () => {
+        const p = store.pointerAt();
+        return p ? [p.x, p.y] : null;
+    },
     onRelease: () => (bridgedReadout.value = null),
 });
 watch(
     sourceReadout,
     (next) => {
         if (next) {
-            if (bridgedReadout.value && hoverBridge.holdsPoint(pointer.x, pointer.y)) return;
+            const p = store.pointerAt();
+            if (bridgedReadout.value && p && hoverBridge.holdsPoint(p.x, p.y)) return;
             bridgedReadout.value = next;
             hoverBridge.engage();
         } else if (bridgedReadout.value) {
@@ -175,14 +178,7 @@ watch(
     },
     { immediate: true },
 );
-function trackPointer(event: PointerEvent): void {
-    pointer = { x: event.clientX, y: event.clientY };
-}
-onMounted(() => window.addEventListener("pointermove", trackPointer, true));
-onBeforeUnmount(() => {
-    window.removeEventListener("pointermove", trackPointer, true);
-    hoverBridge.destroy();
-});
+onBeforeUnmount(() => hoverBridge.destroy());
 
 // Re-measure when the TRANSIENT card opens or its content/position changes (the facts grid
 // resizes the card). `nextTick` lets the DOM lay out before `getBoundingClientRect`. The pinned
@@ -251,8 +247,7 @@ const style = computed(() => {
     // THE TRANSIENT SEAT (the colocated placement geometry, AR-8) — the viewport-clamp, one law in
     // useCardPlacement. The right-margin `tapPeek` fork is REMOVED from the seat math (J-MOBILE §3).
     // The live pointer keeps the card clear of it (F-14); the seat re-reads it when the anchor moves.
-    const live = Number.isNaN(pointer.x) ? null : { x: pointer.x, y: pointer.y };
-    const { left, top } = transientSeat(anchor, footprint.value, { vw, vh }, live);
+    const { left, top } = transientSeat(anchor, footprint.value, { vw, vh }, store.pointerAt());
     return {
         // `position: fixed` is set inline (it WINS over Surface's root `position: relative`) so
         // the teleported floating card is viewport-clamped, not flow-relative.

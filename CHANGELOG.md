@@ -9,8 +9,12 @@
   under the pointer (a /sci charter catchment anchors at the school's internal point, about 200 px from
   where the pointer entered the polygon), the card covered the pointer, the next click landed on the
   card and EntityDetail never opened. `transientSeat` takes the live pointer and picks the first corner
-  round the anchor that leaves it clear; with no pointer it seats below-right as before. Witness:
-  `tests/unit/b7c-card-clear-of-pointer.spec.ts`, 2 of 4 red before.
+  round the anchor that leaves it clear; with no pointer it seats below-right as before. Sites mount
+  the card on the first publish, after the pointer has stopped, so the card's own listener knew no
+  pointer for the first card: the readout store, which every publisher creates at setup, now tracks
+  the live pointer (`pointerAt()`), and HoverCard's own listener is gone. Witnesses:
+  `tests/unit/b7c-card-clear-of-pointer.spec.ts` (2 of 4 red before) and
+  `HoverCard.seat.browser.spec.ts` (red before: the first card covered the pointer).
 
 - **The rail opens from its pinned top edge (U/B7c L · PL-1).** glass 10.1.2 morphs a vertical dock
   with `scale` from its `anchor` edge, centre by default. The rail is pinned at its block start, so the

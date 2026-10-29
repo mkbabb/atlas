@@ -36,3 +36,4 @@ describe("the transient card never seats over the live pointer", () => {
         expect(transientSeat({ x: 400, y: 300 }, fp, vp, null)).toEqual({ left: 416, top: 316 });
     });
 });
+

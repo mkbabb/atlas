@@ -156,6 +156,25 @@ export const useHoverReadout = defineStore("platform:hover-readout", () => {
     const lastTransientKey = ref<string | null>(null);
     /** The pointer-ownership source of truth + the selection set (the pin channel's truth). */
     const selection = useSelection();
+    /**
+     * THE LIVE POINTER (U/B7c L · F-14) — the last viewport point any pointer moved to, or null before
+     * the first move. The store is created by the first publisher's setup, long before the lazy card
+     * mounts on the first publish, so the card knows where the pointer is the moment it opens and can
+     * seat clear of it. One passive capture listener for the app's lifetime; a plain object, not a ref,
+     * because the seat reads it once per anchor and must not chase the pointer onto the card.
+     */
+    const livePointer = { x: Number.NaN, y: Number.NaN };
+    if (typeof window !== "undefined")
+        window.addEventListener(
+            "pointermove",
+            (e: PointerEvent) => {
+                livePointer.x = e.clientX;
+                livePointer.y = e.clientY;
+            },
+            { capture: true, passive: true },
+        );
+    const pointerAt = (): { x: number; y: number } | null =>
+        Number.isNaN(livePointer.x) ? null : { x: livePointer.x, y: livePointer.y };
 
     /** The card surface is open when EITHER a transient payload is live OR any datum is pinned —
         the projection of {transient} ∪ {pinned} (F6.10 §2.3). */
@@ -327,5 +346,6 @@ export const useHoverReadout = defineStore("platform:hover-readout", () => {
         pin,
         // The dismiss-everything seam (Esc / route-change) — blanks the transient + the pin tier.
         clearAll,
+        pointerAt,
     };
 });
