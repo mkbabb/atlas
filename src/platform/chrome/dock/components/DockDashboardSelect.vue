@@ -1,19 +1,13 @@
 <script setup lang="ts">
-// DockDashboardSelect — the dashboard switcher (U/B7 §2.2, O-12). One glass Select of every listed
-// dashboard in `rank` order (held entries are not listed; companions come last). Choosing one routes
-// there; the arriving page runs one view transition (`siteTransition`, 240 ms, a cut under PRM).
-// It is a single control (a Select trigger), so it can sit in the rail's site layer or as the phone
-// bar's Dashboards cell without becoming a container seat. Its list's open state is a model, so the
-// dock can seat it (the bar's bottom seat) or hold the rail open while it is open (PLAN §2.5).
+// DockDashboardSelect — the dashboard switcher's seat (U/B7 §2.2, O-12; U/B7c C1, O-7). Until first
+// use it is the face alone, the dashboards glyph; the list (DockDashboardSelectLive, glass's Select)
+// loads and mounts when the reader opens it (DockSelectSeat). It is a single control, so it can sit
+// in the rail's site layer or as the phone bar's Dashboards cell without becoming a container seat.
 import { computed } from "vue";
-import { useRouter } from "vue-router";
 import { LayoutGrid } from "@lucide/vue";
-import { Select, SelectContent, SelectItem, SelectSeparator } from "@mkbabb/glass-ui/select";
-import { DockTrigger } from "@mkbabb/glass-ui/dock";
 import { useDashboardRegistry } from "../../../../contract/index.js";
-import { siteTransition } from "../site-transition.js";
+import DockSelectSeat from "./DockSelectSeat.vue";
 
-// One control: the caller's attributes land on the trigger (a seat of the bar's run).
 defineOptions({ inheritAttrs: false });
 
 const { active, side = "right", returnFocus = true } = defineProps<{
@@ -29,69 +23,31 @@ const { active, side = "right", returnFocus = true } = defineProps<{
 /** The list is open. */
 const open = defineModel<boolean>("open", { default: false });
 
-/** The list closed: keep focus where the surface that displaced it put it. */
-function onCloseAutoFocus(event: Event): void {
-    if (!returnFocus) event.preventDefault();
-}
-
-const router = useRouter();
 const { getDashboards } = useDashboardRegistry();
-const ranked = computed(() => getDashboards().filter((d) => typeof d.rank === "number"));
-const companions = computed(() => getDashboards().filter((d) => d.rank === "companion"));
 const activeTitle = computed(() => getDashboards().find((d) => d.slug === active)?.title);
-
-const model = computed({
-    get: () => active ?? "",
-    set: (slug) => {
-        if (typeof slug !== "string" || !slug || slug === active) return;
-        siteTransition(() => router.push(`/${slug}`));
-    },
-});
+const load = () => import("./DockDashboardSelectLive.vue");
 </script>
 
 <template>
-    <Select v-model="model" v-model:open="open">
-        <DockTrigger
-            v-bind="$attrs"
-            for="select"
-            class="dock-dashboards"
-            :aria-label="activeTitle ? `Dashboards: ${activeTitle}` : 'Dashboards'"
-            title="Dashboards"
-            data-testid="dock-dashboards"
-        >
-            <LayoutGrid class="dock-dashboards__glyph" aria-hidden="true" />
-            <template #icon><span hidden /></template>
-        </DockTrigger>
-        <SelectContent
-            :side="side"
-            align="start"
-            data-testid="dock-dashboards-list"
-            @close-auto-focus="onCloseAutoFocus"
-        >
-            <SelectItem
-                v-for="d in ranked"
-                :key="d.slug"
-                :value="d.slug"
-                :data-testid="`dock-dashboard-option-${d.slug}`"
-            >
-                {{ d.title }}
-            </SelectItem>
-            <template v-if="companions.length">
-                <SelectSeparator />
-                <SelectItem
-                    v-for="d in companions"
-                    :key="d.slug"
-                    :value="d.slug"
-                    :data-testid="`dock-dashboard-option-${d.slug}`"
-                >
-                    {{ d.title }}
-                </SelectItem>
-            </template>
-        </SelectContent>
-    </Select>
+    <DockSelectSeat
+        v-bind="$attrs"
+        v-model:open="open"
+        :load="load"
+        :bind="{ active, side, returnFocus }"
+        :face="{
+            class: 'dock-trigger dock-select-trigger dock-dashboards',
+            'aria-label': activeTitle ? `Dashboards: ${activeTitle}` : 'Dashboards',
+            title: 'Dashboards',
+            'data-testid': 'dock-dashboards',
+        }"
+    >
+        <LayoutGrid class="dock-dashboards__glyph" aria-hidden="true" />
+        <span hidden />
+    </DockSelectSeat>
 </template>
 
-<style scoped>
+<style>
+/* The face and the live trigger share these rules (the live module has no sheet of its own). */
 .dock-dashboards {
     display: grid;
     place-items: center;

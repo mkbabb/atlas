@@ -23,7 +23,7 @@
 // detail's bottom sheet: opening one closes whichever surface held the seat. The rail's lists take no
 // seat; each holds the rail open while it is open (a dock-portal claim), and focus goes back to the
 // control that opened it when it closes.
-import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue";
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue";
 import { DarkModeToggle } from "@mkbabb/glass-ui/dark-mode-toggle";
 import { DockSeparator, GlassDock } from "@mkbabb/glass-ui/dock";
 import { ScrollProgressRim } from "@mkbabb/glass-ui/scroll-progress-rim";
@@ -32,7 +32,6 @@ import DockStepperRender from "./components/DockStepperRender.vue";
 import DockFoot from "./components/DockFoot.vue";
 import DockRoster from "./components/DockRoster.vue";
 import DockDashboardSelect from "./components/DockDashboardSelect.vue";
-import DockSectionSelect from "./components/DockSectionSelect.vue";
 import DockSearch from "./components/DockSearch.vue";
 import DockSavedViews from "./components/DockSavedViews.vue";
 import DockFilterTrigger from "./components/DockFilterTrigger.vue";
@@ -52,6 +51,11 @@ import { revealReleasesOnLeave, revealPersists } from "./composables/coarse-reve
 import { useSeatedOpen, useSurfaceSeats } from "../surfaces/useSurfaceSeat.js";
 import type { DashboardContext } from "../../../contract/index.js";
 import type { SiteSearchSource, SiteSubject } from "./site.js";
+// The section Select (glass Select and its list) is its own chunk: it renders only on a dashboard
+// route, so the entry does not carry it (U/B7c C1, O-7). The dock fetches it when a dashboard's
+// context arrives, before the body has registered the sections it lists.
+const loadSectionSelect = () => import("./components/DockSectionSelect.vue");
+const DockSectionSelect = defineAsyncComponent(loadSectionSelect);
 
 const props = withDefaults(
     defineProps<{
@@ -79,6 +83,7 @@ const props = withDefaults(
 );
 
 const ctx = computed(() => props.context);
+watch(ctx, (c) => c && void loadSectionSelect(), { immediate: true });
 const membraneFacets = MEMBRANE_FACETS.join(" ");
 
 // The one document-progress scalar: the progress track, the stepper's end zone, the crown gate.
