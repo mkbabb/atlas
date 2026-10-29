@@ -94,6 +94,30 @@ describe("ReadoutFacts: one label-safe grid (O-13)", () => {
         }
     });
 
+    it("a number never parts from its unit: a long label yields its width before a value splits (U/B7b L)", async () => {
+        // The served /sci map card at 1440 (Chromium and Firefox, B7b land): the label track took
+        // max-content beside "Contracted bandwidth per student", so the value track was 34 px and
+        // "2 Gbps", "598 kbps" and "457 Mbps" each broke onto two lines, number over unit.
+        const el = host("300px");
+        const facts: Fact[] = [
+            { label: "Contracted bandwidth per student in the 2025–26 school year", value: "598 kbps" },
+            { label: "Average utilization across the whole school year", value: "457 Mbps" },
+            { label: "Enrollment (ADM)", value: "3,344" },
+        ];
+        const app = createApp(defineComponent({ setup: () => () => h(ReadoutFacts, { facts }) }));
+        app.mount(el);
+        cleanups.push(() => app.unmount());
+        await nextTick();
+        const rows = [...el.querySelectorAll("dt")].map((dt, i) => [dt, el.querySelectorAll("dd")[i]!] as const);
+        for (const [dt, dd] of rows) {
+            expect(lines(dd), `value "${dd.textContent?.trim()}" on one line`).toBe(1);
+            expect(dd.scrollWidth, `value "${dd.textContent?.trim()}" inside its cell`).toBeLessThanOrEqual(dd.clientWidth + 1);
+            expect(dt.getBoundingClientRect().right, `label "${dt.textContent}" clear of its value`).toBeLessThanOrEqual(
+                dd.getBoundingClientRect().left + 1,
+            );
+        }
+    });
+
     it("under 18rem the rows stack, label over value", async () => {
         const el = mountFacts("15rem");
         await nextTick();

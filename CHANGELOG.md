@@ -22,6 +22,12 @@
   presses still move two sections. `sectionScrollEndpoint` is exported from `scroll-anchor.ts` for it.
   Witness: three cases in `section-pager.browser.spec.ts` (2 of 3 red before).
 
+- **A number never parts from its unit in the readout grid (U/B7b L · O-13).** On the served /sci map
+  card at 1440 (Chromium and Firefox) the label track took its full width beside "Contracted bandwidth
+  per student", the value track fell to 34 px, and "2 Gbps", "598 kbps" and "457 Mbps" each broke
+  number over unit. `ReadoutFacts` joins a number to its unit with a no-break space; the label track
+  is `minmax(0, max-content)` and the value track `minmax(min-content, 1fr)`, so a long label wraps at
+  word boundaries before a value splits. Witness: `HoverCard.layout.browser.spec.ts`.
 - **The dock's phone sheets and its Search palette are opaque (U/B7b M1 · D-6).** At 390 the More
   menu, the Filters sheet and the Search palette painted glass at α 0.18–0.26, so the page read
   through their rows (and in the light scheme the palette's ink sat on the dark scrim). They take

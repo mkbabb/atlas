@@ -1,14 +1,19 @@
 <script setup lang="ts">
 // ReadoutFacts.vue — the one fact grid the hover card and the entity detail share (U/B7 O-13).
 //
-// Labels sit left on one line (`max-content`), values right in the remaining track
-// (`minmax(0,1fr)`), tabular figures. A value wraps at word boundaries inside its own cell and never
-// takes width from the label. Under 18rem of container width each row stacks, label over value. The
+// Labels sit left, on one line wherever the card has room (`minmax(0, max-content)`); values sit
+// right in the remaining track, never narrower than their longest word (`minmax(min-content, 1fr)`),
+// tabular figures. A number never parts from its unit: the space between them is a no-break space,
+// so a long label yields its width (wrapping at word boundaries) before "2 Gbps" splits. A long
+// value still wraps at word boundaries inside its own cell. Under 18rem of container width each row stacks, label over value. The
 // breakdown bars use the same label-safe columns. The host sets `container-type`, so a caller that
 // sizes to content (the hover card) gives the host a definite width.
 import FigureSlug from "../frame/FigureSlug.vue";
 import type { Fact } from "../../interaction/HoverCard.vue";
 import type { ReadoutBar } from "../../platform/stores/useHoverReadout.js";
+
+/** Join each number to the unit word after it with a no-break space ("2 Gbps", "598 kbps"). */
+const keepUnit = (value: string): string => value.replace(/(\d)[ \t]+(?=[^\s\d])/g, "$1\u00a0");
 
 withDefaults(
     defineProps<{
@@ -41,7 +46,7 @@ withDefaults(
                         class="readout-facts__dot"
                         :style="{ background: f.accent }"
                     />
-                    <FigureSlug size="card" as="span">{{ f.value }}</FigureSlug>
+                    <FigureSlug size="card" as="span">{{ keepUnit(f.value) }}</FigureSlug>
                 </dd>
             </template>
         </dl>
@@ -79,14 +84,15 @@ withDefaults(
     /* the readout figure rung: one golden step below the card figure token */
     --readout-figure-step: calc(var(--type-figure-card, 1rem) / 1.618);
     display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-columns: minmax(0, max-content) minmax(min-content, 1fr);
     column-gap: 0.75rem;
     row-gap: 0.125rem;
     align-items: baseline;
     margin: 0.5rem 0 0;
 }
 .readout-facts__label {
-    white-space: nowrap;
+    min-inline-size: 0;
+    overflow-wrap: normal;
     font-size: var(--type-caption, 0.75rem);
     color: var(--muted-foreground);
 }
