@@ -23,9 +23,17 @@
 // is a route computed reading the live view/selection stores; the fold owns the coordinator + the
 // three imperative edges, nothing route-specific.
 
-import { computed, watch, watchEffect, type ComputedRef } from "vue";
+import {
+    computed,
+    getCurrentScope,
+    onScopeDispose,
+    shallowReactive,
+    watch,
+    watchEffect,
+    type ComputedRef,
+} from "vue";
 import { createCoordinator, createSelection } from "./coordinator.js";
-import type { Predicate } from "./predicate.js";
+import { normalize, type Predicate } from "./predicate.js";
 
 /** The fold's observable surface — the client's leave-one-out rows, the filter-active flag, and the
     O(1) membership predicate every plate's dimming reads (a presentation adapter over the memoized
@@ -69,6 +77,26 @@ export interface RouteFoldOptions<Row> {
     fields?: Record<string, (row: Row) => string | number | null>;
 }
 
+/** FI-03 (U/B7c M2) · THE APPLIED CLAUSES of a route's dial predicate: the conjuncts of its normal
+    form (identity ⇒ 0, one leaf or one `or`/`not` ⇒ 1, an `and` ⇒ its kids). One reader dial is
+    one clause, so this is the count the dock prints beside Filters. */
+export function appliedClauses<Row>(p: Predicate<Row> | null): number {
+    const n = normalize(p);
+    if (n.op === "any") return 0;
+    return n.op === "and" ? n.kids.length : 1;
+}
+
+/** Every mounted fold's dial predicate, keyed by its client id. A route's folds read the same URL
+    dials, so the route's applied count is the largest clause count among them (summing would count
+    one dial once per fold). A fold leaves the map when its owning scope is disposed. */
+const foldClauses = shallowReactive(new Map<string, ComputedRef<number>>());
+
+/** The applied-filter count of the route's dials, for the dock (FI-03). Before U/B7c the dock read
+    only atlas-declared panel dims, which no route declares, so it printed nothing on every route. */
+export function useRouteFilterCount(): ComputedRef<number> {
+    return computed(() => Math.max(0, ...[...foldClauses.values()].map((c) => c.value)));
+}
+
 /**
  * `useRouteFold` — connect a route's ONE client to the coordinator, drive the filter + selection
  * clauses, and flip the resolution on `?fig=`. Returns the byte-equal `visibleRows`/`filterActive`/
@@ -101,6 +129,9 @@ export function useRouteFold<Row>(opts: RouteFoldOptions<Row>): RouteFold<Row> {
     // THE RESOLUTION FLIP (replaces the SELECTION_DIM dim-list splice): crossfilter (leave-one-out) by
     // default, intersect (every clause applies) inside a ?fig= fullscreen expand.
     watchEffect(() => sel.resolution.set(opts.figOpen() ? "intersect" : "crossfilter"));
+
+    foldClauses.set(vizId, computed(() => appliedClauses(filterP.value)));
+    if (getCurrentScope()) onScopeDispose(() => foldClauses.delete(vizId));
 
     const rowsSig = coord.filteredFor(vizId);
     const rowMatcher = sel.predicate(vizId);

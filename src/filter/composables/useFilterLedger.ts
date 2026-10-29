@@ -7,6 +7,7 @@ import {
 import { useFilterPanel } from "./useFilterPanel.js";
 import { useSelection } from "../../platform/stores/useSelection.js";
 import type { FilterResponse } from "../../charts/contract/viz-contract.js";
+import { useRouteFilterCount } from "../engine/route-fold.js";
 
 export interface FilterLedgerChip {
     key: string;
@@ -34,6 +35,7 @@ export function useFilterLedger(): UseFilterLedgerReturn {
     );
     const { cellFor } = useFilterDimensions(declarations);
     const selection = useSelection();
+    const routeCount = useRouteFilterCount();
 
     const chips = computed<FilterLedgerChip[]>(() =>
         projectedDims.value.flatMap((dim) => {
@@ -51,7 +53,9 @@ export function useFilterLedger(): UseFilterLedgerReturn {
 
     return {
         chips,
-        appliedCount: computed(() => chips.value.length),
+        // The panel's declared dims (chips) and the route's own dials (its folds' clauses) are two
+        // producers of applied filters; a route uses one or the other, and the dock counts both.
+        appliedCount: computed(() => chips.value.length + routeCount.value),
         selectionCount: computed(() => selection.selectedKeys.size),
         filterResponse,
     };

@@ -23,10 +23,19 @@
 // (the existing SectionDivider law). It binds --attn-chrome via the SUFFUSION contract.
 //
 // THE BOIL STAYS FORBIDDEN: a permanent structural mark costs ZERO rAF (the pencil-boil
-// frame-guard, the E1/E4 root law). Both variants render the rule drawn and still. a11y: role="separator"
-// (today's SectionDivider semantics); `aria-hidden` on the ink (the mark is decorative — the
-// chapter SEMANTICS live in the `<h2>` headings, not the rule).
-import { computed } from "vue";
+// frame-guard, the E1/E4 root law). a11y: role="separator" (today's SectionDivider semantics);
+// `aria-hidden` on the ink (the mark is decorative — the chapter SEMANTICS live in the `<h2>`
+// headings, not the rule).
+//
+// T-10 (U/B7c M2 · RQ-054, RB-050): the rule is THIN and UNTAPERED — the hand's centreline inked as
+// an even stroke (InkStroke `even`), not glass's ribbon, whose ends narrowed to a quarter of its
+// body — and it DRAWS IN ONCE on entry (PLAN §4.2 scroll row): a rule below the fold at mount waits
+// `pending`, and the first time it intersects the viewport it draws over --duration-slow on
+// --ease-engrave (stroke-dashoffset on the ink, a start-edge scaleX on the seam; both compositor-
+// friendly, not scrubbed, never reversed), then holds `drawn`. A rule in view at mount, or any rule
+// under reduced motion, is painted at `rest`: no draw at load (the load row allows the lead figure
+// only). One IntersectionObserver per rule, disconnected on its first entry; no rAF.
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import InkStroke from "../charts/glyph/InkStroke.vue";
 
 const props = withDefaults(
@@ -39,6 +48,28 @@ const props = withDefaults(
     }>(),
     { weight: "full", seed: 1 },
 );
+
+const host = ref<HTMLElement | null>(null);
+/** `rest` — painted, no draw (in view at mount, or reduced motion) · `pending` — below the fold,
+    not yet entered · `drawn` — entered once; the draw ran and the rule holds. */
+const draw = ref<"rest" | "pending" | "drawn">("rest");
+let io: IntersectionObserver | null = null;
+onMounted(() => {
+    const el = host.value;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const r = el.getBoundingClientRect();
+    if (r.bottom > 0 && r.top < window.innerHeight) return;
+    draw.value = "pending";
+    io = new IntersectionObserver((entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        draw.value = "drawn";
+        io?.disconnect();
+        io = null;
+    });
+    io.observe(el);
+});
+onBeforeUnmount(() => io?.disconnect());
 
 const isShort = computed(() => props.weight === "short");
 const isSeam = computed(() => props.weight === "seam");
@@ -65,12 +96,14 @@ const ink = computed<string>(() =>
          `<hr>` maps to, on a `<div>` so it can hold the ink child. It binds --attn-chrome (the
          SUFFUSION rung). The `data-weight` is the tier probe (full/short/hero). -->
     <div
+        ref="host"
         class="animated-rule"
         :class="`animated-rule--${weight}`"
         role="separator"
         aria-hidden="true"
         data-attn="chrome"
         :data-weight="weight"
+        :data-draw="draw"
         data-testid="animated-rule"
     >
         <!-- A StoryCard seam is literal chrome. -->
@@ -82,6 +115,7 @@ const ink = computed<string>(() =>
             v-else
             class="animated-rule__ink"
             kind="line"
+            even
             :weight="nib"
             :color="ink"
             :seed="seed"
@@ -134,6 +168,35 @@ const ink = computed<string>(() =>
     inline-size: 100%;
     block-size: 1px;
     background: var(--silver-rule, var(--border));
+    transform-origin: 0 50%;
+}
+[dir="rtl"] .animated-rule__seam {
+    transform-origin: 100% 50%;
+}
+
+/* T-10 · THE DRAW-ON-ENTRY. The ink's path carries pathLength 1, so a dash of 1 is the whole rule:
+   `pending` holds it undrawn, `drawn` transitions it to whole once. */
+.animated-rule__ink :deep(path) {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+}
+.animated-rule[data-draw="pending"] .animated-rule__ink :deep(path) {
+    stroke-dashoffset: 1;
+}
+.animated-rule[data-draw="pending"] .animated-rule__seam {
+    transform: scaleX(0);
+}
+.animated-rule[data-draw="drawn"] .animated-rule__ink :deep(path) {
+    transition: stroke-dashoffset var(--duration-slow) var(--ease-engrave);
+}
+.animated-rule[data-draw="drawn"] .animated-rule__seam {
+    transition: transform var(--duration-slow) var(--ease-engrave);
+}
+@media (prefers-reduced-motion: reduce) {
+    .animated-rule .animated-rule__ink :deep(path),
+    .animated-rule .animated-rule__seam {
+        transition: none;
+    }
 }
 
 </style>

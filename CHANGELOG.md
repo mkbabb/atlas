@@ -4,6 +4,33 @@
 
 ### Fixes
 
+- **Dividing rules are thin, untapered, and draw once on entry (U/B7c M2 · T-10).** `AnimatedRule`
+  inked glass's tapered ribbon, whose ends narrowed to a quarter of its body (0.25 on every route), and
+  never drew. It now inks the hand's centreline as an even stroke (`InkStroke`'s new `even` prop,
+  `pathLength` 1), and a rule below the fold at mount draws once when it first enters the viewport
+  (`data-draw` `pending` → `drawn`, `stroke-dashoffset` over `--duration-slow` on `--ease-engrave`; the
+  seam a start-edge `scaleX`). A rule in view at mount, and every rule under reduced motion, is
+  painted at rest. Witness: `AnimatedRule.browser.spec.ts`, 5 of 5 red before.
+
+- **The Filters drawer floats at ≥ 768 px (U/B7c M2 · FI-02).** Glass sizes a detented side sheet as
+  its rung times `100dvw`, so the continuum's drawer rung of 1 opened the drawer over the whole
+  viewport (1440 × 900 on the served sci build) and over the dock. It now caps at 26rem and sits
+  inset from the top, right and bottom edges by `--space-family`, every corner at `--radius-3xl`.
+  Witness: `FilterPanel.drawer.browser.spec.ts`, 3 of 3 geometry cases red before.
+
+- **A value chosen in a Select keeps the Filters drawer open (U/B7c M2 · FI-04).** The drawer's
+  outside-pointer claim counted a press on its own Select's listbox (glass teleports it to `<body>`) as
+  outside, so choosing any ECF list value closed the drawer (6 of 6 lists, Chromium, served). A list whose
+  controlling trigger is inside the drawer (`aria-controls`) is now the drawer's. Witness: the Select case
+  in `FilterPanel.drawer.browser.spec.ts`, 3 of 3 red before.
+
+- **The dock counts a route's own applied filters (U/B7c M2 · FI-03).** `useFilterLedger().appliedCount`
+  counted only atlas-declared panel dims, which no route declares, so the Filters control never showed
+  a count. Each `useRouteFold` now registers its dial predicate; `useRouteFilterCount()` reads the
+  largest conjunct count among the mounted folds (`appliedClauses`), and the ledger adds it. New
+  exports: `appliedClauses`, `useRouteFilterCount` (`@mkbabb/atlas/filter`). Witness:
+  `tests/unit/b7c-route-filter-count.spec.ts`, red before (the exports did not exist).
+
 - **A section control's leg ends when it lands (U/B7b M1 · O-12, repair round 1).** The leg that
   lets a second quick PageDown move on was never cleared, so whenever the page later lay inside an old
   leg's span PageDown answered from that leg's section: after PageDown from the cover and a scroll back

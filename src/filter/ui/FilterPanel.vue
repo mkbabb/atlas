@@ -151,6 +151,13 @@ const { claimOpen } = useDockPortals();
 // layer opened over the drawer (a figure dock's Options popover or Download menu) claims
 // at priority 110 (`plateLayerClaim`, U RULINGS §K K-1), so the first Escape or outside pointer
 // closes that layer alone and the drawer (and its dock pin) survive; the next one closes the drawer.
+/** A body-teleported list whose controlling trigger sits in the drawer (`aria-controls` names it). */
+function ownedList(node: HTMLElement): boolean {
+    const list = node.closest<HTMLElement>("[role='listbox'], [role='menu']");
+    if (!list?.id) return false;
+    return Boolean(document.querySelector(`[data-testid='filter-panel'] [aria-controls='${CSS.escape(list.id)}']`));
+}
+
 useDismissArbiter().claim(() =>
     open.value
         ? {
@@ -163,7 +170,9 @@ useDismissArbiter().claim(() =>
               // facet-6 / membrane-facet pointer click is NOT "outside", so the two co-located
               // affordances coexist (a provenance click no longer closes an open drawer). Scoped to
               // `within` (pointer only) so ESCAPE from the dock still closes the drawer (guards-only).
-              within: (path) => path.some((node) => node instanceof HTMLElement && Boolean(node.closest("[data-testid='filter-panel'], [data-membrane-band]"))),
+              // FI-04 (U/B7c M2): a list the drawer's own control opened (a glass Select's listbox,
+              // teleported to <body>) is the drawer's too, so choosing a value keeps the drawer open.
+              within: (path) => path.some((node) => node instanceof HTMLElement && (Boolean(node.closest("[data-testid='filter-panel'], [data-membrane-band]")) || ownedList(node))),
               guards: (path) => path.some((node) => node instanceof HTMLElement && Boolean(node.closest("[data-viz-plate]"))),
               onDismiss: () => (open.value = false),
           }
@@ -537,6 +546,22 @@ function cancelSave(): void {
    the invisible side lens. Neutralize the pseudo in the SAME teleport-reaching rest-state override. */
 :global(.cp-drawer[data-filter-continuum][data-register="pip"])::before {
     display: none;
+}
+/* FI-02 (U/B7c M2) · THE FLOATING DRAWER at ≥ 768 px. Glass sizes a detented side sheet as its rung
+   times 100dvw (glass sheet styles, "THE DETENT IS A SIZE"), so the continuum's drawer rung of 1
+   spanned the whole viewport (1440 × 900 measured on the served PL head) and covered the dock, whose
+   Filters control could then not be pressed to close it. The drawer floats from the top right
+   instead: no wider than the entity detail's 26rem (the seat's other tenant), inset from the top,
+   right and bottom edges by the family space, every corner rounded at the sheet's room radius. The
+   rung still drives the width (the pip's door rides the same lens), and the cap is the drawer. */
+@media (min-width: 768px) {
+    :global(.cp-drawer[data-filter-continuum]) {
+        max-inline-size: 26rem;
+        inset-block: var(--space-family);
+        inset-inline-end: var(--space-family);
+        height: auto;
+        border-radius: var(--radius-3xl);
+    }
 }
 .cp-drawer[data-register="pip"] .cp-continuum__door {
     pointer-events: auto;
