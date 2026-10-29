@@ -13,23 +13,22 @@
 // J-ARCH's `useDockDataState`; the filter-open + dark-toggle are the platform singletons. This
 // component takes the scalars + handlers as props and emits the gear-open model — a thin sheet,
 // not a second data seam.
-import { DockTrigger } from "@mkbabb/glass-ui/dock";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-} from "@mkbabb/glass-ui/menu";
-import { Button } from "@mkbabb/glass-ui/button";
-import { DarkModeToggle } from "@mkbabb/glass-ui/dark-mode-toggle";
-import {
-    Settings,
-    GitCompareArrows,
-    Download,
-} from "@lucide/vue";
+//
+// THE MENU LOADS ON FIRST USE (U/B7c M1, O-7 entry JS). glass's DropdownMenu root provides the
+// whole reka DropdownMenu family and floating-ui, about 60 KB raw of sci's entry, for a sheet the
+// reader may never open. Until the reader reaches for it, the gear is a face alone: a button with
+// the dock trigger's classes, name, seat mark and test id. Pointer or focus on it fetches the live
+// menu (DockSettingsMenu); a press (the live trigger opens on pointerdown), Enter or Space mounts
+// it, open, in the face's place, and from then on it owns the gear, its focus and its close. The
+// dock can also open the sheet itself (the model set true), which mounts it the same way. The face
+// stays until the module has arrived, so the swap is one frame with no gap (C1's DockSelectSeat).
+import { markRaw, shallowRef, watch, type Component } from "vue";
+import { Settings } from "@lucide/vue";
 
 // One control: the caller's attributes land on the gear (the bar's end cell).
 defineOptions({ inheritAttrs: false });
 
-const { returnFocus = true } = defineProps<{
+const { open, returnFocus = true } = defineProps<{
     /** The gear-sheet open model (the `v-model:open` from the dock's `useDockGear().gearOpen`). */
     open: boolean;
     /** Show the year-range compare control (a multi-year dashboard whose scope landed). */
@@ -58,6 +57,33 @@ const emit = defineEmits<{
     (e: "save-view"): void;
 }>();
 
+const Live = shallowRef<Component | null>(null);
+/** The live menu is mounted: the reader (or the dock) opened the sheet once. */
+const armed = shallowRef(false);
+let loading: Promise<void> | null = null;
+function fetchLive(): Promise<void> {
+    loading ??= import("./DockSettingsMenu.vue").then((m) => {
+        Live.value = markRaw(m.default);
+    });
+    return loading;
+}
+watch(
+    () => open,
+    (next) => {
+        if (next)
+            void fetchLive().then(() => {
+                armed.value = true;
+            });
+    },
+    { immediate: true },
+);
+function arm(): void {
+    if (armed.value) return;
+    void fetchLive().then(() => {
+        armed.value = true;
+        emit("update:open", true);
+    });
+}
 /** The sheet closed: keep focus where the surface that displaced it put it. */
 function onCloseAutoFocus(event: Event): void {
     if (!returnFocus) event.preventDefault();
@@ -65,82 +91,41 @@ function onCloseAutoFocus(event: Event): void {
 </script>
 
 <template>
-    <!-- THE GEAR — ONE Lucide Settings glyph opening the controls sheet. The `DropdownMenu` root
-         is the open model (driven by the dock's `useDockGear().gearOpen` via `v-model:open`); the
-         `DockTrigger` is the gear's rounded dock-control face (the same ≥44px hitbox the
-         rail controls wear); the `DropdownMenuContent` is the sheet holding the four controls. -->
-    <DropdownMenu
+    <component
+        :is="Live"
+        v-if="armed && Live"
+        v-bind="$attrs"
         :open="open"
+        :has-year-scope="hasYearScope"
+        :year-mode-now="yearModeNow"
+        :save-flash="saveFlash"
+        :disable-transitions="disableTransitions"
+        :can-save="canSave"
         @update:open="(v: boolean) => emit('update:open', v)"
+        @toggle-range="emit('toggle-range')"
+        @save-view="emit('save-view')"
+        @close-auto-focus="onCloseAutoFocus"
+    />
+    <!-- THE FACE: the gear as the live trigger draws it, until the menu has loaded. -->
+    <button
+        v-else
+        v-bind="$attrs"
+        type="button"
+        data-glass-dock-seat
+        class="dock-trigger dock-dropdown-trigger usf-dock__gear"
+        aria-label="More"
+        title="More"
+        aria-haspopup="menu"
+        aria-expanded="false"
+        data-state="closed"
+        data-testid="dock-gear"
+        @pointerdown="arm"
+        @click="arm"
+        @pointerenter="fetchLive"
+        @focus="fetchLive"
     >
-        <DockTrigger
-            v-bind="$attrs"
-            for="dropdown"
-            class="usf-dock__gear"
-            aria-label="More"
-            title="More"
-            data-testid="dock-gear"
-        >
-            <Settings class="usf-dock__ctl-glyph" aria-hidden="true" />
-        </DockTrigger>
-
-        <!-- THE CONTROLS SHEET — the four secondary affordances, resolved INSIDE the opened gear
-             (NOT inline rail rungs at --phone). They render as glass-ui `<Button>`s (the G2
-             glassy-Button swap folded here). The controls are TOGGLES, not menu commands — they sit
-             in the content as buttons (no `DropdownMenuItem` auto-dismiss), so a year-range flip
-             keeps the sheet open. -->
-        <DropdownMenuContent
-            side="top"
-            align="end"
-            :side-offset="8"
-            class="usf-dock-settings"
-            @close-auto-focus="onCloseAutoFocus"
-        >
-            <!-- The year-range compare toggle (the third arm of the year grammar). -->
-            <Button
-                v-if="hasYearScope"
-                emphasis="quiet"
-                size="sm"
-                class="usf-dock-settings__row"
-                :class="{ 'usf-dock-settings__row--on': yearModeNow === 'range' }"
-                :aria-pressed="yearModeNow === 'range'"
-                data-testid="dock-year-range"
-                @click="emit('toggle-range')"
-            >
-                <GitCompareArrows
-                    class="usf-dock__ctl-glyph"
-                    aria-hidden="true"
-                />
-                <span>Compare years</span>
-            </Button>
-
-            <!-- The ⤓-save door — quick-save the current full URL state onto the views shelf. -->
-            <Button
-                v-if="canSave"
-                emphasis="quiet"
-                size="sm"
-                class="usf-dock-settings__row"
-                :class="{ 'usf-dock-settings__row--flash': saveFlash }"
-                data-testid="dock-save-view"
-                @click="emit('save-view')"
-            >
-                <Download class="usf-dock__ctl-glyph" aria-hidden="true" />
-                <span>{{ saveFlash ? "View saved" : "Save this view" }}</span>
-            </Button>
-
-            <!-- The filter pull-out — summons the live-behind filter Drawer (ONE open truth). -->
-            <!-- The dark-mode toggle — `size="dock"` routes the glyph through the dock-control
-                 register; `:disable-transitions` wires the INSTANT theme re-print. The toggle
-                 owns its OWN label, so it rides the sheet as the library control (no wrapper). -->
-            <div class="usf-dock-settings__row usf-dock-settings__row--theme">
-                <DarkModeToggle
-                    size="dock"
-                    :disable-transitions="disableTransitions"
-                />
-                <span>Theme</span>
-            </div>
-        </DropdownMenuContent>
-    </DropdownMenu>
+        <Settings class="usf-dock__ctl-glyph" aria-hidden="true" />
+    </button>
 </template>
 
 <style scoped>
@@ -156,45 +141,5 @@ function onCloseAutoFocus(event: Event): void {
 .usf-dock__ctl-glyph {
     inline-size: 1.05rem;
     block-size: 1.05rem;
-}
-
-/* THE CONTROLS SHEET — a compact column of the four secondary affordances, opened off the gear.
-   The DropdownMenuContent owns the floating glass plate; we lay the rows out as a tidy stack. */
-.usf-dock-settings {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    min-inline-size: 12rem;
-    padding: 0.375rem;
-}
-
-/* A control ROW — a full-width labelled button, the icon leading the word (the sheet is wide
-   enough to carry the label the narrow rail could not). The pressed/flash states reuse the rail
-   control's chrome-accent pill (one-color-one-meaning: --cp-accent, never a data hue). */
-.usf-dock-settings__row {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 0.5rem;
-    inline-size: 100%;
-    min-block-size: 2.75rem;
-    text-align: start;
-}
-.usf-dock-settings__row--theme {
-    /* the DarkModeToggle owns its own glyph; the row only seats it beside its label. */
-    padding-inline: 0.5rem;
-    color: var(--muted-foreground);
-    font-size: 0.875rem;
-}
-.usf-dock-settings__row--on {
-    color: var(--cp-accent-ink, var(--background));
-    background: var(--cp-accent, var(--foreground));
-}
-.usf-dock-settings__row--flash {
-    color: var(--cp-accent-ink, var(--background));
-    background: var(--cp-accent, var(--foreground));
-    transition:
-        color 120ms ease,
-        background 120ms ease;
 }
 </style>
