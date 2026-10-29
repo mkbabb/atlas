@@ -40,6 +40,26 @@ describe("the dock rides its own z rung above the content stage (REGISTRY 119)",
         expect(site.router.currentRoute.value.path).toBe("/");
     });
 
+    // U/B7c L · PL-1. The rail is pinned at its block start, so it opens from that edge: glass
+    // 10.1.2 morphs the box with `scale` from the dock's `anchor` edge, and the default centre
+    // origin carried the crest 200 px down, out from under the pointer, which looped the expand.
+    it("at 1440 px the rail opens from its pinned top edge: the crest stays under the pointer", async () => {
+        site = await mountSite("/sci", 1440);
+        const box0 = crest().getBoundingClientRect();
+        const x = box0.left + box0.width / 2;
+        const y = box0.top + box0.height / 2;
+        await userEvent.hover(crest());
+        // Every frame of the expand, the point the pointer entered on is still inside the crest.
+        const off: number[] = [];
+        for (let i = 0; i < 40; i++) {
+            await new Promise((r) => requestAnimationFrame(r));
+            const b = crest().getBoundingClientRect();
+            if (y < b.top || y > b.bottom || x < b.left || x > b.right) off.push(i);
+        }
+        expect(off).toEqual([]);
+        expect(dock().dataset.anchor).toBe("start");
+    });
+
     it("at 1440 px every rung of the open rail takes a pointer", async () => {
         site = await mountSite("/sci", 1440);
         await userEvent.hover(crest());

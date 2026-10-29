@@ -4,6 +4,13 @@
 
 ### Fixes
 
+- **The rail opens from its pinned top edge (U/B7c L · PL-1).** glass 10.1.2 morphs a vertical dock
+  with `scale` from its `anchor` edge, centre by default. The rail is pinned at its block start, so the
+  centre origin carried the crest about 200 px down on the first frame, out from under the pointer that
+  entered on it; the rail collapsed, the pointer re-entered and the expand looped (13 engine cases at
+  1440). The rail now passes `anchor="start"`. Witness: `Dock.zrung.browser.spec.ts` "the crest stays
+  under the pointer", red before; the dock engine specs pass 75 of 75 after.
+
 - **Dividing rules are thin, untapered, and draw once on entry (U/B7c M2 · T-10).** `AnimatedRule`
   inked glass's tapered ribbon, whose ends narrowed to a quarter of its body (0.25 on every route), and
   never drew. It now inks the hand's centreline as an even stroke (`InkStroke`'s new `even` prop,

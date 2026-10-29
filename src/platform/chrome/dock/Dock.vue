@@ -278,13 +278,15 @@ watch(bottomHeld, (held) => {
 </script>
 
 <template>
-    <!-- ≥ 768 px: the vertical rail. -->
+    <!-- ≥ 768 px: the vertical rail. It is pinned at its block start (Dock.css), so its size morph
+         grows from that edge (`anchor="start"`); from the centre the crest left the pointer (PL-1). -->
     <GlassDock
         v-if="!isPhone"
         id="dock-rail"
         key="rail"
         ref="dockRef"
         orientation="vertical"
+        anchor="start"
         shape="card"
         :collapse="home ? 'open' : 'closed'"
         class="usf-dock"
