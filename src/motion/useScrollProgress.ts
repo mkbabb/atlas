@@ -12,8 +12,8 @@
 // — the full span over which any part of the section is on screen — so a tall section
 // scrubs across its whole length and a short one still gets a full 0→1 sweep.
 
-import { computed, ref, type ComputedRef, type Ref } from "vue";
-import { useElementBounding, useWindowScroll, useWindowSize } from "@vueuse/core";
+import { computed, getCurrentScope, onScopeDispose, ref, shallowRef, type ComputedRef, type Ref, type ShallowRef } from "vue";
+import { useElementBounding, useWindowSize } from "@vueuse/core";
 import { clamp } from "@mkbabb/value.js/math";
 import { smoothStep3 } from "@mkbabb/value.js/easing";
 import { supportsViewTimeline as glSupportsViewTimeline } from "@mkbabb/glass-ui";
@@ -117,12 +117,59 @@ export function useScrollProgress(
     return { progress, inView };
 }
 
+/** The one document scroll source (U/B7c F9). Every `useDocumentScrollProgress` caller (the dock,
+    its scroll chrome, the cover and pin clocks, the story director) shares ONE passive scroll
+    listener and ONE resize listener, and the scroll handler reads `scrollY` and nothing else. Before,
+    each caller ran its own `useWindowScroll`, whose handler computes vueuse's arrived state on every
+    event: a `getComputedStyle` of the root plus `scrollWidth`, `clientWidth`, `scrollHeight` and
+    `clientHeight`, per caller, per scroll event, which forced style and layout in the scroll path. */
+interface DocumentScroll {
+    readonly y: ShallowRef<number>;
+    readonly viewport: ShallowRef<number>;
+}
+let documentScroll: (DocumentScroll & { users: number; stop: () => void }) | null = null;
+
+function acquireDocumentScroll(): DocumentScroll {
+    if (typeof window === "undefined") return { y: shallowRef(0), viewport: shallowRef(0) };
+    if (!documentScroll) {
+        const y = shallowRef(window.scrollY);
+        const viewport = shallowRef(window.innerHeight);
+        const onScroll = (): void => {
+            y.value = window.scrollY;
+        };
+        const onResize = (): void => {
+            viewport.value = window.innerHeight;
+            y.value = window.scrollY;
+        };
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", onResize, { passive: true });
+        documentScroll = {
+            y,
+            viewport,
+            users: 0,
+            stop: () => {
+                window.removeEventListener("scroll", onScroll);
+                window.removeEventListener("resize", onResize);
+            },
+        };
+    }
+    const shared = documentScroll;
+    shared.users++;
+    if (getCurrentScope())
+        onScopeDispose(() => {
+            if (--shared.users > 0 || documentScroll !== shared) return;
+            shared.stop();
+            documentScroll = null;
+        });
+    return shared;
+}
+
 /**
  * Whole-DOCUMENT scroll progress as a [0, 1] scalar — 0 pinned at the page top, 1 at
  * the bottom of the scrollable range. The section variant above answers "how far through
  * THIS beat", which is the right scalar for a per-viz reveal; the dock barometer instead
  * needs "how far through the WHOLE story" — the spine-fill that rides the stepper thread
- * (S2 §2.4). This is that scalar, built over @vueuse `useWindowScroll` (the live scrollY,
+ * (S2 §2.4). This is that scalar: the shared document scroll source's `scrollY` (above,
  * recomputed on scroll) divided by the document's scrollable height (`scrollHeight −
  * viewport`). When the page is shorter than the viewport (nothing to scroll) progress is
  * 0 — the thread reads "at the top", not a spurious 1.
@@ -137,8 +184,7 @@ export function useScrollProgress(
  * grep (T6-class) seals it: `useWindowScroll`/`scrollY` may appear only in this file.
  */
 export function useDocumentScrollProgress(): ComputedRef<number> {
-    const { y } = useWindowScroll();
-    const { height: viewport } = useWindowSize();
+    const { y, viewport } = acquireDocumentScroll();
 
     return computed(() => {
         if (typeof document === "undefined") return 0;
