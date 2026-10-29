@@ -26,6 +26,7 @@ import { useVizPalette } from "../composables/useVizPalette.js";
 import { trajectory, type TrajectoryPoint } from "../../data/multiYear.js";
 import { forecastBoundaryX as forecastBoundary } from "../marks/trajectory-marks.js";
 import type { Feed } from "../../data/contract.js";
+import type { FactsAt } from "../composables/useXFacts.js";
 import type { FilterResponse } from "../contract/viz-contract.js";
 
 const props = withDefaults(
@@ -50,6 +51,9 @@ const props = withDefaults(
         size?: "default" | "hero";
         figId?: string;
         filterResponse?: FilterResponse;
+        /** The per-x facts hook (U/B7c C1): the hover card for one drawn year. See TimeSeries'
+            `factsAt`. Omit ⇒ no period hover. */
+        factsAt?: FactsAt;
     }>(),
     {
         leadMeasure: undefined,
@@ -64,6 +68,7 @@ const props = withDefaults(
         ariaLabel: "Multi-year window trajectory",
         size: "default",
         figId: undefined,
+        factsAt: undefined,
         filterResponse: "responsive",
     },
 );
@@ -138,6 +143,7 @@ const forecastX = computed<number | undefined>(() => {
         :size="size"
         :fig-id="figId"
         :filter-response="filterResponse"
+        :facts-at="factsAt"
     >
         <template v-if="$slots.title" #title><slot name="title" /></template>
         <template v-if="$slots.foot" #foot><slot name="foot" /></template>

@@ -29,6 +29,7 @@ import {
     type TrajectoryPoint,
 } from "../../data/multiYear.js";
 import type { Feed } from "../../data/contract.js";
+import type { FactsAt } from "../composables/useXFacts.js";
 import type { FilterResponse } from "../contract/viz-contract.js";
 
 const props = withDefaults(
@@ -87,6 +88,9 @@ const props = withDefaults(
             the window-arc M2 is a USF/SCI register that keeps its key-stats. Default `false` ⇒
             render parity everywhere it is not set. */
         hideKeyStats?: boolean;
+        /** The per-x facts hook (U/B7c C1): the hover card for one drawn year. See TimeSeries'
+            `factsAt`. Omit ⇒ no period hover. */
+        factsAt?: FactsAt;
     }>(),
     {
         leadMeasure: undefined,
@@ -100,6 +104,7 @@ const props = withDefaults(
         ariaLabel: "Multi-year figure",
         size: "default",
         figId: undefined,
+        factsAt: undefined,
         filterResponse: "responsive",
         terminalValue: undefined,
         terminalCaption: undefined,
@@ -147,6 +152,7 @@ const showFootTerminal = computed<boolean>(
             :size="size"
             :fig-id="figId"
             :filter-response="filterResponse"
+            :facts-at="factsAt"
         >
             <template v-if="$slots.title" #title><slot name="title" /></template>
             <template v-if="showFootTerminal" #foot>
@@ -176,6 +182,7 @@ const showFootTerminal = computed<boolean>(
             :size="size"
             :fig-id="figId"
             :filter-response="filterResponse"
+            :facts-at="factsAt"
             :hide-key-stats="hideKeyStats"
         >
             <template v-if="$slots.title" #title><slot name="title" /></template>

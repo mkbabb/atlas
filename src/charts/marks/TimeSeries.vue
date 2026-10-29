@@ -149,6 +149,7 @@ import {
     endLabelGutterCollapsed,
 } from "../composables/useTimeSeriesOption.js";
 import ChartLegend, { type LegendChip } from "../legend/ChartLegend.vue";
+import { useXFacts, type FactsAt } from "../composables/useXFacts.js";
 
 // Line + grid; the TooltipComponent is registered but every option keeps it OFF. The canvas
 // LegendComponent is RETIRED (DV-8) — the legend is the shared <ChartLegend> DOM strip.
@@ -299,6 +300,14 @@ const props = withDefaults(
          * consumer unchanged).
          */
         selectableCurves?: boolean;
+        /**
+         * THE PER-X FACTS HOOK (U/B7c C1; sci T1/T2). The card for one drawn x (a school year, a
+         * month): the pointer over the plot snaps to the nearest x and the hover card shows what
+         * this returns (null: no card). Omit ⇒ no period hover (the series hover is unchanged).
+         */
+        factsAt?: FactsAt;
+        /** The hover-readout origin the period card publishes under (one per plate). */
+        factsOrigin?: string;
         ariaLabel?: string;
     }>(),
     {
@@ -319,6 +328,8 @@ const props = withDefaults(
         axisFontFamily: undefined,
         markLine: undefined,
         selectableCurves: false,
+        factsAt: undefined,
+        factsOrigin: "time-series",
         ariaLabel: "Time series",
     },
 );
@@ -437,7 +448,7 @@ const seriesFingerprint = computed<string>(
         `#${latchedKey.value ?? ""}`,
 );
 
-useEChart({
+const { chart } = useEChart({
     host,
     option: () => option.value,
     fingerprint: () => seriesFingerprint.value,
@@ -451,6 +462,14 @@ useEChart({
     // box via `chart-h-lg` (a fixed 560/640px), so the deferred canvas mounts into an already-sized
     // slot — no scroll-in shift (the ≤0.038 CLS floor holds). Off the route hydration critical path.
     lazyMount: true,
+});
+
+useXFacts({
+    chart,
+    host,
+    series: () => props.series,
+    factsAt: () => props.factsAt,
+    origin: () => props.factsOrigin,
 });
 </script>
 

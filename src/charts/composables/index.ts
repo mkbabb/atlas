@@ -12,5 +12,6 @@ export * from "./useTimeSeriesOption.js";
 export * from "./useTrendline.js";
 export * from "./useVizOptions.js";
 export * from "./useVizOverlay.js";
+export * from "./useXFacts.js";
 export * from "./useVizPalette.js";
 export * from "./useVizRegistry.js";
