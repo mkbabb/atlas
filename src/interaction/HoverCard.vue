@@ -250,7 +250,9 @@ const style = computed(() => {
             : anchor.y + footprint.value.h + 2 * pad;
     // THE TRANSIENT SEAT (the colocated placement geometry, AR-8) — the viewport-clamp, one law in
     // useCardPlacement. The right-margin `tapPeek` fork is REMOVED from the seat math (J-MOBILE §3).
-    const { left, top } = transientSeat(anchor, footprint.value, { vw, vh });
+    // The live pointer keeps the card clear of it (F-14); the seat re-reads it when the anchor moves.
+    const live = Number.isNaN(pointer.x) ? null : { x: pointer.x, y: pointer.y };
+    const { left, top } = transientSeat(anchor, footprint.value, { vw, vh }, live);
     return {
         // `position: fixed` is set inline (it WINS over Surface's root `position: relative`) so
         // the teleported floating card is viewport-clamped, not flow-relative.

@@ -41,22 +41,36 @@ export const RAIL_CARD_STRIDE = 8; // the gap between stacked rail cards
     register's readout is the platform `EntityDetail` bottom-sheet (the ONE thumb-reach answer),
     NOT a right-margin peek; HoverCard already suppresses its transient card on that register
     (`!tapPeek.value`), so this seat math is the desktop-pointer path ONLY — the dead right-margin
-    branch is retired and the reach idiom has a single home. */
+    branch is retired and the reach idiom has a single home.
+
+    `pointer` is the live pointer (null for a keyboard or deep-link selection): the seat never covers
+    it (U/B7c L · F-14). */
 export function transientSeat(
     anchor: Anchor,
     footprint: Footprint,
     viewport: Viewport,
+    pointer: Anchor | null = null,
 ): { left: number; top: number } {
     const { vw, vh } = viewport;
-    const left = Math.max(
-        CARD_PAD,
-        Math.min(anchor.x + CARD_PAD, vw - footprint.w - CARD_PAD),
-    );
-    const top = Math.max(
-        CARD_PAD,
-        Math.min(anchor.y + CARD_PAD, vh - footprint.h - CARD_PAD),
-    );
-    return { left, top };
+    const clampX = (x: number) => Math.max(CARD_PAD, Math.min(x, vw - footprint.w - CARD_PAD));
+    const clampY = (y: number) => Math.max(CARD_PAD, Math.min(y, vh - footprint.h - CARD_PAD));
+    const right = clampX(anchor.x + CARD_PAD);
+    const below = clampY(anchor.y + CARD_PAD);
+    // U/B7c L · F-14 — the card takes the pointer, so it must never seat over it: a card under the
+    // pointer eats the next click on the mark. The corners round the anchor, in order; the first that
+    // leaves the live pointer clear wins (below-right whenever the pointer allows it).
+    if (!pointer) return { left: right, top: below };
+    const left = clampX(anchor.x - CARD_PAD - footprint.w);
+    const above = clampY(anchor.y - CARD_PAD - footprint.h);
+    const seats = [
+        { left: right, top: below },
+        { left, top: below },
+        { left: right, top: above },
+        { left, top: above },
+    ];
+    const clear = (s: { left: number; top: number }) =>
+        pointer.x < s.left || pointer.x > s.left + footprint.w || pointer.y < s.top || pointer.y > s.top + footprint.h;
+    return seats.find(clear) ?? seats[0]!;
 }
 
 /** A SINGLE pin seats at its datum ANCHOR (the same law as the transient card), clamped on-screen. */

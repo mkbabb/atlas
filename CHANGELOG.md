@@ -4,6 +4,14 @@
 
 ### Fixes
 
+- **The hover card never seats over the pointer (U/B7c L · F-14).** The card takes the pointer, so a
+  reader can move onto it, and it seated below and right of its datum's anchor. When the anchor is not
+  under the pointer (a /sci charter catchment anchors at the school's internal point, about 200 px from
+  where the pointer entered the polygon), the card covered the pointer, the next click landed on the
+  card and EntityDetail never opened. `transientSeat` takes the live pointer and picks the first corner
+  round the anchor that leaves it clear; with no pointer it seats below-right as before. Witness:
+  `tests/unit/b7c-card-clear-of-pointer.spec.ts`, 2 of 4 red before.
+
 - **The rail opens from its pinned top edge (U/B7c L · PL-1).** glass 10.1.2 morphs a vertical dock
   with `scale` from its `anchor` edge, centre by default. The rail is pinned at its block start, so the
   centre origin carried the crest about 200 px down on the first frame, out from under the pointer that
