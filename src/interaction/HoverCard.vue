@@ -57,6 +57,7 @@ import { transientSeat } from "./useCardPlacement.js";
 import { useDismissArbiter } from "../platform/interaction/useDismissArbiter.js";
 import { createHoverBridge } from "./hover-bridge.js";
 import { useEntityDetail } from "./describe-entity.js";
+import { useTapPin } from "./useTapPin.js";
 
 /** A single labelled fact in the grid (the universal fact-row). */
 export interface Fact {
@@ -87,7 +88,7 @@ useAffordanceHint();
 /** At most four measures, and never a row whose value repeats the card's own title. */
 const PEEK_ROWS = 4;
 const peekFacts = computed<Fact[]>(() => {
-    const r = readout.value;
+    const r = shown.value;
     if (!r) return [];
     const title = r.title.trim().toLowerCase();
     return r.facts.filter((f) => f.value.trim().toLowerCase() !== title).slice(0, PEEK_ROWS);
@@ -112,6 +113,19 @@ const transientOpen = computed(
         readout.value.anchor !== null &&
         !tapPeek.value &&
         !entityDetail.open,
+);
+
+// THE PHONE TAP PIN (U/B7c C1, O-13). On the phone register the transient card is suppressed and an
+// entity tap opens EntityDetail; a tap on a mark that is not an entity pins its readout here instead,
+// so every mark has a phone readout. `card` is what renders: the live hover, else the pinned tap.
+const tapPin = useTapPin({
+    enabled: () => tapPeek.value,
+    readout: () => sourceReadout.value,
+    entityOpen: () => entityDetail.open,
+    card: () => measureEl(),
+});
+const shown = computed<HoverReadout | null>(() =>
+    transientOpen.value ? readout.value : tapPin.pinned.value?.anchor ? tapPin.pinned.value : null,
 );
 
 // The card element — clamped to its OWN measured footprint, never a magic 280 (H-5/B2).
@@ -176,13 +190,13 @@ onBeforeUnmount(() => {
 watch(
     () =>
         [
-            transientOpen.value,
-            readout.value?.anchor?.x,
-            readout.value?.anchor?.y,
-            readout.value?.title,
+            shown.value,
+            shown.value?.anchor?.x,
+            shown.value?.anchor?.y,
+            shown.value?.title,
         ] as const,
     async () => {
-        if (!transientOpen.value) return;
+        if (!shown.value) return;
         await nextTick();
         const el = measureEl();
         if (!el) return;
@@ -225,7 +239,7 @@ const style = computed(() => {
     // THE Anchor|null PAINT GUARD (H.W1.a) — a null anchor is "no measured datum"; `transientOpen`
     // already AND's in `anchor != null`, so the v-if never mounts the card at the origin floor; we
     // read a zero fallback ONLY to compute a stable position string, never to paint one.
-    const anchor = readout.value?.anchor ?? { x: 0, y: 0 };
+    const anchor = shown.value?.anchor ?? { x: 0, y: 0 };
     const vw =
         typeof window !== "undefined"
             ? window.innerWidth
@@ -253,7 +267,7 @@ const style = computed(() => {
 // esc-no-scroll parity). Guarded so a click on a producer's own mark (which selects + re-publishes)
 // does not race the clear: we only clear when the click landed OUTSIDE any interactive viz plate.
 useDismissArbiter().claim(() =>
-    readout.value
+    readout.value || tapPin.pinned.value
         ? {
               id: "hover-card",
               priority: 10,
@@ -261,7 +275,10 @@ useDismissArbiter().claim(() =>
               escape: true,
               within: (path) => path.some((node) => node instanceof HTMLElement && Boolean(node.closest("[data-testid='hover-card']"))),
               guards: (path) => path.some((node) => node instanceof HTMLElement && Boolean(node.closest("[data-viz-plate],[data-testid='filter-view']"))),
-              onDismiss: () => store.clearAll(),
+              onDismiss: () => {
+                  store.clearAll();
+                  tapPin.release();
+              },
           }
         : null,
 );
@@ -286,7 +303,10 @@ useDismissArbiter().claim(() =>
 const route = useRoute();
 watch(
     () => route.path,
-    () => store.clearAll(),
+    () => {
+        store.clearAll();
+        tapPin.release();
+    },
 );
 
 // THE LONG-NAME RECONCILIATION (G-NAME-RECONCILE) — the transient card is TERSE (a long title clamps
@@ -307,36 +327,38 @@ watch(
              THE FLOATING TIER (AS-8) — glass-ui's <Surface tier="floating">. The card takes the
              measure ref; the seat geometry rides `style` (presence is the `v-if`, not a visibility flip). -->
         <Surface
-            v-if="transientOpen && readout"
+            v-if="shown"
             :ref="(el) => setCardRef(el)"
             tier="floating"
             class="hover-card-readout z-(--z-hovercard) pointer-events-auto px-3 py-2.5 transition-opacity duration-100"
             :style="style"
             role="tooltip"
             data-testid="hover-card"
-            :data-readout-origin="readout.origin || undefined"
+            :data-readout-origin="shown.origin || undefined"
+            :data-tap-pinned="shown === tapPin.pinned.value ? '' : undefined"
         >
             <!-- The peek: name, one context line, at most four measures, the sources, the cue. -->
             <p
                 class="text-panel-title hover-card-readout__title"
-                :class="{ 'hover-card-readout__title--accented': readout.accent }"
-                :style="readout.accent ? { '--title-accent': readout.accent } : undefined"
-                :title="readout.title"
+                :class="{ 'hover-card-readout__title--accented': shown.accent }"
+                :style="shown.accent ? { '--title-accent': shown.accent } : undefined"
+                :title="shown.title"
             >
-                {{ readout.title }}
+                {{ shown.title }}
             </p>
-            <p v-if="readout.subhead" class="hover-card-readout__context">
-                {{ readout.subhead }}
+            <p v-if="shown.subhead" class="hover-card-readout__context">
+                {{ shown.subhead }}
             </p>
             <ReadoutFacts
                 :facts="peekFacts"
-                :density="readout.density"
-                :breakdown="readout.breakdown"
-                :breakdown-label="readout.breakdownLabel"
+                :density="shown.density"
+                :breakdown="shown.breakdown"
+                :breakdown-label="shown.breakdownLabel"
             />
             <p class="hover-card-readout__foot">
-                <span v-if="readout.sources?.length">Source: {{ readout.sources.join(", ") }}. </span>
-                <span>Click for detail</span>
+                <span v-if="shown.sources?.length">Source: {{ shown.sources.join(", ") }}. </span>
+                <span v-if="shown === tapPin.pinned.value">Tap elsewhere to close</span>
+                <span v-else>Click for detail</span>
             </p>
         </Surface>
     </Teleport>

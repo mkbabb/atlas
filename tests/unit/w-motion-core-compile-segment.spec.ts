@@ -17,7 +17,7 @@ import { MOTION_TRIGGERS } from "../../src/motion/triggers";
 import type { AnyMotionSegment } from "../../src/motion/motion-director";
 
 const PRESETS = Object.keys(LEAN_CATALOG) as LeanPresetName[];
-const POSITION = ["scroll", "pin"] as const;
+const POSITION = ["pin"] as const;
 const seg = (use: LeanPresetName, on: AnyMotionSegment["on"]): AnyMotionSegment => ({
     id: `${use}-${on}`,
     use,
@@ -34,7 +34,7 @@ describe("compileTarget — total over mechanism × trigger", () => {
                 expect(target).toBeTypeOf("string");
                 targets.add(target);
             }
-        expect(LEAN_MECHANISMS.length * MOTION_TRIGGERS.length).toBe(63);
+        expect(LEAN_MECHANISMS.length * MOTION_TRIGGERS.length).toBe(54);
         expect([...targets].sort()).toEqual([
             "compositor",
             "compositor-idle",
@@ -60,7 +60,7 @@ describe("compileTarget — total over mechanism × trigger", () => {
                 );
     });
 
-    it("THE INVARIANT — no scroll/pin reveal or draw ever takes the director-spring path", () => {
+    it("THE INVARIANT — no pin reveal or draw ever takes the director-spring path", () => {
         for (const trigger of POSITION)
             for (const mechanism of ["reveal", "draw", "path"] as const)
                 expect(compileTarget(mechanism, trigger)).not.toBe("director-spring");
@@ -76,7 +76,7 @@ describe("compileSegment — total over the sealed catalog", () => {
                 expect(compiled.target).toBeTypeOf("string");
                 cells++;
             }
-        expect(cells).toBe(29); // the catalog's declared (preset, trigger) pairs (+2 CurvePersist, +1 Breath)
+        expect(cells).toBe(19); // the catalog's declared (preset, trigger) pairs (the 10 scroll pairs retired)
     });
 
     it("compiles every preset × EVERY trigger without throwing (totality past the declared set)", () => {
@@ -86,8 +86,8 @@ describe("compileSegment — total over the sealed catalog", () => {
     });
 
     it("a compositor segment carries data attributes and binds no director scalar", () => {
-        const compiled = compileSegment(seg("DrawIn", "scroll"));
-        expect(compiled).toEqual({ target: "compositor", dataAttrs: { "data-motion": "DrawIn" } });
+        const compiled = compileSegment(seg("RevealUp", "pin"));
+        expect(compiled).toEqual({ target: "compositor", dataAttrs: { "data-motion": "RevealUp" } });
         expect(compiled.directorBind).toBeUndefined();
     });
 

@@ -1,15 +1,10 @@
 <script setup lang="ts">
-// DockSavedViews — the site layer's Saved views (U/B7 §2.2): a glass Select of the views the reader
-// saved with "Save this view", newest first, across every dashboard. Choosing one opens it. The list's
-// open state is a model, so the dock can seat it or hold the rail open while it is open (PLAN §2.5).
-import { computed } from "vue";
-import { useRouter } from "vue-router";
+// DockSavedViews — the Saved views seat (U/B7 §2.2; U/B7c C1, O-7). Until first use it is the face
+// alone, the bookmark glyph; the list (DockSavedViewsLive, glass's Select of the views the reader
+// saved, newest first) loads and mounts when the reader opens it (DockSelectSeat).
 import { Bookmark } from "@lucide/vue";
-import { Select, SelectContent, SelectItem } from "@mkbabb/glass-ui/select";
-import { DockTrigger } from "@mkbabb/glass-ui/dock";
-import { useSavedViews } from "../../../composables/useSavedViews.js";
+import DockSelectSeat from "./DockSelectSeat.vue";
 
-// One control: the caller's attributes land on the trigger (a seat of the bar's run).
 defineOptions({ inheritAttrs: false });
 
 const { side = "right", returnFocus = true } = defineProps<{
@@ -23,42 +18,29 @@ const { side = "right", returnFocus = true } = defineProps<{
 /** The list is open. */
 const open = defineModel<boolean>("open", { default: false });
 
-/** The list closed: keep focus where the surface that displaced it put it. */
-function onCloseAutoFocus(event: Event): void {
-    if (!returnFocus) event.preventDefault();
-}
-
-const router = useRouter();
-const { views } = useSavedViews();
-const model = computed({
-    get: () => "",
-    set: (url) => {
-        if (typeof url === "string" && url) void router.push(url);
-    },
-});
+const load = () => import("./DockSavedViewsLive.vue");
 </script>
 
 <template>
-    <Select v-model="model" v-model:open="open">
-        <DockTrigger
-            v-bind="$attrs"
-            for="select"
-            class="dock-saved"
-            aria-label="Saved views"
-            title="Saved views"
-            data-testid="dock-saved-views"
-        >
-            <Bookmark class="dock-saved__glyph" aria-hidden="true" />
-            <template #icon><span hidden /></template>
-        </DockTrigger>
-        <SelectContent :side="side" align="start" @close-auto-focus="onCloseAutoFocus">
-            <SelectItem v-if="!views.length" value="none" disabled>No saved views yet</SelectItem>
-            <SelectItem v-for="v in views" :key="v.id" :value="v.url">{{ v.name }}</SelectItem>
-        </SelectContent>
-    </Select>
+    <DockSelectSeat
+        v-bind="$attrs"
+        v-model:open="open"
+        :load="load"
+        :bind="{ side, returnFocus }"
+        :face="{
+            class: 'dock-trigger dock-select-trigger dock-saved',
+            'aria-label': 'Saved views',
+            title: 'Saved views',
+            'data-testid': 'dock-saved-views',
+        }"
+    >
+        <Bookmark class="dock-saved__glyph" aria-hidden="true" />
+        <span hidden />
+    </DockSelectSeat>
 </template>
 
-<style scoped>
+<style>
+/* The face and the live trigger share these rules (the live module has no sheet of its own). */
 .dock-saved {
     display: grid;
     place-items: center;

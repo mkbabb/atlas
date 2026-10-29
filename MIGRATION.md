@@ -189,6 +189,20 @@ projecting components.
 | `resolveBeatTemplate(policy, phase, seed, rank)` / `resolveBeatTemplates(policy, seed, rank)` (U/B7b) | drop the `rank` argument |
 | `DashboardMeta.crest` (U/B7b) | delete it; the dock reads the crest from `DashboardContext.crest` |
 
+## 5h · U/B7c: route chunks, seated dock Selects, period hover
+
+| Change | Consumer edit |
+|---|---|
+| `atlasCorePreset()` adds `atlas:route-chunks`, which owns `build.rollupOptions.output.manualChunks` (U/B7c C1). A dashboard route loads its modules in one chunk per set of routes that need them, with `dashboards/<slug>/DashboardBody.vue` and `context.ts` counted as one route; the entry keeps what it needs. sci /sci: 87 files before the body → 42, the same modules | none for sci (its config sets no `manualChunks`; chunk file names change). A consumer that sets `output.manualChunks` is refused (`atlas:route-chunks: the consumer sets output.manualChunks`); delete it |
+| `coreManualChunks` deleted from `@mkbabb/atlas/vite` (no consumer read it) | delete the import |
+| The dock's dashboard, saved-view and subject Selects seat a static trigger and load the Select on first pointer-enter, focus or click; the section Select loads once a dashboard context exists. The entry no longer carries `@mkbabb/glass-ui/select` (sci entry 463,540 → 437,089 B raw) | none; the trigger keeps its `data-testid`, `aria-label` and classes, and a test that opens the Select waits for the listbox as before |
+| `TimeSeries`, `MultiYearFigure`, `TrajectoryPlate` and `WindowArcPlate` take `factsAt?: (x) => XFacts \| null` (and `TimeSeries` a `factsOrigin`): the pointer over the plot snaps to the nearest drawn x and the hover card shows that period's facts. `useXFacts`, `nearestX`, `XFacts`, `FactsAt` export from `@mkbabb/atlas/charts` | opt in: pass `:facts-at` for the sci T1/T2 period tooltip |
+| On the phone, a tap on a mark that is not an entity pins its hover readout; a tap elsewhere, Escape, a route change or an entity tap releases it (`useTapPin`) | none |
+| `DockSettings` takes `returnFocus` (default true) and `Dock` passes `!bar.more.displaced`; DockSearch's button takes focus before it opens the palette | none |
+| A chart's echarts `init` and first `setOption` run as a job of the paint pump, one frame after the host mounts or scrolls in; `useEChart().chart` is null until then | none for sci plates (they read `settled` / `frame`); code that reads `chart.value` in a microtask after mount waits for it (`watch(api.chart, …)`) |
+| `useDocumentScrollProgress` callers share one scroll listener that reads `scrollY` only | none |
+| The motion `scroll` trigger is retired: `MotionTrigger`, `MOTION_TRIGGERS`, `MotionDrivers.scroll`, `MotionDriverSources.scroll` and `VizContextSources.scroll` are gone, and `useVizContext` no longer runs a cover-progress clock per plate. The scroll-only presets `BarRise`, `ClipWipe` and `DrawIn` are deleted (their K-names fold into `RevealUp` and `CurvePersist`); `CurvePersist` fires on `select` only. 13 presets | none for sci (no segment declares `scroll`); a consumer declaring `on: "scroll"` moves the reveal to the reveal register (`revealHostStyle`) |
+
 ## 6 · glass-ui 10.1.0
 
 Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.

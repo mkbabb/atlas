@@ -4,6 +4,7 @@
 // sweep (hover opens nothing) needs glass's `expandOn: "press"`, so it runs once installed glass
 // declares that prop.
 import "../../../tests/browser/glass-root.css";
+import { walkKey } from "../../../tests/browser/walk-key.js";
 import { afterEach, describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { createApp, defineComponent, h, nextTick, type App } from "vue";
@@ -80,7 +81,7 @@ describe("PlateDock: one handle per figure, press opens, Escape closes to the ha
         expect(dockOf(root, "b").querySelector('[data-action="download"]')).toBeNull();
     });
 
-    // R-FIGDOCK §4: a closed dock is one tab stop. Walk Tab from a sentinel before the figures to one
+    // R-FIGDOCK §4: a closed dock is one tab stop. Walk the engine's navigation key from a sentinel before the figures to one
     // after them and count the stops inside each figure's dock.
     it("Tab stops once on each closed figure dock", async () => {
         const root = await mount();
@@ -93,7 +94,7 @@ describe("PlateDock: one handle per figure, press opens, Escape closes to the ha
         before.focus();
         const stops: Element[] = [];
         for (let i = 0; i < 40 && document.activeElement !== after; i++) {
-            await userEvent.keyboard("{Tab}");
+            await userEvent.keyboard(walkKey); // Option+Tab in WebKit
             if (document.activeElement !== after) stops.push(document.activeElement!);
         }
         expect(document.activeElement, "the walk reaches the sentinel after the figures").toBe(after);

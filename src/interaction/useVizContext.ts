@@ -1,15 +1,16 @@
 // platform/interaction/useVizContext.ts — THE VIZ COORDINATION HUB (O-A6 · story-sota §4.3 · the
 // reserved motion-director §10 seam, landed).
 //
-// The director's `MotionDrivers` interface names SIX injected edges (scroll · selected · hovered ·
+// The director's `MotionDrivers` interface names the injected edges (pin · selected · hovered ·
 // active · filterEpoch · reducedMotion); before this hub every plate hand-wired them (WfaScatter
 // passed `store.hoveredCrn`/`selectedCrn`; ProductMixPlate passed local demo refs; CrossoverPlate
 // passed nothing, so `active`/`filter` fell to the inert `() => false`/`() => 0` defaults). This is
-// the ONE composable that wires all six from the SHARED single-writer stores, so a plate declaring
+// the ONE composable that wires them from the SHARED single-writer stores, so a plate declaring
 // only a `MotionDeclaration` becomes interactive with NO per-plate wiring — interactivity by default.
 //
-// The six edges (story-sota §4.3):
-//   scroll      → useCoverProgress(host).t     (the ONE page cover clock, 0.50 ≡ viewport centre)
+// The edges (story-sota §4.3; the `scroll` cover edge retired in U/B7c — no plate rode it, and it
+// cost each plate a cover-progress clock):
+//   pin         → usePinProgress(deck).pinT     (a pinned stage passes it; 1 off a stage)
 //   selected    → useSelection.selectedKeys    (the sticky pin SET — any pin ⇒ the host is selected)
 //   hovered     → useSelection.hoveredKey       (the transient pointer channel — de-stormed at source)
 //   active      → useActiveBeat.activeVizId     (the centre-argmin edge — is THIS viz centred?)
@@ -36,7 +37,6 @@ import type {
     MotionDrivers,
     MotionDriverSources,
 } from "../motion/motion-director.js";
-import { useCoverProgress } from "../motion/useCoverProgress.js";
 import { useReducedMotion } from "../motion/useReducedMotion.js";
 import { useSelection } from "../platform/stores/useSelection.js";
 import { useActiveBeat } from "../platform/stores/useActiveBeat.js";
@@ -96,8 +96,6 @@ export interface UseVizContextReturn extends MotionDrivers {
 /** The resolved reactive SOURCES the pure core maps — every field a getter over live state (a store
     ref in production; a plain `ref` in a spec). The core equates + projects; it never mutates a source. */
 export interface VizContextSources {
-    /** The cover scalar [0,1] — `useCoverProgress(host).t`. */
-    readonly scroll: () => number;
     /** The pinned stage's composed step clock [0,1] — `usePinProgress(deck).pinT`; 1 off a stage. */
     readonly pin: () => number;
     /** The transiently-hovered key (or null). */
@@ -125,7 +123,6 @@ export function createVizContext(
     vizId: string,
     src: VizContextSources,
 ): UseVizContextReturn {
-    const scroll = (): number => src.scroll();
     const pin = (): number => src.pin();
     const selected = (): boolean => src.selectedKeys().size > 0;
     const hovered = (): boolean => src.hoveredKey() !== null;
@@ -148,7 +145,7 @@ export function createVizContext(
         hasSelection: src.selectedKeys().size > 0,
     }));
 
-    return { scroll, pin, selected, hovered, active, filterEpoch, reducedMotion, selectionScope, provenance };
+    return { pin, selected, hovered, active, filterEpoch, reducedMotion, selectionScope, provenance };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -182,7 +179,7 @@ function useSharedFilterEpoch(): () => number {
 
 /**
  * `useVizContext(vizId, host)` — the coordination hub. Wires all seven director edges from the shared
- * single-writer stores + the cover clock ONCE, so `useMotionDirector(host, decl, ctx)` receives a full
+ * single-writer stores ONCE, so `useMotionDirector(host, decl, ctx)` receives a full
  * `MotionDrivers` with NO per-plate driver wiring. Returns the two read-only facets (`selectionScope`,
  * `provenance`) the provenance/drill-down families consume too.
  *
@@ -199,12 +196,11 @@ export function useVizContext(
 ): UseVizContextReturn {
     const sel = useSelection();
     const beat = useActiveBeat();
-    const cover = useCoverProgress(host);
+    void host; // reserved: the plate anchor (the hub's per-host seam)
     const reduced = useReducedMotion();
     const filterEpoch = sources.filterEpoch ?? useSharedFilterEpoch();
 
     const ctx = createVizContext(vizId, {
-        scroll: sources.scroll ?? ((): number => cover.t.value),
         pin: sources.pin ?? ((): number => 1),
         hoveredKey: (): string | null => sel.hoveredKey,
         selectedKeys: (): ReadonlySet<string> => sel.selectedKeys,

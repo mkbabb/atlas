@@ -21,6 +21,7 @@ import VizPlate from "../frame/VizPlate.vue";
 import TimeSeries, { type LineSeries } from "./TimeSeries.vue";
 import DiscreteColumns, { type ColumnDatum } from "./DiscreteColumns.vue";
 import type { FilterResponse, VizContract } from "../contract/viz-contract.js";
+import type { FactsAt } from "../composables/useXFacts.js";
 import { useVizPalette } from "../composables/useVizPalette.js";
 import { trajectory, type TrajectoryPoint } from "../../data/multiYear.js";
 import { trajectoryRivet } from "../../data/useYearScope.js";
@@ -74,6 +75,9 @@ const props = withDefaults(
             three window magnitudes), so no number renders twice within one beat. Default `false`
             ⇒ the key-stats render as before (USF decade / SCI chase unchanged — render parity). */
         hideKeyStats?: boolean;
+        /** The per-x facts hook (U/B7c C1): the hover card for one drawn year. See TimeSeries'
+            `factsAt`. Omit ⇒ no period hover. */
+        factsAt?: FactsAt;
     }>(),
     {
         leadMeasure: undefined,
@@ -89,6 +93,7 @@ const props = withDefaults(
         ariaLabel: "Multi-year trajectory",
         size: "default",
         figId: undefined,
+        factsAt: undefined,
         filterResponse: "responsive",
         hideKeyStats: false,
     },
@@ -293,6 +298,8 @@ const contract = computed<VizContract>(() => {
                 :forecast-boundary-x="forecastBoundaryX"
                 :over-subscription-x="overSubscriptionX"
                 :over-subscription-label="overSubscriptionLabel"
+                :facts-at="factsAt"
+                :facts-origin="figId ?? 'trajectory'"
                 :aria-label="ariaLabel"
             />
             <!-- The belt-and-suspenders DOM markers (the gate's crown-mark / data-point / void

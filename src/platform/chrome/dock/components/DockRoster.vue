@@ -2,15 +2,16 @@
 // DockRoster — the dock's site face on `/` (U/B7 §2.2, §3.1–§3.3; O-2, O-3). At ≥ 768 px the dock
 // rests open on the homepage and lists the ranked dashboards: one row per dashboard with its title,
 // its one number and that number's period, SCI first. Held entries are not listed; companions follow
-// below a rule. The last row, "By subject", opens the subject index.
+// below a rule. The last row, "By subject", opens the subject index (DockRosterSubjectsLive, loaded on
+// first use). The row sheet is unscoped (its classes are namespaced) so the live row wears it too.
 //
 // Every root node is one control, because these rows are the seats of glass's toolbar run (the same
 // contract as the chapter rungs, B6 · §M M-4): glass roves them with the arrows and gives the run one
 // Tab stop. The rule above the companions is that row's top border, not an element.
 import { computed } from "vue";
 import { RouterLink, useRouter } from "vue-router";
-import { Select, SelectContent, SelectItem } from "@mkbabb/glass-ui/select";
-import { DockTrigger } from "@mkbabb/glass-ui/dock";
+import { ChevronDown } from "@lucide/vue";
+import DockSelectSeat from "./DockSelectSeat.vue";
 import { useDashboardRegistry } from "../../../../contract/index.js";
 import { siteTransition } from "../site-transition.js";
 import type { SiteSubject } from "../site.js";
@@ -31,12 +32,8 @@ function go(e: MouseEvent, to: string): void {
     siteTransition(() => router.push(to));
 }
 
-const subject = computed({
-    get: () => "",
-    set: (to) => {
-        if (typeof to === "string" && to) siteTransition(() => router.push(to));
-    },
-});
+// "By subject" is a seat: its Select loads on first use (U/B7c C1, O-7).
+const loadSubjects = () => import("./DockRosterSubjectsLive.vue");
 </script>
 
 <template>
@@ -69,22 +66,24 @@ const subject = computed({
     >
         <span class="dock-roster__title">{{ d.title }}</span>
     </RouterLink>
-    <Select v-if="subjects.length" v-model="subject">
-        <DockTrigger
-            for="select"
-            class="dock-roster__row dock-roster__row--subjects"
-            :class="{ 'dock-roster__row--ruled': !companions.length }"
-            data-testid="dock-roster-subjects"
-        >
-            <span class="dock-roster__title">By subject</span>
-        </DockTrigger>
-        <SelectContent side="right" align="start">
-            <SelectItem v-for="s in subjects" :key="s.to" :value="s.to">{{ s.label }}</SelectItem>
-        </SelectContent>
-    </Select>
+    <DockSelectSeat
+        v-if="subjects.length"
+        :load="loadSubjects"
+        :bind="{ subjects, ruled: !companions.length }"
+        :face="{
+            class: [
+                'dock-trigger dock-select-trigger dock-roster__row dock-roster__row--subjects',
+                { 'dock-roster__row--ruled': !companions.length },
+            ],
+            'data-testid': 'dock-roster-subjects',
+        }"
+    >
+        <span class="dock-roster__title">By subject</span>
+        <ChevronDown class="dock-select-trigger__chevron" aria-hidden="true" />
+    </DockSelectSeat>
 </template>
 
-<style scoped>
+<style>
 /* A roster row: one link covering the whole row, ≥ 44 px, the dashboard's accent as a 3 px edge.
    Hover and the current row change colour only (no transform, no shadow change). */
 .dock-roster__row {

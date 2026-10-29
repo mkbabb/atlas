@@ -8,7 +8,6 @@
 // swept in N.WC1; the director owns the resolution now, one DriverEdge per trigger.)
 //
 // THE DECISION RULE (what drives the animation scalar `t` — resolved in `createDirectorCore`):
-//   scroll → the --scroll-tl cover band (reversible, scrubbed)     ← useCoverProgress
 //   select → a discrete selection-store edge (an impulse spring)   ← useSelection
 //   hover  → a pointer enter/leave edge (an impulse spring)        ← emphasis-policy
 //   active → a viewport-centre argmin edge (an impulse spring)     ← activeViz
@@ -16,13 +15,14 @@
 //   load   → a mount-once one-shot                                 ← NumericAnimation
 //   pin    → the pinned stage's composed step clock (scrubbed)     ← usePinProgress
 
-/** The sealed six + `pin` — the closed taxonomy (no `(string & {})` escape: a trigger MUST resolve to
-    a known DriverEdge, so the union stays sealed for exhaustiveness). `pin` is the seventh and last:
-    a POSITION-derived scalar like `scroll` (it opens no spring, no rAF, no second poll), composed by
+/** The sealed five + `pin` — the closed taxonomy (no `(string & {})` escape: a trigger MUST resolve to
+    a known DriverEdge, so the union stays sealed for exhaustiveness). `scroll` was retired in U/B7c: no
+    consumer declared it, and scroll-scrubbed reveals are the reveal register's (`revealHostStyle`,
+    `scroll-driven.css`), not the director's. `pin` is the one POSITION-derived scalar left (it opens no
+    spring, no rAF, no second poll), composed by
     `usePinProgress` from the pinned stage's ALREADY-registered per-step scrub hosts. It is
     AUTHORING-GATED to a `ChapterStage` — see `SurfaceTrigger` (the W-50 pin gate). */
 export type MotionTrigger =
-    | "scroll"
     | "select"
     | "hover"
     | "active"
@@ -32,7 +32,6 @@ export type MotionTrigger =
 
 /** The ordered roster — the gate iterates this to prove every member resolves to a DriverEdge. */
 export const MOTION_TRIGGERS = [
-    "scroll",
     "select",
     "hover",
     "active",

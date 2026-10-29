@@ -13,7 +13,8 @@
 //      (U/B7 §2.2: below 768 px the dock is a horizontal bar whose run seats are its cells);
 //   4. the dock carries no figure subject: no control in it names or pins a figure id.
 import { afterEach, describe, expect, it } from "vitest";
-import { page, server, userEvent } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
+import { walkKey } from "../../../../tests/browser/walk-key.js";
 import { createApp, defineComponent, h, nextTick } from "vue";
 import { createPinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
@@ -98,7 +99,6 @@ async function openDock(phone: boolean): Promise<void> {
 // control (Safari's "Press Tab to highlight each item", or Option-Tab). That is the platform's
 // default, not the dock's: atlas must not force tabindex=0 onto buttons to defeat it. So the walk
 // presses the key a WebKit reader uses to reach every control; Chromium and Firefox press Tab.
-const walkKey = server.browser === "webkit" ? "{Alt>}{Tab}{/Alt}" : "{Tab}";
 
 /** Tab from the crest until focus leaves the dock; the dock's focus stops, in order. */
 async function tabWalk(): Promise<HTMLElement[]> {

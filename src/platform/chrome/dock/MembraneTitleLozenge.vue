@@ -36,10 +36,12 @@
 // no heading crosses the band the lozenge occupies (D-7: it never sits on a heading). The shell reserves the same band (`--shell-head-reserve`) as the headings' scroll margin,
 // so a section jump lands the heading below it. Below 768 px there is no lozenge: the bottom bar's
 // Sections cell carries the name.
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import DockSectionSelect from "./components/DockSectionSelect.vue";
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { UseDockStepper } from "./composables/useDockStepper.js";
 import type { MembraneFacet } from "./membrane-facet.js";
+// The section Select (glass Select and its list) is its own chunk: it renders only on a dashboard
+// route, so the entry does not carry it (U/B7c C1, O-7).
+const DockSectionSelect = defineAsyncComponent(() => import("./components/DockSectionSelect.vue"));
 
 const props = defineProps<{
     /** True at/near the crown (`useScrollChrome.atTop`): the in-content title carries wayfinding. */
