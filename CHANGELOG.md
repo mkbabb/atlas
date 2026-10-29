@@ -18,6 +18,12 @@
   inset from the top, right and bottom edges by `--space-family`, every corner at `--radius-3xl`.
   Witness: `FilterPanel.drawer.browser.spec.ts`, 3 of 3 geometry cases red before.
 
+- **A value chosen in a Select keeps the Filters drawer open (U/B7c M2 · FI-04).** The drawer's
+  outside-pointer claim counted a press on its own Select's listbox (glass teleports it to `<body>`) as
+  outside, so choosing any ECF list value closed the drawer (6 of 6 lists, Chromium, served). A list whose
+  controlling trigger is inside the drawer (`aria-controls`) is now the drawer's. Witness: the Select case
+  in `FilterPanel.drawer.browser.spec.ts`, 3 of 3 red before.
+
 - **The dock counts a route's own applied filters (U/B7c M2 · FI-03).** `useFilterLedger().appliedCount`
   counted only atlas-declared panel dims, which no route declares, so the Filters control never showed
   a count. Each `useRouteFold` now registers its dial predicate; `useRouteFilterCount()` reads the

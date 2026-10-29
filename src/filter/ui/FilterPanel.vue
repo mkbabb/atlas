@@ -151,6 +151,13 @@ const { claimOpen } = useDockPortals();
 // layer opened over the drawer (a figure dock's Options popover or Download menu) claims
 // at priority 110 (`plateLayerClaim`, U RULINGS §K K-1), so the first Escape or outside pointer
 // closes that layer alone and the drawer (and its dock pin) survive; the next one closes the drawer.
+/** A body-teleported list whose controlling trigger sits in the drawer (`aria-controls` names it). */
+function ownedList(node: HTMLElement): boolean {
+    const list = node.closest<HTMLElement>("[role='listbox'], [role='menu']");
+    if (!list?.id) return false;
+    return Boolean(document.querySelector(`[data-testid='filter-panel'] [aria-controls='${CSS.escape(list.id)}']`));
+}
+
 useDismissArbiter().claim(() =>
     open.value
         ? {
@@ -163,7 +170,9 @@ useDismissArbiter().claim(() =>
               // facet-6 / membrane-facet pointer click is NOT "outside", so the two co-located
               // affordances coexist (a provenance click no longer closes an open drawer). Scoped to
               // `within` (pointer only) so ESCAPE from the dock still closes the drawer (guards-only).
-              within: (path) => path.some((node) => node instanceof HTMLElement && Boolean(node.closest("[data-testid='filter-panel'], [data-membrane-band]"))),
+              // FI-04 (U/B7c M2): a list the drawer's own control opened (a glass Select's listbox,
+              // teleported to <body>) is the drawer's too, so choosing a value keeps the drawer open.
+              within: (path) => path.some((node) => node instanceof HTMLElement && (Boolean(node.closest("[data-testid='filter-panel'], [data-membrane-band]")) || ownedList(node))),
               guards: (path) => path.some((node) => node instanceof HTMLElement && Boolean(node.closest("[data-viz-plate]"))),
               onDismiss: () => (open.value = false),
           }

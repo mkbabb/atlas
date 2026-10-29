@@ -10,17 +10,19 @@ import "../../design/tokens/space.css";
 import "../../design/tokens/elevation.css";
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
-import { createApp, defineComponent, h, provide } from "vue";
+import { createApp, defineComponent, h, provide, ref } from "vue";
 import { createPinia } from "pinia";
 import { createMemoryHistory, createRouter, useRoute } from "vue-router";
 import SiteShell from "../../platform/chrome/shell/SiteShell.vue";
 import PlatformShell from "../../platform/chrome/shell/PlatformShell.vue";
 import FilterPanel from "./FilterPanel.vue";
 import { useFilterPane } from "../composables/useFilterPane.js";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@mkbabb/glass-ui/select";
 import { DASHBOARD_KEY, installDashboardRegistry, type DashboardContext } from "../../contract/index.js";
 import { makeRegistry } from "../../../tests/browser/mount-site.js";
 import { atRest } from "../../../tests/browser/at-rest.js";
 
+const picked = ref("");
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 async function until(pred: () => boolean, ms = 1500): Promise<boolean> {
     const end = performance.now() + ms;
@@ -43,7 +45,15 @@ function contextFor(slug: string): DashboardContext {
         hasMultiYear: false,
         filterBody: {
             render: () =>
-                h("div", null, Array.from({ length: 4 }, (_, i) => h("button", { type: "button", "data-testid": `filter-body-control-${i}` }, `Region ${i}`))),
+                h("div", null, [
+                    ...Array.from({ length: 4 }, (_, i) => h("button", { type: "button", "data-testid": `filter-body-control-${i}` }, `Region ${i}`)),
+                    h(Select, { modelValue: picked.value, "onUpdate:modelValue": (v: unknown) => void (picked.value = String(v)) }, {
+                        default: () => [
+                            h(SelectTrigger, { "data-testid": "filter-body-select", "aria-label": "Window" }, { default: () => h(SelectValue, { placeholder: "All windows" }) }),
+                            h(SelectContent, null, { default: () => ["one", "two", "three"].map((v) => h(SelectItem, { value: v, "data-testid": `filter-body-option-${v}` }, { default: () => v })) }),
+                        ],
+                    }),
+                ]),
         },
         nav: ["one", "two"].map((id) => ({ kind: "beat", id, label: id, icon: { render: () => null } })),
     } as unknown as DashboardContext;
@@ -132,6 +142,21 @@ for (const [width, height] of [[1440, 900], [1024, 768], [768, 1024]] as const) 
                 expect(b.left).toBeGreaterThanOrEqual(r.left);
                 expect(b.right).toBeLessThanOrEqual(r.right);
             }
+        });
+
+        it("stays open when a value is chosen from a Select in its body (FI-04)", async () => {
+            await mount(width, height);
+            await pressTrigger();
+            expect(await until(isOpen)).toBe(true);
+            expect(await atRest("[data-slot='sheet-content']")).toBe(true);
+            await userEvent.click(q("[data-testid='filter-body-select']")!);
+            expect(await until(() => !!q("[data-testid='filter-body-option-two']"))).toBe(true);
+            await sleep(300);
+            await userEvent.click(q("[data-testid='filter-body-option-two']")!);
+            await sleep(900);
+            expect(picked.value).toBe("two");
+            expect(isOpen(), "the drawer is still open after the choice").toBe(true);
+            expect(q("#filter-drawer-body")?.checkVisibility()).toBe(true);
         });
 
         it("the dock's Filters control is a toggle: pressed again, it closes the drawer", async () => {
