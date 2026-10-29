@@ -300,8 +300,24 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     // The actual mount — `init` the instance, first `paint`, wire the hover bridge. Shared
     // by the eager path (onMounted) and the lazy path (first-viewport intersection), so the
     // two entry points produce an identical live instance.
+    //
+    // U/B7c (dashboard TBT): the mount runs as a job of the frame-budgeted paint pump, not inside
+    // the component's mount. `init` plus the first `setOption` parse cost tens of milliseconds per
+    // chart on a throttled phone, and a dashboard mounts its eager charts in ONE Vue mount task, so
+    // their costs summed into one long task (the /sci phone TBT). In the pump each chart's init and
+    // first parse run in their own frame slice; the route paints its frame first.
+    let mountPending = false;
+    let unmounted = false;
     function mount(): void {
-        if (chart.value || !opts.host.value) return;
+        if (chart.value || mountPending || !opts.host.value) return;
+        mountPending = true;
+        enqueuePaint(() => {
+            mountPending = false;
+            mountNow();
+        });
+    }
+    function mountNow(): void {
+        if (chart.value || unmounted || !opts.host.value) return;
         const c = init(opts.host.value);
         chart.value = c;
         // The first `paint()` is a `lazyUpdate` setOption: ECharts holds it until its next frame, and
@@ -480,7 +496,9 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
 
     onBeforeUnmount(() => {
         // Dispose drops the instance AND the readiness state, so a held emphasis can never reach a
-        // disposed instance (ECharts would only warn, but the held state must not outlive it).
+        // disposed instance (ECharts would only warn, but the held state must not outlive it). A
+        // mount still queued in the pump finds `unmounted` and creates nothing.
+        unmounted = true;
         intent = null;
         owed = false;
         raisedSeries = null;

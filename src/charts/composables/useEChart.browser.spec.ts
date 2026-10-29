@@ -12,7 +12,6 @@ import {
     defineComponent,
     h,
     nextTick,
-    onMounted,
     ref,
     shallowRef,
     watch,
@@ -112,8 +111,14 @@ function run(
                             series: [{ type: "scatter", data: data.value }],
                         }),
                     });
-                    onMounted(() =>
-                        queueMicrotask(() => {
+                    // The chart is created in a paint-pump frame after mount (U/B7c): the verbs act
+                    // once `init` and the first lazy paint have run, as they did after onMounted.
+                    const stopAtInit = watch(
+                        api.chart,
+                        (live) => {
+                            if (!live) return;
+                            queueMicrotask(() => stopAtInit());
+                            queueMicrotask(() => {
                             const c = api.chart.value as unknown as {
                                 dispatchAction: (p: { type: string; dataIndex?: number }) => void;
                                 setOption: (...a: unknown[]) => unknown;
@@ -191,7 +196,9 @@ function run(
                                 window.removeEventListener("error", onErr);
                                 resolve({ pending, thrown, log, errors, emphasis0, emphasis1 });
                             }, waitMs);
-                        }),
+                            });
+                        },
+                        { flush: "sync" },
                     );
                     return () => h("div", { ref: host, style: hostStyle });
                 },

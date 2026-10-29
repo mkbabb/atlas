@@ -122,8 +122,17 @@ function pumpPaints(): void {
     // Always drain at least one job per frame (else a single plate heavier than the budget could
     // never paint). After each job re-check the budget and yield if it is spent, so one plate's
     // re-parse never drags the next plate's into the same task — the per-task cap is one plate.
+    // A job that throws must not stall the pump: every live chart's paint and mount drain here, so
+    // a stalled pump would leave every later chart blank. The error is rethrown on its own task.
     do {
-        paintQueue.shift()!();
+        const job = paintQueue.shift()!;
+        try {
+            job();
+        } catch (error) {
+            setTimeout(() => {
+                throw error;
+            });
+        }
     } while (paintQueue.length > 0 && performance.now() - t0 < PAINT_FRAME_BUDGET_MS);
     if (paintQueue.length > 0) requestAnimationFrame(pumpPaints);
     else paintPumpArmed = false;
