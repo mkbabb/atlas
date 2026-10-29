@@ -40,6 +40,18 @@ describe("the dock rides its own z rung above the content stage (REGISTRY 119)",
         expect(site.router.currentRoute.value.path).toBe("/");
     });
 
+    it("at 1440 px every rung of the open rail takes a pointer", async () => {
+        site = await mountSite("/sci", 1440);
+        await userEvent.hover(crest());
+        await new Promise((r) => setTimeout(r, 600));
+        const rungs = [...document.querySelectorAll<HTMLElement>("button[data-testid^='dock-step-']")];
+        expect(rungs.length).toBe(4);
+        // The rail opens on glass's spring; once it has settled, every rung takes the hit.
+        await expect
+            .poll(() => rungs.filter((r) => !hitsDock(r)).map((r) => r.dataset.testid), { timeout: 3000 })
+            .toEqual([]);
+    });
+
     // U/B7c L · PL-1. The rail is pinned at its block start, so it opens from that edge: glass
     // 10.1.2 morphs the box with `scale` from the dock's `anchor` edge, and the default centre
     // origin carried the crest 200 px down, out from under the pointer, which looped the expand.
@@ -58,17 +70,5 @@ describe("the dock rides its own z rung above the content stage (REGISTRY 119)",
         }
         expect(off).toEqual([]);
         expect(dock().dataset.anchor).toBe("start");
-    });
-
-    it("at 1440 px every rung of the open rail takes a pointer", async () => {
-        site = await mountSite("/sci", 1440);
-        await userEvent.hover(crest());
-        await new Promise((r) => setTimeout(r, 600));
-        const rungs = [...document.querySelectorAll<HTMLElement>("button[data-testid^='dock-step-']")];
-        expect(rungs.length).toBe(4);
-        // The rail opens on glass's spring; once it has settled, every rung takes the hit.
-        await expect
-            .poll(() => rungs.filter((r) => !hitsDock(r)).map((r) => r.dataset.testid), { timeout: 3000 })
-            .toEqual([]);
     });
 });
