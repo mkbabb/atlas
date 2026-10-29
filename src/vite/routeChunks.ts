@@ -566,8 +566,8 @@ interface RouteSet {
 }
 
 /**
- * Fold each small chunk that two or more routes can load into the smallest exact chunk of a route
- * set that covers them (U/B7c M1, O-7). The exact-set cut gave a phone dashboard route 34–37 files
+ * Fold each small chunk that two or more routes can load into the smallest chunk of a route set
+ * that covers them and that is exact or effect-free throughout (U/B7c M1, O-7). The exact-set cut gave a phone dashboard route 34–37 files
  * before its hero, most of them an icon or a helper of 0–2 KB; on HTTP/1.1's six connections the
  * file count set the paint. A chunk folds only when every module in it is free of side effects,
  * imports no sheet, and imports only modules that every route of the wider set already loads, so a
@@ -594,10 +594,19 @@ function foldSmallSets(names: Map<string, string>, routeSets: Map<string, RouteS
         const { keys, exact } = routeSets.get(n)!;
         // a one-route set is that route's own chunk, which the route fetches anyway
         if (keys.size < 2 || ids.reduce((sum, id) => sum + shapes.get(id)!.size, 0) >= MIN_SET_CHUNK || !ids.every(pure)) continue;
+        // A target is a chunk every route of its set loads at once, or one whose modules are all
+        // effect-free: loading it at once where it used to load late runs nothing (U/B7c M1; the
+        // dock's on-demand menus key their shared helpers with the routes).
         const wider = order
             .filter((m) => {
                 const t = routeSets.get(m)!;
-                return m !== n && !into.has(m) && t.exact && within(keys, t.keys) && (!exact || t.keys.size > keys.size);
+                return (
+                    m !== n &&
+                    !into.has(m) &&
+                    (t.exact || (members.get(m) ?? []).every(pure)) &&
+                    within(keys, t.keys) &&
+                    (!exact || !t.exact || t.keys.size > keys.size)
+                );
             })
             .sort((a, b) => routeSets.get(a)!.keys.size - routeSets.get(b)!.keys.size);
         const target = wider.find((m) => {

@@ -178,4 +178,30 @@ describe("the route cut's reach", () => {
         expect(names.get("lz")).toBe("route-shared-4");
         expect(names.get("fig")).not.toBe("route-shared-4");
     });
+
+    // The dock's on-demand menus are lazy imports of the entry, so a helper a menu shares with some
+    // routes got a chunk of its own on each of those routes (U/B7c M1: 7 more /sci files once the
+    // More menu loaded on demand).
+    it("folds a small effect-free chunk into an effect-free chunk that loads late on some of its routes", async () => {
+        const body = (route: string, names: string[], more = "") =>
+            [`/d/${route}/DashboardBody.vue`, `${names.map((n) => `import { ${n} } from "${n}";`).join(" ")} export default [${names}];${more}`] as const;
+        // `wide` loads at once on x and y and late (through the menu) on z; `small` at once on x
+        const bodies = [
+            body("x", ["wide", "small"]),
+            body("y", ["wide"]),
+            body("z", ["zed"], ' export const later = () => import("menu");'),
+        ];
+        const wide = `export const wide = [${"1,".repeat(6000)}];`;
+        const shapes = new Map<string, Shape>([
+            ["entry", await shape("export const go = () => 1;", true)],
+            ...(await Promise.all(bodies.map(async ([id, code]) => [id, await shape(code, true)] as const))),
+            ["menu", await shape('import { wide } from "wide"; import { small } from "small"; export default [wide, small];', true)],
+            ["wide", await shape(wide)],
+            ["small", await shape("export const small = 1;")],
+            ["zed", await shape("export const zed = 1;")],
+        ]);
+        const dyn: Record<string, string[]> = { entry: bodies.map(([id]) => id), "/d/z/DashboardBody.vue": ["menu"] };
+        const names = assignChunks(["entry"], (id) => dyn[id] ?? [], shapes, (id) => /\/d\/(\w)\//.exec(id)?.[1]);
+        expect(names.get("small")).toBe(names.get("wide"));
+    });
 });
