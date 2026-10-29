@@ -1,13 +1,20 @@
 // U/B7 O-11 (PLAN §5.5): every menu atlas renders is a glass primitive. No template renders a native
 // <select>, and none builds its own menu or listbox (role="menu", "menuitem", "listbox", "option" or
-// aria-haspopup="menu"/"listbox"). The one exemption is named: SelectionRegion's roving listbox is
-// the keyboard model of a map's regions, not a dropdown.
+// aria-haspopup="menu"/"listbox"). The exemptions are named: SelectionRegion's roving listbox is
+// the keyboard model of a map's regions, not a dropdown; DockSelectSeat is the glass Select's
+// trigger, seated until the Select loads.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOT = join(__dirname, "../../src");
-const EXEMPT = new Map([["charts/geo/SelectionRegion.vue", "the map's region listbox (keyboard model, not a menu)"]]);
+const EXEMPT = new Map([
+    ["charts/geo/SelectionRegion.vue", "the map's region listbox (keyboard model, not a menu)"],
+    // U/B7c: the dock Select's static trigger until the glass Select loads on first open. It carries
+    // the glass SelectTrigger's ARIA so the accessibility tree does not change when the Select swaps
+    // in; it renders no list, and the list it opens is glass's.
+    ["platform/chrome/dock/components/DockSelectSeat.vue", "the glass Select's trigger, seated until first open"],
+]);
 
 function vueFiles(dir: string): string[] {
     return readdirSync(dir).flatMap((name) => {
