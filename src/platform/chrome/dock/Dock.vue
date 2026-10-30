@@ -137,7 +137,19 @@ function bindBloom(inst: DockExposed | null): void {
     // leaving releases it only when the other is gone too: a pointer drifting off does not collapse
     // the rail under keyboard focus (which would drop focus to BODY), and focus leaving does not
     // collapse it under a resting pointer. Focus a mouse click left behind does not hold it.
+    // Keyboard focus is focus the last input put there: a key press, or a surface that hands focus
+    // back on Escape. It is read from the input itself, not from `:focus-visible`, whose heuristic
+    // differs by engine: Firefox does not match it on a trigger that a closing list refocuses after
+    // Escape, so the rail collapsed under keyboard focus there (U/B7d D1).
     let hovered = false;
+    let keyed = false;
+    const onKeyDown = (e: KeyboardEvent): void => {
+        if (!e.metaKey && !e.ctrlKey) keyed = true;
+    };
+    const onAnyPointerDown = (): void => {
+        keyed = false;
+    };
+    const holdsKeyboardFocus = (): boolean => keyed && el.contains(document.activeElement);
     const bloom = (): void => setIntent("bloom", false);
     const enterFromPointer = (e: PointerEvent): void => {
         hovered = revealReleasesOnLeave(e.pointerType, canHover.value);
@@ -146,7 +158,7 @@ function bindBloom(inst: DockExposed | null): void {
     const restFromPointer = (e: PointerEvent): void => {
         if (!revealReleasesOnLeave(e.pointerType, canHover.value)) return;
         hovered = false;
-        if (!el.querySelector(":focus-visible")) setIntent("bloom", null);
+        if (!holdsKeyboardFocus()) setIntent("bloom", null);
     };
     const onFocusOut = (e: FocusEvent): void => {
         if (!el.contains(e.relatedTarget as Node | null) && !hovered) setIntent("bloom", null);
@@ -167,6 +179,8 @@ function bindBloom(inst: DockExposed | null): void {
     el.addEventListener("focusin", bloom);
     el.addEventListener("focusout", onFocusOut);
     document.addEventListener("pointerdown", onOutsidePointerDown, true);
+    document.addEventListener("keydown", onKeyDown, true);
+    document.addEventListener("pointerdown", onAnyPointerDown, true);
     detachBloom = (): void => {
         el.removeEventListener("pointerenter", enterFromPointer);
         el.removeEventListener("pointerleave", restFromPointer);
@@ -175,6 +189,8 @@ function bindBloom(inst: DockExposed | null): void {
         el.removeEventListener("focusin", bloom);
         el.removeEventListener("focusout", onFocusOut);
         document.removeEventListener("pointerdown", onOutsidePointerDown, true);
+        document.removeEventListener("keydown", onKeyDown, true);
+        document.removeEventListener("pointerdown", onAnyPointerDown, true);
     };
 }
 watch(dockRef, (inst) => bindBloom(inst), { immediate: true });
