@@ -233,6 +233,24 @@ const series = computed(() => described.value?.series.filter((s) => s.points.som
                 </p>
             </header>
 
+            <nav
+                v-if="described?.links?.length"
+                class="entity-detail__hops"
+                aria-label="Related views"
+                data-testid="entity-detail-hops"
+            >
+                <RouterLink
+                    v-for="hop in described.links"
+                    :key="hop.to"
+                    :to="hop.to"
+                    class="entity-detail__hop"
+                    data-entity-hop
+                    @click="close"
+                >
+                    {{ hop.label }}
+                </RouterLink>
+            </nav>
+
             <div v-if="described" class="entity-detail__body">
                 <table v-if="tableMeasures.length" class="entity-detail__table" data-testid="entity-detail-measures">
                     <thead>
@@ -476,6 +494,26 @@ const series = computed(() => described.value?.series.filter((s) => s.points.som
     color: var(--muted-foreground);
     text-decoration: underline;
     text-underline-offset: 2px;
+}
+.entity-detail__hops {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    font-size: var(--type-caption, 0.8125rem);
+}
+.entity-detail__hop {
+    color: var(--foreground, currentColor);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, currentColor 40%, transparent);
+    text-underline-offset: 3px;
+    border-radius: 2px;
+}
+.entity-detail__hop:hover {
+    text-decoration-color: currentColor;
+}
+.entity-detail__hop:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
 }
 .entity-detail__empty {
     margin: 0;
