@@ -55,6 +55,7 @@ import {
 } from "vue";
 import { init, use, type EChartsType } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
+import { LabelLayout } from "echarts/features";
 import type { EChartsOption } from "echarts";
 import { useResizeObserver, useIntersectionObserver } from "@vueuse/core";
 import { useGlobalDark } from "@mkbabb/glass-ui/dark";
@@ -64,7 +65,9 @@ import { useOptionalStageMorphDriver } from "../scene/stage-morph.js";
 // The canvas renderer is the shared base every viz needs; chart/component
 // modules (BarChart, GridComponent…) register at the call site so the bundle
 // only carries what a viz actually draws (modular registration, CH2 §B).
-use([CanvasRenderer]);
+// LabelLayout makes `labelLayout` work. echarts' core entry installs it in dev; a production build drops
+// that install because the package declares the entry free of side effects.
+use([CanvasRenderer, LabelLayout]);
 
 import { RETINTING, scheduleRetint, enqueuePaint } from "./echart-pumps.js";
 import { canvasTextTheme } from "./useVizPalette.js";

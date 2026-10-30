@@ -4,6 +4,12 @@
 
 ### Fixes
 
+- **`labelLayout` works in a production build on every chart (U/B7d M3 repair 1).** `useEChart` registers
+  `LabelLayout`. echarts' core entry installs it in dev only: the package declares the entry free of side
+  effects, so a production build drops it, and only `TimeSeries` registered it. Until a `TimeSeries` chunk
+  loaded, `hideOverlap` did nothing and the /sci scatter's outlier names overprinted. Witness:
+  `useEChart.label-layout.spec.ts`.
+
 - **The readout figure holds the 12 px floor; the easter-egg marker holds the text floor (U/B7d M3 repair 1 ·
   T-02, T-12).** `ReadoutFacts` set its figure one golden step below the card token, 11.87 px at 1.2rem.
   The egg's marker is a focusable button, and mixing its ink into the ground read 2.37-2.70:1 in dark.
