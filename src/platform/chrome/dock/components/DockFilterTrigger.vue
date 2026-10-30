@@ -25,7 +25,7 @@ const FACET: MembraneFacet = "filter-trigger";
 const { ctx } = defineProps<{ ctx: DashboardContext }>();
 const routeHasFilter = computed(() => Boolean(ctx.filterBody));
 
-const { open } = useFilterPane();
+const { open, armBody } = useFilterPane();
 const { appliedCount } = useFilterLedger();
 
 /** The accessible name is the human contract: the route's Filters dialog, never a technical slug.
@@ -56,6 +56,8 @@ function toggle(): void {
             :data-membrane-facet="FACET"
             data-testid="dock-filter-trigger"
             data-membrane-filter-trigger
+            @pointerenter="armBody"
+            @focus="armBody"
             @click="toggle"
         >
             <SlidersHorizontal aria-hidden="true" />

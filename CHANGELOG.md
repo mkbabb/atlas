@@ -4,6 +4,11 @@
 
 ### Fixes
 
+- **The dock's Filters trigger arms the route's filter body (U/B7d M2 · MO-03).** The body mounts on
+  first use, and only the panel's own door armed it, so at 1440 the mount landed in the drawer's first
+  frames. Reaching the dock's trigger by pointer or focus now arms it. `useFilterPane` keeps
+  `bodyArmed` and `armBody`; a new panel starts unarmed. Witness: `FilterPanel.drawer.browser.spec.ts`
+  "mounts when the reader reaches the dock's trigger", red before.
 - **The phone tap pin reads the first tap on a page (U/B7d M2 · O-13).** A consumer mounts the hover
   card on the first readout, so the first tap published its readout, ended and saw its plate clear
   before the card existed, and pinned nothing. The tap clock now lives in the readout store beside

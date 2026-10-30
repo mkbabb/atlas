@@ -57,7 +57,7 @@ const { label: freshnessLabel } = useFreshness();
 
 // The shared flag requests the full register. Its false state leaves this same
 // physical sheet at the non-occluding PIP detent.
-const { open } = useFilterPane();
+const { open, bodyArmed, armBody } = useFilterPane();
 // One open surface per seat (PLAN §2.5): the drawer shares its edge with the entity detail.
 useSeatedOpen(open, useViewportSeat(), "filter-drawer");
 // D-6: on the phone the drawer is a sheet over the page, so it takes glass's opaque rung (the
@@ -87,12 +87,12 @@ const doorLabel = computed(() =>
     is always mounted for its PIP door, and the body inside it was too, hidden by `v-show`: sci mounts
     the sheet once the page is idle, so its whole filter body (the unit picker over every school unit,
     the sliders and toggle groups) mounted in one ~250 ms task after LCP on the phone. The body now
-    mounts when the drawer first opens, or when the reader reaches for the door (pointer or focus), and
-    then stays mounted, so its control state survives a close. */
-const bodyArmed = ref(open.value);
-function armBody(): void {
-    bodyArmed.value = true;
-}
+    mounts when the drawer first opens, or when the reader reaches for a door (this one or the dock's
+    trigger, by pointer or focus), and then stays mounted, so its control state survives a close. */
+bodyArmed.value = open.value;
+onBeforeUnmount(() => {
+    bodyArmed.value = false;
+});
 watch([open, drawerActive], ([o, d]) => {
     if (o || d) armBody();
 });
