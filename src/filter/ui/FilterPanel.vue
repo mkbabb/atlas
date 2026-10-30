@@ -83,6 +83,20 @@ const doorLabel = computed(() =>
         : `Open filters${appliedCount.value ? `, ${appliedCount.value} applied` : ""}`,
 );
 
+/** The route's filter body mounts on first use, not with the sheet (U/B7d D1 · /sci TBT). The sheet
+    is always mounted for its PIP door, and the body inside it was too, hidden by `v-show`: sci mounts
+    the sheet once the page is idle, so its whole filter body (the unit picker over every school unit,
+    the sliders and toggle groups) mounted in one ~250 ms task after LCP on the phone. The body now
+    mounts when the drawer first opens, or when the reader reaches for the door (pointer or focus), and
+    then stays mounted, so its control state survives a close. */
+const bodyArmed = ref(open.value);
+function armBody(): void {
+    bodyArmed.value = true;
+}
+watch([open, drawerActive], ([o, d]) => {
+    if (o || d) armBody();
+});
+
 /** The Dialog open model. The continuum never unmounts (PIP at rest), so `get` is constant; a close
     request (glass's own sheet ✕, or a dismissal) retracts to the PIP exactly like the door. */
 const sheetOpen = computed<boolean>({
@@ -439,6 +453,8 @@ function cancelSave(): void {
                 :aria-label="doorLabel"
                 aria-controls="filter-drawer-body"
                 data-filter-door
+                @pointerenter="armBody"
+                @focus="armBody"
                 @click="activateContinuum"
             >
                 <SlidersHorizontal v-if="drawerActive" aria-hidden="true" />
@@ -480,7 +496,7 @@ function cancelSave(): void {
                 />
 
                 <div class="cp-drawer__body">
-                    <component v-if="filterBody" :is="filterBody">
+                    <component v-if="filterBody && bodyArmed" :is="filterBody">
                         <template
                             v-for="(_, name) in $slots"
                             :key="name"

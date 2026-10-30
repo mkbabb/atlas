@@ -4,6 +4,15 @@
 
 ### Fixes
 
+- **The route's filter body mounts on first use (U/B7d D1 · /sci TBT).** The Filters sheet is always
+  mounted for its door, and the route's filter body inside it mounted with it, hidden. sci mounts the
+  sheet once the page is idle, so on /sci the whole filter body (the unit picker over every school unit,
+  the sliders, the toggle groups) mounted in one 249 ms task after LCP on the phone. The body now mounts
+  when the drawer first opens or the pointer or focus reaches its door, and stays mounted. Phone A/B
+  against the landed dist (3 runs, 390 px, 4x CPU, 1.6 Mbps): /sci TBT 326 → 163 ms, reveal drops 33 →
+  20; /ecf TBT 101 → 64 ms. Witness: `FilterPanel.drawer.browser.spec.ts` "is not mounted while the
+  drawer has never opened", red before.
+
 - **A click on the hover card opens its entity's detail (U/B7d D1 · F-14).** After the pointer visits
   the card and returns, the card can rest over its own mark, so the click lands on the card. The card
   stands for one entity: the store stamps the readout with the hovered entity key, and a click on the

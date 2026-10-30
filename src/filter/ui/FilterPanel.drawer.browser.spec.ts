@@ -122,6 +122,29 @@ async function pressTrigger(): Promise<void> {
     else await userEvent.keyboard("{Enter}");
 }
 
+// /sci TBT (U/B7d D1): the sheet is always mounted for its door, and the body inside it mounted with
+// it, hidden: sci's whole filter body mounted in one long task after LCP. It mounts on first use now.
+describe("the route's filter body", () => {
+    it("is not mounted while the drawer has never opened; mounts on open and stays mounted after close", async () => {
+        await mount(1440, 900);
+        const controls = () => document.querySelectorAll("[data-testid^='filter-body-control-']").length;
+        expect(q("[data-filter-door]"), "the door is at rest").not.toBeNull();
+        expect(controls(), "no body before first use").toBe(0);
+        await pressTrigger();
+        expect(await until(isOpen)).toBe(true);
+        expect(controls(), "the body mounts on open").toBe(4);
+        await pressTrigger();
+        expect(await until(() => !isOpen())).toBe(true);
+        expect(controls(), "the body stays mounted after close").toBe(4);
+    });
+
+    it("mounts when the pointer reaches the door, before the press", async () => {
+        await mount(1440, 900);
+        q("[data-filter-door]")!.dispatchEvent(new PointerEvent("pointerenter", { pointerType: "mouse" }));
+        expect(await until(() => document.querySelectorAll("[data-testid^='filter-body-control-']").length === 4)).toBe(true);
+    });
+});
+
 for (const [width, height] of [[1440, 900], [1024, 768], [768, 1024]] as const) {
     describe(`the Filters drawer at ${width} × ${height}`, () => {
         it("floats from the top right: narrower than the page, shorter than the viewport, inset from both edges", async () => {
