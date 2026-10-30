@@ -73,16 +73,29 @@ export function scrollToSection(
         if (!active) return;
         heal.abort();
     };
-    // Reader input ends the leg (`abort`), so a scroll that rests short here was stopped by something
-    // else: WebKit stops a smooth scroll when focus moves as a list closes. It resumes once.
+    const isShort = (): boolean =>
+        Math.abs(scroller.scrollTop - requestedScrollY) > ANCHOR_EPSILON_PX;
+    // Reader input ends the leg (`abort`), so a page that rests short at a `scrollend` was stopped by
+    // something else: WebKit stops a smooth scroll when focus moves as a list closes. It resumes once.
+    // A stale `scrollend` from an earlier scroll arrives while this leg is moving, so the page must
+    // hold still for two frames first; a stale one spends nothing. `win`: this outlives the caller.
+    const win = window;
     let resumed = false;
-    const settle = (): void => {
-        if (!active || settled) return;
-        if (Math.abs(scroller.scrollTop - requestedScrollY) > ANCHOR_EPSILON_PX) {
-            if (!resumed) {
+    const resumeIfStopped = (): void => {
+        const at = scroller.scrollTop;
+        settleFrame = win.requestAnimationFrame(() => {
+            settleFrame = win.requestAnimationFrame(() => {
+                settleFrame = 0;
+                if (!active || settled || resumed || scroller.scrollTop !== at || !isShort()) return;
                 resumed = true;
                 target.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
+            });
+        });
+    };
+    const settle = (): void => {
+        if (!active || settled) return;
+        if (isShort()) {
+            if (!resumed && !settleFrame) resumeIfStopped();
             return;
         }
         settled = true;
