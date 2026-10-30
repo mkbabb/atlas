@@ -158,6 +158,12 @@ function onPointerDownOutside(e: Event): void {
     if (target instanceof Element && target.closest("[data-viz-plate],[data-figure-dock]")) e.preventDefault();
 }
 
+/** Focus moving onto a figure is the same act: the sheet stays, so a chord on the next mark adds. */
+function onFocusOutside(e: Event): void {
+    const target = (e as CustomEvent<{ originalEvent?: Event }>).detail?.originalEvent?.target ?? e.target;
+    if (target instanceof Element && target.closest("[data-viz-plate],[data-figure-dock]")) e.preventDefault();
+}
+
 // ── actions ──────────────────────────────────────────────────────────────────────────────────
 const copied = ref(false);
 function addToComparison(): void {
@@ -223,6 +229,7 @@ const series = computed(() => described.value?.series.filter((s) => s.points.som
             @open-auto-focus="onOpenAutoFocus"
             @close-auto-focus="onCloseAutoFocus"
             @pointer-down-outside="onPointerDownOutside"
+            @focus-outside="onFocusOutside"
         >
             <header class="entity-detail__head">
                 <DialogTitle ref="heading" tabindex="-1" class="entity-detail__name">{{ title }}</DialogTitle>

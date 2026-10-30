@@ -4,6 +4,11 @@
 
 ### Fixes
 
+- **Focus on a figure keeps the detail open (U/B7d M3 · M-02).** The non-modal sheet guarded a pointer
+  press on a figure but not focus moving onto one, so focus closed the sheet and cleared the selection
+  before the mark's click ran. After a detail opened from a hover card, a chord on the next mark replaced
+  the unit instead of adding it. Witness: `EntityDetail.focus-outside.browser.spec.ts`.
+
 - **Stat numerals stay legible in both schemes (U/B7d M3 · T-12).** A stat that names a chart fill token
   printed in that fill: `--viz-no-data` read 1.01:1 on the light ground and 1.42:1 on the dark one (/bead),
   `--viz-diverging-mid` 1.43:1 and 1.88:1 (/usf-integrity). `VizAggregateStats` now passes the token
