@@ -4,6 +4,10 @@
 
 ### Fixes
 
+- **A section jump lands where it was sent (U/B7d M2 · WebKit).** On the first Sections jump after a
+  load, WebKit stopped the smooth scroll 360 to 381 px short when focus moved as the list closed, with
+  `?at=` written and the label a section behind. `scrollToSection` now resumes once when a scroll rests
+  short without reader input. Witness: `scroll-anchor.browser.spec.ts`, red before.
 - **The dock's Filters trigger arms the route's filter body (U/B7d M2 · MO-03).** The body mounts on
   first use, and only the panel's own door armed it, so at 1440 the mount landed in the drawer's first
   frames. Reaching the dock's trigger by pointer or focus now arms it. `useFilterPane` keeps

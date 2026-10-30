@@ -73,10 +73,18 @@ export function scrollToSection(
         if (!active) return;
         heal.abort();
     };
+    // Reader input ends the leg (`abort`), so a scroll that rests short here was stopped by something
+    // else: WebKit stops a smooth scroll when focus moves as a list closes. It resumes once.
+    let resumed = false;
     const settle = (): void => {
         if (!active || settled) return;
-        if (Math.abs(scroller.scrollTop - requestedScrollY) > ANCHOR_EPSILON_PX)
+        if (Math.abs(scroller.scrollTop - requestedScrollY) > ANCHOR_EPSILON_PX) {
+            if (!resumed) {
+                resumed = true;
+                target.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
             return;
+        }
         settled = true;
         removeScrollEnd();
         heal.settle();
