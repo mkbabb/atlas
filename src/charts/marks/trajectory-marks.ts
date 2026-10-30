@@ -81,7 +81,7 @@ export function markPointRivet(spec: MarkPointRivetSpec): Record<string, unknown
                               formatter: spec.label,
                               fontFamily: spec.fontMono,
                               fontWeight: 600,
-                              fontSize: 9,
+                              fontSize: 11,
                               color: "#fff",
                           },
                       }
@@ -171,7 +171,7 @@ export function dropRule(spec: DropRuleSpec): Record<string, unknown> {
                 lab: {
                     fontFamily: spec.fontMono,
                     fontWeight: 600,
-                    fontSize: 9,
+                    fontSize: 11,
                     color: spec.color,
                 },
                 arr: {

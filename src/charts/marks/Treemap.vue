@@ -308,8 +308,8 @@ const option = computed<EChartsOption>(() => {
                       meta: {
                           fontFamily: palette.value.fontMono,
                           fontWeight: 400,
-                          fontSize: 10,
-                          lineHeight: 13,
+                          fontSize: 11,
+                          lineHeight: 14,
                           color: mix(nameInk, palette.value.muted, 0.55),
                       },
                       dot: { fontWeight: 400, color: mix(nameInk, palette.value.muted, 0.78) },
@@ -363,7 +363,7 @@ const option = computed<EChartsOption>(() => {
                 ...(isRollup
                     ? {
                           position: "insideBottomRight" as const,
-                          fontSize: 10,
+                          fontSize: 11,
                           opacity: 0.72,
                           // The residual's count is a COUNT — it wraps rather than truncating a
                           // word away (a corner tile is narrow by design; "…and 86 mo…" is noise).
