@@ -148,7 +148,12 @@ describe("scrolling only scrolls (PLAN §5.1)", () => {
             c.missingFromInnerText = await page.evaluate(() => {
                 const fold = (s: string) => s.replace(/\s+/g, "").toLowerCase();
                 const inner = fold(document.body.innerText);
+                // U/B7d: a heading inside a disclosure the reader has not opened (its content carries
+                // `data-state="closed"` and the heading draws no box) is not owed to innerText; the
+                // sci RouteReference holds each route's appendix that way (RULINGS U-5).
+                const closed = (h: HTMLElement) => !h.getClientRects().length && Boolean(h.closest("[data-state='closed']"));
                 return [...document.querySelectorAll<HTMLElement>(".essay-beat h2")]
+                    .filter((h) => !closed(h))
                     .map((h) => (h.textContent ?? "").replace(/\s+/g, " ").trim())
                     .filter((t) => t && !inner.includes(fold(t)));
             });
