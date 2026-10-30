@@ -73,6 +73,9 @@ const props = withDefaults(
     },
 );
 
+/** The measure key of the line under the pointer, or null when it leaves (U/B7d D1). */
+const emit = defineEmits<{ hover: [key: string | null] }>();
+
 const palette = useVizPalette();
 
 const points = computed<TrajectoryPoint[]>(() =>
@@ -144,6 +147,7 @@ const forecastX = computed<number | undefined>(() => {
         :fig-id="figId"
         :filter-response="filterResponse"
         :facts-at="factsAt"
+        @hover="emit('hover', $event)"
     >
         <template v-if="$slots.title" #title><slot name="title" /></template>
         <template v-if="$slots.foot" #foot><slot name="foot" /></template>

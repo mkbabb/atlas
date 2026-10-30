@@ -113,6 +113,9 @@ const props = withDefaults(
     },
 );
 
+/** The measure key of the line under the pointer, or null when it leaves (U/B7d D1). */
+const emit = defineEmits<{ hover: [key: string | null] }>();
+
 const points = computed<TrajectoryPoint[]>(() =>
     trajectory(props.feed, props.measures),
 );
@@ -153,6 +156,7 @@ const showFootTerminal = computed<boolean>(
             :fig-id="figId"
             :filter-response="filterResponse"
             :facts-at="factsAt"
+            @hover="emit('hover', $event)"
         >
             <template v-if="$slots.title" #title><slot name="title" /></template>
             <template v-if="showFootTerminal" #foot>
@@ -184,6 +188,7 @@ const showFootTerminal = computed<boolean>(
             :filter-response="filterResponse"
             :facts-at="factsAt"
             :hide-key-stats="hideKeyStats"
+            @hover="emit('hover', $event)"
         >
             <template v-if="$slots.title" #title><slot name="title" /></template>
             <template v-if="showFootTerminal" #foot>
