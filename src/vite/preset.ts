@@ -26,7 +26,10 @@ import { atlasRouteChunks } from "./routeChunks";
 //   · `atlas:layers` (normal, after @tailwindcss/vite and vite:css) wraps, in that recorded root
 //     only, every top-level item that is not an `@layer atlas…` item in `@layer atlas.recipes`,
 //     and leads the sheet with the atlas order statement. The root is known by id, never by text,
-//     so a second consumer sheet that names an atlas layer is left alone.
+//     so a second consumer sheet that names an atlas layer is left alone. A glass-ui component sheet
+//     takes the same wrap: its JS module imports it, so it never passes through the root, and a
+//     top-level `@layer components` sits under every atlas layer, where Tailwind's preflight in
+//     atlas.recipes.base zeroes its padding and radius.
 export const ATLAS_LAYER_ORDER = "@layer atlas, atlas.tokens, atlas.recipes, atlas.components;";
 export const ROOT_IMPORTS = ["tailwindcss", "@mkbabb/glass-ui/styles", "@mkbabb/atlas/styles"] as const;
 
@@ -117,6 +120,7 @@ export function wrapInAtlasLayers(css: string): string {
 // A CSS request as Vite sees it: a `.css` file, or an SFC `<style>` block (`X.vue?vue&type=style&…&lang.css`).
 const isCss = (id: string) => /\.css(?:$|\?)/.test(id);
 const moduleFile = (id: string) => id.split("?", 1)[0];
+const isGlassComponentSheet = (file: string) => /\/@mkbabb\/glass-ui\/dist\/.+\.css$/.test(file);
 
 /**
  * Whether COMPILED css carries the atlas styles sheet. The sheet declares `--atlas-styles` in
@@ -150,7 +154,7 @@ export function atlasLayers(): Plugin[] {
                 if (!isCss(id)) return undefined;
                 const file = moduleFile(id);
                 // A root is a `.css` FILE whose own source passed atlas:root-order.
-                if (file.endsWith(".css") && roots.has(file))
+                if (file.endsWith(".css") && (roots.has(file) || isGlassComponentSheet(file)))
                     return { code: wrapInAtlasLayers(code), map: null };
                 // THE COMPILED-OUTPUT CHECK (CX-1). Tailwind inlines nested `@import`s itself, so a
                 // sheet can compile the atlas styles without its own source naming them (one level of

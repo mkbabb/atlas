@@ -4,6 +4,11 @@
 
 ### Fixes
 
+- **A glass-ui component sheet sits in the atlas layers (U/B7d M3 repair 1).** Its JS module imports it, so
+  it never passes through the root, and a top-level `@layer components` loses to Tailwind's preflight in
+  `atlas.recipes.base`. `/sci` and `/usf` option toggles painted square with 0 padding. `atlas:layers` now
+  wraps these sheets as it wraps the root. Witness: `preset.spec.ts`.
+
 - **`labelLayout` works in a production build on every chart (U/B7d M3 repair 1).** `useEChart` registers
   `LabelLayout`. echarts' core entry installs it in dev only: the package declares the entry free of side
   effects, so a production build drops it, and only `TimeSeries` registered it. Until a `TimeSeries` chunk
