@@ -99,6 +99,9 @@ const props = withDefaults(
     },
 );
 
+/** The measure key of the line under the pointer, or null when it leaves (U/B7d D1). */
+const emit = defineEmits<{ hover: [key: string | null] }>();
+
 const palette = useVizPalette();
 
 /** The per-year folded trajectory — the engine's whole-span read (the designed void is a
@@ -301,6 +304,7 @@ const contract = computed<VizContract>(() => {
                 :facts-at="factsAt"
                 :facts-origin="figId ?? 'trajectory'"
                 :aria-label="ariaLabel"
+                @hover="emit('hover', $event)"
             />
             <!-- The belt-and-suspenders DOM markers (the gate's crown-mark / data-point / void
                  selectors). Zero-weight, aria-hidden — the REAL marks are the ECharts canvas

@@ -56,6 +56,7 @@ import { MQ } from "../design/foundations/breakpoints.js";
 import { transientSeat } from "./useCardPlacement.js";
 import { useDismissArbiter } from "../platform/interaction/useDismissArbiter.js";
 import { createHoverBridge } from "./hover-bridge.js";
+import { useSelection } from "../platform/stores/useSelection.js";
 import { useEntityDetail } from "./describe-entity.js";
 import { useTapPin } from "./useTapPin.js";
 
@@ -306,6 +307,18 @@ watch(
     },
 );
 
+// ── F-14 · A CLICK ON THE CARD OPENS ITS ENTITY'S DETAIL (U/B7d D1) ─────────────────────────────
+// The card takes the pointer, and it can come to rest over its own mark: after the pointer visits the
+// card and returns, the mark's centre may lie under it, and the click lands on the card. The card
+// stands for one entity, so a click on it selects that entity, the same act as a click on the mark,
+// and EntityDetail opens. A card for a mark that is not an entity (a period) offers no detail.
+const selection = useSelection();
+const detailKey = computed(() => (shown.value && shown.value !== tapPin.pinned.value ? (shown.value.entityKey ?? null) : null));
+function openDetail(): void {
+    const key = detailKey.value;
+    if (key && !selection.isSelected(key)) selection.select(key);
+}
+
 // THE LONG-NAME RECONCILIATION (G-NAME-RECONCILE) — the transient card is TERSE (a long title clamps
 // to 2 lines); the full string rides the native `title`. The marquee is REJECTED (§5 R-3); the reveal
 // is clip + the native tooltip (zero rAF, G-NO-MARQUEE-MOTION). The fact-value half lives in
@@ -333,6 +346,8 @@ watch(
             data-testid="hover-card"
             :data-readout-origin="shown.origin || undefined"
             :data-tap-pinned="shown === tapPin.pinned.value ? '' : undefined"
+            :data-opens-detail="detailKey ? '' : undefined"
+            @click="openDetail"
         >
             <!-- The peek: name, one context line, at most four measures, the sources, the cue. -->
             <p
@@ -355,7 +370,7 @@ watch(
             <p class="hover-card-readout__foot">
                 <span v-if="shown.sources?.length">Source: {{ shown.sources.join(", ") }}. </span>
                 <span v-if="shown === tapPin.pinned.value">Tap elsewhere to close</span>
-                <span v-else>Click for detail</span>
+                <span v-else-if="detailKey">Click for detail</span>
             </p>
         </Surface>
     </Teleport>
@@ -373,6 +388,9 @@ watch(
    fact grid's container query has a definite width to read. */
 .hover-card-readout {
     inline-size: min(20rem, 100vw - 2rem);
+}
+.hover-card-readout[data-opens-detail] {
+    cursor: pointer;
 }
 .hover-card-readout__context {
     margin-block: 0.1rem 0;

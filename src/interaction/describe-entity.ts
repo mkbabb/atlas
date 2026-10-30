@@ -52,6 +52,14 @@ export interface EntitySeries {
     points: EntitySeriesPoint[];
 }
 
+/** A drill hop the route declares for one entity (M-06): a view that goes one grain deeper or across
+    to another dashboard ("Schools in this district" → `/data/sci-schools?leaNumber=93N`). `to` is an
+    app path with its query; the label names the destination in the reader's words. */
+export interface EntityLink {
+    label: string;
+    to: string;
+}
+
 export interface EntityDescription {
     /** The entity's own name from the feed's entity record. Never a code. */
     name: string;
@@ -62,6 +70,8 @@ export interface EntityDescription {
     place: string;
     measures: EntityMeasure[];
     series: EntitySeries[];
+    /** The drill hops from this entity, in reading order. Omit or leave empty for none. */
+    links?: EntityLink[];
 }
 
 export type DescribeEntity = (key: SelectionKey) => EntityDescription | null;

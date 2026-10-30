@@ -42,6 +42,12 @@ export default defineConfig({
         // Each file starts with no motion preference: the page, and so its emulated media, is shared
         // by the files a worker runs (tests/browser/engine-setup.ts).
         setupFiles: ["tests/browser/engine-setup.ts"],
+        // One file at a time (U/B7d D1). The specs drive the engine's one real pointer and keyboard
+        // (`userEvent.hover`, `click`, `keyboard`), and two files running at once in one browser
+        // share them. In Firefox the rail specs then received each other's moves: the whole lane
+        // read 7 to 12 reds with two files at once (Dock.sitehold, Dock.zrung, Dock.sheet-plate, the
+        // period Select), and 1 with one file at a time, on the same head and glass.
+        fileParallelism: false,
         browser: {
             enabled: true,
             headless: true,
@@ -53,6 +59,12 @@ export default defineConfig({
             commands: {
                 emulateMotion: async ({ page }, reducedMotion: "reduce" | "no-preference") => {
                     await page.emulateMedia({ reducedMotion });
+                },
+                // Rest the pointer in the page's far corner, outside every spec's mount, so a file
+                // never starts with the pointer where the last one left it (tests/browser/engine-setup.ts).
+                parkPointer: async ({ page }) => {
+                    const size = page.viewportSize() ?? { width: 1280, height: 720 };
+                    await page.mouse.move(size.width - 1, size.height - 1);
                 },
             },
         },

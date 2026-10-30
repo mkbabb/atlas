@@ -48,6 +48,19 @@ const PINE: EntityDescription = {
     ],
 };
 
+// M-06 (U/B7d D1): a route declares drill hops on the entity; the detail renders each as a link.
+const NC: EntityDescription = {
+    ...PINE,
+    name: "North Carolina",
+    kind: "State",
+    ids: [{ label: "FIPS", value: "37", param: "state" }],
+    place: "",
+    links: [
+        { label: "School connectivity in North Carolina", to: "/sci" },
+        { label: "Schools in North Carolina", to: "/data/sci-schools?state=37" },
+    ],
+};
+
 const cleanups: Array<() => void> = [];
 afterEach(async () => {
     while (cleanups.length) cleanups.pop()!();
@@ -59,7 +72,11 @@ async function mountShell() {
     setActivePinia(pinia);
     const router = createRouter({
         history: createMemoryHistory(),
-        routes: [{ path: "/", component: { render: () => null } }, { path: "/data/:dataset", component: { render: () => null } }],
+        routes: [
+            { path: "/", component: { render: () => null } },
+            { path: "/sci", component: { render: () => null } },
+            { path: "/data/:dataset", component: { render: () => null } },
+        ],
     });
     const el = document.createElement("div");
     document.body.appendChild(el);
@@ -85,8 +102,8 @@ async function mountShell() {
         spacer.remove();
         window.scrollTo(0, 0);
     });
-    useEntityDetail(pinia).register((key) => (key.id === "93N" ? PINE : null));
-    return { selection: useSelection(pinia), hover: useHoverReadout(pinia) };
+    useEntityDetail(pinia).register((key) => (key.id === "93N" ? PINE : key.id === "37" ? NC : null));
+    return { selection: useSelection(pinia), hover: useHoverReadout(pinia), router };
 }
 
 const settle = async () => {
@@ -167,5 +184,32 @@ describe("EntityDetail (O-13)", () => {
         const name = document.querySelector('[data-testid="entity-detail"] .entity-detail__name')?.textContent?.trim();
         expect(name).toBeTruthy();
         expect(name).not.toMatch(/43C/);
+    });
+
+    it("M-06: a declared drill hop is a link; following it routes there and closes the detail", async () => {
+        await page.viewport(1440, 900);
+        const { selection, router } = await mountShell();
+        selection.select("state:37");
+        await settle();
+        const sheet = document.querySelector<HTMLElement>('[data-testid="entity-detail"]')!;
+        const hops = [...sheet.querySelectorAll<HTMLAnchorElement>('[data-testid="entity-detail-hops"] a[data-entity-hop]')];
+        expect(hops.map((a) => [a.textContent?.trim(), a.getAttribute("href")])).toEqual([
+            ["School connectivity in North Carolina", "/sci"],
+            ["Schools in North Carolina", "/data/sci-schools?state=37"],
+        ]);
+        hops[1]!.click();
+        await settle();
+        await router.isReady();
+        expect(router.currentRoute.value.fullPath).toBe("/data/sci-schools?state=37");
+        expect(document.querySelector('[data-testid="entity-detail"]'), "the hop closes the detail").toBeNull();
+        expect(selection.selectedKeys.size).toBe(0);
+    });
+
+    it("an entity without hops renders no hop row", async () => {
+        await page.viewport(1440, 900);
+        const { selection } = await mountShell();
+        selection.select("district:93N");
+        await settle();
+        expect(document.querySelector('[data-testid="entity-detail-hops"]')).toBeNull();
     });
 });

@@ -38,7 +38,7 @@
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
 import type { Fact } from "../../interaction/HoverCard.vue";
-import type { Anchor } from "../../charts/contract/selection-contract.js";
+import { parseSelKey, type Anchor } from "../../charts/contract/selection-contract.js";
 import { useSelection } from "./useSelection.js";
 
 /**
@@ -120,6 +120,22 @@ export interface HoverReadout {
      * draws a glyph); the geo producers stamp it on their pin payload.
      */
     grain?: "state" | "county" | "district";
+    /**
+     * The entity the card stands for, as a selection key (U/B7d D1 · F-14). The store stamps it at
+     * publish from the live hovered key; a producer never sets it. Null when the hovered mark is not
+     * an entity (a period on a trend line), so the card offers no detail.
+     */
+    entityKey?: string | null;
+}
+
+/** The hovered key as an entity selection key, or null when it names no entity (`x:2017`). */
+function entityKeyOf(key: string | null): string | null {
+    if (key === null) return null;
+    try {
+        return parseSelKey(key).key;
+    } catch {
+        return null;
+    }
 }
 
 /** A pinned readout — the persistent card payload carrying its SELECTION key (so the card surface
@@ -213,7 +229,11 @@ export const useHoverReadout = defineStore("platform:hover-readout", () => {
         // card stays HIDDEN until the producer's datum geometry settles. This is the structural
         // cure for the at-rest ghost: a seeded hover whose `convertToPixel` has not run publishes
         // at the origin floor, and that payload must NOT paint over the hero <h1>.
-        readout.value = { ...payload, anchor: settledAnchor(payload.anchor) };
+        readout.value = {
+            ...payload,
+            anchor: settledAnchor(payload.anchor),
+            entityKey: entityKeyOf(selection.hoveredKey),
+        };
         // Tag the payload with the live hovered key (its selection key) so a subsequent select of
         // that key can auto-capture this payload into the pin tier (the universal pin-persist seam).
         lastTransientKey.value = selection.hoveredKey;
