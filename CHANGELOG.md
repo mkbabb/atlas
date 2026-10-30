@@ -4,6 +4,11 @@
 
 ### Fixes
 
+- **A click on a shared border selects (U/B7d M3 · F-14).** A raised mark's stroke can cover a point on
+  its border, so a press and a release land on two marks and the browser sends the click to their common
+  ancestor. `GeoChoropleth` now selects the mark the pointer came up on. Witness:
+  `GeoChoropleth.border-click.browser.spec.ts`.
+
 - **Focus on a figure keeps the detail open (U/B7d M3 · M-02).** The non-modal sheet guarded a pointer
   press on a figure but not focus moving onto one, so focus closed the sheet and cleared the selection
   before the mark's click ran. After a detail opened from a hover card, a chord on the next mark replaced
