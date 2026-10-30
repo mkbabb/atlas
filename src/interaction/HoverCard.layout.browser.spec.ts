@@ -169,6 +169,7 @@ describe("HoverCard: the peek (O-13)", () => {
             facts: FACTS_93N,
             anchor: { x: 400, y: 300 },
             density: "compact",
+            entityKey: "district:93N",
         };
         await nextTick();
         await nextTick();
