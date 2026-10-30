@@ -67,6 +67,7 @@ import { useOptionalStageMorphDriver } from "../scene/stage-morph.js";
 use([CanvasRenderer]);
 
 import { RETINTING, scheduleRetint, enqueuePaint } from "./echart-pumps.js";
+import { canvasTextTheme } from "./useVizPalette.js";
 
 export interface UseEChartOptions {
     /** The host element the chart mounts into (a fixed-height box). */
@@ -318,7 +319,7 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     }
     function mountNow(): void {
         if (chart.value || unmounted || !opts.host.value) return;
-        const c = init(opts.host.value);
+        const c = init(opts.host.value, canvasTextTheme());
         chart.value = c;
         // The first `paint()` is a `lazyUpdate` setOption: ECharts holds it until its next frame, and
         // only that frame's `prepare` creates the scheduler's pipeline map. An emphasis action

@@ -4,6 +4,12 @@
 
 ### Fixes
 
+- **Canvas labels take the page's prose family (U/B7d M3 · T-03).** A label whose option named no
+  family painted in ECharts' default `sans-serif`, a face the page never sets. Every instance is now
+  created with `canvasTextTheme()`, whose `textStyle.fontFamily` is the live `--font-serif` (the
+  sans-UI stack on the dashboards); a label that names its own family keeps it. Witness:
+  `tests/unit/b7d-canvas-text-theme.spec.ts`, red before.
+
 - **Chart text floors at 11 px (U/B7d M3 · T-02).** The time-series crossing and partial-year
   eyebrows, the trajectory pin and rule labels painted at 9 px, and the treemap meta and residual
   runs at 10 px. Each now paints at 11 px, the axis-tick floor; the treemap meta line height follows
