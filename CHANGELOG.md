@@ -4,6 +4,14 @@
 
 ### Fixes
 
+- **Stat numerals stay legible in both schemes (U/B7d M3 · T-12).** A stat that names a chart fill token
+  printed in that fill: `--viz-no-data` read 1.01:1 on the light ground and 1.42:1 on the dark one (/bead),
+  `--viz-diverging-mid` 1.43:1 and 1.88:1 (/usf-integrity). `VizAggregateStats` now passes the token
+  through `statInk`, the §INK clamp. Witness: `tests/unit/b7d-stat-ink.spec.ts`.
+
+- **One provenance line, one size (U/B7d M3 · PV-03).** The cover's provenance line set at `--type-micro`
+  (12 px) while every plate's strip sets at `--type-small`. It now sets at `--type-small`.
+
 - **A unit with no measures can say why (U/B7d M3 · PR-03).** `EntityDescription.note` prints under the
   sheet's header, so a unit a route draws but holds no row for names itself and states the reason.
 

@@ -220,7 +220,7 @@ const appendixHref = computed<string>(() => `#${appendixAnchorId(vizId)}`);
     align-items: baseline;
     gap: 0.15rem 0.5rem;
     margin: 0;
-    font-size: var(--type-micro);
+    font-size: var(--type-small, 0.875rem);
 }
 .provenance-bar__source {
     min-inline-size: 0;
