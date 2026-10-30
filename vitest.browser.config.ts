@@ -60,6 +60,12 @@ export default defineConfig({
                 emulateMotion: async ({ page }, reducedMotion: "reduce" | "no-preference") => {
                     await page.emulateMedia({ reducedMotion });
                 },
+                // Rest the pointer in the page's far corner, outside every spec's mount, so a file
+                // never starts with the pointer where the last one left it (tests/browser/engine-setup.ts).
+                parkPointer: async ({ page }) => {
+                    const size = page.viewportSize() ?? { width: 1280, height: 720 };
+                    await page.mouse.move(size.width - 1, size.height - 1);
+                },
             },
         },
     },
