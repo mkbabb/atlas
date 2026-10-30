@@ -251,6 +251,9 @@ const series = computed(() => described.value?.series.filter((s) => s.points.som
                 </RouterLink>
             </nav>
 
+            <p v-if="described?.note" class="entity-detail__muted entity-detail__empty" data-testid="entity-detail-note">
+                {{ described.note }}
+            </p>
             <div v-if="described" class="entity-detail__body">
                 <table v-if="tableMeasures.length" class="entity-detail__table" data-testid="entity-detail-measures">
                     <thead>

@@ -93,7 +93,7 @@ describe("a click on the hover card", () => {
     it("a chord on the card adds the entity, as a chord on its mark does (M-02)", async () => {
         await page.viewport(1440, 900);
         const { selection, readout } = await mount();
-        selection.select("district:310");
+        selection.selectMany(["district:310", "district:320"]);
         selection.hover("73A", "sci-map", "district");
         readout.publish({
             origin: "sci-map",
@@ -105,7 +105,7 @@ describe("a click on the hover card", () => {
         await settle();
         card()!.dispatchEvent(new MouseEvent("click", { bubbles: true, metaKey: true }));
         await settle();
-        expect([...selection.selectedKeys]).toEqual(["district:310", "district:73A"]);
+        expect([...selection.selectedKeys]).toEqual(["district:310", "district:320", "district:73A"]);
     });
 
     it("on a period card offers no detail and selects nothing", async () => {

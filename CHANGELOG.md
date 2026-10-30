@@ -4,6 +4,9 @@
 
 ### Fixes
 
+- **A unit with no measures can say why (U/B7d M3 · PR-03).** `EntityDescription.note` prints under the
+  sheet's header, so a unit a route draws but holds no row for names itself and states the reason.
+
 - **A click on a hover card opens its detail on every route (U/B7d M3 · F-14).** The card took its
   entity from the hovered key, which a route writes as a raw id, so `parseSelKey` refused it and the
   card offered nothing. `useSelection.hover(key, origin, kind)` now takes the id's grain and

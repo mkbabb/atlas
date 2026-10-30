@@ -72,6 +72,8 @@ export interface EntityDescription {
     series: EntitySeries[];
     /** The drill hops from this entity, in reading order. Omit or leave empty for none. */
     links?: EntityLink[];
+    /** Why the unit has no measures (PR-03: "No ECF request in this view."). */
+    note?: string;
 }
 
 export type DescribeEntity = (key: SelectionKey) => EntityDescription | null;
