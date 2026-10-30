@@ -214,7 +214,7 @@ projecting components.
 | Every real `TimeSeries` line is a stroke event target (`triggerLineEvent`), so `@hover` fires without `selectable-curves`. The builder dial `selectableCurves` in `TimeSeriesDials` is deleted; the SFC prop `selectableCurves` still gates the click latch | sci /demand crossover: drop `:selectable-curves="true"` unless the latch is wanted; `u-b7c-sci-line-hover` stops requiring it |
 | `FilterPanel` mounts its `body` when the drawer first opens or the door takes the pointer or focus, then keeps it mounted; before, the body mounted with the always-present sheet | none, unless a filter body runs setup work the page needs before the drawer opens: move that work to the route |
 | `MultiYearFigure`, `WindowArcPlate` and `TrajectoryPlate` emit `hover` with the measure key of the line under the pointer, or null | opt in: `@hover` on the sci utilization and USF decade figures |
-| `useHoverReadout` keeps the phone tap clock: `lastTap` (when the last touch tap ended) and `published` (the last accepted readout and its time, dropped by `clearAll`). A hover card that mounts after the first tap now pins that tap's readout. `TAP_MS` and `TAP_SLOP_PX` are exported from the store module (O-13) | none; a consumer that mounts `HoverCard` lazily keeps doing so |
+| `useHoverReadout` keeps the phone tap clock: `lastTap` (when the last touch tap ended) and `published` (the last accepted readout and its time). A hover card that mounts after the first tap now pins that tap's readout. `TAP_MS` and `TAP_SLOP_PX` are exported from the store module (O-13) | none; a consumer that mounts `HoverCard` lazily keeps doing so |
 
 ## 6 · glass-ui 10.1.0
 

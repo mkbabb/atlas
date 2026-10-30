@@ -209,7 +209,8 @@ export const useHoverReadout = defineStore("platform:hover-readout", () => {
      * the first readout, so the first tap on a page ends, and its plate clears, before the card exists.
      */
     const lastTap = ref(Number.NEGATIVE_INFINITY);
-    /** The last readout the store accepted and when; kept after the plate clears it. */
+    /** The last readout the store accepted and when; kept after the plate clears it and after a
+        dismissal, because a tap on a new mark publishes before the dismissal its pointerdown fires. */
     const published = shallowRef<PublishedReadout | null>(null);
     if (typeof window !== "undefined") {
         let down: { x: number; y: number; t: number } | null = null;
@@ -308,8 +309,6 @@ export const useHoverReadout = defineStore("platform:hover-readout", () => {
     function clearAll(): void {
         readout.value = null;
         lastTransientKey.value = null;
-        // a dismissed readout is no tap's to pin (the Escape, outside-tap and route-change seams)
-        published.value = null;
         if (pinnedReadouts.value.size > 0) pinnedReadouts.value = new Map();
     }
 

@@ -119,6 +119,33 @@ describe("HoverCard on the phone: a tap pins a mark that is not an entity", () =
         expect(card()).toBeNull();
     });
 
+    // The sci tap spec's second and fourth segments (U/B7d M2): a tap on a new mark while a card is
+    // pinned. The touch publishes the new mark's readout as it enters, before its pointerdown releases
+    // the old pin; the new readout pins.
+    it("a tap on another mark while a card is pinned pins the new mark", async () => {
+        phone();
+        const s = mount();
+        await nextTick();
+        await tapBand(s, 160, 300);
+        expect(card()!.textContent).toContain("500 Mbps to 1 Gbps");
+        s.selection.hover("tier:1000", "band-cake");
+        s.readout.publish({
+            origin: "band-cake",
+            title: "1 Gbps or more",
+            facts: [{ label: "School units", value: "41" }],
+            anchor: { x: 240, y: 300 },
+            density: "compact",
+        });
+        touch("pointerdown", 240, 300);
+        await nextTick();
+        touch("pointerup", 240, 300);
+        s.selection.hover(null, "band-cake");
+        s.readout.clear("band-cake");
+        await frames(4);
+        expect(card(), "the second mark's pinned card").not.toBeNull();
+        expect(card()!.textContent).toContain("1 Gbps or more");
+    });
+
     it("a touch that moves (a scroll) pins nothing", async () => {
         phone();
         const stores = mount();

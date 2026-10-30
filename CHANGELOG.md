@@ -8,7 +8,8 @@
   card on the first readout, so the first tap published its readout, ended and saw its plate clear
   before the card existed, and pinned nothing. The tap clock now lives in the readout store beside
   `pointerAt`: `useHoverReadout` keeps `lastTap` and `published` (the last accepted readout and its
-  time; `clearAll` drops it), and the card settles a pin when it mounts. `TAP_MS` and `TAP_SLOP_PX`
+  time), and the card settles a pin when it mounts. A tap on a new mark while a card is pinned still
+  pins the new mark: only the pinned readout's own record is spent by the releasing tap. `TAP_MS` and `TAP_SLOP_PX`
   move to the store module. Witness: `HoverCard.tap-pin.browser.spec.ts` "a card that mounts after the
   first tap ended still pins that tap's readout", red before. The sci tap spec's first segment (High
   Cost) raised no card in Chromium and WebKit 2287.

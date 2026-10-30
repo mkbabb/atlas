@@ -58,9 +58,11 @@ export function useTapPin(opts: {
         if (e.pointerType !== "touch") return;
         const card = opts.card();
         if (pinned.value && !(card && e.target instanceof Node && card.contains(e.target))) {
-            // this tap releases the pin, so the readout it shows must not pin again when the tap
-            // ends; a readout this tap lands on another mark is a new record and still pins
-            spent = opts.published();
+            // this tap releases the pin, so the pinned readout must not pin again when the tap ends;
+            // a readout this tap lands on another mark (published as the touch entered it, before
+            // this pointerdown) is a new record and still pins
+            const last = opts.published();
+            if (last?.readout === pinned.value) spent = last;
             release();
         }
     }
