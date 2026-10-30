@@ -215,6 +215,14 @@ projecting components.
 | `FilterPanel` mounts its `body` when the drawer first opens or the door takes the pointer or focus, then keeps it mounted; before, the body mounted with the always-present sheet | none, unless a filter body runs setup work the page needs before the drawer opens: move that work to the route |
 | `MultiYearFigure`, `WindowArcPlate` and `TrajectoryPlate` emit `hover` with the measure key of the line under the pointer, or null | opt in: `@hover` on the sci utilization and USF decade figures |
 
+## 5j · U/B7d: hover with a grain, the unconditional appendix return link
+
+- `useSelection.hover(key, origin, kind)` takes the raw id's `SelectionKind`. Pass it wherever a mark
+  stands for an entity, so its hover card can open the detail. A composite key needs none.
+- `ProvenanceAppendix` drops `figureNos`; `figureOrdinalFor` is deleted. Every row links to
+  `#figure-<vizId>`. A figure with no `VizPlate` carries the anchor on its un-hosted `ProvenanceBar`.
+- `useComponentPointLoading` takes `figureHash`, the live hash.
+
 ## 6 · glass-ui 10.1.0
 
 Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.

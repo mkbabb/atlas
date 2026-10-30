@@ -4,6 +4,19 @@
 
 ### Fixes
 
+- **A click on a hover card opens its detail on every route (U/B7d M3 · F-14).** The card took its
+  entity from the hovered key, which a route writes as a raw id, so `parseSelKey` refused it and the
+  card offered nothing. `useSelection.hover(key, origin, kind)` now takes the id's grain and
+  `hoveredEntity` composes the selection key; the linked raise still reads the raw id. A Shift, Cmd or
+  Ctrl click on the card adds, as the same chord on the mark does. Witnesses:
+  `tests/unit/b7d-hover-entity.spec.ts`, `HoverCard.click-detail.browser.spec.ts`.
+
+- **Appendix rows link back to their figures (U/B7d M3 · PV-04).** The return link waited on a
+  `figureNos` roster no route supplied, and no figure carried the anchor it names. Every row now links
+  to `#figure-<vizId>`; a plate carries that id on its root and a plateless provenance bar on its own.
+  A hash that names a figure not yet mounted mounts the points and scrolls to it. `figureNos` and
+  `figureOrdinalFor` are deleted. Witness: `tests/unit/b7d-appendix-two-way.spec.ts`.
+
 - **Canvas labels take the page's prose family (U/B7d M3 · T-03).** A label whose option named no
   family painted in ECharts' default `sans-serif`, a face the page never sets. Every instance is now
   created with `canvasTextTheme()`, whose `textStyle.fontFamily` is the live `--font-serif` (the

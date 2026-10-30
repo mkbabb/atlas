@@ -208,7 +208,10 @@ const loadedComponentIds = useComponentPointLoading(
         eager: isCoverChapter(chapter, index) || index === firstFigureIndex,
     })),
     beatEls,
-    { fragment: route.hash ? decodeURIComponent(route.hash.slice(1)) : null },
+    {
+        fragment: route.hash ? decodeURIComponent(route.hash.slice(1)) : null,
+        figureHash: () => route.hash,
+    },
 );
 
 /** Whether a chapter's component point is still waiting for its idle mount (the beat reserves its

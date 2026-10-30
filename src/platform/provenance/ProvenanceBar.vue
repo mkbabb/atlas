@@ -41,7 +41,7 @@
 import { computed, ref, useId } from "vue";
 import { useProvenance, type ProvenanceSources } from "./useProvenance.js";
 import type { ProvenanceFacet } from "./provenance-contract.js";
-import { appendixAnchorId } from "./appendix.js";
+import { appendixAnchorId, plateAnchorId } from "./appendix.js";
 import {
     sourceLine as sourceLineOf,
     measureLine as measureLineOf,
@@ -109,6 +109,7 @@ const appendixHref = computed<string>(() => `#${appendixAnchorId(vizId)}`);
         class="provenance-bar"
         :data-viz-id="vizId"
         :data-detent="recordShown ? 'open' : 'shut'"
+        :id="hosted ? undefined : plateAnchorId(vizId)"
         data-testid="provenance-bar"
     >
         <!-- W-63 — THE ATTRIBUTION LINE. One credit, and the appendix row that carries the rest.

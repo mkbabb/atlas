@@ -57,6 +57,7 @@ import { transientSeat } from "./useCardPlacement.js";
 import { useDismissArbiter } from "../platform/interaction/useDismissArbiter.js";
 import { createHoverBridge } from "./hover-bridge.js";
 import { useSelection } from "../platform/stores/useSelection.js";
+import { isMultiSelect } from "../charts/contract/selection-contract.js";
 import { useEntityDetail } from "./describe-entity.js";
 import { useTapPin } from "./useTapPin.js";
 
@@ -314,9 +315,11 @@ watch(
 // and EntityDetail opens. A card for a mark that is not an entity (a period) offers no detail.
 const selection = useSelection();
 const detailKey = computed(() => (shown.value && shown.value !== tapPin.pinned.value ? (shown.value.entityKey ?? null) : null));
-function openDetail(): void {
+function openDetail(e: MouseEvent): void {
     const key = detailKey.value;
-    if (key && !selection.isSelected(key)) selection.select(key);
+    if (!key) return;
+    const additive = isMultiSelect(e);
+    if (additive || !selection.isSelected(key)) selection.select(key, { additive });
 }
 
 // THE LONG-NAME RECONCILIATION (G-NAME-RECONCILE) — the transient card is TERSE (a long title clamps

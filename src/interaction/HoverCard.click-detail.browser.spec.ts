@@ -73,6 +73,41 @@ describe("a click on the hover card", () => {
         expect(sheet!.querySelector(".entity-detail__name")?.textContent?.trim()).toBe("Bethel Hill Charter School");
     });
 
+    it("names the entity when the route hovers a raw id with its kind (U/B7d M3)", async () => {
+        await page.viewport(1440, 900);
+        const { selection, readout } = await mount();
+        selection.hover("73A", "sci-map", "district");
+        readout.publish({
+            origin: "sci-map",
+            title: "Bethel Hill Charter School",
+            facts: [{ label: "Contracted bandwidth", value: "250 Mbps" }],
+            anchor: { x: 400, y: 300 },
+            density: "compact",
+        });
+        await settle();
+        card()!.click();
+        await settle();
+        expect([...selection.selectedKeys]).toEqual(["district:73A"]);
+    });
+
+    it("a chord on the card adds the entity, as a chord on its mark does (M-02)", async () => {
+        await page.viewport(1440, 900);
+        const { selection, readout } = await mount();
+        selection.select("district:310");
+        selection.hover("73A", "sci-map", "district");
+        readout.publish({
+            origin: "sci-map",
+            title: "Bethel Hill Charter School",
+            facts: [{ label: "Contracted bandwidth", value: "250 Mbps" }],
+            anchor: { x: 400, y: 300 },
+            density: "compact",
+        });
+        await settle();
+        card()!.dispatchEvent(new MouseEvent("click", { bubbles: true, metaKey: true }));
+        await settle();
+        expect([...selection.selectedKeys]).toEqual(["district:310", "district:73A"]);
+    });
+
     it("on a period card offers no detail and selects nothing", async () => {
         await page.viewport(1440, 900);
         const { selection, readout } = await mount();

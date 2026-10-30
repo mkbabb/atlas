@@ -38,7 +38,7 @@
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
 import type { Fact } from "../../interaction/HoverCard.vue";
-import { parseSelKey, type Anchor } from "../../charts/contract/selection-contract.js";
+import type { Anchor } from "../../charts/contract/selection-contract.js";
 import { useSelection } from "./useSelection.js";
 
 /**
@@ -122,20 +122,10 @@ export interface HoverReadout {
     grain?: "state" | "county" | "district";
     /**
      * The entity the card stands for, as a selection key (U/B7d D1 · F-14). The store stamps it at
-     * publish from the live hovered key; a producer never sets it. Null when the hovered mark is not
-     * an entity (a period on a trend line), so the card offers no detail.
+     * publish from `useSelection.hoveredEntity`; a producer never sets it. Null when the hovered mark
+     * is not an entity (a period on a trend line), so the card offers no detail.
      */
     entityKey?: string | null;
-}
-
-/** The hovered key as an entity selection key, or null when it names no entity (`x:2017`). */
-function entityKeyOf(key: string | null): string | null {
-    if (key === null) return null;
-    try {
-        return parseSelKey(key).key;
-    } catch {
-        return null;
-    }
 }
 
 /** A pinned readout — the persistent card payload carrying its SELECTION key (so the card surface
@@ -232,7 +222,7 @@ export const useHoverReadout = defineStore("platform:hover-readout", () => {
         readout.value = {
             ...payload,
             anchor: settledAnchor(payload.anchor),
-            entityKey: entityKeyOf(selection.hoveredKey),
+            entityKey: selection.hoveredEntity,
         };
         // Tag the payload with the live hovered key (its selection key) so a subsequent select of
         // that key can auto-capture this payload into the pin tier (the universal pin-persist seam).
