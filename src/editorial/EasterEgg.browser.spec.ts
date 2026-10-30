@@ -1,7 +1,8 @@
 // The margin glyph paints at full opacity (U/B7 repair 1 · PLAN §4.2: no text below full opacity).
 // RC6 receded the whole egg with `opacity: var(--attn-chrome)`, so the dagger read at 0.46 in the
 // clone scroll-free witness on /sci, /usf and /ecf at 390 and 1440. The recession is now ink mixed
-// into the ground.
+// into the ground. U/B7d M3 repair 1 · T-12: the marker is a focusable button, and that mix read
+// 2.37-2.70:1 in dark on /sci, /usf and /ecf. Its resting ink is the muted foreground, unmixed.
 import { describe, expect, it } from "vitest";
 import { createApp, h } from "vue";
 import EasterEgg from "./EasterEgg.vue";
@@ -25,7 +26,7 @@ describe("EasterEgg at rest", () => {
                 o *= Number(getComputedStyle(a).opacity);
             expect(o).toBe(1);
             const ink = getComputedStyle(host.querySelector(".easter-egg__marker")!).color;
-            expect(ink).not.toBe("rgb(100, 100, 100)");
+            expect(ink).toBe("rgb(100, 100, 100)");
         } finally {
             app.unmount();
             host.remove();

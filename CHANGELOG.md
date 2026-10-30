@@ -4,6 +4,15 @@
 
 ### Fixes
 
+- **The readout figure holds the 12 px floor; the easter-egg marker holds the text floor (U/B7d M3 repair 1 ·
+  T-02, T-12).** `ReadoutFacts` set its figure one golden step below the card token, 11.87 px at 1.2rem.
+  The egg's marker is a focusable button, and mixing its ink into the ground read 2.37-2.70:1 in dark.
+  Witnesses: `ReadoutFacts.floor.browser.spec.ts`, `EasterEgg.browser.spec.ts`.
+
+- **A tap on empty field does not reselect an earlier mark (U/B7d M3 repair 1).** The shared-border click
+  read the last fine pointer's mark even after a touch came between. Witness:
+  `GeoChoropleth.border-click.browser.spec.ts`.
+
 - **A click on a shared border selects (U/B7d M3 · F-14).** A raised mark's stroke can cover a point on
   its border, so a press and a release land on two marks and the browser sends the click to their common
   ancestor. `GeoChoropleth` now selects the mark the pointer came up on. Witness:

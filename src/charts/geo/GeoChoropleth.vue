@@ -148,11 +148,13 @@ function onFieldClick(ev: MouseEvent) {
 }
 
 function onFieldPointerUp(ev: PointerEvent) {
+    const key = keyFromEvent(ev);
     if (ev.pointerType !== "touch" && ev.pointerType !== "pen") {
-        fineUpKey = keyFromEvent(ev);
+        fineUpKey = key;
         return;
     }
-    const key = keyFromEvent(ev);
+    // A coarse pointer's follow-on click must not read a mark an earlier mouse came up on.
+    fineUpKey = null;
     if (!key) return;
     lastTouchSelect.value = ev.timeStamp;
     emit("select", { key, multi: isMultiSelect(ev) });

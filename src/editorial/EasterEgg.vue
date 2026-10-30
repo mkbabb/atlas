@@ -26,7 +26,7 @@
 //      CANDIDATE — user signs IN/OUT. (SiteColophon is outside this lane's write-bound — SPEC'd in
 //      the lane's blockers, not built here.)
 //
-// THE RUNG — ④ chrome (the margin aside): EasterEgg binds --attn-chrome (0.46). The glyph is Fira
+// THE RUNG — ④ chrome (the margin aside): the muted ink at the text floor. The glyph is Fira
 // (the figures/chips face); the revealed detail wears the hover-card register (the platform's ONE
 // card). ≤1 per route (the §pop-budget fence — scarcity makes it a FIND, not a feature; the
 // manifest gate enforces it). Mints no hue.
@@ -146,8 +146,9 @@ function onKeydown(e: KeyboardEvent): void {
     min-width: 2.75rem;
     min-height: 2.75rem;
     padding: 0.2rem;
-    /* the rung ④ chrome recession, as ink mixed into the ground at opacity 1 (U/B7 · PLAN §4.2). */
-    color: color-mix(in oklab, var(--muted-foreground) calc(var(--attn-chrome) * 100%), var(--background));
+    /* A focusable control's ink holds the text floor: muted at rest, foreground on hover. Mixing
+       it into the ground read 2.37-2.70:1 in dark (U/B7d M3 repair 1 · T-12). */
+    color: var(--muted-foreground);
     background: transparent;
     border: 0;
     border-radius: var(--radius, 6px);
@@ -157,7 +158,7 @@ function onKeydown(e: KeyboardEvent): void {
 }
 .easter-egg__marker:hover,
 .easter-egg__marker:focus-visible {
-    color: color-mix(in oklab, var(--foreground) calc(var(--attn-chrome) * 100%), var(--background));
+    color: var(--foreground);
 }
 .easter-egg__marker:focus-visible {
     outline: 2px solid var(--focus-ring-color);
@@ -165,7 +166,7 @@ function onKeydown(e: KeyboardEvent): void {
 }
 /* The pinned state — a quiet tell the find is latched open (the F6.10 persist). */
 .easter-egg__marker[data-pinned] {
-    color: color-mix(in oklab, var(--foreground) calc(var(--attn-chrome) * 100%), var(--background));
+    color: var(--foreground);
 }
 .easter-egg__glyph {
     font-size: 0.85em;
