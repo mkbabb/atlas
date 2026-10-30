@@ -121,7 +121,8 @@ const transientOpen = computed(
 // so every mark has a phone readout. `card` is what renders: the live hover, else the pinned tap.
 const tapPin = useTapPin({
     enabled: () => tapPeek.value,
-    readout: () => sourceReadout.value,
+    lastTap: () => store.lastTap,
+    published: () => store.published,
     entityOpen: () => entityDetail.open,
     card: () => measureEl(),
 });

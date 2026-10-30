@@ -36,7 +36,7 @@
 // The transient tier is byte-unchanged at rest (zero pins ⇒ the E3 behaviour exactly).
 
 import { defineStore } from "pinia";
-import { computed, ref, watch } from "vue";
+import { computed, ref, shallowRef, watch } from "vue";
 import type { Fact } from "../../interaction/HoverCard.vue";
 import { parseSelKey, type Anchor } from "../../charts/contract/selection-contract.js";
 import { useSelection } from "./useSelection.js";
@@ -149,6 +149,16 @@ export interface PinnedReadout extends HoverReadout {
     multi-card ledger stays legible and the budget honest. A pin past the cap evicts the OLDEST. */
 export const PIN_CAP = 3;
 
+/** The longest press, and the farthest drift, that still count as a tap. */
+export const TAP_MS = 500;
+export const TAP_SLOP_PX = 10;
+
+/** A readout the store accepted, with the time it was published. */
+export interface PublishedReadout {
+    readout: HoverReadout;
+    t: number;
+}
+
 export const useHoverReadout = defineStore("platform:hover-readout", () => {
     /** The ONE live TRANSIENT readout, or null when no viz is publishing the hover (E3, unchanged). */
     const readout = ref<HoverReadout | null>(null);
@@ -192,6 +202,37 @@ export const useHoverReadout = defineStore("platform:hover-readout", () => {
     const pointerAt = (): { x: number; y: number } | null =>
         Number.isNaN(livePointer.x) ? null : { x: livePointer.x, y: livePointer.y };
 
+    /**
+     * THE LAST TAP (U/B7d M2, O-13) — the time the last touch that counted as a tap ended (a press of
+     * at most TAP_MS that drifted at most TAP_SLOP_PX), or -Infinity. With `published`, the phone tap
+     * pin's clock. It lives here for the reason `pointerAt` does: a consumer mounts the card lazily on
+     * the first readout, so the first tap on a page ends, and its plate clears, before the card exists.
+     */
+    const lastTap = ref(Number.NEGATIVE_INFINITY);
+    /** The last readout the store accepted and when; kept after the plate clears it. */
+    const published = shallowRef<PublishedReadout | null>(null);
+    if (typeof window !== "undefined") {
+        let down: { x: number; y: number; t: number } | null = null;
+        window.addEventListener(
+            "pointerdown",
+            (e: PointerEvent) => {
+                down = e.pointerType === "touch" ? { x: e.clientX, y: e.clientY, t: performance.now() } : null;
+            },
+            { capture: true, passive: true },
+        );
+        window.addEventListener(
+            "pointerup",
+            (e: PointerEvent) => {
+                if (e.pointerType !== "touch" || !down) return;
+                const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
+                const held = performance.now() - down.t;
+                down = null;
+                if (moved <= TAP_SLOP_PX && held <= TAP_MS) lastTap.value = performance.now();
+            },
+            { capture: true, passive: true },
+        );
+    }
+
     /** The card surface is open when EITHER a transient payload is live OR any datum is pinned —
         the projection of {transient} ∪ {pinned} (F6.10 §2.3). */
     const open = computed<boolean>(
@@ -234,6 +275,7 @@ export const useHoverReadout = defineStore("platform:hover-readout", () => {
             anchor: settledAnchor(payload.anchor),
             entityKey: entityKeyOf(selection.hoveredKey),
         };
+        published.value = { readout: readout.value, t: performance.now() };
         // Tag the payload with the live hovered key (its selection key) so a subsequent select of
         // that key can auto-capture this payload into the pin tier (the universal pin-persist seam).
         lastTransientKey.value = selection.hoveredKey;
@@ -266,6 +308,8 @@ export const useHoverReadout = defineStore("platform:hover-readout", () => {
     function clearAll(): void {
         readout.value = null;
         lastTransientKey.value = null;
+        // a dismissed readout is no tap's to pin (the Escape, outside-tap and route-change seams)
+        published.value = null;
         if (pinnedReadouts.value.size > 0) pinnedReadouts.value = new Map();
     }
 
@@ -367,5 +411,7 @@ export const useHoverReadout = defineStore("platform:hover-readout", () => {
         // The dismiss-everything seam (Esc / route-change) — blanks the transient + the pin tier.
         clearAll,
         pointerAt,
+        lastTap,
+        published,
     };
 });
