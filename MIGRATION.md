@@ -205,6 +205,15 @@ projecting components.
 | `atlas:route-chunks` folds each chunk that two or more routes load and whose modules hold under `MIN_SET_CHUNK` (8,192) characters into the smallest chunk of a covering route set that every route loads at once or whose modules are all effect-free, when every module in the small chunk is free of side effects, imports no sheet, and imports only what that set already loads (U/B7c M1). A route outside the small set fetches the folded bytes and evaluates nothing new. sci: 71 route script files → 48; /sci requests before the hero 48 → 36 | none |
 | The More gear (`DockSettings`) seats a face (the dock trigger's classes, name, seat mark and test id) and loads the live menu (`DockSettingsMenu`: the glass DropdownMenu, its trigger and the controls sheet) on the gear's first pointer, focus, press or open (U/B7c M1). glass's DropdownMenu root provides the whole reka DropdownMenu family and floating-ui; sci's entry: 422,519 → 340,008 B raw (125,808 → 105,960 B brotli 11) | none |
 
+## 5i · U/B7d: entity hops, the card click, line hover
+
+| Change | Consumer edit |
+|---|---|
+| `EntityDescription` takes `links?: EntityLink[]` (`{ label, to }`, exported from `@mkbabb/atlas/interaction`): EntityDetail lists each as a link under the identity line, and following one closes the detail (M-06) | opt in: a describer returns the hops for an entity, e.g. USF North Carolina → `/sci`, a unit → `/data/sci-schools?leaNumber=<lea>` |
+| A click on the hover card selects the entity it stands for and opens EntityDetail. The store stamps `entityKey` on each published readout from the live hovered key (null for a non-entity key such as a period `x:2019`); the card prints "Click for detail" only when it has one (F-14) | none; a publisher never sets `entityKey` |
+| Every real `TimeSeries` line is a stroke event target (`triggerLineEvent`), so `@hover` fires without `selectable-curves`. The builder dial `selectableCurves` in `TimeSeriesDials` is deleted; the SFC prop `selectableCurves` still gates the click latch | sci /demand crossover: drop `:selectable-curves="true"` unless the latch is wanted; `u-b7c-sci-line-hover` stops requiring it |
+| `MultiYearFigure`, `WindowArcPlate` and `TrajectoryPlate` emit `hover` with the measure key of the line under the pointer, or null | opt in: `@hover` on the sci utilization and USF decade figures |
+
 ## 6 · glass-ui 10.1.0
 
 Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.

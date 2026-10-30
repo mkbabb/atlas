@@ -4,6 +4,34 @@
 
 ### Fixes
 
+- **A click on the hover card opens its entity's detail (U/B7d D1 · F-14).** After the pointer visits
+  the card and returns, the card can rest over its own mark, so the click lands on the card. The card
+  stands for one entity: the store stamps the readout with the hovered entity key, and a click on the
+  card selects it, which opens EntityDetail. A period card has no entity and offers no detail. Witness:
+  `HoverCard.click-detail.browser.spec.ts`, 2 of 2 red before.
+
+- **A TimeSeries line hovers without the curve latch (U/B7d D1).** `@hover` fires from the stroke's
+  `mouseover`, which ECharts dispatches on a symbol-less line only under `triggerLineEvent`, and the
+  builder set that only under `selectableCurves`. Every real line now carries it. `MultiYearFigure`,
+  `WindowArcPlate` and `TrajectoryPlate` forward `hover`. Witnesses: `tests/unit/b7d-line-hover.spec.ts`
+  and `MultiYearFigure.hover.browser.spec.ts`, red before.
+
+- **The rail holds keyboard focus in Firefox (U/B7d D1).** The rail stayed open under a leaving pointer
+  only while `:focus-visible` matched inside it. Firefox does not match it on a trigger a closing list
+  refocuses after Escape, so the rail collapsed under keyboard focus. The hold now reads the last input
+  (a key press puts focus there; a pointer press does not). Witness: Dock.sitehold "with focus inside
+  the rail, the pointer leaving does not collapse it", red in Firefox before.
+
+- **The engine lane runs one file at a time (U/B7d D1).** Specs drive the engine's one pointer and
+  keyboard; with two files at once in one browser, Firefox's rail specs received each other's moves
+  (7 to 12 reds per lane run, 1 with one file at a time on the same head and glass).
+
+### Features
+
+- **Entity drill hops (U/B7d D1 · M-06).** `EntityDescription.links` lists the views one hop from an
+  entity; EntityDetail renders them as links and closes when one is followed. Witness:
+  `EntityDetail.browser.spec.ts` "M-06", red before.
+
 - **The hover card never seats over the pointer (U/B7c L · F-14).** The card takes the pointer, so a
   reader can move onto it, and it seated below and right of its datum's anchor. When the anchor is not
   under the pointer (a /sci charter catchment anchors at the school's internal point, about 200 px from
