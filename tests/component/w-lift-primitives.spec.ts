@@ -132,7 +132,7 @@ describe("A-03 — the crossing's own words", () => {
             position: "insideStartTop",
             rich: {
                 yr: { fontFamily: "Fira Code", fontWeight: 500, fontSize: 11, color: palette.diverging.low },
-                lab: { fontFamily: "Fira Code", fontWeight: 600, fontSize: 9, color: palette.diverging.low },
+                lab: { fontFamily: "Fira Code", fontWeight: 600, fontSize: 11, color: palette.diverging.low },
                 arr: { fontFamily: "Fira Code", fontWeight: 600, fontSize: 11, color: palette.diverging.low },
             },
         },
