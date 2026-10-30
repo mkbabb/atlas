@@ -56,6 +56,9 @@ export interface AppendixEntry {
     provenance: ResolvedProvenance;
     /** Source ids linked from this appendix record. */
     sourceIds?: readonly string[];
+    /** The element the row links back to, for a figure with no anchor of its own (a cover figure, a
+        scene of a stage): the id of the beat that holds it. Defaults to `plateAnchorId(vizId)`. */
+    figureAnchor?: string;
 }
 
 /** Declared-roster order is the appendix order, independent of mount or observation timing. */

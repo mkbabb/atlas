@@ -220,7 +220,8 @@ projecting components.
 - `useSelection.hover(key, origin, kind)` takes the raw id's `SelectionKind`. Pass it wherever a mark
   stands for an entity, so its hover card can open the detail. A composite key needs none.
 - `ProvenanceAppendix` drops `figureNos`; `figureOrdinalFor` is deleted. Every row links to
-  `#figure-<vizId>`. A figure with no `VizPlate` carries the anchor on its un-hosted `ProvenanceBar`.
+  `#figure-<vizId>`. A figure with no `VizPlate` carries the anchor on its un-hosted `ProvenanceBar`,
+  or its entry names the beat that holds it in `figureAnchor`.
 - `useComponentPointLoading` takes `figureHash`, the live hash.
 
 ## 6 · glass-ui 10.1.0

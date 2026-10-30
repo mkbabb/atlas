@@ -19,6 +19,11 @@ describe("the appendix's way back", () => {
         for (const id of ["a", "b"]) expect(html).toContain(`href="#${plateAnchorId(id)}"`);
     });
 
+    it("a row for a figure with no anchor of its own links to the beat that holds it", async () => {
+        const html = await renderToString(createSSRApp({ render: () => h(ProvenanceAppendix, { entries: [{ ...entry("cover-figure"), figureAnchor: "cover" }] }) }));
+        expect(html).toContain('href="#cover"');
+    });
+
     it("the figure hash prefix is the anchor's own", () => {
         expect(`#${plateAnchorId("a")}`.startsWith(FIGURE_HASH_PREFIX)).toBe(true);
     });

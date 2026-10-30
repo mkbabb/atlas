@@ -66,7 +66,7 @@ const cited = computed(() => dedupeSources(entries, sources));
                 </h3>
                 <a
                     class="provenance-appendix__return"
-                    :href="`#${plateAnchorId(entry.vizId)}`"
+                    :href="`#${entry.figureAnchor ?? plateAnchorId(entry.vizId)}`"
                     data-testid="provenance-appendix-return"
                 >
                     ↑ Back to the figure
