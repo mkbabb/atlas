@@ -4,6 +4,11 @@
 
 ### Fixes
 
+- **Chart text floors at 11 px (U/B7d M3 · T-02).** The time-series crossing and partial-year
+  eyebrows, the trajectory pin and rule labels painted at 9 px, and the treemap meta and residual
+  runs at 10 px. Each now paints at 11 px, the axis-tick floor; the treemap meta line height follows
+  (13 → 14). Witness: `tests/unit/b7d-chart-text-floor.spec.ts`, 5 sites before, 0 after.
+
 - **The route's filter body mounts on first use (U/B7d D1 · /sci TBT).** The Filters sheet is always
   mounted for its door, and the route's filter body inside it mounted with it, hidden. sci mounts the
   sheet once the page is idle, so on /sci the whole filter body (the unit picker over every school unit,
