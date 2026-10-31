@@ -73,11 +73,11 @@ const slugClass = computed(() => {
        prior flat `opacity: 0.58` STACKED on the parent's chromatic hero ink (a payer-red L0.62 that
        is only ~3.6:1 by design) sank the chromatic unit to 2.28 (usf 'B') — sub-AA. The recession
        is now carried by SIZE alone; the ink RE-CLAMPS the inherited hue into the body-legibility
-       band (the §INK contract applied to currentColor: L≤0.47 light / ≥0.75 dark, chroma-guarded),
+       band (the §INK contract applied to currentColor: L≤0.44 light / ≥0.75 dark, chroma-guarded),
        so a chromatic unit clears AA-normal at its own small size while the NEUTRAL (foreground) case
        is a no-op. One derivation, both themes, no second token. */
     color: light-dark(
-        oklch(from currentColor min(l, 0.47) min(c, 0.17) h),
+        oklch(from currentColor min(l, 0.44) min(c, 0.17) h),
         oklch(from currentColor max(l, 0.75) min(c, 0.15) h)
     );
 }

@@ -224,7 +224,7 @@ const appendixHref = computed<string>(() => `#${appendixAnchorId(vizId)}`);
 }
 .provenance-bar__source {
     min-inline-size: 0;
-    color: color-mix(in oklab, var(--foreground), transparent 32%);
+    color: color-mix(in oklab, var(--foreground), transparent 24%);
     text-wrap: pretty;
 }
 .provenance-bar__handle {
@@ -282,7 +282,7 @@ const appendixHref = computed<string>(() => `#${appendixAnchorId(vizId)}`);
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: light-dark(
-        color-mix(in oklab, var(--foreground), transparent 32%),
+        color-mix(in oklab, var(--foreground), transparent 24%),
         color-mix(in oklab, var(--foreground), transparent 5%)
     );
     white-space: nowrap;

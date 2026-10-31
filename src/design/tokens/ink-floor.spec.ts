@@ -3,10 +3,11 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { statInk } from "../../charts/legend/statInk";
 
 const css = readFileSync(resolve(process.cwd(), "src/design/tokens/color.css"), "utf8");
 const clamp = (name: string) => {
-    const m = new RegExp(`${name}: light-dark\\(\\s*oklch\\(from var\\([^)]*\\) min\\(l, ([\\d.]+)\\)`).exec(css);
+    const m = new RegExp(`${name}: light-dark\\(\\s*oklch\\(from var\\(.*?\\) min\\(l, ([\\d.]+)\\)`).exec(css);
     if (!m) throw new Error(name);
     return Number(m[1]);
 };
@@ -20,4 +21,14 @@ describe("the light scheme's ink clamps", () => {
         "%s large ink sits at L 0.60 or below",
         (name) => expect(clamp(name)).toBeLessThanOrEqual(0.6),
     );
+    it("statInk and FigureSlug share the body clamp", () => {
+        expect(statInk("--x")).toContain("min(l, 0.44)");
+        expect(readFileSync(resolve(process.cwd(), "src/charts/frame/FigureSlug.vue"), "utf8")).toContain("min(l, 0.44)");
+    });
+    it("the provenance text holds its floor on a route with a lighter foreground", () => {
+        for (const f of ["ProvenanceBar", "ProvenanceAppendix"]) {
+            const sfc = readFileSync(resolve(process.cwd(), `src/platform/provenance/${f}.vue`), "utf8");
+            expect(sfc).not.toMatch(/var\(--foreground\), transparent (32|28)%/);
+        }
+    });
 });

@@ -7,7 +7,7 @@ import { statInk } from "../../src/charts/legend/statInk";
 describe("the stat numeral's ink", () => {
     it("clamps the token into the legibility band in both schemes", () => {
         const ink = statInk("--viz-no-data");
-        expect(ink).toContain("oklch(from var(--viz-no-data) min(l, 0.47)");
+        expect(ink).toContain("oklch(from var(--viz-no-data) min(l, 0.44)");
         expect(ink).toContain("oklch(from var(--viz-no-data) max(l, 0.75)");
     });
     it("VizAggregateStats never paints a raw token", () => {

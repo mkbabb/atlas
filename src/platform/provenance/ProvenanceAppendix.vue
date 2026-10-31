@@ -142,7 +142,7 @@ const cited = computed(() => dedupeSources(entries, sources));
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: light-dark(
-        color-mix(in oklab, var(--foreground), transparent 32%),
+        color-mix(in oklab, var(--foreground), transparent 24%),
         color-mix(in oklab, var(--foreground), transparent 5%)
     );
 }
@@ -173,7 +173,7 @@ const cited = computed(() => dedupeSources(entries, sources));
     font-family: var(--font-mono, inherit);
     font-size: var(--type-micro);
     letter-spacing: 0.08em;
-    color: color-mix(in oklab, var(--foreground), transparent 28%);
+    color: color-mix(in oklab, var(--foreground), transparent 24%);
 }
 .provenance-appendix__return {
     flex: none;
@@ -211,7 +211,7 @@ const cited = computed(() => dedupeSources(entries, sources));
     letter-spacing: 0.12em;
     white-space: nowrap;
     color: light-dark(
-        color-mix(in oklab, var(--foreground), transparent 32%),
+        color-mix(in oklab, var(--foreground), transparent 24%),
         color-mix(in oklab, var(--foreground), transparent 5%)
     );
 }
@@ -240,7 +240,7 @@ const cited = computed(() => dedupeSources(entries, sources));
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: light-dark(
-        color-mix(in oklab, var(--foreground), transparent 32%),
+        color-mix(in oklab, var(--foreground), transparent 24%),
         color-mix(in oklab, var(--foreground), transparent 5%)
     );
 }
@@ -262,7 +262,7 @@ const cited = computed(() => dedupeSources(entries, sources));
     margin: 0;
     max-inline-size: 62ch;
     font-size: var(--type-micro);
-    color: color-mix(in oklab, var(--foreground), transparent 32%);
+    color: color-mix(in oklab, var(--foreground), transparent 24%);
     text-wrap: pretty;
 }
 .provenance-appendix__cite {
