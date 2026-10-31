@@ -138,6 +138,23 @@ describe("the route's filter body", () => {
         expect(controls(), "the body stays mounted after close").toBe(4);
     });
 
+    // MO-03 (U/B7d M2): the dock's trigger is the reader's way in at 1440. It did not arm the body, so
+    // the mount landed in the slide's first frames: drawer settle 124-148 ms -> 195-225 ms in WebKit 2287.
+    it("mounts when the reader reaches the dock's trigger, by pointer or by focus, before the press", async () => {
+        const controls = () => document.querySelectorAll("[data-testid^='filter-body-control-']").length;
+        await mount(1440, 900);
+        expect(controls(), "no body before the reach").toBe(0);
+        q("[data-testid='dock-filter-trigger']")!.dispatchEvent(new PointerEvent("pointerenter", { pointerType: "mouse" }));
+        expect(await until(() => controls() === 4), "pointer").toBe(true);
+        expect(isOpen(), "reaching does not open the drawer").toBe(false);
+        unmount?.();
+        unmount = null;
+        await mount(1440, 900);
+        expect(controls(), "a new panel starts unarmed").toBe(0);
+        q("[data-testid='dock-filter-trigger']")!.dispatchEvent(new FocusEvent("focus"));
+        expect(await until(() => controls() === 4), "focus").toBe(true);
+    });
+
     it("mounts when the pointer reaches the door, before the press", async () => {
         await mount(1440, 900);
         q("[data-filter-door]")!.dispatchEvent(new PointerEvent("pointerenter", { pointerType: "mouse" }));

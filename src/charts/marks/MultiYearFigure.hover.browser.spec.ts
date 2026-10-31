@@ -53,12 +53,30 @@ async function mount(component: Component, props: Record<string, unknown>) {
     return { el, hovered };
 }
 
+/**
+ * Resolve on the chart's first `finished`: its first render is drawn and the line's entrance
+ * reveal (600 ms) has run. Until then the reveal's clip has not reached every x, and a pointer
+ * there hits nothing. Subscribed as soon as the instance exists, which is before the first frame
+ * of a 600 ms animation, so the event cannot have passed.
+ */
+function firstFinished(chart: NonNullable<ReturnType<typeof getInstanceByDom>>, ms = 6000) {
+    return new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("the chart never finished its first render")), ms);
+        const done = () => {
+            clearTimeout(timer);
+            chart.off("finished", done);
+            resolve();
+        };
+        chart.on("finished", done);
+    });
+}
+
 /** Move the pointer onto the drawn line `name` at x, the way zrender reads a real pointer. */
 async function pointAtLine(el: HTMLElement, name: string, x: number, y: number) {
     const host = el.querySelector<HTMLElement>('[data-testid="time-series"]')!;
     await until(() => host.querySelector("canvas") !== null && getInstanceByDom(host) !== undefined);
-    await new Promise((r) => setTimeout(r, 300));
     const chart = getInstanceByDom(host)!;
+    await firstFinished(chart);
     const [px, py] = chart.convertToPixel({ seriesName: name }, [x, y]) as number[];
     const box = host.getBoundingClientRect();
     const surface = host.querySelector("canvas")!.parentElement as HTMLElement;

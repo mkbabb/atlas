@@ -4,6 +4,26 @@
 
 ### Fixes
 
+- **A section jump lands where it was sent (U/B7d M2 · WebKit).** On the first Sections jump after a
+  load, WebKit stopped the smooth scroll 360 to 381 px short when focus moved as the list closed, with
+  `?at=` written and the label a section behind (2 of 25 jumps in the engine harness; the served /sci
+  landed 8 of 8 before and after). `scrollToSection` now resumes once when a scroll holds still short
+  without reader input. Witness: `scroll-anchor.browser.spec.ts`, red before.
+- **The dock's Filters trigger arms the route's filter body (U/B7d M2 · MO-03).** The body mounts on
+  first use, and only the panel's own door armed it, so at 1440 the mount landed in the drawer's first
+  frames. Reaching the dock's trigger by pointer or focus now arms it. `useFilterPane` keeps
+  `bodyArmed` and `armBody`; a new panel starts unarmed. Witness: `FilterPanel.drawer.browser.spec.ts`
+  "mounts when the reader reaches the dock's trigger", red before.
+- **The phone tap pin reads the first tap on a page (U/B7d M2 · O-13).** A consumer mounts the hover
+  card on the first readout, so the first tap published its readout, ended and saw its plate clear
+  before the card existed, and pinned nothing. The tap clock now lives in the readout store beside
+  `pointerAt`: `useHoverReadout` keeps `lastTap` and `published` (the last accepted readout and its
+  time), and the card settles a pin when it mounts. A tap on a new mark while a card is pinned still
+  pins the new mark: only the pinned readout's own record is spent by the releasing tap. `TAP_MS` and `TAP_SLOP_PX`
+  move to the store module. Witness: `HoverCard.tap-pin.browser.spec.ts` "a card that mounts after the
+  first tap ended still pins that tap's readout", red before. The sci tap spec's first segment (High
+  Cost) raised no card in Chromium and WebKit 2287.
+
 - **The route's filter body mounts on first use (U/B7d D1 · /sci TBT).** The Filters sheet is always
   mounted for its door, and the route's filter body inside it mounted with it, hidden. sci mounts the
   sheet once the page is idle, so on /sci the whole filter body (the unit picker over every school unit,

@@ -4,7 +4,7 @@
 // query; the spec answers it as a phone does.
 import "../../tests/browser/utilities.css";
 import { afterEach, describe, expect, it } from "vitest";
-import { createApp, defineComponent, h, nextTick } from "vue";
+import { createApp, defineComponent, h, nextTick, ref } from "vue";
 import { createPinia, setActivePinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
 import HoverCard from "./HoverCard.vue";
@@ -38,13 +38,19 @@ function touch(type: "pointerdown" | "pointerup", x: number, y: number, target: 
     target.dispatchEvent(new PointerEvent(type, { pointerType: "touch", clientX: x, clientY: y, bubbles: true }));
 }
 
-function mount() {
+/**
+ * The app with its platform stores, and the card behind a gate the way a consumer mounts it lazily
+ * (sci DashboardView: `<HoverCard v-if="readOnce" />`). `mounted: false` leaves the card unmounted
+ * until `showCard()`.
+ */
+function mount({ mounted = true } = {}) {
     const pinia = createPinia();
     setActivePinia(pinia);
     const router = createRouter({ history: createMemoryHistory(), routes: [{ path: "/", component: { render: () => null } }] });
     const el = document.createElement("div");
     document.body.appendChild(el);
-    const app = createApp(defineComponent({ setup: () => () => h(HoverCard) }));
+    const gate = ref(mounted);
+    const app = createApp(defineComponent({ setup: () => () => (gate.value ? h(HoverCard) : null) }));
     app.use(pinia).use(router);
     installDashboardRegistry(app, { getDashboards: () => [], findDashboard: () => undefined });
     app.mount(el);
@@ -52,7 +58,7 @@ function mount() {
         app.unmount();
         el.remove();
     });
-    return { readout: useHoverReadout(pinia), selection: useSelection(pinia) };
+    return { readout: useHoverReadout(pinia), selection: useSelection(pinia), showCard: () => (gate.value = true) };
 }
 
 /** A plate's tap on a band: the touch lands a readout, then the pointer leaves (the plate clears). */
@@ -87,6 +93,57 @@ describe("HoverCard on the phone: a tap pins a mark that is not an entity", () =
         touch("pointerup", 20, 700);
         await frames();
         expect(card(), "released by a tap elsewhere").toBeNull();
+    });
+
+    // U/B7d M2 (WebKit queue; the sci tap spec's first-tap red). A consumer mounts the card lazily on
+    // the first readout (sci DashboardView: `v-if="readOnce"`), so the first tap on a page ends, and
+    // its plate clears, before the card exists. The card that mounts then still pins that tap.
+    it("a card that mounts after the first tap ended still pins that tap's readout", async () => {
+        phone();
+        const s = mount({ mounted: false });
+        await tapBand(s, 160, 300);
+        expect(card(), "no card before it mounts").toBeNull();
+        s.showCard();
+        await frames(4);
+        expect(card(), "the first tap's pinned card").not.toBeNull();
+        expect(card()!.textContent).toContain("500 Mbps to 1 Gbps");
+        expect(card()!.hasAttribute("data-tap-pinned")).toBe(true);
+    });
+
+    it("a card that mounts after a scroll ended pins nothing", async () => {
+        phone();
+        const s = mount({ mounted: false });
+        await tapBand(s, 160, 300, 60);
+        s.showCard();
+        await frames(4);
+        expect(card()).toBeNull();
+    });
+
+    // The sci tap spec's second and fourth segments (U/B7d M2): a tap on a new mark while a card is
+    // pinned. The touch publishes the new mark's readout as it enters, before its pointerdown releases
+    // the old pin; the new readout pins.
+    it("a tap on another mark while a card is pinned pins the new mark", async () => {
+        phone();
+        const s = mount();
+        await nextTick();
+        await tapBand(s, 160, 300);
+        expect(card()!.textContent).toContain("500 Mbps to 1 Gbps");
+        s.selection.hover("tier:1000", "band-cake");
+        s.readout.publish({
+            origin: "band-cake",
+            title: "1 Gbps or more",
+            facts: [{ label: "School units", value: "41" }],
+            anchor: { x: 240, y: 300 },
+            density: "compact",
+        });
+        touch("pointerdown", 240, 300);
+        await nextTick();
+        touch("pointerup", 240, 300);
+        s.selection.hover(null, "band-cake");
+        s.readout.clear("band-cake");
+        await frames(4);
+        expect(card(), "the second mark's pinned card").not.toBeNull();
+        expect(card()!.textContent).toContain("1 Gbps or more");
     });
 
     it("a touch that moves (a scroll) pins nothing", async () => {

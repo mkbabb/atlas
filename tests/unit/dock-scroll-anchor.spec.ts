@@ -144,6 +144,36 @@ describe("dock semantic section scroll", () => {
         expect(fixture.scrollIntoView).toHaveBeenCalledTimes(2);
     });
 
+    it("resumes once when the page holds still short of the endpoint at scrollend", async () => {
+        const fixture = anchorFixture();
+        const frames = () => new Promise((done) => setTimeout(done, 20));
+
+        scrollToSection("scatter");
+        fixture.setScrollY(40);
+        fixture.document.dispatchEvent(new Event("scrollend"));
+        await frames();
+        expect(fixture.scrollIntoView).toHaveBeenCalledTimes(2);
+
+        fixture.document.dispatchEvent(new Event("scrollend"));
+        await frames();
+        expect(fixture.scrollIntoView, "once only").toHaveBeenCalledTimes(2);
+    });
+
+    it("spends no resume on a stale scrollend while the page is moving", async () => {
+        const fixture = anchorFixture();
+        const frames = () => new Promise((done) => setTimeout(done, 20));
+
+        scrollToSection("scatter");
+        fixture.document.dispatchEvent(new Event("scrollend"));
+        fixture.setScrollY(40);
+        await frames();
+        expect(fixture.scrollIntoView).toHaveBeenCalledOnce();
+
+        fixture.document.dispatchEvent(new Event("scrollend"));
+        await frames();
+        expect(fixture.scrollIntoView).toHaveBeenCalledTimes(2);
+    });
+
     it("includes target margin and root padding in the requested endpoint", () => {
         const fixture = anchorFixture({ paddingTop: "16px" });
 
