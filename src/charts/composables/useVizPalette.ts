@@ -167,6 +167,16 @@ function resolveColorsBatch(exprs: { expr: string; fallback: string }[]): string
     the palette snapshots its ramps with (zero new colour machinery; the canvas-colour law holds — an
     ECharts/WebGL surface cannot read a CSS var, so the pole must arrive as a concrete `rgb(…)`). One
     batched recalc for the ≤2 pole exprs; each falls to its `fallback` under SSR/happy-dom (no cascade). */
+/**
+ * The init theme every chart instance takes (U/B7d M3 · T-03). A canvas label whose option names
+ * no family painted in ECharts' default "sans-serif", a face the page never sets (/bead 390 labels,
+ * /usf 56, /sci 18, /vft 74 on the B7d re-measure). The theme's `textStyle.fontFamily` is the
+ * page's live prose family, so a label that names none inherits it; a label that names one keeps it.
+ */
+export function canvasTextTheme(): { textStyle: { fontFamily: string } } {
+    return { textStyle: { fontFamily: cssTypography().fontSerif } };
+}
+
 export function resolveAtmosphereColors(
     exprs: { expr: string; fallback: string }[],
 ): string[] {

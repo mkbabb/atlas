@@ -23,6 +23,74 @@
   move to the store module. Witness: `HoverCard.tap-pin.browser.spec.ts` "a card that mounts after the
   first tap ended still pins that tap's readout", red before. The sci tap spec's first segment (High
   Cost) raised no card in Chromium and WebKit 2287.
+- **The ink clamps hold their floors on a plate (U/B7d M3 repair 1 · T-12).** The light body ink moves from
+  L 0.47 to 0.44 and the large ink from 0.62 to 0.60; they read 4.37:1 and 2.96:1. Witness:
+  `ink-floor.spec.ts`.
+
+- **A glass-ui component sheet sits in the atlas layers (U/B7d M3 repair 1).** Its JS module imports it, so
+  it never passes through the root, and a top-level `@layer components` loses to Tailwind's preflight in
+  `atlas.recipes.base`. `/sci` and `/usf` option toggles painted square with 0 padding. `atlas:layers` now
+  wraps these sheets as it wraps the root. Witness: `preset.spec.ts`.
+
+- **`labelLayout` works in a production build on every chart (U/B7d M3 repair 1).** `useEChart` registers
+  `LabelLayout`. echarts' core entry installs it in dev only: the package declares the entry free of side
+  effects, so a production build drops it, and only `TimeSeries` registered it. Until a `TimeSeries` chunk
+  loaded, `hideOverlap` did nothing and the /sci scatter's outlier names overprinted. Witness:
+  `useEChart.label-layout.spec.ts`.
+
+- **The readout figure holds the 12 px floor; the easter-egg marker holds the text floor (U/B7d M3 repair 1 ·
+  T-02, T-12).** `ReadoutFacts` set its figure one golden step below the card token, 11.87 px at 1.2rem.
+  The egg's marker is a focusable button, and mixing its ink into the ground read 2.37-2.70:1 in dark.
+  Witnesses: `ReadoutFacts.floor.browser.spec.ts`, `EasterEgg.browser.spec.ts`.
+
+- **A tap on empty field does not reselect an earlier mark (U/B7d M3 repair 1).** The shared-border click
+  read the last fine pointer's mark even after a touch came between. Witness:
+  `GeoChoropleth.border-click.browser.spec.ts`.
+
+- **A click on a shared border selects (U/B7d M3 · F-14).** A raised mark's stroke can cover a point on
+  its border, so a press and a release land on two marks and the browser sends the click to their common
+  ancestor. `GeoChoropleth` now selects the mark the pointer came up on. Witness:
+  `GeoChoropleth.border-click.browser.spec.ts`.
+
+- **Focus on a figure keeps the detail open (U/B7d M3 · M-02).** The non-modal sheet guarded a pointer
+  press on a figure but not focus moving onto one, so focus closed the sheet and cleared the selection
+  before the mark's click ran. After a detail opened from a hover card, a chord on the next mark replaced
+  the unit instead of adding it. Witness: `EntityDetail.focus-outside.browser.spec.ts`.
+
+- **Stat numerals stay legible in both schemes (U/B7d M3 · T-12).** A stat that names a chart fill token
+  printed in that fill: `--viz-no-data` read 1.01:1 on the light ground and 1.42:1 on the dark one (/bead),
+  `--viz-diverging-mid` 1.43:1 and 1.88:1 (/usf-integrity). `VizAggregateStats` now passes the token
+  through `statInk`, the §INK clamp. Witness: `tests/unit/b7d-stat-ink.spec.ts`.
+
+- **One provenance line, one size (U/B7d M3 · PV-03).** The cover's provenance line set at `--type-micro`
+  (12 px) while every plate's strip sets at `--type-small`. It now sets at `--type-small`.
+
+- **A unit with no measures can say why (U/B7d M3 · PR-03).** `EntityDescription.note` prints under the
+  sheet's header, so a unit a route draws but holds no row for names itself and states the reason.
+
+- **A click on a hover card opens its detail on every route (U/B7d M3 · F-14).** The card took its
+  entity from the hovered key, which a route writes as a raw id, so `parseSelKey` refused it and the
+  card offered nothing. `useSelection.hover(key, origin, kind)` now takes the id's grain and
+  `hoveredEntity` composes the selection key; the linked raise still reads the raw id. A Shift, Cmd or
+  Ctrl click on the card adds, as the same chord on the mark does. Witnesses:
+  `tests/unit/b7d-hover-entity.spec.ts`, `HoverCard.click-detail.browser.spec.ts`.
+
+- **Appendix rows link back to their figures (U/B7d M3 · PV-04).** The return link waited on a
+  `figureNos` roster no route supplied, and no figure carried the anchor it names. Every row now links
+  to `#figure-<vizId>`; a plate carries that id on its root and a plateless provenance bar on its own.
+  A hash that names a figure not yet mounted mounts the points and scrolls to it. `figureNos` and
+  `figureOrdinalFor` are deleted. Witness: `tests/unit/b7d-appendix-two-way.spec.ts`.
+
+- **Canvas labels take the page's prose family (U/B7d M3 · T-03).** A label whose option named no
+  family painted in ECharts' default `sans-serif`, a face the page never sets. Every instance is now
+  created with `canvasTextTheme()`, whose `textStyle.fontFamily` is the live `--font-serif` (the
+  sans-UI stack on the dashboards); a label that names its own family keeps it. Witness:
+  `tests/unit/b7d-canvas-text-theme.spec.ts`, red before.
+
+- **Chart text floors at 11 px (U/B7d M3 · T-02).** The time-series crossing and partial-year
+  eyebrows, the trajectory pin and rule labels painted at 9 px, and the treemap meta and residual
+  runs at 10 px. Each now paints at 11 px, the axis-tick floor; the treemap meta line height follows
+  (13 → 14). Witness: `tests/unit/b7d-chart-text-floor.spec.ts`, 5 sites before, 0 after.
 
 - **The route's filter body mounts on first use (U/B7d D1 · /sci TBT).** The Filters sheet is always
   mounted for its door, and the route's filter body inside it mounted with it, hidden. sci mounts the

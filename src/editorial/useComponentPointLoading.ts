@@ -1,4 +1,5 @@
 import { onScopeDispose, ref, watch, type Ref } from "vue";
+import { FIGURE_HASH_PREFIX } from "../platform/provenance/appendix.js";
 
 export interface ComponentPointLoad {
     id: string;
@@ -9,6 +10,8 @@ export interface ComponentPointLoad {
 export interface ComponentPointLoadingOptions {
     /** The cold `#fragment` the page opened on (decoded, no `#`), or null. */
     fragment?: string | null;
+    /** The live hash; one that names an absent figure mounts every point (PV-04). */
+    figureHash?: () => string;
     /** How far ahead of the viewport a beat queues its mount, in viewport heights. */
     aheadViewports?: number;
     /** The idle-callback deadline: the mount runs by then even on a busy main thread. */
@@ -41,11 +44,56 @@ const cancelIdle: (h: IdleHandle) => void =
  * Eager points (the cover) mount at setup. A cold `#fragment` naming a component beat mounts that
  * beat and the beat before it at setup, so the restore lands on content that is already there.
  */
+/** How long a figure's hash waits for its figure to mount before the page stays where it is. */
+const FIGURE_HASH_WAIT_MS = 6000;
+
+/**
+ * PV-04 (U/B7d M3) · An appendix row links back to its figure, and the reader can reach the appendix
+ * without scrolling past every beat, so the figure may not have mounted. A hash that names an absent
+ * figure mounts every point, waits for the figure, and scrolls to it.
+ */
+function watchFigureHash(
+    hash: () => string,
+    points: readonly ComponentPointLoad[],
+    loaded: Ref<ReadonlySet<string>>,
+): void {
+    let stop: (() => void) | null = null;
+    onScopeDispose(() => stop?.());
+    watch(
+        hash,
+        (h) => {
+            stop?.();
+            stop = null;
+            if (!h.startsWith(FIGURE_HASH_PREFIX) || typeof MutationObserver === "undefined") return;
+            const id = decodeURIComponent(h.slice(1));
+            if (document.getElementById(id)) return;
+            loaded.value = new Set(points.filter((p) => p.component).map((p) => p.id));
+            const land = (): boolean => {
+                const el = document.getElementById(id);
+                if (el) el.scrollIntoView({ block: "start" });
+                return Boolean(el);
+            };
+            const mo = new MutationObserver(() => {
+                if (land()) stop?.();
+            });
+            const timer = window.setTimeout(() => stop?.(), FIGURE_HASH_WAIT_MS);
+            stop = () => {
+                mo.disconnect();
+                window.clearTimeout(timer);
+                stop = null;
+            };
+            mo.observe(document.body, { childList: true, subtree: true });
+        },
+        { immediate: true },
+    );
+}
+
 export function useComponentPointLoading(
     points: readonly ComponentPointLoad[],
     beatEls: readonly Ref<HTMLElement | null>[],
     {
         fragment = null,
+        figureHash,
         aheadViewports = POINT_MOUNT_AHEAD_VIEWPORTS,
         idleTimeoutMs = POINT_MOUNT_IDLE_TIMEOUT_MS,
     }: ComponentPointLoadingOptions = {},
@@ -58,6 +106,7 @@ export function useComponentPointLoading(
         }
     }
     const loaded = ref<ReadonlySet<string>>(initial);
+    if (figureHash) watchFigureHash(figureHash, points, loaded);
 
     if (typeof IntersectionObserver === "undefined") return loaded;
 

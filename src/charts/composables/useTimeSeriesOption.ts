@@ -134,7 +134,7 @@ export function buildTimeSeriesOption(
                     lab: {
                         fontFamily: palette.fontMono,
                         fontWeight: 600,
-                        fontSize: 9,
+                        fontSize: 11,
                         color: palette.muted,
                     },
                 },

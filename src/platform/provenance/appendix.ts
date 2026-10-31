@@ -13,10 +13,14 @@ export function appendixAnchorId(vizId: string): string {
     return `provenance-appendix-${vizId}`;
 }
 
-/** Stable figure-side target for the appendix's return link. */
+/** The figure's own anchor, the target of its appendix row's return link. A plate carries it on its
+    root; a figure drawn without a plate (a cover, a stage scene) carries it on its provenance bar. */
 export function plateAnchorId(vizId: string): string {
     return `figure-${vizId}`;
 }
+
+/** The anchor's hash prefix: a hash that begins with it names a figure, which may not have mounted. */
+export const FIGURE_HASH_PREFIX = "#figure-";
 
 /** The appendix disclosure has exactly three public detents. */
 export type AppendixDetent = "shut" | "peek" | "full";
@@ -52,6 +56,9 @@ export interface AppendixEntry {
     provenance: ResolvedProvenance;
     /** Source ids linked from this appendix record. */
     sourceIds?: readonly string[];
+    /** The element the row links back to, for a figure with no anchor of its own (a cover figure, a
+        scene of a stage): the id of the beat that holds it. Defaults to `plateAnchorId(vizId)`. */
+    figureAnchor?: string;
 }
 
 /** Declared-roster order is the appendix order, independent of mount or observation timing. */
@@ -60,16 +67,4 @@ export function appendixOrdinal(index: number): string {
         throw new RangeError("Appendix index must be a non-negative integer.");
     }
     return `A.${index + 1}`;
-}
-
-/** Resolve a figure number from the route-authored stable-id roster. */
-export function figureOrdinalFor(
-    figureNos: Readonly<Record<string, number>>,
-    vizId: string,
-): number {
-    const figureNo = figureNos[vizId];
-    if (!Number.isInteger(figureNo) || figureNo < 1) {
-        throw new Error(`No figure ordinal is declared for "${vizId}".`);
-    }
-    return figureNo;
 }

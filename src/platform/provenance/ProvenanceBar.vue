@@ -41,7 +41,7 @@
 import { computed, ref, useId } from "vue";
 import { useProvenance, type ProvenanceSources } from "./useProvenance.js";
 import type { ProvenanceFacet } from "./provenance-contract.js";
-import { appendixAnchorId } from "./appendix.js";
+import { appendixAnchorId, plateAnchorId } from "./appendix.js";
 import {
     sourceLine as sourceLineOf,
     measureLine as measureLineOf,
@@ -109,6 +109,7 @@ const appendixHref = computed<string>(() => `#${appendixAnchorId(vizId)}`);
         class="provenance-bar"
         :data-viz-id="vizId"
         :data-detent="recordShown ? 'open' : 'shut'"
+        :id="hosted ? undefined : plateAnchorId(vizId)"
         data-testid="provenance-bar"
     >
         <!-- W-63 — THE ATTRIBUTION LINE. One credit, and the appendix row that carries the rest.
@@ -219,11 +220,11 @@ const appendixHref = computed<string>(() => `#${appendixAnchorId(vizId)}`);
     align-items: baseline;
     gap: 0.15rem 0.5rem;
     margin: 0;
-    font-size: var(--type-micro);
+    font-size: var(--type-small, 0.875rem);
 }
 .provenance-bar__source {
     min-inline-size: 0;
-    color: color-mix(in oklab, var(--foreground), transparent 32%);
+    color: color-mix(in oklab, var(--foreground), transparent 24%);
     text-wrap: pretty;
 }
 .provenance-bar__handle {
@@ -281,7 +282,7 @@ const appendixHref = computed<string>(() => `#${appendixAnchorId(vizId)}`);
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: light-dark(
-        color-mix(in oklab, var(--foreground), transparent 32%),
+        color-mix(in oklab, var(--foreground), transparent 24%),
         color-mix(in oklab, var(--foreground), transparent 5%)
     );
     white-space: nowrap;

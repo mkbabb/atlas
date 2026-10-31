@@ -140,7 +140,6 @@ import {
     MarkAreaComponent,
     MarkLineComponent,
 } from "echarts/components";
-import { LabelLayout } from "echarts/features";
 import type { EChartsOption } from "echarts";
 import { useEChart } from "../composables/useEChart.js";
 import { useVizPalette } from "../composables/useVizPalette.js";
@@ -160,10 +159,6 @@ use([
     MarkPointComponent,
     MarkAreaComponent,
     MarkLineComponent,
-    // The label de-collision feature (DIRECT END-OF-LINE LABELS, 1.4.1) — `labelLayout.moveOverlap`
-    // pushes near-coincident `endLabel`s apart vertically (the no-smoke 86% / smoke 80% terminals).
-    // Additive: a consumer that declares no `endLabel` registers the feature but emits no labels.
-    LabelLayout,
 ]);
 
 // `SeriesPoint` / `LineSeries` / `BOUNDARY_AXIS` are declared in the sibling <script> block

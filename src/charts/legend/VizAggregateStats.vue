@@ -25,6 +25,7 @@
 // number layout. Tinting is a CSS-var NAME off the facet's `colorVar` (the i0-colorkind-law: never a
 // hex). The data is the contract's thunk off the store reducers (the live face) — J-STORY PLACES it,
 // it never re-computes the magnitude (J-DATA's).
+import { statInk } from "./statInk.js";
 import { computed } from "vue";
 import FigureSlug from "../frame/FigureSlug.vue";
 import type { AggregateStat } from "../contract/viz-contract.js";
@@ -44,6 +45,10 @@ const props = withDefaults(
 const lead = computed<AggregateStat | undefined>(() => props.stats[0]);
 /** The supporting stats — stepped beneath the lead at the card rung (the hierarchy). */
 const supports = computed<AggregateStat[]>(() => props.stats.slice(1));
+
+// T-12 (U/B7d M3): a stat names a chart FILL token, and a fill can sit next to the page's own ground
+// (--viz-no-data read 1.01:1 on cream). The numeral takes the hue through the §INK clamp every slug
+// suffix already uses, so it stays legible in both schemes.
 </script>
 
 <template>
@@ -66,9 +71,7 @@ const supports = computed<AggregateStat[]>(() => props.stats.slice(1));
                 <FigureSlug
                     size="slug"
                     data-attn-mark="aggregate-hero"
-                    :style="
-                        lead.colorVar ? { color: `var(${lead.colorVar})` } : undefined
-                    "
+                    :style="lead.colorVar ? { color: statInk(lead.colorVar) } : undefined"
                     >{{ lead.value }}</FigureSlug
                 >
             </dd>
@@ -84,7 +87,7 @@ const supports = computed<AggregateStat[]>(() => props.stats.slice(1));
             <dd class="agg-stat__value">
                 <FigureSlug
                     size="card"
-                    :style="s.colorVar ? { color: `var(${s.colorVar})` } : undefined"
+                    :style="s.colorVar ? { color: statInk(s.colorVar) } : undefined"
                     >{{ s.value }}</FigureSlug
                 >
             </dd>

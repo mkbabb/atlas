@@ -572,13 +572,13 @@
    ink lands ~5:1, the dark ~8:1 vs their grounds (§F2's Y≈L³ prediction).
 
    THE TWO REGISTERS (§F2 large-text relaxation · [ANSWERS Q-13] clamp ALL, heroes RIDE AA-large):
-     · body register — normal text (AA ≥4.5): L≤0.47 light / L≥0.75 dark. NOTE (O-C2-TAIL · the
+     · body register — normal text (AA ≥4.5): L≤0.44 light / L≥0.75 dark. NOTE (O-C2-TAIL · the
        G16 LEAD RULING, Q-13 clamp-all fidelity): the light-arm floor tightened 0.52→0.47 so
        chromatic BODY text (the key-stat card figures, the axis-keyed words, the void-mark) clears
        AA-normal 4.5 across the gamut — at 0.52 the cool poles (sequential-high L0.52, the green/
        teal) and even the warm diverging-low card figures sat 3.9–4.4. Heroes keep the -lg arm.
      · `-lg` register — the audacious HEROES (≥24px, or ≥18.66px bold): the AA-large relaxation
-       (≥3.0) L≤0.62 light / L≥0.66 dark — they keep MOST of their vividness yet stay both-theme
+       (≥3.0) L≤0.60 light / L≥0.66 dark — they keep MOST of their vividness yet stay both-theme
        readable (the vivid-crown EXEMPTION is REJECTED, Q-13; the heroes ARE clamped, just to the
        looser large-text band). Measured: ~3.3:1 light / ~6.2:1 dark. NOTE (tree-over-spec): the
        O-C7 draft line cites "dark ≥0.75" for the large relaxation, which is the BODY floor (no
@@ -596,47 +596,47 @@
 :root {
     /* body register (AA ≥4.5) — the pole/accent as READABLE text ink */
     --ink-diverging-low: light-dark(
-        oklch(from var(--viz-diverging-low) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--viz-diverging-low) min(l, 0.44) min(c, 0.17) h),
         oklch(from var(--viz-diverging-low) max(l, 0.75) min(c, 0.15) h)
     );
     --ink-diverging-high: light-dark(
-        oklch(from var(--viz-diverging-high) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--viz-diverging-high) min(l, 0.44) min(c, 0.17) h),
         oklch(from var(--viz-diverging-high) max(l, 0.75) min(c, 0.15) h)
     );
     --ink-sequential-high: light-dark(
-        oklch(from var(--viz-sequential-high) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--viz-sequential-high) min(l, 0.44) min(c, 0.17) h),
         oklch(from var(--viz-sequential-high) max(l, 0.75) min(c, 0.15) h)
     );
     /* the chrome PRIMARY as text ink (the filter dim value, the drawer crosslink, the gallery CTA)
        — a clamp that is a no-op on glass-ui's already-readable primary and lifts a route-overridden
        accent (vft shadyshroom) into band. */
     --ink-primary: light-dark(
-        oklch(from var(--primary) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--primary) min(l, 0.44) min(c, 0.17) h),
         oklch(from var(--primary) max(l, 0.75) min(c, 0.15) h)
     );
     /* the per-card / per-datum default — the gallery cell re-declares this from its own `--accent`
        (see GalleryView); this :root default keeps the token always-resolved off `--accent`. */
     --ink-accent: light-dark(
-        oklch(from var(--accent, var(--primary)) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--accent, var(--primary)) min(l, 0.44) min(c, 0.17) h),
         oklch(from var(--accent, var(--primary)) max(l, 0.75) min(c, 0.15) h)
     );
     /* `-lg` register (AA-large ≥3.0) — the audacious HERO crowns ride this looser band, keeping
-       more vividness (L≤0.62 light / L≥0.66 dark). */
+       more vividness (L≤0.60 light / L≥0.66 dark). */
     --ink-diverging-low-lg: light-dark(
-        oklch(from var(--viz-diverging-low) min(l, 0.62) min(c, 0.17) h),
+        oklch(from var(--viz-diverging-low) min(l, 0.60) min(c, 0.17) h),
         oklch(from var(--viz-diverging-low) max(l, 0.66) min(c, 0.15) h)
     );
     --ink-diverging-high-lg: light-dark(
-        oklch(from var(--viz-diverging-high) min(l, 0.62) min(c, 0.17) h),
+        oklch(from var(--viz-diverging-high) min(l, 0.60) min(c, 0.17) h),
         oklch(from var(--viz-diverging-high) max(l, 0.66) min(c, 0.15) h)
     );
     --ink-sequential-high-lg: light-dark(
-        oklch(from var(--viz-sequential-high) min(l, 0.62) min(c, 0.17) h),
+        oklch(from var(--viz-sequential-high) min(l, 0.60) min(c, 0.17) h),
         oklch(from var(--viz-sequential-high) max(l, 0.66) min(c, 0.15) h)
     );
     /* the SCI rainbow-green signature as a hero crown ink (the /sci lede crown + the chase crown) */
     --ink-rainbow-signature-1-lg: light-dark(
-        oklch(from var(--rainbow-signature-1) min(l, 0.62) min(c, 0.17) h),
+        oklch(from var(--rainbow-signature-1) min(l, 0.60) min(c, 0.17) h),
         oklch(from var(--rainbow-signature-1) max(l, 0.66) min(c, 0.15) h)
     );
     /* §EMPHASIS-RECORD (F-10, the gold QUAD retired) — THE ONE SUPERLATIVE. The gilt idiom was a
@@ -647,10 +647,10 @@
        Law C-2) taken at RAISED chroma — where the §INK family CAPS chroma to keep a data hue
        readable, the record RAISES it, because the one all-time-high figure in a view is the one
        datum allowed to be louder than its siblings. The clamp band is the ink family's own body
-       register (L≤0.47 light / L≥0.75 dark), so the token is safe as TEXT at any rung as well as
+       register (L≤0.44 light / L≥0.75 dark), so the token is safe as TEXT at any rung as well as
        as a fill or a rim. The scarcity law is unchanged: ≤1 record per view. */
     --emphasis-record: light-dark(
-        oklch(from var(--viz-diverging-low) min(l, 0.47) max(c, 0.19) h),
+        oklch(from var(--viz-diverging-low) min(l, 0.44) max(c, 0.19) h),
         oklch(from var(--viz-diverging-low) max(l, 0.75) max(c, 0.17) h)
     );
 }

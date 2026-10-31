@@ -136,9 +136,25 @@ function keyFromEvent(ev: Event): string | null {
     return t?.closest?.("[data-key]")?.getAttribute("data-key") ?? null;
 }
 
+/** The mark a fine pointer came up on. On a shared border the press and the release can land on two
+    marks (a raised mark's stroke covers the point), and the browser then sends the click to their
+    common ancestor, which no mark's handler hears (U/B7d M3, a first click on /ecf went nowhere). */
+let fineUpKey: string | null = null;
+
+/** A click the marks did not hear selects the mark the pointer came up on. */
+function onFieldClick(ev: MouseEvent) {
+    if (keyFromEvent(ev) !== null || fineUpKey === null) return;
+    emit("select", { key: fineUpKey, multi: isMultiSelect(ev) });
+}
+
 function onFieldPointerUp(ev: PointerEvent) {
-    if (ev.pointerType !== "touch" && ev.pointerType !== "pen") return;
     const key = keyFromEvent(ev);
+    if (ev.pointerType !== "touch" && ev.pointerType !== "pen") {
+        fineUpKey = key;
+        return;
+    }
+    // A coarse pointer's follow-on click must not read a mark an earlier mouse came up on.
+    fineUpKey = null;
     if (!key) return;
     lastTouchSelect.value = ev.timeStamp;
     emit("select", { key, multi: isMultiSelect(ev) });
@@ -208,6 +224,7 @@ const tableRows = computed(() =>
             :aria-details="sourceGridOpen ? sourceGridId || undefined : undefined"
             data-testid="geo-choropleth-svg"
             @pointerup="onFieldPointerUp"
+            @click="onFieldClick"
         >
             <defs>
                 <!-- The dim hatch: filtered-out shapes carry it so the de-emphasis is never signalled

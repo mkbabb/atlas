@@ -55,6 +55,7 @@ import {
 } from "vue";
 import { init, use, type EChartsType } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
+import { LabelLayout } from "echarts/features";
 import type { EChartsOption } from "echarts";
 import { useResizeObserver, useIntersectionObserver } from "@vueuse/core";
 import { useGlobalDark } from "@mkbabb/glass-ui/dark";
@@ -64,9 +65,12 @@ import { useOptionalStageMorphDriver } from "../scene/stage-morph.js";
 // The canvas renderer is the shared base every viz needs; chart/component
 // modules (BarChart, GridComponent…) register at the call site so the bundle
 // only carries what a viz actually draws (modular registration, CH2 §B).
-use([CanvasRenderer]);
+// LabelLayout makes `labelLayout` work. echarts' core entry installs it in dev; a production build drops
+// that install because the package declares the entry free of side effects.
+use([CanvasRenderer, LabelLayout]);
 
 import { RETINTING, scheduleRetint, enqueuePaint } from "./echart-pumps.js";
+import { canvasTextTheme } from "./useVizPalette.js";
 
 export interface UseEChartOptions {
     /** The host element the chart mounts into (a fixed-height box). */
@@ -318,7 +322,7 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     }
     function mountNow(): void {
         if (chart.value || unmounted || !opts.host.value) return;
-        const c = init(opts.host.value);
+        const c = init(opts.host.value, canvasTextTheme());
         chart.value = c;
         // The first `paint()` is a `lazyUpdate` setOption: ECharts holds it until its next frame, and
         // only that frame's `prepare` creates the scheduler's pipeline map. An emphasis action

@@ -32,6 +32,7 @@ import ChartDataTable from "../legend/ChartDataTable.vue";
 import PlateVoid from "./PlateVoid.vue";
 import PlateSkeleton from "./PlateSkeleton.vue";
 import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
+import { plateAnchorId } from "../../platform/provenance/appendix.js";
 import { STORY_CARD_KEY } from "./story-card-context.js";
 import { useVizPlate, type VizPlateProps } from "./useVizPlate.js";
 import { STAGE_ANATOMY_KEY } from "../contract/scene-contract.js";
@@ -113,6 +114,7 @@ defineExpose({ archetype });
         :fig-id="contract.id"
         :legend-dock="suppressFoot ? 'none' : legendDock"
         :show-title="showOwnTitle"
+        :id="plateAnchorId(contract.id)"
         data-viz-plate
         :data-viz-id="contract.id"
     >

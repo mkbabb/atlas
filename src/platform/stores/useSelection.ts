@@ -33,6 +33,16 @@ import {
 import { markColorFor } from "../../charts/scale/ColorScale.js";
 import { useViewParams } from "./useViewParams.js";
 
+/** A hovered key as a selection key: minted from its grain, or read as a composite; null otherwise. */
+function entityKeyOf(key: string, kind: SelectionKind | null): string | null {
+    if (kind !== null) return encodeSelKey(kind, key);
+    try {
+        return parseSelKey(key).key;
+    } catch {
+        return null;
+    }
+}
+
 export const useSelection = defineStore("platform:selection", () => {
     /** The transiently-hovered entity key, or null when the pointer is off the marks. */
     const hoveredKey = ref<string | null>(null);
@@ -96,6 +106,12 @@ export const useSelection = defineStore("platform:selection", () => {
     // chronic specced-in-B-never-built keystone, finally built. Consumed `useDebounceFn`
     // (@vueuse, shipped) — not a hand-rolled timer (H5).
     const hoverRaw = ref<string | null>(null);
+    /**
+     * The entity the live hover stands for, as a selection key (U/B7d M3 · F-14). A route hovers its
+     * marks by their raw id (the linked raise reads it bare), so the kind travels beside the key and
+     * only this reading composes them. Null when the hovered mark names no entity (a period).
+     */
+    const hoveredEntity = ref<string | null>(null);
     /** ≈ the gap-transit window (reka-ui's `HoverPopover` ships 150ms; 120 is its near-floor). */
     const CLOSE_MS = 120;
     // The deferred close: fires only when no new key has arrived inside CLOSE_MS, and only when
@@ -106,6 +122,7 @@ export const useSelection = defineStore("platform:selection", () => {
     const clearSoon = useDebounceFn(() => {
         if (hoverRaw.value === null) {
             hoveredKey.value = null;
+            hoveredEntity.value = null;
             hoverOrigin.value = null;
         }
     }, CLOSE_MS);
@@ -117,13 +134,19 @@ export const useSelection = defineStore("platform:selection", () => {
      * key, so it is non-null exactly while a real plate owns the live pointer. A raise-only
      * plate passes its own origin too — it owns the pointer (clearing any prior card) though it
      * publishes nothing. A linked raise (a viz lighting off another plate's `hoveredKey`) never
-     * calls this, so it never becomes the owner.
+     * calls this, so it never becomes the owner. `kind` names the entity grain of a raw id; a key
+     * that already is a composite needs none.
      */
-    function hover(key: string | null, origin: string | null = null): void {
+    function hover(
+        key: string | null,
+        origin: string | null = null,
+        kind: SelectionKind | null = null,
+    ): void {
         hoverRaw.value = key;
         // OPEN EAGERLY — a real hover lands the settled key + its owner with zero latency.
         if (key !== null) {
             hoveredKey.value = key;
+            hoveredEntity.value = entityKeyOf(key, kind);
             hoverOrigin.value = origin;
         }
         // CLOSE LAZILY — swallow the border-gap null; only a settled <120ms-quiet null clears
@@ -326,6 +349,7 @@ export const useSelection = defineStore("platform:selection", () => {
 
     return {
         hoveredKey,
+        hoveredEntity,
         hoverOrigin,
         selectedKeys,
         isHovering,

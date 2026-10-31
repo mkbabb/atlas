@@ -216,6 +216,15 @@ projecting components.
 | `MultiYearFigure`, `WindowArcPlate` and `TrajectoryPlate` emit `hover` with the measure key of the line under the pointer, or null | opt in: `@hover` on the sci utilization and USF decade figures |
 | `useHoverReadout` keeps the phone tap clock: `lastTap` (when the last touch tap ended) and `published` (the last accepted readout and its time). A hover card that mounts after the first tap now pins that tap's readout. `TAP_MS` and `TAP_SLOP_PX` are exported from the store module (O-13) | none; a consumer that mounts `HoverCard` lazily keeps doing so |
 
+## 5j · U/B7d: hover with a grain, the unconditional appendix return link
+
+- `useSelection.hover(key, origin, kind)` takes the raw id's `SelectionKind`. Pass it wherever a mark
+  stands for an entity, so its hover card can open the detail. A composite key needs none.
+- `ProvenanceAppendix` drops `figureNos`; `figureOrdinalFor` is deleted. Every row links to
+  `#figure-<vizId>`. A figure with no `VizPlate` carries the anchor on its un-hosted `ProvenanceBar`,
+  or its entry names the beat that holds it in `figureAnchor`.
+- `useComponentPointLoading` takes `figureHash`, the live hash.
+
 ## 6 · glass-ui 10.1.0
 
 Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.

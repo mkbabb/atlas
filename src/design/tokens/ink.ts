@@ -17,14 +17,14 @@
  *
  * @param accent a CSS `<color>` or `var(--token)` string (the raw data/registry hue).
  * @param large  the AA-large relaxation (≥3.0) for audacious HERO figures (≥24px / ≥18.66px bold):
- *               keeps more vividness (L≤0.62 light / L≥0.66 dark). Default (body) is AA ≥4.5
- *               (L≤0.47 light / L≥0.75 dark — the O-C2-TAIL G16 ruling tightened the body light
- *               arm 0.52→0.47 so chromatic body text, e.g. the VizKeyStats card figures this
+ *               keeps more vividness (L≤0.60 light / L≥0.66 dark). Default (body) is AA ≥4.5
+ *               (L≤0.44 light / L≥0.75 dark — the O-C2-TAIL G16 ruling tightened the body light
+ *               arm 0.52→0.47→0.44 so chromatic body text, e.g. the VizKeyStats card figures this
  *               helper inks, clears AA-normal across the gamut; the CSS `--ink-*` twin matches).
  * @returns a `light-dark(oklch(from …), oklch(from …))` string for a `color:` binding.
  */
 export const inkFromAccent = (accent: string, large = false): string => {
-    const lLight = large ? 0.62 : 0.47; // light forces L DOWN to this ceiling
+    const lLight = large ? 0.60 : 0.44; // light forces L DOWN to this ceiling
     const lDark = large ? 0.66 : 0.75; // dark forces L UP to this floor
     return `light-dark(oklch(from ${accent} min(l, ${lLight}) min(c, 0.17) h), oklch(from ${accent} max(l, ${lDark}) min(c, 0.15) h))`;
 };

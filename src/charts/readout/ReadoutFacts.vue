@@ -81,8 +81,9 @@ withDefaults(
     container-name: readout-facts;
 }
 .readout-facts {
-    /* the readout figure rung: one golden step below the card figure token */
-    --readout-figure-step: calc(var(--type-figure-card, 1rem) / 1.618);
+    /* the readout figure rung: one golden step below the card figure token, never smaller than its
+       own label and never under the 12 px text floor */
+    --readout-figure-step: max(12px, var(--type-caption, 12px), calc(var(--type-figure-card, 1rem) / 1.618));
     display: grid;
     grid-template-columns: minmax(0, max-content) minmax(min-content, 1fr);
     column-gap: 0.75rem;

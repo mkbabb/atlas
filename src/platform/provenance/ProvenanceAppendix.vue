@@ -13,7 +13,6 @@ import { computed } from "vue";
 import {
     appendixAnchorId,
     appendixOrdinal,
-    figureOrdinalFor,
     plateAnchorId,
     type AppendixEntry,
 } from "./appendix.js";
@@ -28,15 +27,13 @@ import {
     filterLine,
 } from "./provenance-lines.js";
 
-const { entries, heading = "Provenance", sources = [], figureNos } = defineProps<{
+const { entries, heading = "Provenance", sources = [] } = defineProps<{
     /** the route's provenance roster — each item's title + resolved provenance, the route's own order. */
     entries: readonly AppendixEntry[];
     /** the section heading, in the route's words (default "Provenance"). */
     heading?: string;
     /** Verified sources addressable by each entry's `sourceIds`. */
     sources?: readonly DataSource[];
-    /** Optional route-authored figure ordinals for appendix-to-figure return links. */
-    figureNos?: Readonly<Record<string, number>>;
 }>();
 
 // A-31 — the records are enumerated ONCE for the whole appendix, with the figures that cite each,
@@ -68,11 +65,11 @@ const cited = computed(() => dedupeSources(entries, sources));
                     {{ entry.title }}
                 </h3>
                 <a
-                    v-if="figureNos"
                     class="provenance-appendix__return"
-                    :href="`#${plateAnchorId(entry.vizId)}`"
+                    :href="`#${entry.figureAnchor ?? plateAnchorId(entry.vizId)}`"
+                    data-testid="provenance-appendix-return"
                 >
-                    ↑ Figure {{ figureOrdinalFor(figureNos, entry.vizId) }}
+                    ↑ Back to the figure
                 </a>
             </div>
             <dl class="provenance-appendix__rungs">
@@ -145,7 +142,7 @@ const cited = computed(() => dedupeSources(entries, sources));
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: light-dark(
-        color-mix(in oklab, var(--foreground), transparent 32%),
+        color-mix(in oklab, var(--foreground), transparent 24%),
         color-mix(in oklab, var(--foreground), transparent 5%)
     );
 }
@@ -176,7 +173,7 @@ const cited = computed(() => dedupeSources(entries, sources));
     font-family: var(--font-mono, inherit);
     font-size: var(--type-micro);
     letter-spacing: 0.08em;
-    color: color-mix(in oklab, var(--foreground), transparent 28%);
+    color: color-mix(in oklab, var(--foreground), transparent 24%);
 }
 .provenance-appendix__return {
     flex: none;
@@ -214,7 +211,7 @@ const cited = computed(() => dedupeSources(entries, sources));
     letter-spacing: 0.12em;
     white-space: nowrap;
     color: light-dark(
-        color-mix(in oklab, var(--foreground), transparent 32%),
+        color-mix(in oklab, var(--foreground), transparent 24%),
         color-mix(in oklab, var(--foreground), transparent 5%)
     );
 }
@@ -243,7 +240,7 @@ const cited = computed(() => dedupeSources(entries, sources));
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: light-dark(
-        color-mix(in oklab, var(--foreground), transparent 32%),
+        color-mix(in oklab, var(--foreground), transparent 24%),
         color-mix(in oklab, var(--foreground), transparent 5%)
     );
 }
@@ -265,7 +262,7 @@ const cited = computed(() => dedupeSources(entries, sources));
     margin: 0;
     max-inline-size: 62ch;
     font-size: var(--type-micro);
-    color: color-mix(in oklab, var(--foreground), transparent 32%);
+    color: color-mix(in oklab, var(--foreground), transparent 24%);
     text-wrap: pretty;
 }
 .provenance-appendix__cite {

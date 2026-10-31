@@ -102,3 +102,27 @@ describe("atlas:layers compiled-output check (CX-1)", () => {
         expect(() => wrap(MARKED, "/app/styles.css")).toThrow(/atlas:layers: .*not an atlas styles root/);
     });
 });
+
+// U/B7d M3 repair 1: a glass-ui component sheet comes in through its JS module, not through the root,
+// so `@layer components` stayed top level, under every atlas layer. Tailwind's preflight in
+// atlas.recipes.base then zeroed its padding and radius: /sci and /usf option toggles painted square.
+describe("atlas:layers on a glass-ui component sheet", () => {
+    const layers = atlasLayers().find((p) => p.name === "atlas:layers")!;
+    const run = (code: string, id: string) =>
+        (layers.transform as unknown as (c: string, i: string) => { code: string } | undefined)(code, id);
+    const SHEET = "@layer theme, base, components, utilities;@layer components{.toggle-group__item{padding-inline:.75rem}}";
+
+    it.each([
+        "/app/node_modules/@mkbabb/glass-ui/dist/toggle-group.css",
+        "/app/node_modules/.vite/deps/../../@mkbabb/glass-ui/dist/label.css",
+    ])("wraps %s in atlas.recipes", (id) => {
+        const out = run(SHEET, id)!.code;
+        expect(out.startsWith(ATLAS_LAYER_ORDER)).toBe(true);
+        for (const item of topLevelItems(out)) expect(item.trim()).toMatch(/^@layer atlas[\s.,;{]/);
+        expect(out).toContain(".toggle-group__item");
+    });
+
+    it("leaves any other package's sheet alone", () => {
+        expect(run(SHEET, "/app/node_modules/other/dist/toggle-group.css")).toBeUndefined();
+    });
+});
