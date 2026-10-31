@@ -4,6 +4,10 @@
 
 ### Fixes
 
+- **The ink clamps hold their floors on a plate (U/B7d M3 repair 1 · T-12).** The light body ink moves from
+  L 0.47 to 0.44 and the large ink from 0.62 to 0.60; they read 4.37:1 and 2.96:1. Witness:
+  `ink-floor.spec.ts`.
+
 - **A glass-ui component sheet sits in the atlas layers (U/B7d M3 repair 1).** Its JS module imports it, so
   it never passes through the root, and a top-level `@layer components` loses to Tailwind's preflight in
   `atlas.recipes.base`. `/sci` and `/usf` option toggles painted square with 0 padding. `atlas:layers` now

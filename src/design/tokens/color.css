@@ -596,47 +596,47 @@
 :root {
     /* body register (AA ≥4.5) — the pole/accent as READABLE text ink */
     --ink-diverging-low: light-dark(
-        oklch(from var(--viz-diverging-low) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--viz-diverging-low) min(l, 0.44) min(c, 0.17) h),
         oklch(from var(--viz-diverging-low) max(l, 0.75) min(c, 0.15) h)
     );
     --ink-diverging-high: light-dark(
-        oklch(from var(--viz-diverging-high) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--viz-diverging-high) min(l, 0.44) min(c, 0.17) h),
         oklch(from var(--viz-diverging-high) max(l, 0.75) min(c, 0.15) h)
     );
     --ink-sequential-high: light-dark(
-        oklch(from var(--viz-sequential-high) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--viz-sequential-high) min(l, 0.44) min(c, 0.17) h),
         oklch(from var(--viz-sequential-high) max(l, 0.75) min(c, 0.15) h)
     );
     /* the chrome PRIMARY as text ink (the filter dim value, the drawer crosslink, the gallery CTA)
        — a clamp that is a no-op on glass-ui's already-readable primary and lifts a route-overridden
        accent (vft shadyshroom) into band. */
     --ink-primary: light-dark(
-        oklch(from var(--primary) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--primary) min(l, 0.44) min(c, 0.17) h),
         oklch(from var(--primary) max(l, 0.75) min(c, 0.15) h)
     );
     /* the per-card / per-datum default — the gallery cell re-declares this from its own `--accent`
        (see GalleryView); this :root default keeps the token always-resolved off `--accent`. */
     --ink-accent: light-dark(
-        oklch(from var(--accent, var(--primary)) min(l, 0.47) min(c, 0.17) h),
+        oklch(from var(--accent, var(--primary)) min(l, 0.44) min(c, 0.17) h),
         oklch(from var(--accent, var(--primary)) max(l, 0.75) min(c, 0.15) h)
     );
     /* `-lg` register (AA-large ≥3.0) — the audacious HERO crowns ride this looser band, keeping
        more vividness (L≤0.62 light / L≥0.66 dark). */
     --ink-diverging-low-lg: light-dark(
-        oklch(from var(--viz-diverging-low) min(l, 0.62) min(c, 0.17) h),
+        oklch(from var(--viz-diverging-low) min(l, 0.60) min(c, 0.17) h),
         oklch(from var(--viz-diverging-low) max(l, 0.66) min(c, 0.15) h)
     );
     --ink-diverging-high-lg: light-dark(
-        oklch(from var(--viz-diverging-high) min(l, 0.62) min(c, 0.17) h),
+        oklch(from var(--viz-diverging-high) min(l, 0.60) min(c, 0.17) h),
         oklch(from var(--viz-diverging-high) max(l, 0.66) min(c, 0.15) h)
     );
     --ink-sequential-high-lg: light-dark(
-        oklch(from var(--viz-sequential-high) min(l, 0.62) min(c, 0.17) h),
+        oklch(from var(--viz-sequential-high) min(l, 0.60) min(c, 0.17) h),
         oklch(from var(--viz-sequential-high) max(l, 0.66) min(c, 0.15) h)
     );
     /* the SCI rainbow-green signature as a hero crown ink (the /sci lede crown + the chase crown) */
     --ink-rainbow-signature-1-lg: light-dark(
-        oklch(from var(--rainbow-signature-1) min(l, 0.62) min(c, 0.17) h),
+        oklch(from var(--rainbow-signature-1) min(l, 0.60) min(c, 0.17) h),
         oklch(from var(--rainbow-signature-1) max(l, 0.66) min(c, 0.15) h)
     );
     /* §EMPHASIS-RECORD (F-10, the gold QUAD retired) — THE ONE SUPERLATIVE. The gilt idiom was a
