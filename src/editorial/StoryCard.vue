@@ -58,6 +58,9 @@ const secondSeam = computed(
 );
 </script>
 
+<!-- The plate samples no backdrop (glass `backdropMode: "static"`, U/B8 PF P-3). It sits in the
+     page flow over a still field, so a live lens re-filtered up to 1296 x 2600 px on every
+     scroll frame and showed nothing the fill does not. It keeps its rung, fill and rim. -->
 <template>
     <Beat
         :id="id"
@@ -76,6 +79,7 @@ const secondSeam = computed(
                 :surface="surface"
                 :tier="facet.tier ?? 'quiet'"
                 :shadow="false"
+                backdrop-mode="static"
                 class="story-card"
                 :class="{ 'story-card--keyline': facet.frame === 'keyline' }"
                 :data-card-mode="facet.mode ?? 'plate'"
