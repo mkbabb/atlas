@@ -361,39 +361,58 @@ describe("morph engine", () => {
         expect(() => m.snap(gridLayout(5, { width: 40, cell: 10 }))).toThrow(/count/);
     });
 
-    // Bytes per frame, from V8's running allocation count (Node 26 `total_allocated_bytes`). A read
-    // allocates too, and by a varying amount, so each trial subtracts an empty read taken just before
-    // it. The runtime's own allocation (a tier-up or a deopt landing mid-trial, more likely under
-    // load) only ever adds bytes, so the minimum over trials is the frame's own rate: a frame that
-    // allocates shows it in every trial, a clean one reads ~0 once compiled. The trials stop at the
-    // first one under `below`, and run at most `trials` (the interpreter boxes floats until the loop
-    // is compiled, so the first few always read high). Undefined on an older Node without the count.
-    function allocationPerFrame(frame: (t: number) => unknown, below = -Infinity, trials = 40, frames = 20_000) {
+    // Bytes per frame, from V8's running allocation count (Node 26 `total_allocated_bytes`). The count
+    // moves a heap page (256 KiB) at a time, so a short run reads 0 or a whole page: a frame that
+    // allocates one object every 32 frames lands under a page in 20k frames and reads clean. One long
+    // run of `FRAMES` frames carries any steady rate across many pages, so its error is under a page
+    // over the run (0.13 B per frame). Each run subtracts an empty loop of the same length, which
+    // cancels the reads' own allocation, and the read is the median over `RUNS` runs: the runtime's own
+    // allocation (a tier-up or a deopt landing mid-run, more likely under load) lifts one run and
+    // leaves the median. Undefined on an older Node without the count.
+    const FRAMES = 2_000_000;
+    const RUNS = 5;
+    // Half of a 16 B object every 32 frames (0.5 B per frame). Measured on Node 26 over 10 runs of the
+    // file: the live loop's median reads -0.001 to 0.071 (a single run, lifted by the runtime, up to
+    // 0.34, which is why the read is a median); the sparsest controls, a `{ t }` literal (32 B) and a
+    // closure every 32 frames, read medians of 1.00 to 1.05 and 1.69 to 1.78.
+    const ALLOCATION_LIMIT = 0.25;
+
+    function allocationRuns(frame: (t: number) => unknown) {
         const stats = () => getHeapStatistics() as unknown as { total_allocated_bytes?: number };
         if (stats().total_allocated_bytes === undefined) return undefined;
         const allocated = () => stats().total_allocated_bytes!;
-        let best = Infinity;
-        let t = 0;
-        for (let k = 0; k < trials && best >= below; k++) {
-            const r0 = allocated();
-            const r1 = allocated();
-            const end = t + frames;
-            for (; t < end; t++) frame(t);
-            const r2 = allocated();
-            best = Math.min(best, (r2 - r1 - (r1 - r0)) / frames);
+        const empty = (_t: number) => undefined;
+        const run = (f: (t: number) => unknown) => {
+            const before = allocated();
+            for (let t = 0; t < FRAMES; t++) f(t);
+            return allocated() - before;
+        };
+        run(frame); // warm: the interpreter boxes floats until the loop is compiled
+        run(empty);
+        const reads: number[] = [];
+        for (let k = 0; k < RUNS; k++) {
+            const base = run(empty);
+            reads.push((run(frame) - base) / FRAMES);
         }
-        return best;
+        const median = [...reads].sort((a, b) => a - b)[RUNS >> 1];
+        return { median, reads };
     }
 
-    function smallMorph() {
-        const small = new UnitMorph(200, { duration: 1e9, spread: 2000 });
-        small.snap(gridLayout(200, { width: 400, cell: 8 }));
-        small.morphTo(boustrophedonLayout(200, { width: 300, cell: 6 }), 0);
-        small.focus(0);
-        return small;
+    // A small morph kept in flight for the whole run: `now` cycles inside the morph's span, so every
+    // frame has marks landed, leaving and between, and the focus flips every 500 frames so the alpha
+    // keeps easing. A morph that settled would measure only the early return.
+    function liveFrame() {
+        const n = 16;
+        const m = new UnitMorph(n, { duration: 1000, spread: 2000 });
+        m.snap(createUnitLayout({ ...gridLayout(n, { width: 400, cell: 8 }), group: Array.from({ length: n }, (_, i) => i & 1) }));
+        m.morphTo(boustrophedonLayout(n, { width: 300, cell: 6 }), 0);
+        return (t: number) => {
+            if (t % 500 === 0) m.focus((t / 500) & 1);
+            return m.step(t % 2500);
+        };
     }
 
-    it("allocates nothing in the step loop", () => {
+    it("allocates nothing in the step loop", async ({ annotate }) => {
         const n = 2000;
         const from = gridLayout(n, { width: 400, cell: 8 });
         const to = boustrophedonLayout(n, { width: 300, cell: 6 });
@@ -440,35 +459,62 @@ describe("morph engine", () => {
         }
         expect(built).toBe(0);
 
-        // Measured: the probe sees one small object per frame, so a clean read is real.
-        const small = smallMorph();
-        let held: unknown = null;
-        const control = allocationPerFrame((t) => {
-            small.step(t);
-            held = { t };
-        }, -Infinity, 8);
-        void held;
-        const clean = allocationPerFrame((t) => small.step(t), 1);
-        if (control === undefined || clean === undefined) return; // the structural check is then the witness
-        expect(control).toBeGreaterThan(16);
-        expect(clean).toBeLessThan(1);
+        // Measured: the live loop reads under the limit that every negative control below exceeds.
+        const clean = allocationRuns(liveFrame());
+        if (clean === undefined) return; // the structural check is then the witness
+        await annotate(`B per frame: median ${clean.median.toFixed(3)} of ${clean.reads.map((r) => r.toFixed(3))}`);
+        expect(clean.median).toBeLessThan(ALLOCATION_LIMIT);
     });
 
-    it("the allocation probe is immune to a runtime burst landing mid-run", () => {
-        // A one-off 1.6 MB allocation the frame does not own (a tier-up under load, modelled): a slope
-        // or a mean over the run would carry it as ~10 B per frame; the per-trial minimum does not.
-        const small = smallMorph();
-        let calls = 0;
-        let held: unknown = null;
-        const clean = allocationPerFrame((t) => {
-            small.step(t);
-            if (++calls === 10_000) held = new Array(200_000).fill(0);
-        }, 1);
+    // Negative controls: the live loop plus one allocation every `period` frames. Each MUST read over
+    // the limit, or the probe is blind at that rate and the clean read above means nothing.
+    let held: unknown = null;
+    const controls: [string, number, (t: number) => void][] = [];
+    for (const period of [1, 3, 4, 8, 32]) {
+        controls.push([
+            "an object literal",
+            period,
+            (t) => {
+                if (t % period === 0) held = { t };
+            },
+        ]);
+        controls.push([
+            "a closure",
+            period,
+            (t) => {
+                if (t % period === 0) held = () => period;
+            },
+        ]);
+    }
+    it.for(controls)("the probe sees %s every %i frames", async ([, , allocate], { annotate }) => {
+        const frame = liveFrame();
+        const read = allocationRuns((t) => {
+            frame(t);
+            allocate(t);
+        });
         void held;
-        if (clean === undefined) return;
-        // The burst landed in the first trial, so the read came from a later one.
-        expect(calls).toBeGreaterThan(20_000);
-        expect(clean).toBeLessThan(1);
+        if (read === undefined) return;
+        await annotate(`B per frame: median ${read.median.toFixed(3)} of ${read.reads.map((r) => r.toFixed(3))}`);
+        expect(read.median).toBeGreaterThan(ALLOCATION_LIMIT);
+    });
+
+    it("the allocation probe is immune to a runtime burst landing mid-run", async ({ annotate }) => {
+        // A one-off 16 MB allocation the frame does not own (a tier-up under load, modelled), landing in
+        // the first measured run: that run reads ~8 B per frame and a mean over the runs ~1.7, both over
+        // the limit; the median does not carry it.
+        const frame = liveFrame();
+        let calls = 0;
+        let burst: unknown = null;
+        const read = allocationRuns((t) => {
+            if (++calls === FRAMES + 10_000) burst = new Array(2_000_000).fill(0);
+            return frame(t);
+        });
+        void burst;
+        if (read === undefined) return;
+        await annotate(`B per frame: median ${read.median.toFixed(3)} of ${read.reads.map((r) => r.toFixed(3))}`);
+        expect(Math.max(...read.reads)).toBeGreaterThan(ALLOCATION_LIMIT);
+        expect(read.reads.reduce((a, b) => a + b) / RUNS).toBeGreaterThan(ALLOCATION_LIMIT);
+        expect(read.median).toBeLessThan(ALLOCATION_LIMIT);
     });
 });
 

@@ -53,6 +53,15 @@
   subtracts an empty read per trial and takes the minimum over trials, which runtime noise only
   raises; the limit tightens from 4 to 1 B per frame. Witness: `b8-unit-chart.spec.ts` "the
   allocation probe is immune to a runtime burst…" (10.5 B per frame under the slope, red before).
+- **The step-loop allocation witness sees periodic allocation (U/B8 A3 review).** The per-trial
+  minimum read 20k-frame trials, and V8's `total_allocated_bytes` moves a 256 KiB page at a time, so
+  a trial the count did not tick read negative and won: a closure every 8 frames and a literal or a
+  closure every 32 read -0.033 B per frame and passed. Each read is now one 2M-frame run of a morph
+  kept in flight, minus an empty loop of the same length, and the median of 5 such runs; the limit
+  is 0.25 B per frame (half of a 16 B object every 32 frames). The live loop reads -0.001 to 0.071 and
+  the sparsest control 1.00. Witness: `b8-unit-chart.spec.ts` "the probe sees … every N frames", ten
+  negative controls (a literal and a closure every 1, 3, 4, 8 and 32 frames) that must read over the
+  limit; the burst test now lands 16 MB in one run and holds the median clean.
 - **The ink clamps hold their floors on a plate (U/B7d M3 repair 1 · T-12).** The light body ink moves from
   L 0.47 to 0.44 and the large ink from 0.62 to 0.60; they read 4.37:1 and 2.96:1. Witness:
   `ink-floor.spec.ts`.
