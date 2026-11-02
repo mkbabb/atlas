@@ -371,6 +371,10 @@ const isDead = (count?: number): boolean => count == null || count === 0;
     width: auto;
     min-inline-size: 8rem;
 }
+/* The anchors sit a hair below the full-width ramp, in the key's own micro size. */
+.chart-legend--wide .chart-legend__anchors {
+    margin-block-start: 0.3rem;
+}
 .chart-legend--wide .chart-legend__swatch-dt {
     justify-self: start;
 }
