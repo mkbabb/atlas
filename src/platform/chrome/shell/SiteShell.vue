@@ -13,20 +13,13 @@
 // It is also the one binder of the active route's `--route-*` theme cascade (the dock and the route
 // frame both read it) and the scope of the dock-portal registry (the dock's pin and the route's
 // filter drawer share it).
-import { computed, defineAsyncComponent, shallowRef, watch } from "vue";
+import { computed, shallowRef, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
+import Dock from "../dock/Dock.vue";
 import { AMERICA, themeCssVars, useDashboardRegistry, type DashboardContext } from "../../../contract/index.js";
 import { atmosphereCssVars } from "../background/composables/atmosphere.js";
 import { provideDockPortals } from "../dock/composables/useDockPortals.js";
 import type { SiteSearchSource, SiteSubject } from "../dock/site.js";
-
-// THE CONTENT FIRST (U/B8 PF, P-G1 after gregg's hero-first App; entry JS, owner act B7E §8.2). The
-// dock is its own chunk: its download starts on the shell's first render, beside the route's, and it
-// mounts the moment it lands. It is fixed-position chrome (the phone bar's band is the shell's
-// `--dock-bar-reserve`, below), so its arrival moves no content. Before, the dock, its glass module,
-// the keyframes spring and the dock-only atlas chrome (about 80 KB raw) parsed and ran before the
-// first paint of every route.
-const Dock = defineAsyncComponent(() => import("../dock/Dock.vue"));
 
 const props = withDefaults(
     defineProps<{
