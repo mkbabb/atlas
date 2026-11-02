@@ -111,3 +111,28 @@
     color: var(--foreground);
 }
 
+
+/* U/B8 A4 — THE VIEW STAGE. The figure body keeps its box in both views, so the plate's height never
+   moves on a toggle; the table view hides it (visibility, plus `inert` on the element) and the table
+   fills the same box. A figure shorter than a readable table grows to the floor. The table fades in
+   on the reader's press (it mounts only then, so nothing animates at load); the figure returns at
+   once, already drawn. Reduced motion swaps both at once. */
+.viz-plate__stage {
+    position: relative;
+}
+.viz-plate__stage[data-view="table"] {
+    min-block-size: 18rem;
+}
+.viz-plate__stage[data-view="table"] > .viz-plate__body {
+    visibility: hidden;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .viz-plate__stage > [data-plate-table] {
+        animation: viz-plate-view-in var(--duration-fast, 0.16s) var(--ease-out, ease-out);
+    }
+}
+@keyframes viz-plate-view-in {
+    from {
+        opacity: 0;
+    }
+}

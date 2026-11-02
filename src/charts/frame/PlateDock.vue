@@ -7,10 +7,16 @@
 // Every control names this figure; a control the figure lacks is absent. Hover, focus and scrolling
 // open nothing (glass `expandOn: "press"`). Escape closes an open menu first, then the dock, and
 // returns focus to the handle. A sheet taking a screen seat closes the dock (PLAN §2.5).
+//
+// U/B8 A4 — THE TABLE VIEW TOGGLE. When the host passes a `view`, the dock's persistent region (the
+// glass `#persistent` seat, live while the dock is collapsed and while it is open) carries one
+// pressed-state toggle: Table view. One click swaps the figure for its rows and back; the toggle is
+// never behind the handle. The source-data browser keeps its own control in the open face, with
+// its own glyph, so the two tables never share an icon.
 import { computed, nextTick, ref, useSlots, watch } from "vue";
-import { Download, Ellipsis, Maximize2, SlidersHorizontal, Table2, X } from "@lucide/vue";
+import { Database, Download, Ellipsis, Maximize2, SlidersHorizontal, Table2, X } from "@lucide/vue";
 import { Button } from "@mkbabb/glass-ui/button";
-import { GlassDock } from "@mkbabb/glass-ui/dock";
+import { DockControl, GlassDock } from "@mkbabb/glass-ui/dock";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -21,6 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@mkbabb/glass-ui/popove
 import { useDismissArbiter } from "../../platform/interaction/useDismissArbiter.js";
 import { useSeatYield } from "../../platform/chrome/surfaces/useSurfaceSeat.js";
 import { PLATE_LAYER_ATTR, plateLayerClaim, type PlateLayer } from "./plate-layer.js";
+import type { PlateView } from "./plate-view.js";
 
 const props = defineProps<{
     /** The plate's id: the one subject every control acts on. */
@@ -36,7 +43,13 @@ const props = defineProps<{
     browse?: (() => void) | null;
     /** Any of the figure's options is off its default: the handle carries a dot. */
     dirty?: boolean;
+    /** The figure's view. Present ⇒ the dock carries the one-click Table view toggle. */
+    view?: PlateView;
 }>();
+const emit = defineEmits<{ "update:view": [view: PlateView] }>();
+function toggleView(): void {
+    emit("update:view", props.view === "table" ? "chart" : "table");
+}
 
 defineSlots<{ options?(): unknown }>();
 const slots = useSlots();
@@ -131,6 +144,19 @@ async function run(fn: (() => void) | null | undefined): Promise<void> {
             data-preset="cockpit"
             class="plate-dock__dock"
         >
+            <template v-if="view" #persistent>
+                <DockControl
+                    class="plate-dock__view"
+                    :active="view === 'table'"
+                    :aria-label="`Table view of ${title}`"
+                    :title="view === 'table' ? `Show ${title} as a chart` : `Show ${title} as a table`"
+                    :data-subject="id"
+                    data-action="view"
+                    @click="toggleView"
+                >
+                    <Table2 aria-hidden="true" />
+                </DockControl>
+            </template>
             <template #collapsed>
                 <span class="plate-dock__handle" data-plate-dock-handle :data-subject="id">
                     <Ellipsis aria-hidden="true" />
@@ -173,7 +199,7 @@ async function run(fn: (() => void) | null | undefined): Promise<void> {
                 data-action="source"
                 @click="run(browse)"
             >
-                <Table2 aria-hidden="true" />
+                <Database aria-hidden="true" />
             </Button>
             <DropdownMenu v-else-if="hasExports" v-model:open="downloadOpen" :modal="false">
                 <DropdownMenuTrigger as-child>
@@ -241,6 +267,10 @@ async function run(fn: (() => void) | null | undefined): Promise<void> {
     block-size: 44px;
 }
 .plate-dock__handle :deep(svg) {
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+}
+.plate-dock__view :deep(svg) {
     inline-size: 1.125rem;
     block-size: 1.125rem;
 }

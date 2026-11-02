@@ -13,6 +13,7 @@ import { h } from "vue";
 import { RouterLink } from "vue-router";
 import { Button } from "@mkbabb/glass-ui/button";
 import { DataTable, type DataTableColumn, type DataTableSort } from "@mkbabb/glass-ui/data-table";
+import { sortRowsBy } from "../../lib/compareCells.js";
 import { Dialog, DialogDescription, DialogTitle } from "@mkbabb/glass-ui/dialog";
 import { Input } from "@mkbabb/glass-ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@mkbabb/glass-ui/select";
@@ -156,17 +157,11 @@ const filterText = computed(() => {
 
 // ── sort ────────────────────────────────────────────────────────────────────────────────────────
 const sort = ref<DataTableSort | undefined>(undefined);
+// The one atlas table sort (lib/compareCells): blanks last in both directions, numbers as numbers.
 const sorted = computed<Row[]>(() => {
     const s = sort.value;
     if (!s) return filtered.value;
-    const dir = s.direction === "asc" ? 1 : -1;
-    return [...filtered.value].sort((a, b) => {
-        const x = a[s.key];
-        const y = b[s.key];
-        if (x == null) return 1;
-        if (y == null) return -1;
-        return (typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y))) * dir;
-    });
+    return sortRowsBy(filtered.value, (row) => row[s.key], s.direction);
 });
 
 // ── the table, windowed ─────────────────────────────────────────────────────────────────────────

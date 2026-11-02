@@ -47,6 +47,8 @@ export * from "./useReducedMotion.js";
 export * from "./useScrollProgress.js";
 export * from "./useRankMotion.js";
 export * from "./useLoadSequence.js";
+// U/B8 A9 · P-G4 — the one entrance law (130 ms first view, the deep-link landing hold).
+export * from "./useFirstView.js";
 
 // ── O-B4R (the SCC closure) — the deferred members now land ───────────────────────────────────
 // motion-director re-exports ./buildMarkAnimation.

@@ -8,17 +8,21 @@ import "../../tests/browser/glass-root.css";
 import "../design/tokens/motion.css";
 import "../design/tokens/color.css";
 import { createApp, h } from "vue";
+import { commands } from "vitest/browser";
+const motion = commands as unknown as { emulateMotion: (m: "reduce" | "no-preference") => Promise<void> };
 import AnimatedRule from "./AnimatedRule.vue";
+import { beginNarrativeRestore, resetNarrativeLanding, settleNarrativeRestore } from "../motion/narrative-restore";
 
 const frames = (n = 2) => new Promise<void>((r) => {
     const step = (k: number) => (k <= 0 ? r() : requestAnimationFrame(() => step(k - 1)));
     step(n);
 });
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const cleanups: Array<() => void> = [];
-afterEach(() => {
-    while (cleanups.length) cleanups.pop()!();
+const cleanups: Array<() => void | Promise<void>> = [];
+afterEach(async () => {
+    while (cleanups.length) await cleanups.pop()!();
     window.scrollTo(0, 0);
+    resetNarrativeLanding(false);
 });
 
 /** Mount one rule, `offset` px below the top of a tall page. */
@@ -111,9 +115,10 @@ describe("AnimatedRule · T-10", () => {
     });
 
     it("under reduced motion nothing draws; the rule is painted at rest", async () => {
-        const mq = window.matchMedia;
-        window.matchMedia = ((q: string) => ({ ...mq.call(window, q), matches: /prefers-reduced-motion/.test(q) })) as typeof window.matchMedia;
-        cleanups.push(() => void (window.matchMedia = mq));
+        // The engine's own emulation: the rule reads the platform's one reduced-motion source
+        // (`useReducedMotion`), which a hand-stubbed matchMedia without listeners cannot drive.
+        await motion.emulateMotion("reduce");
+        cleanups.push(() => motion.emulateMotion("no-preference"));
         const rule = mount("full", 2400);
         await frames(3);
         expect(rule.dataset.draw).toBe("rest");
@@ -122,3 +127,45 @@ describe("AnimatedRule · T-10", () => {
         expect(rule.getAnimations({ subtree: true })).toHaveLength(0);
     });
 });
+
+// U/B8 A9 — the entrance law. Before, the rule drew on its first intersection: a scroll that passed
+// it in one frame, or a deep-link restore flying past, spent the draw where no one saw it.
+describe("AnimatedRule · the entrance law (A9)", () => {
+    it("a pass-through shorter than 130 ms does not draw; a real view draws", async () => {
+        resetNarrativeLanding(false);
+        const rule = mount("full", 2400);
+        await frames(3);
+        expect(rule.dataset.draw).toBe("pending");
+        window.scrollTo(0, 2400 - 300);
+        await frames(2);
+        window.scrollTo(0, 0);
+        await sleep(300);
+        expect(rule.dataset.draw, "the pass-through left the draw unspent").toBe("pending");
+        window.scrollTo(0, 2400 - 300);
+        await sleep(60);
+        expect(rule.dataset.draw, "not before the dwell").toBe("pending");
+        expect(await until(() => rule.dataset.draw === "drawn", 1000)).toBe(true);
+    });
+
+    it("on a page opened on a deep link it waits until the link has landed", async () => {
+        resetNarrativeLanding(true);
+        beginNarrativeRestore();
+        const rule = mount("full", 2400);
+        await frames(3);
+        expect(rule.dataset.draw, "held, even though it is not in view at mount").toBe("pending");
+        window.scrollTo(0, 2400 - 300);
+        await sleep(400);
+        expect(rule.dataset.draw, "the restore has not settled").toBe("pending");
+        settleNarrativeRestore({ beatId: "x" }, { aborted: false });
+        expect(await until(() => rule.dataset.draw === "drawn", 1000)).toBe(true);
+    });
+});
+
+async function until(pred: () => boolean, ms: number): Promise<boolean> {
+    const end = performance.now() + ms;
+    while (performance.now() < end) {
+        if (pred()) return true;
+        await sleep(16);
+    }
+    return pred();
+}

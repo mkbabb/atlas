@@ -30,13 +30,15 @@
 // T-10 (U/B7c M2 · RQ-054, RB-050): the rule is THIN and UNTAPERED — the hand's centreline inked as
 // an even stroke (InkStroke `even`), not glass's ribbon, whose ends narrowed to a quarter of its
 // body — and it DRAWS IN ONCE on entry (PLAN §4.2 scroll row): a rule below the fold at mount waits
-// `pending`, and the first time it intersects the viewport it draws over --duration-slow on
+// `pending`, and the first time it is seen it draws over --duration-slow on
 // --ease-engrave (stroke-dashoffset on the ink, a start-edge scaleX on the seam; both compositor-
 // friendly, not scrubbed, never reversed), then holds `drawn`. A rule in view at mount, or any rule
 // under reduced motion, is painted at `rest`: no draw at load (the load row allows the lead figure
-// only). One IntersectionObserver per rule, disconnected on its first entry; no rAF.
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+// only). The first view is the entrance law's (U/B8 A9): 130 ms in view, after any deep link has
+// landed, so a jump past the rule does not use its draw up. No rAF.
+import { computed, ref } from "vue";
 import InkStroke from "../charts/glyph/InkStroke.vue";
+import { useEntrance } from "../motion/useFirstView.js";
 
 const props = withDefaults(
     defineProps<{
@@ -51,25 +53,12 @@ const props = withDefaults(
 
 const host = ref<HTMLElement | null>(null);
 /** `rest` — painted, no draw (in view at mount, or reduced motion) · `pending` — below the fold,
-    not yet entered · `drawn` — entered once; the draw ran and the rule holds. */
-const draw = ref<"rest" | "pending" | "drawn">("rest");
-let io: IntersectionObserver | null = null;
-onMounted(() => {
-    const el = host.value;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const r = el.getBoundingClientRect();
-    if (r.bottom > 0 && r.top < window.innerHeight) return;
-    draw.value = "pending";
-    io = new IntersectionObserver((entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
-        draw.value = "drawn";
-        io?.disconnect();
-        io = null;
-    });
-    io.observe(el);
-});
-onBeforeUnmount(() => io?.disconnect());
+    not yet seen · `drawn` — seen once under the entrance law (130 ms in view, after any deep link
+    has landed; U/B8 A9, `motion/useFirstView.ts`); the draw ran and the rule holds. */
+const { phase } = useEntrance(host, { restInViewAtMount: true });
+const draw = computed<"rest" | "pending" | "drawn">(() =>
+    phase.value === "play" ? "drawn" : phase.value,
+);
 
 const isShort = computed(() => props.weight === "short");
 const isSeam = computed(() => props.weight === "seam");

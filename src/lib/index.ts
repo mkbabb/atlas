@@ -11,6 +11,7 @@
 // the charts family (WG-B B3/B4); re-homing the shim now would dangle on charts that has not landed.
 export * from "./bounds.js";
 export * from "./regions.js";
+export * from "./compareCells.js";
 export * from "./perf/inp-probe.js";
 
 // ── v1.0.2 (O-B10 re-cut) — THE PROSE-FORMATTER LIGHT SURFACE ──────────────────────────────────

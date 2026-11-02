@@ -24,6 +24,8 @@ import {
 } from "vue";
 import { useReducedMotion } from "../../../../motion/useReducedMotion.js";
 import {
+    beginNarrativeRestore,
+    markNarrativeRestoreAbsent,
     onNarrativeRestoreSettled,
     settleNarrativeRestore,
     watchNarrativeAnchorLayout,
@@ -341,7 +343,11 @@ export function useDockStepper(
         the Pinia-UNWRAPPED values (NO `.value` — a setup store auto-unwraps the returned computeds). */
     function restoreNarrativeAnchor(): void {
         const anchor = view.narrativeAt;
-        if (!anchor) return;
+        if (!anchor) {
+            markNarrativeRestoreAbsent();
+            return;
+        }
+        beginNarrativeRestore();
         const el = anchorElement(anchor);
         if (!el) {
             settleNarrativeRestore(anchor, { aborted: true });

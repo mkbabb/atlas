@@ -224,6 +224,20 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
     }
 
     /**
+     * U/B8 P-G4 — THE FIRST PAINT IS AT REST. A chart mounts eagerly at route mount, or lazily up to
+     * 200 px before it scrolls in, so ECharts' own first-render animation (a column rise, a line
+     * draw) ran off the reader's screen or half-seen, and the entrance was spent. Under the one
+     * entrance law (motion/useFirstView.ts) the first frame a reader sees is the final one; the
+     * plate's later paints keep their base `animation`, so a filter, a re-rank or a morph still moves
+     * in answer to the reader's act. Only the first push is overlaid; the option itself is untouched.
+     */
+    function firstPaint(): void {
+        if (!chart.value) return;
+        const option = opts.option();
+        push(option.animation === false ? option : { ...option, animation: false });
+    }
+
+    /**
      * The ONE structural write path: the data paint above, a view-change morph, a stage-scene push.
      * It closes `settled` until its `finished`, then REPLAYS the held key against the new data
      * (§L D3-4): the key is re-resolved through its live index, so nothing of the replaced data is
@@ -329,7 +343,7 @@ export function useEChart(opts: UseEChartOptions): UseEChart {
         // dispatched in between reaches `Scheduler.getPipeline` with `_pipelineMap` undefined and
         // throws (the Firefox /ecf page error, U-F29). `settled` holds every verb until `finished`.
         c.on("finished", onFinished);
-        paint();
+        firstPaint();
 
         if (opts.onHover && opts.keyOf) {
             chart.value.on("mouseover", (params) => {

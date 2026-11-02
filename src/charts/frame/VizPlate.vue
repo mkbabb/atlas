@@ -21,7 +21,7 @@
 //   • ChartDataTable  — the a11y rows that ARE the export payload (E3, off the contract).
 //   • VizDescription / VizKeyStats / PlateVoid — the new furniture rungs (E1 / B4 / E8).
 //   • vizExport       — the getDataURL / DOM-snapshot / CSV serializers (E3, ZERO heavy dep).
-import { defineAsyncComponent, inject, onBeforeUnmount, watch } from "vue";
+import { defineAsyncComponent, inject, onBeforeUnmount, ref, watch } from "vue";
 import ChartFrame from "./ChartFrame.vue";
 import PlateDock from "./PlateDock.vue";
 import VizOptionsBand from "../../filter/ui/VizOptionsBand.vue";
@@ -31,6 +31,7 @@ import ChartLegend from "../legend/ChartLegend.vue";
 import ChartDataTable from "../legend/ChartDataTable.vue";
 import PlateVoid from "./PlateVoid.vue";
 import PlateSkeleton from "./PlateSkeleton.vue";
+import type { PlateView } from "./plate-view.js";
 import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
 import { plateAnchorId } from "../../platform/provenance/appendix.js";
 import { STORY_CARD_KEY } from "./story-card-context.js";
@@ -42,6 +43,10 @@ import { STAGE_ANATOMY_KEY } from "../contract/scene-contract.js";
 const SourceDataBrowser = defineAsyncComponent(
     () => import("../../filter/ui/SourceDataBrowser.vue"),
 );
+
+/** U/B8 A4 — the figure's table view, loaded on the reader's first press of Table view, so the glass
+    DataTable never rides a plate's critical path. */
+const PlateTable = defineAsyncComponent(() => import("./PlateTable.vue"));
 
 const props = withDefaults(defineProps<VizPlateProps>(), { chart: null, nav: null });
 const suppressFoot = inject(STAGE_ANATOMY_KEY, false);
@@ -98,7 +103,16 @@ onBeforeUnmount(() => storyCard?.clearAggregateStats(props.contract.id));
 // dock-portal holds and the export focus receiver are deleted with it: no page surface carries a
 // figure's actions, so nothing has to guess which figure the reader means.
 
-defineExpose({ archetype });
+// U/B8 A4 — THE TABLE VIEW (O-18, O-19). The dock's Table view toggle swaps the drawn figure for its
+// export rows in the same footprint. The figure stays mounted and laid out underneath (hidden and
+// inert), so a chart never resizes to zero and back, and the plate's height does not move.
+const view = ref<PlateView>("chart");
+watch(
+    () => props.contract.id,
+    () => (view.value = "chart"),
+);
+
+defineExpose({ archetype, view });
 </script>
 
 <template>
@@ -166,6 +180,8 @@ defineExpose({ archetype });
                 :export-csv="onExportCsv"
                 :export-image="onExportImage"
                 :browse="sourceData ? openSourceData : null"
+                :view="platePhase === 'figure' ? view : undefined"
+                @update:view="view = $event"
             >
                 <template v-if="hasOptions" #options>
                     <VizOptionsBand :viz-id="contract.id" :controller="optionsController" />
@@ -240,26 +256,43 @@ defineExpose({ archetype });
                  (role=application, opt-in — SR-mode-changing, so opt-in only; the reading path role=img
                  on the inner host is untouched). The aria-live region serializes the SAME readout the
                  HoverCard renders; the focus rim seats the platform overlay ring at the focused mark. -->
+            <!-- U/B8 A4 — THE VIEW STAGE. The figure keeps its box; in the table view it is hidden and
+                 inert, and the table fills the same box (PlateTable is absolutely seated in it). -->
             <div
                 v-else
-                class="viz-plate__body"
-                :data-viz-body="contract.id"
-                :tabindex="hasNav ? 0 : undefined"
-                :role="hasNav ? 'application' : undefined"
-                :aria-roledescription="hasNav ? 'interactive chart' : undefined"
-                :aria-label="hasNav ? ariaLabel : undefined"
-                @keydown="onFigureKey"
+                class="viz-plate__stage"
+                :data-view="view"
             >
-                <slot :fullscreen="fullscreen" />
-                <div v-if="hasNav" aria-live="polite" class="sr-only" data-testid="viz-aria-live">
-                    {{ liveSentence }}
-                </div>
                 <div
-                    v-if="hasNav && focusRim.visible"
-                    class="viz-plate__focus-rim"
-                    aria-hidden="true"
-                    data-testid="viz-focus-rim"
-                    :style="{ left: `${focusRim.x}px`, top: `${focusRim.y}px` }"
+                    class="viz-plate__body"
+                    :data-viz-body="contract.id"
+                    :tabindex="hasNav ? 0 : undefined"
+                    :role="hasNav ? 'application' : undefined"
+                    :aria-roledescription="hasNav ? 'interactive chart' : undefined"
+                    :aria-label="hasNav ? ariaLabel : undefined"
+                    :inert="view === 'table' || undefined"
+                    :aria-hidden="view === 'table' || undefined"
+                    @keydown="onFigureKey"
+                >
+                    <slot :fullscreen="fullscreen" />
+                    <div v-if="hasNav" aria-live="polite" class="sr-only" data-testid="viz-aria-live">
+                        {{ liveSentence }}
+                    </div>
+                    <div
+                        v-if="hasNav && focusRim.visible"
+                        class="viz-plate__focus-rim"
+                        aria-hidden="true"
+                        data-testid="viz-focus-rim"
+                        :style="{ left: `${focusRim.x}px`, top: `${focusRim.y}px` }"
+                    />
+                </div>
+                <PlateTable
+                    v-if="view === 'table'"
+                    :id="contract.id"
+                    :title="contract.title"
+                    :rows="contract.export.rows()"
+                    :row-header="contract.export.rowHeader"
+                    :value-header="contract.export.valueHeader"
                 />
             </div>
 
@@ -292,7 +325,7 @@ defineExpose({ archetype });
                  The CSV export is UNAFFECTED — it reads `contract.export.rows()` directly (never this
                  DOM), so the payload stays complete + byte-stable whether or not the table mounts. -->
             <ChartDataTable
-                v-if="!sourceData"
+                v-if="!sourceData && view === 'chart'"
                 :rows="contract.export.rows()"
                 :caption="contract.title"
                 :row-header="contract.export.rowHeader"
