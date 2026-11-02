@@ -57,8 +57,8 @@ describe("U/B8 N-2 — a region's name and value never share a seat", () => {
         const valueY = yOf(html, "geo-value-label", "$14.66");
         expect(nameY).toBeLessThan(60);
         expect(valueY).toBeGreaterThan(60);
-        // The name's line box sits on or above the value's (11 and 12 user units, 1.2 em lines).
-        expect(nameY + (11 * 1.2) / 2).toBeLessThanOrEqual(valueY - (12 * 1.2) / 2 + 1e-9);
+        // The name's line box sits on or above the value's (11 and 12 user units, 1.32 em lines).
+        expect(nameY + (11 * 1.32) / 2).toBeLessThanOrEqual(valueY - (12 * 1.32) / 2 + 1e-9);
     });
 
     it("drops a value word whose block would touch a neighbour's name (the texture carries it)", async () => {
@@ -72,10 +72,10 @@ describe("U/B8 N-2 — a region's name and value never share a seat", () => {
 
     it("sizes the block from the faces the CSS paints", () => {
         const k = labelStack({ cx: 0, cy: 0, place: "PITT", label: "$14.66" });
-        expect(k.placeH + k.valueH).toBeCloseTo(23 * 1.2);
+        expect(k.placeH + k.valueH).toBeCloseTo(23 * 1.32);
         expect(k.valueW).toBeCloseTo(6 * 12 * 0.6);
         expect(k.placeW).toBeCloseTo(4 * 11 * 0.6);
-        expect(k.placeY).toBeCloseTo(-7.2);
-        expect(k.valueY).toBeCloseTo(6.6);
+        expect(k.placeY).toBeCloseTo(-7.92);
+        expect(k.valueY).toBeCloseTo(7.26);
     });
 });

@@ -196,8 +196,9 @@ export interface PatternDefEmit {
 export const VALUE_LABEL_PX = 12;
 export const PLACE_LABEL_PX = 11;
 const MONO_ADVANCE_EM = 0.6;
-/** A word's line box: its glyph cell, ascent to descent, is 1.2 em (the box a reader sees inked). */
-const LINE_EM = 1.2;
+/** A word's line box, ascent to descent: Fira Code's (and its fallback's, 99% + 32%) is 1.32 em.
+    Read on /ecf at 1440: the 12 px value box is 16.4 user units tall, the 11 px name 13.9. */
+const LINE_EM = 1.32;
 
 /**
  * U/B8 N-2 · THE LABEL STACK. A region that carries both a place word and a value word seats them as
