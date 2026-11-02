@@ -27,6 +27,7 @@ import {
     cellFloorScale,
     type ChoroplethProps,
     type Shape,
+    labelStack,
 } from "./useChoroplethShapes.js";
 
 const props = withDefaults(
@@ -89,7 +90,7 @@ const {
     labelsMounted,
     labelsRedundant,
     labelGateFails,
-} = useChoroplethShapes(props);
+} = useChoroplethShapes(props, () => placeLetterScale.value);
 
 // A-04 · THE AGGREGATED-CELL TAP FLOOR — the field's own rendered measure (the `viewBox` scales the
 // user-space geometry to this box, so `width / WIDTH` is the px-per-unit the floor is judged in).
@@ -183,14 +184,22 @@ const magnitudeRings = computed(() => {
 // place word per feature whose `placeLabel` returns a non-empty string, seated at the SAME centroid
 // the value label uses. It AUGMENTS the value-label channel below (never replaces it); omit the
 // prop ⇒ no layer, byte-identical render.
-const placeLabels = computed(() => {
-    const fn = props.placeLabel;
-    if (!fn) return [];
-    return shapes.value.flatMap((s) => {
-        const text = fn(s.key);
-        return text ? [{ key: s.key, cx: s.cx, cy: s.cy, text }] : [];
-    });
-});
+// U/B8 N-2 — a feature with both words seats them as one stack (`labelStack`): the place word above
+// the centroid, the value word below, so the two never share a baseline.
+const placeLabels = computed(() =>
+    shapes.value.flatMap((s) =>
+        s.place
+            ? [{ key: s.key, cx: s.cx, cy: stackOf(s).placeY, text: s.place }]
+            : [],
+    ),
+);
+/** The stack a feature's words take; a word that is not mounted takes no line. */
+function stackOf(s: Shape) {
+    return labelStack(
+        { cx: s.cx, cy: s.cy, place: s.place, label: labelsMounted.value ? s.label : "" },
+        placeLetterScale.value,
+    );
+}
 
 // The PHONE counter-scale: the viewBox scales the letters with the geometry, so a narrow render
 // shrinks the 11px word below legibility (~4px at 390). When the field renders UNDER user scale
@@ -376,7 +385,7 @@ const tableRows = computed(() =>
                     v-show="s.label"
                     :key="`label-${s.key}`"
                     :x="s.cx"
-                    :y="s.cy"
+                    :y="stackOf(s).valueY"
                     class="geo-value-label"
                     :class="{ 'geo-value-label--gate-fail': labelGateFails(s) }"
                     text-anchor="middle"

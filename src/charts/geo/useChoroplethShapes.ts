@@ -166,6 +166,8 @@ export interface Shape {
     cy: number;
     /** GAP-5 — the per-feature value word (the forced-colors text channel); "" ⇒ no label. */
     label: string;
+    /** A-28 — the per-feature bold place word (`placeLabel`); "" ⇒ none. */
+    place: string;
     /** O-A22 — the RESOLVED data fill (computed once). The region always paints this exact colour;
         the redundant tier texture is an ink overlay above it, never a replacement fill. */
     fill: string;
@@ -187,12 +189,37 @@ export interface PatternDefEmit {
     geom: PatternDef;
 }
 
-/** The value-label box metrics — a mono word's advance-width per char + line height, in SVG
-    user-space (the `cx`/`cy` frame). The `.geo-value-label` face is 9px mono (GeoChoropleth.css); a
-    monospace advance is ≈0.6em, so a char is ≈5.4 user units wide. The declutter box is an estimate
-    (a de-clutter heuristic needs the same coordinate frame, not sub-pixel accuracy). */
-const LABEL_ADVANCE_PX = 5.4;
-const LABEL_LINE_PX = 9;
+/** The label box metrics, in SVG user-space (the `cx`/`cy` frame): a mono word's advance per char
+    (≈0.6em) and its line height. `.geo-value-label` is `--type-micro` (0.75rem, 12 user units) mono;
+    `.geo-place-label` is 11 user units bold mono, times the phone counter-scale (GeoChoropleth.css).
+    U/B8 N-2: the value box was sized for a 9px face, so the declutter kept words whose ink touched. */
+export const VALUE_LABEL_PX = 12;
+export const PLACE_LABEL_PX = 11;
+const MONO_ADVANCE_EM = 0.6;
+/** A word's line box: its glyph cell, ascent to descent, is 1.2 em (the box a reader sees inked). */
+const LINE_EM = 1.2;
+
+/**
+ * U/B8 N-2 · THE LABEL STACK. A region that carries both a place word and a value word seats them as
+ * one block centred on its centroid: the place word above, the value word below. They never share a
+ * baseline (they did: both at the centroid, so /ecf printed PITT over $14.66, 63 overlaps at 1440).
+ * Returns each word's centre y and box size; `placeScale` is the phone counter-scale.
+ */
+export function labelStack(
+    s: Pick<Shape, "cx" | "cy" | "label" | "place">,
+    placeScale = 1,
+): { placeY: number; valueY: number; placeW: number; placeH: number; valueW: number; valueH: number } {
+    const placeH = s.place ? PLACE_LABEL_PX * placeScale * LINE_EM : 0;
+    const valueH = s.label ? VALUE_LABEL_PX * LINE_EM : 0;
+    return {
+        placeY: s.cy - valueH / 2,
+        valueY: s.cy + placeH / 2,
+        placeW: s.place.length * PLACE_LABEL_PX * placeScale * MONO_ADVANCE_EM,
+        placeH,
+        valueW: Math.max(1, s.label.length) * VALUE_LABEL_PX * MONO_ADVANCE_EM,
+        valueH,
+    };
+}
 
 // ── A-04 · THE AGGREGATED-CELL TAP FLOOR (the L4 law at the geo mark) ───────────────────────────
 // A BINNED field (the speedtest H3 hex layer) draws its cells at the bin's own size: at a phone
@@ -252,7 +279,11 @@ function categoryVar(idx: number): string {
  * The reactive orchestration the SFC braided inline, lifted once. Reads `props` reactively (the Vue
  * reactive proxy), so a prop change re-derives exactly the affected computeds.
  */
-export function useChoroplethShapes(props: ChoroplethProps) {
+export function useChoroplethShapes(
+    props: ChoroplethProps,
+    /** The place words' phone counter-scale (the SFC's measured `placeLetterScale`); 1 on desktop. */
+    placeScale: () => number = () => 1,
+) {
     // The viewBox: the US Albers canvas by default, or the caller's NC-fitted viewport.
     const WIDTH = computed(() => props.viewport?.[0] ?? 975);
     const HEIGHT = computed(() => props.viewport?.[1] ?? 610);
@@ -340,6 +371,7 @@ export function useChoroplethShapes(props: ChoroplethProps) {
             const minorAxis = Math.min(x1 - x0, y1 - y0);
             // O-A22 — the per-cell word, computed ONCE (the redundant channel + the fill read one truth).
             const word = wordOf ? wordOf(key) : "";
+            const place = props.placeLabel ? props.placeLabel(key) || "" : "";
             return {
                 key,
                 d: draw(f) ?? "",
@@ -350,6 +382,7 @@ export function useChoroplethShapes(props: ChoroplethProps) {
                 cx,
                 cy,
                 label: word,
+                place,
                 minorAxis,
                 fill: fillOf(key),
                 ordinal: ordinalOf(valueOf?.(key)),
@@ -433,17 +466,23 @@ export function useChoroplethShapes(props: ChoroplethProps) {
     // key ASC as the deterministic tiebreak, so the suppressed set is frozen per frame.
     const collisionSuppressed = computed<Set<string>>(() => {
         if (resolvedChannel.value !== "value-label") return new Set<string>();
+        const scale = placeScale();
         const boxes: LabelBox[] = shapes.value
             .filter((s) => s.hasValue && s.label !== "" && shapeClearsLabelGate(s.key))
             .sort((a, b) => b.minorAxis - a.minorAxis || (a.key < b.key ? -1 : 1))
-            .map((s) => ({
-                key: s.key,
-                cx: s.cx,
-                cy: s.cy,
-                w: Math.max(1, s.label.length) * LABEL_ADVANCE_PX,
-                h: LABEL_LINE_PX,
-            }));
-        return resolveLabelCollisions(boxes);
+            .map((s) => {
+                const k = labelStack(s, scale);
+                return { key: s.key, cx: s.cx, cy: k.valueY, w: k.valueW, h: k.valueH };
+            });
+        // A place word always draws (A-28: it augments, never yields), so its box is reserved. A
+        // region's own name sits above its own value by construction, so it never counts against it.
+        const reserved = shapes.value
+            .filter((s) => s.place !== "")
+            .map((s) => {
+                const k = labelStack(s, scale);
+                return { key: s.key, cx: s.cx, cy: k.placeY, w: k.placeW, h: k.placeH };
+            });
+        return resolveLabelCollisions(boxes, reserved);
     });
 
     /** THE UNIFIED SUPPRESSION TEST — a value-label region loses its resting word when it fails the

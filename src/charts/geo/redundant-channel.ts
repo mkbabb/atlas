@@ -272,16 +272,21 @@ export interface LabelBox {
     whose centred AABB overlaps a kept box. Returns the suppressed key set; the caller routes a
     suppressed region to the pattern texture, so O-A22's non-hue-channel-per-region invariant survives
     the thin (the word only changes FORM, it never drops). PURE + DETERMINISTIC: the same ordered
-    boxes always yield the same suppressed set — no hover state, frozen per frame. */
-export function resolveLabelCollisions(boxes: readonly LabelBox[]): Set<string> {
+    boxes always yield the same suppressed set — no hover state, frozen per frame. `reserved` boxes
+    are never suppressed and never compete; they only take space. */
+export function resolveLabelCollisions(
+    boxes: readonly LabelBox[],
+    reserved: readonly LabelBox[] = [],
+): Set<string> {
     const suppressed = new Set<string>();
     const kept: LabelBox[] = [];
+    const hits = (k: LabelBox, b: LabelBox) =>
+        Math.abs(k.cx - b.cx) < (k.w + b.w) / 2 && Math.abs(k.cy - b.cy) < (k.h + b.h) / 2;
     for (const b of boxes) {
-        const overlaps = kept.some(
-            (k) =>
-                Math.abs(k.cx - b.cx) < (k.w + b.w) / 2 &&
-                Math.abs(k.cy - b.cy) < (k.h + b.h) / 2,
-        );
+        // U/B8 N-2 — `reserved` are words that always draw (a region's place name): a word keeps its
+        // seat only clear of every other region's reserved box as well as every kept word.
+        const overlaps =
+            kept.some((k) => hits(k, b)) || reserved.some((r) => r.key !== b.key && hits(r, b));
         if (overlaps) suppressed.add(b.key);
         else kept.push(b);
     }
