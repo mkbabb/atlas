@@ -141,4 +141,19 @@ describe("GeoChoropleth — no CSS draw hook", () => {
             expect(html).not.toContain("geo-shape--draw");
         }
     });
+
+    it("puts neither on the texture overlay a pattern-channel map paints", async () => {
+        // `redundantChannel: "pattern"` mounts the `.geo-texture` ink path over each valued region,
+        // the second site the retired hook wrote to.
+        for (const props of [
+            { rank, redundantChannel: "pattern" },
+            { rank, redundantChannel: "pattern", entrance: { origin: "01", kind: "ripple" } },
+        ]) {
+            const html = await render(props);
+            expect(html).toMatch(/class="[^"]*\bgeo-texture\b/);
+            expect(html).toContain('data-texture-key="01"');
+            expect(html).not.toContain("--rank");
+            expect(html).not.toContain("geo-shape--draw");
+        }
+    });
 });
