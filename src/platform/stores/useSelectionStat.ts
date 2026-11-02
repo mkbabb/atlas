@@ -30,6 +30,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { Fact } from "../../interaction/HoverCard.vue";
 import type { SelectionKey } from "../../charts/contract/selection-contract.js";
+import type { CountNoun } from "../../editorial/evidence-floor.js";
 import { useActiveBeat } from "./useActiveBeat.js";
 import { useHoverReadout } from "./useHoverReadout.js";
 
@@ -56,19 +57,36 @@ export type SelectionStatResolver = (
 ) => SelectionStat | null;
 
 /**
+ * THE AGGREGATE A BEAT RETURNS for one grain of a multi-unit selection (O-A11; U/B8 N-4). It carries
+ * the reduced facts and how many of the selected units they cover, never a count sentence: the panel
+ * owns the count and the noun (the one count law, `SelectionDrilldownPanel`), so the header and the
+ * aggregate can never disagree ("2 districts" over "1 districts selected" was two writers).
+ */
+export interface SelectionAggregate {
+    /** The fact rows, in the `<ReadoutFacts>` grammar. */
+    facts: Fact[];
+    /** How many of the grain's selected units the facts reduce. A unit the beat holds no figure for
+        (a district with no request) is left out of the reduce, and the panel says so. */
+    covered: number;
+    /** What the beat calls one unit of this grain, when it is not the grain's own word (sci calls
+        every district and charter a "school unit"). The panel reads it for the header and the
+        aggregate alike. Omitted: the grain's own noun. */
+    noun?: CountNoun;
+}
+
+/**
  * O-A11 — a beat's AGGREGATE resolver: given the selected items OF ONE GRAIN (the `SelectionDrilldownPanel`
- * pre-groups by kind) and that grain, return the beat's WHOLE-SELECTION aggregate stat — or `null` when
+ * pre-groups by kind) and that grain, return the beat's WHOLE-SELECTION aggregate — or `null` when
  * the beat has no summable facts for the grain (a firm with no public totals, an un-registered grain).
  * The resolver reduces the beat's OWN store extensives/intensives through the AGGREGATE LAW compute
  * (`charts/contract/aggregate.ts` — `Σ` for extensives, `pooled`+`median` for intensives, [ANSWERS Q-38]
- * both reported), returning the SAME `{ label, facts }` grammar `statFor` does so the panel renders it
- * through one `<ReadoutFacts>`. This is the MULTI-only twin of `statFor` (single-item) — the two share
- * the beat-tracked registry discipline, never a plain mean of a ratio (the Simpson trap is unreachable).
+ * both reported). This is the MULTI-only twin of `statFor` (single-item) — the two share the
+ * beat-tracked registry discipline, never a plain mean of a ratio (the Simpson trap is unreachable).
  */
 export type AggregateResolver = (
     items: readonly SelectionKey[],
     grain: SelectionKey["kind"],
-) => SelectionStat | null;
+) => SelectionAggregate | null;
 
 export const useSelectionStat = defineStore("platform:selection-stat", () => {
     /** The beat-id → resolver registry. One resolver per beat; a beat may register/replace its own. */
@@ -146,7 +164,7 @@ export const useSelectionStat = defineStore("platform:selection-stat", () => {
     /**
      * Resolve the WHOLE-SELECTION aggregate for one grain's items, TRACKING THE ACTIVE BEAT (the twin
      * of `statFor`). Reads the active beat off `useActiveBeat`, runs its registered `AggregateResolver`
-     * for the grouped `items`+`grain`, and returns the `{ label, facts }` — or `null` when no aggregate
+     * for the grouped `items`+`grain`, and returns its `{ facts, covered, noun? }` — or `null` when no aggregate
      * resolver is registered for the active beat / it returns null (the panel then FALLS BACK to a
      * count-only roll-up, never a blank). No pinned-facts fallback here — an aggregate has no single
      * pinned payload; the count roll-up is the panel's floor.
@@ -154,7 +172,7 @@ export const useSelectionStat = defineStore("platform:selection-stat", () => {
     function aggregateFor(
         items: readonly SelectionKey[],
         grain: SelectionKey["kind"],
-    ): SelectionStat | null {
+    ): SelectionAggregate | null {
         const resolver = aggregateResolvers.value.get(activeBeat.activeBeatId);
         return resolver?.(items, grain) ?? null;
     }

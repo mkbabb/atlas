@@ -59,7 +59,8 @@ import type {
     SelectionKind,
 } from "../charts/contract/selection-contract.js";
 import { useSelection } from "../platform/stores/useSelection.js";
-import { useSelectionStat } from "../platform/stores/useSelectionStat.js";
+import { useSelectionStat, type SelectionAggregate } from "../platform/stores/useSelectionStat.js";
+import { countNoun, nounFor, type CountNoun } from "../editorial/evidence-floor.js";
 import { PIN_CAP } from "../platform/stores/useHoverReadout.js";
 import { projectDrilldown } from "./projectDrilldown.js";
 
@@ -168,15 +169,16 @@ const GRAIN_ORDER: readonly SelectionKind[] = [
     "cell",
     "firm",
 ];
-/** Plural nouns per grain — the dropdown header + the roll-up lede. */
-const GRAIN_PLURAL: Record<SelectionKind, string> = {
-    state: "States",
-    county: "Counties",
-    district: "Districts",
-    school: "Schools",
-    cell: "Cells",
-    firm: "Firms",
+/** Each grain's own count noun. A beat may name its unit otherwise (`SelectionAggregate.noun`). */
+const GRAIN_NOUN: Record<SelectionKind, CountNoun> = {
+    state: countNoun("state"),
+    county: countNoun("county", "counties"),
+    district: countNoun("district"),
+    school: countNoun("school"),
+    cell: countNoun("map cell"),
+    firm: countNoun("firm"),
 };
+const capital = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 const SPATIAL_KINDS: ReadonlySet<SelectionKind> = new Set([
     "state",
     "county",
@@ -186,7 +188,12 @@ const SPATIAL_KINDS: ReadonlySet<SelectionKind> = new Set([
 
 interface GrainGroup {
     grain: SelectionKind;
-    plural: string;
+    /** How many units of this grain are selected: the one count every line of the panel prints. */
+    count: number;
+    /** The one noun for this grain: the active beat's word for its unit, else the grain's own. */
+    noun: CountNoun;
+    /** The beat's reduce over this grain, or null (the panel then prints the count alone). */
+    aggregate: SelectionAggregate | null;
     rows: Described[];
     /** overflow beyond `PIN_CAP` — the `+N more` chip count. */
     overflow: number;
@@ -203,9 +210,12 @@ const groups = computed<GrainGroup[]>(() => {
         const items = byKind.get(grain);
         if (!items || !items.length) continue;
         const capped = items.slice(0, PIN_CAP).map(describe);
+        const aggregate = stat.aggregateFor(items, grain);
         out.push({
             grain,
-            plural: GRAIN_PLURAL[grain],
+            count: items.length,
+            noun: aggregate?.noun ?? GRAIN_NOUN[grain],
+            aggregate,
             rows: capped,
             overflow: Math.max(0, items.length - PIN_CAP),
         });
@@ -213,10 +223,16 @@ const groups = computed<GrainGroup[]>(() => {
     return out;
 });
 
-/** The roll-up lede — the count + the grain noun ("3 places" mixed, else the grain plural). */
-const rollupNoun = computed(() => {
-    if (groups.value.length === 1) return groups.value[0].plural.toLowerCase();
-    return "places";
+// ── THE ONE COUNT LAW (U/B8 N-4). Every count the panel prints is a count of the SELECTION, read per
+// grain from the selection's own entity kinds, and every noun is that grain's one noun. The beat's
+// aggregate supplies facts and how many units they cover, never a count sentence of its own. So the
+// header, the aggregate line and the dropdown header read one number in one word. ─────────────────
+/** "2 districts", "1 school unit". */
+const counted = (count: number, noun: CountNoun): string => `${count} ${nounFor(count, noun)}`;
+/** The roll-up lede: one grain reads its own count and noun; mixed grains read "places". */
+const rollup = computed(() => {
+    if (groups.value.length === 1) return counted(groups.value[0].count, groups.value[0].noun);
+    return `${n.value} places`;
 });
 
 // ── THE AGGREGATE BLOCK (selection-drilldown §B.4 · [ANSWERS Q-37/Q-38]). Per grain group, the
@@ -226,12 +242,13 @@ const rollupNoun = computed(() => {
 const aggregates = computed(() =>
     groups.value.map((g) => ({
         grain: g.grain,
-        plural: g.plural,
-        count: g.rows.length + g.overflow,
-        stat: stat.aggregateFor(
-            selectedItems.value.filter((it) => it.kind === g.grain),
-            g.grain,
-        ),
+        label: `${counted(g.count, g.noun)} selected`,
+        facts: g.aggregate?.facts ?? null,
+        /** The facts leave units out (no figure for them): say how many they cover. */
+        coverage:
+            g.aggregate && g.aggregate.covered < g.count
+                ? `Figures cover ${g.aggregate.covered} of ${counted(g.count, g.noun)}`
+                : null,
     })),
 );
 
@@ -341,7 +358,7 @@ function onPanelKeydown(e: KeyboardEvent): void {
                 <header class="drilldown__head">
                     <div class="drilldown__head-row">
                         <p class="drilldown__eyebrow">Selection</p>
-                        <p class="drilldown__count">{{ n }} {{ rollupNoun }}</p>
+                        <p class="drilldown__count" data-testid="drilldown-count">{{ rollup }}</p>
                     </div>
                     <button
                         type="button"
@@ -405,16 +422,19 @@ function onPanelKeydown(e: KeyboardEvent): void {
                 >
                     <template v-for="a in aggregates" :key="a.grain">
                         <div class="drilldown__aggregate-group">
-                            <template v-if="a.stat">
-                                <p class="drilldown__stat-label">{{ a.stat.label }}</p>
+                            <template v-if="a.facts">
+                                <p class="drilldown__stat-label" data-testid="drilldown-aggregate-label">{{ a.label }}</p>
+                                <p v-if="a.coverage" class="drilldown__coverage" data-testid="drilldown-aggregate-coverage">
+                                    {{ a.coverage }}
+                                </p>
                                 <ReadoutFacts
-                                    :facts="a.stat.facts"
+                                    :facts="a.facts"
                                     density="compact"
                                 />
                             </template>
                             <!-- the count-only floor (canon §5.A4 — never a bare em-dash) -->
-                            <p v-else class="drilldown__aggregate-count">
-                                {{ a.count }} {{ a.plural.toLowerCase() }}
+                            <p v-else class="drilldown__aggregate-count" data-testid="drilldown-aggregate-label">
+                                {{ a.label }}
                             </p>
                         </div>
                     </template>
@@ -438,10 +458,10 @@ function onPanelKeydown(e: KeyboardEvent): void {
                                 :grain="grainForKind(g.grain)"
                                 size="sm"
                                 fill-policy="identity"
-                                :label="g.plural"
+                                :label="capital(g.noun.many)"
                             />
                             <span class="drilldown__dropdown-title"
-                                >{{ g.plural }} · {{ g.rows.length + g.overflow }}</span
+                                >{{ capital(g.noun.many) }} · {{ g.count }}</span
                             >
                         </CollapsibleTrigger>
                         <CollapsibleContent>
@@ -709,6 +729,12 @@ function onPanelKeydown(e: KeyboardEvent): void {
 .drilldown__aggregate-count {
     margin: 0;
     font-family: var(--font-mono, monospace);
+    font-size: var(--type-micro);
+    color: var(--muted-foreground);
+}
+/* N-4 — the coverage line: sentence case, recessive, under the count it qualifies. */
+.drilldown__coverage {
+    margin: 0;
     font-size: var(--type-micro);
     color: var(--muted-foreground);
 }
