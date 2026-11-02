@@ -10,14 +10,14 @@
   far side fits. `transientSeat` takes an optional avoid-rect (a fixed dock; a `DOMRect` serves) that
   the seat stays clear of when a corner can; the live pointer still outranks it. The seat is
   internal, so no consumer changes. Witness: `tests/unit/b8-card-flip-and-avoid.spec.ts`, red before.
-- **The hover card keeps clear of the platform dock (U/B8 A5 repair).** The avoid-rect now carries a
-  clearance gap (`AVOID_GAP`, 8 px, Gregg's dock clearance), so the card never sits flush on the dock.
-  In a viewport too small for the card on any side of its anchor, every corner clamped back over the
-  anchor; the seat now takes the roomier band above or below it and caps the card's height there
-  (`maxHeight`, the card scrolls). The dock binds its root to a dock-rect source that `SiteShell`
-  provides (`provideDockRect`, `useDockRect`), and `HoverCard` passes that rect as the avoid-rect, so
-  no caller queries the DOM by class. Witnesses: `tests/unit/b8-card-flip-and-avoid.spec.ts` and
-  `src/interaction/HoverCard.dock-clear.browser.spec.ts`, red before.
+- **The hover card keeps a gap from an avoid-rect and never covers its anchor (U/B8 A5 repair).** The
+  avoid-rect now carries a clearance gap (`AVOID_GAP`, 8 px, Gregg's dock clearance), so a card seated
+  clear of a dock never sits flush on it. In a viewport too small for the card on any side of its
+  anchor, every corner clamped back over the anchor; the seat now takes the roomier band above or
+  below it and caps the card's height there (`maxHeight`, the card scrolls), and `HoverCard` measures
+  the card's natural height so it never reads the cap back as its size. `HoverCard` passes no
+  avoid-rect: wiring it to the dock's rect is U/B8's. Witnesses: `tests/unit/b8-card-flip-and-avoid.spec.ts`
+  and `tests/unit/b8-card-no-dock-rect.spec.ts`, red before.
 - **A section jump lands where it was sent (U/B7d M2 · WebKit).** On the first Sections jump after a
   load, WebKit stopped the smooth scroll 360 to 381 px short when focus moved as the list closed, with
   `?at=` written and the label a section behind (2 of 25 jumps in the engine harness; the served /sci

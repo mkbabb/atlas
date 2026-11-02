@@ -65,7 +65,7 @@ export interface Seat {
 
     U/B8 A5 — the card FLIPS to the far side of the anchor on each axis when the near side would
     cross the viewport edge and the far side has room, so the clamp never slides it back over the
-    anchor and its mark. `avoid` (the platform dock, `useDockRect`) is a box the seat stays `gap` px
+    anchor and its mark. `avoid` (a fixed dock; a `DOMRect` serves) is a box the seat stays `gap` px
     clear of when a corner can. The seat never covers the anchor: when the viewport is too small for
     any full-size corner to clear it, the card takes the side above or below the anchor with the
     more room and caps its height to that room (`maxHeight`).
