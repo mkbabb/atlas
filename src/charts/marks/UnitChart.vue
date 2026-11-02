@@ -6,17 +6,20 @@
 //
 // The component owns the Vue edges only: the host width (emitted, so the consumer rebuilds its
 // layouts at the new size and the chart lands on them without a morph), the palette (CSS custom
-// properties resolved through `readVar`, re-read on the post-settle theme epoch), reduced motion
-// (every change snaps), and the pointer (hit test → `hover`/`select`, and the hovered mark's group
-// stays lit while the rest dim). The canvas is `role="img"`; `summary` is its accessible text, and
-// `unitSummary` writes one from a layout. A figure's table twin carries the same counts.
+// properties resolved through `readVar`, re-read on the post-settle theme epoch), the device pixel
+// ratio (a display move or a zoom resizes the backing store), reduced motion (every change snaps,
+// and turning it on lands a flight), and the pointer and keyboard (hit test or the rank walk →
+// `hover`/`select`, and the hovered mark's group stays lit while the rest dim). The canvas is
+// `role="img"`; `summary` is its accessible text, and `unitSummary` writes one from a layout. The
+// hovered mark is announced through a polite live line (`markLabel`). A figure's table twin carries
+// the same counts.
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
-import { useElementSize } from "@vueuse/core";
+import { useDevicePixelRatio, useElementSize } from "@vueuse/core";
 import { useReducedMotion } from "../../motion/useReducedMotion.js";
 import { useThemeReactiveOption } from "../composables/useThemeReactiveOption.js";
 import { readVar } from "../scale/colorRamp.js";
-import { UnitCanvas, unitDpr, type UnitMorphOptions, type UnitSpriteFactory } from "./unit-engine.js";
-import type { UnitLayout } from "./unit-layouts.js";
+import { UnitCanvas, type UnitMorphOptions, type UnitSpriteFactory } from "./unit-engine.js";
+import { unitStep, type UnitLayout } from "./unit-layouts.js";
 
 const props = withDefaults(
     defineProps<{
@@ -30,6 +33,8 @@ const props = withDefaults(
         summary: string;
         /** A group to keep lit while the rest dim, from outside the chart (a legend hover). */
         focusGroup?: number | null;
+        /** The live text for a hovered or keyboard-focused mark. Defaults to its place in the rank. */
+        markLabel?: (index: number) => string;
         /** Dim every other group while a mark is hovered. */
         dimOnHover?: boolean;
         /** Draws each mark from an image in place of a flat fill. */
@@ -38,6 +43,7 @@ const props = withDefaults(
     }>(),
     {
         colorOf: undefined,
+        markLabel: undefined,
         focusGroup: null,
         dimOnHover: true,
         sprite: undefined,
@@ -59,6 +65,7 @@ const engine = shallowRef<UnitCanvas>();
 const hovered = ref(-1);
 const reduced = useReducedMotion();
 const { width: hostWidth } = useElementSize(host);
+const { pixelRatio } = useDevicePixelRatio();
 
 const resolve = (c: string) => (c.startsWith("--") ? readVar(c, readVar("--foreground", "#000")) : c);
 const palette = useThemeReactiveOption(() => props.colors.map(resolve));
@@ -70,7 +77,7 @@ function mount(layout: UnitLayout) {
         sprite: props.sprite,
         reduced: reduced.value,
     });
-    u.setSize(layout.width, layout.height, unitDpr());
+    u.setSize(layout.width, layout.height, pixelRatio.value);
     u.setPalette(palette.value, props.colorOf ?? layout.group);
     u.snap(layout);
     u.focus(lit.value);
@@ -87,13 +94,14 @@ watch(
         if (!u || next.count !== u.count) return mount(next);
         // A new frame size is a rebuilt layout: land on it. A new arrangement morphs.
         const resized = next.width !== prev.width || next.height !== prev.height;
-        u.setSize(next.width, next.height, unitDpr());
+        u.setSize(next.width, next.height, pixelRatio.value);
         if (resized) u.snap(next);
         else u.show(next);
         if (!props.colorOf) u.setPalette(palette.value, next.group);
     },
 );
 watch([palette, () => props.colorOf], ([colors]) => engine.value?.setPalette(colors, props.colorOf ?? props.layout.group));
+watch(pixelRatio, (dpr) => engine.value?.setSize(props.layout.width, props.layout.height, dpr));
 watch(reduced, (r) => {
     if (engine.value) engine.value.reduced = r;
 });
@@ -112,34 +120,51 @@ function at(e: MouseEvent) {
     const r = canvas.value!.getBoundingClientRect();
     return engine.value?.hit(e.clientX - r.left, e.clientY - r.top) ?? -1;
 }
-function onMove(e: PointerEvent) {
-    const i = at(e);
+function hover(i: number) {
     if (i === hovered.value) return;
     hovered.value = i;
     emit("hover", i);
 }
-function onLeave() {
-    if (hovered.value < 0) return;
-    hovered.value = -1;
-    emit("hover", -1);
-}
+const onMove = (e: PointerEvent) => hover(at(e));
+const onLeave = () => hover(-1);
 function onClick(e: MouseEvent) {
     const i = at(e);
     if (i >= 0) emit("select", i);
 }
+function onKey(e: KeyboardEvent) {
+    if (e.key === "Escape") return hover(-1);
+    if ((e.key === "Enter" || e.key === " ") && hovered.value >= 0) {
+        e.preventDefault();
+        return emit("select", hovered.value);
+    }
+    const i = unitStep(props.layout, hovered.value, e.key);
+    if (i === hovered.value) return;
+    e.preventDefault();
+    hover(i);
+}
+
+const announce = computed(() => {
+    const i = hovered.value;
+    if (i < 0 || i >= props.layout.count) return "";
+    return props.markLabel?.(i) ?? `${props.layout.rank[i] + 1} of ${props.layout.count}`;
+});
 </script>
 
 <template>
     <div ref="host" class="w-full" data-testid="unit-chart">
         <canvas
             ref="canvas"
-            class="block"
+            class="block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--focus-ring-color)"
             role="img"
+            tabindex="0"
             :aria-label="summary"
             :style="{ width: `${layout.width}px`, height: `${layout.height}px` }"
             @pointermove="onMove"
             @pointerleave="onLeave"
             @click="onClick"
+            @keydown="onKey"
+            @blur="onLeave"
         />
+        <p class="sr-only" aria-live="polite">{{ announce }}</p>
     </div>
 </template>

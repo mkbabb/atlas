@@ -255,6 +255,25 @@ export function groupedBlocksLayout(group: ArrayLike<number>, o: UnitBlockOption
     return { ...layout, blocks };
 }
 
+/**
+ * The keyboard walk: the mark `key` moves to from `index`, along the layout's rank (the order a
+ * morph reaches the marks, so the walk reads the arrangement on screen). Arrow right/down step
+ * forward, left/up back, Home and End jump to the ends; -1 (nothing focused) enters at an end.
+ * Returns `index` for any other key and at either end.
+ */
+export function unitStep(l: UnitLayout, index: number, key: string): number {
+    if (l.count === 0) return -1;
+    const rank = index >= 0 ? l.rank[index] : -1;
+    let to: number;
+    if (key === "Home") to = 0;
+    else if (key === "End") to = l.count - 1;
+    else if (key === "ArrowRight" || key === "ArrowDown") to = rank < 0 ? 0 : Math.min(rank + 1, l.count - 1);
+    else if (key === "ArrowLeft" || key === "ArrowUp") to = rank < 0 ? l.count - 1 : Math.max(rank - 1, 0);
+    else return index;
+    for (let i = 0; i < l.count; i++) if (l.rank[i] === to) return i;
+    return index;
+}
+
 /** The role=img summary: the total, then each group's count, largest first ("5 visits: 3 Tour, …"). */
 export function unitSummary(l: UnitLayout, groupNames: readonly string[], noun: string): string {
     const counts = new Map<number, number>();

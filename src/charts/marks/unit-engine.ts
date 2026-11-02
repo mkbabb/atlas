@@ -14,14 +14,8 @@
 // Framework-free: `UnitChart.vue` owns the Vue lifecycle, the CSS-variable colors and the theme flip.
 
 import { springTimingFunction, stagger } from "@mkbabb/keyframes.js";
+import { cappedDpr } from "../../lib/dpr.js";
 import { hitTest, type UnitLayout } from "./unit-layouts.js";
-
-/** The backing-store ratio ceiling: past 2 the fill cost grows and the eye sees no difference. */
-export const UNIT_MAX_DPR = 2;
-
-export function unitDpr(raw: number = typeof devicePixelRatio === "number" ? devicePixelRatio : 1): number {
-    return Math.min(raw > 0 ? raw : 1, UNIT_MAX_DPR);
-}
 
 export interface UnitSpring {
     response: number;
@@ -309,7 +303,7 @@ export class UnitCanvas {
 
     /** The frame in CSS px and the raw device ratio (capped here). Repaints. */
     setSize(width: number, height: number, dpr?: number): void {
-        this.dpr = unitDpr(dpr);
+        this.dpr = cappedDpr(dpr);
         const pw = Math.round(width * this.dpr);
         const ph = Math.round(height * this.dpr);
         if (this.canvas.width !== pw) this.canvas.width = pw;

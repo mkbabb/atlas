@@ -6,9 +6,11 @@ import {
     gridLayout,
     groupedBlocksLayout,
     hitTest,
+    unitStep,
     unitSummary,
 } from "../../src/charts/marks/unit-layouts";
-import { UNIT_MAX_DPR, UnitCanvas, UnitMorph, sampleSpring, unitDpr } from "../../src/charts/marks/unit-engine";
+import { UnitCanvas, UnitMorph, sampleSpring } from "../../src/charts/marks/unit-engine";
+import { MAX_CANVAS_DPR, cappedDpr } from "../../src/lib/dpr";
 
 // U/B8 A3: the canvas unit chart, one mark per record (the Gregg cloth's engine, made generic).
 // Fails at b25200d: neither module exists.
@@ -137,6 +139,32 @@ describe("hit test", () => {
         });
         expect(hitTest(dense, 10, 10)).toBe(0);
         expect(hitTest(dense, 11, 10)).toBe(2);
+    });
+});
+
+describe("keyboard walk", () => {
+    // A snake: mark order 0 1 2 / 5 4 3 on screen, rank along the path.
+    const l = boustrophedonLayout(6, { width: 30, cell: 10, order: [0, 1, 2, 3, 4, 5] });
+
+    it("steps along the rank, entering at an end", () => {
+        expect(unitStep(l, -1, "ArrowRight")).toBe(0);
+        expect(unitStep(l, -1, "ArrowLeft")).toBe(5);
+        expect(unitStep(l, 2, "ArrowDown")).toBe(3);
+        expect(unitStep(l, 3, "ArrowUp")).toBe(2);
+        expect(unitStep(l, 4, "Home")).toBe(0);
+        expect(unitStep(l, 1, "End")).toBe(5);
+    });
+
+    it("holds at either end and ignores other keys", () => {
+        expect(unitStep(l, 5, "ArrowRight")).toBe(5);
+        expect(unitStep(l, 0, "ArrowLeft")).toBe(0);
+        expect(unitStep(l, 2, "a")).toBe(2);
+    });
+
+    it("follows a reordered rank, not the mark index", () => {
+        const r = gridLayout(3, { width: 30, cell: 10, order: [2, 0, 1] });
+        expect(unitStep(r, -1, "ArrowRight")).toBe(2);
+        expect(unitStep(r, 2, "ArrowRight")).toBe(0);
     });
 });
 
@@ -327,10 +355,10 @@ describe("unit canvas", () => {
     }
 
     it("caps the device pixel ratio at 2", () => {
-        expect(UNIT_MAX_DPR).toBe(2);
-        expect(unitDpr(3)).toBe(2);
-        expect(unitDpr(1.5)).toBe(1.5);
-        expect(unitDpr(0)).toBe(1);
+        expect(MAX_CANVAS_DPR).toBe(2);
+        expect(cappedDpr(3)).toBe(2);
+        expect(cappedDpr(1.5)).toBe(1.5);
+        expect(cappedDpr(0)).toBe(1);
     });
 
     it("sizes the backing store at the capped ratio", () => {

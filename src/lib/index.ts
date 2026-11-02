@@ -10,6 +10,7 @@
 // member no longer reaches into an unpublished instance module). Its authority therefore moves WITH
 // the charts family (WG-B B3/B4); re-homing the shim now would dangle on charts that has not landed.
 export * from "./bounds.js";
+export * from "./dpr.js";
 export * from "./regions.js";
 export * from "./perf/inp-probe.js";
 

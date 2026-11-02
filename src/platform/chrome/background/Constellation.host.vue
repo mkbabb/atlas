@@ -74,6 +74,7 @@ import {
 } from "./composables/constellation-register.js";
 import { useAtmosphereTier } from "./composables/useAtmosphereTier.js";
 import { useThemeKey } from "../../composables/useThemeKey.js";
+import { cappedDpr } from "../../../lib/dpr.js";
 
 const props = withDefaults(
     defineProps<{
@@ -134,10 +135,6 @@ const latticeFrozen = computed(() => captureKind.value === "seed");
     (the WebGPU/WebGL2 surface; a 2D `drawImage` source once the async device has painted). */
 const latticeRef = ref<{ field: ConstellationField } | null>(null);
 
-/** The DPR clamp — mirror the fleck (2 is the retina ceiling; higher DPR is imperceptible here and
-    doubles the raster cost). */
-const dprOf = (): number => Math.min(window.devicePixelRatio || 1, 2);
-
 /** Resolve the live substrate canvas — the expose is the clean path; the host query is the belt. */
 function latticeCanvas(): HTMLCanvasElement | null {
     const c = latticeRef.value?.field?.canvas;
@@ -187,7 +184,7 @@ function bakeFrame(force = false): boolean {
     const src = latticeCanvas();
     if (!dst || !src || !src.width || !src.height) return false;
     if (!force && !hasContent(src)) return false;
-    const dpr = dprOf();
+    const dpr = cappedDpr();
     const cssW = dst.clientWidth || 1;
     const cssH = dst.clientHeight || 1;
     const w = Math.round(cssW * dpr);
@@ -323,7 +320,7 @@ function paintFleck(): void {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const dpr = dprOf();
+    const dpr = cappedDpr();
     const cssW = canvas.clientWidth || 1;
     const cssH = canvas.clientHeight || 1;
     const w = Math.round(cssW * dpr);
