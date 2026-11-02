@@ -22,7 +22,7 @@
 // and frames off `selectedKeys`, the conflation the prior scalar-fallback forced gone.
 
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import {
     encodeSelKey,
@@ -32,6 +32,7 @@ import {
 } from "../../charts/contract/selection-contract.js";
 import { markColorFor } from "../../charts/scale/ColorScale.js";
 import { useViewParams } from "./useViewParams.js";
+import { figureOf, holdAnchor } from "../interaction/holdAnchor.js";
 
 /** A hovered key as a selection key: minted from its grain, or read as a composite; null otherwise. */
 function entityKeyOf(key: string, kind: SelectionKind | null): string | null {
@@ -58,6 +59,35 @@ export const useSelection = defineStore("platform:selection", () => {
     const hoverOrigin = ref<string | null>(null);
     /** The pinned entity SET (a click pins; cmd-click pins more) — empty when nothing is selected. */
     const selectedKeys = ref<Set<string>>(new Set());
+
+    // N-5 / N-W2 (U/B8) — A SELECTION NEVER MOVES THE READER. A pick can reflow the page above the
+    // figure (a /usf map tap also filters every figure to the state, 724 px of growth at 390), and
+    // each engine's scroll anchoring answered differently: Chromium hid it and undid it, WebKit left
+    // the page 290 px off after Escape. So every change to the set, pick or clear, holds the figure
+    // the reader acted on where it was on screen until the layout settles (holdAnchor.ts). `sync`
+    // reads the figure's top before anything re-renders. The figure is the one focus is in, else the
+    // one the last press landed in; outside a figure (a URL restore, a dock verb) nothing is held.
+    let pressedAt: Element | null = null;
+    if (typeof document !== "undefined") {
+        document.addEventListener(
+            "pointerdown",
+            (e) => {
+                pressedAt = e.target instanceof Element ? e.target : null;
+            },
+            { capture: true, passive: true },
+        );
+    }
+    let releaseHold: () => void = () => {};
+    watch(
+        selectedKeys,
+        () => {
+            if (typeof document === "undefined") return;
+            const figure = figureOf(document.activeElement) ?? figureOf(pressedAt?.isConnected ? pressedAt : null);
+            releaseHold();
+            releaseHold = holdAnchor(figure);
+        },
+        { flush: "sync" },
+    );
 
     /**
      * The MANUALLY-FOCUSED key (I-UX UX-S2 · the `[focus]` re-aim), or null when no explicit

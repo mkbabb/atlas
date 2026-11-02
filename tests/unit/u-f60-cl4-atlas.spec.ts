@@ -60,7 +60,8 @@ const fakeHistory = {
 const fakeWindow = {
     location: loc,
     history: fakeHistory,
-    document: { title: "" },
+    // The selection store listens for presses on the document (its figure hold, U/B8 N-5).
+    document: { title: "", addEventListener() {}, removeEventListener() {} },
     addEventListener(type: string, l: (e: Event) => void) {
         if (!listeners.has(type)) listeners.set(type, new Set());
         listeners.get(type)!.add(l);
