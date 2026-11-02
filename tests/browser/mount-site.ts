@@ -58,7 +58,8 @@ function contextFor(slug: string, title: string): DashboardContext {
     } as unknown as DashboardContext;
 }
 
-/** `contextDelayMs` holds each context module back, as a slow network does its chunk. */
+/** `contextDelayMs` holds each context module back, as a slow network does its chunk (mountSite
+    holds the dashboard route's chunk back by the same time). */
 export function makeRegistry(contextDelayMs = 0): { registry: DashboardRegistry; loads: Map<string, number> } {
     const loads = new Map<string, number>();
     const metaModules: Record<string, { meta: DashboardMeta }> = {};
@@ -130,13 +131,23 @@ export async function mountSite(
     const host = document.createElement("div");
     document.body.appendChild(host);
     const { registry, loads } = makeRegistry(contextDelayMs);
+    // A page load: the history already holds the URL the reader asked for.
+    const memory = createMemoryHistory();
+    memory.replace(path);
     const router = createRouter({
-        history: createMemoryHistory(),
+        history: memory,
         routes: [
             { path: "/", name: "gallery", component: Plain("The Connectivity Atlas") },
             { path: "/c/:category", name: "category-home", component: Plain("Subject") },
             { path: "/data/:rest(.*)*", name: "data", component: Plain("Data") },
-            { path: "/:slug/:view?", name: "dashboard", component: DashboardRoute },
+            {
+                path: "/:slug/:view?",
+                name: "dashboard",
+                // A slow network holds the route's chunk back as it does the context's.
+                component: contextDelayMs
+                    ? () => new Promise((r) => setTimeout(() => r(DashboardRoute), contextDelayMs))
+                    : DashboardRoute,
+            },
             { path: "/:pathMatch(.*)*", name: "not-found", component: Plain("Not found") },
         ],
     });
@@ -155,9 +166,15 @@ export async function mountSite(
     installDashboardRegistry(app, registry);
     app.use(createPinia());
     app.use(router);
-    await router.push(path);
-    await router.isReady();
-    app.mount(host);
+    if (contextDelayMs) {
+        // A slow load paints before the first navigation commits, as a served page does.
+        app.mount(host);
+        await router.isReady();
+    } else {
+        await router.push(path);
+        await router.isReady();
+        app.mount(host);
+    }
     await settle(500);
     return {
         app,

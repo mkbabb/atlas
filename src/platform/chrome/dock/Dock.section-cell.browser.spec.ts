@@ -22,7 +22,8 @@ describe("the phone bar's Sections cell", () => {
             if (sampling) requestAnimationFrame(sample);
         };
         requestAnimationFrame(sample);
-        // The context arrives 400 ms after the bar's first frame.
+        // The route's chunk and its context arrive 400 ms after the bar's first frame, so the first
+        // navigation has not committed yet when the bar paints.
         site = await mountSite("/bead", 390, 844, 400);
         await settle(900);
         sampling = false;

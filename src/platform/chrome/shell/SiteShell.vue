@@ -14,7 +14,7 @@
 // frame both read it) and the scope of the dock-portal registry (the dock's pin and the route's
 // filter drawer share it).
 import { computed, shallowRef, watch } from "vue";
-import { RouterView, useRoute } from "vue-router";
+import { RouterView, useRoute, useRouter } from "vue-router";
 import Dock from "../dock/Dock.vue";
 import { AMERICA, themeCssVars, useDashboardRegistry, type DashboardContext } from "../../../contract/index.js";
 import { atmosphereCssVars } from "../background/composables/atmosphere.js";
@@ -42,9 +42,17 @@ provideDockPortals();
 // Where the dock sits, for the surfaces that seat clear of it (the hover card, U/B8 A5).
 provideDockRect();
 
+// Until the first navigation commits (its route chunk still loading), `route` is vue-router's
+// START_LOCATION, which matches nothing. The URL the reader asked for is already known: read it, so
+// the dock lays a dashboard's cells from its first frame (U/B8 P-12).
+const router = useRouter();
+const initial = router.resolve(router.options.history.location);
+const current = computed(() => (route.matched.length ? route : initial));
+
 const slug = computed<string | undefined>(() => {
-    if (route.name !== props.dashboardRoute) return undefined;
-    const raw = route.params.slug;
+    const r = current.value;
+    if (r.name !== props.dashboardRoute) return undefined;
+    const raw = r.params.slug;
     const s = Array.isArray(raw) ? raw[0] : raw;
     return s ? String(s) : undefined;
 });
