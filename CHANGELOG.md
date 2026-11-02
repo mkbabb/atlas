@@ -26,6 +26,13 @@
   that clears the anchor, even one over the pointer. No seat caps the card below the floor or puts its
   top above the viewport. Witness: `tests/unit/b8-card-band-floor.spec.ts` (both cases plus a property
   sweep), red before.
+- **A hover card taller than the viewport fits inside it (U/B8 A5 repair).** A card taller than the
+  viewport less its margins got a full-size corner with no `maxHeight`, clamped to `top = CARD_PAD`, and
+  ran past the bottom edge. `transientSeat` now seats it at the height that fits (`vh − 2·CARD_PAD`) and
+  gives every seat it returns that cap or a smaller one, so `top ≥ CARD_PAD` and the card ends inside the
+  bottom margin. The floor rules stand; the last-resort fallback's top is now held at `CARD_PAD`, not 0.
+  Witness: `tests/unit/b8-card-taller-than-viewport.spec.ts` and the property sweep in
+  `tests/unit/b8-card-band-floor.spec.ts`, now with cards of 700, 1000 and 1600 px (red before).
 - **A section jump lands where it was sent (U/B7d M2 · WebKit).** On the first Sections jump after a
   load, WebKit stopped the smooth scroll 360 to 381 px short when focus moved as the list closed, with
   `?at=` written and the label a section behind (2 of 25 jumps in the engine harness; the served /sci

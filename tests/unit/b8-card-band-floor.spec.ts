@@ -37,7 +37,7 @@ describe("the band fallback never shrinks the card to a sliver", () => {
     });
 });
 
-describe("property sweep: maxHeight >= floor and top >= 0", () => {
+describe("property sweep: maxHeight >= floor, top >= 0, and a tall card fits", () => {
     // A seeded LCG so the sweep is deterministic.
     let seed = 0x5eed;
     const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32);
@@ -55,6 +55,10 @@ describe("property sweep: maxHeight >= floor and top >= 0", () => {
         { w: 320, h: 282 },
         { w: 280, h: 90 },
         { w: 320, h: 420 },
+        // Taller than some or all of the viewports (U/B8 A5: the card above the viewport).
+        { w: 300, h: 700 },
+        { w: 320, h: 1000 },
+        { w: 280, h: 1600 },
     ];
     it("holds across viewports, cards, anchors, pointers and docks", () => {
         let n = 0;
@@ -71,10 +75,16 @@ describe("property sweep: maxHeight >= floor and top >= 0", () => {
                     const ctx = JSON.stringify({ vp, fp, a, p, dock, s });
                     expect(s.maxHeight ?? fp.h, ctx).toBeGreaterThanOrEqual(floor);
                     expect(s.top, ctx).toBeGreaterThanOrEqual(0);
+                    if (fp.h > vp.vh - 2 * CARD_PAD) {
+                        // A card taller than the viewport gets a cap that fits inside the margins.
+                        expect(s.maxHeight, ctx).toBeDefined();
+                        expect(s.top, ctx).toBeGreaterThanOrEqual(CARD_PAD);
+                        expect(s.top + s.maxHeight!, ctx).toBeLessThanOrEqual(vp.vh - CARD_PAD);
+                    }
                     n++;
                 }
             }
         }
-        expect(n).toBeGreaterThan(5000);
+        expect(n).toBeGreaterThan(10000);
     });
 });

@@ -55,8 +55,9 @@ export function bandFloor(h: number, vh: number): number {
     return Math.max(0, Math.min(h, BAND_FLOOR, vh - 2 * CARD_PAD));
 }
 
-/** A transient seat. `maxHeight` is set only when no full-size seat clears the anchor (a viewport too
-    small for the card on any side): the card then caps its height to the room on one side. */
+/** A transient seat. `maxHeight` is set when no full-size seat clears the anchor (a viewport too
+    small for the card on any side), so the card caps its height to the room on one side, and on every
+    seat of a card taller than the viewport less its margins, so the card fits inside them. */
 export interface Seat {
     left: number;
     top: number;
@@ -79,6 +80,10 @@ export interface Seat {
     any full-size corner to clear it, the card takes the side above or below the anchor with the
     more room and caps its height to that room (`maxHeight`).
 
+    A card taller than the viewport less its margins is seated as a card of the height that fits
+    (`vh − 2·CARD_PAD`), and every seat it gets carries that cap or a smaller one as `maxHeight`, so
+    `top ≥ CARD_PAD` and the card never runs past the bottom edge.
+
     `pointer` is the live pointer (null for a keyboard or deep-link selection): the seat never covers
     it (U/B7c L · F-14). Precedence: the pointer, then the anchor, then the avoid-rect. */
 export function transientSeat(
@@ -90,7 +95,11 @@ export function transientSeat(
     gap: number = AVOID_GAP,
 ): Seat {
     const { vw, vh } = viewport;
-    const { w, h } = footprint;
+    const { w } = footprint;
+    // A card taller than the viewport less its margins is placed at the height that fits, and capped.
+    const h = Math.min(footprint.h, Math.max(0, vh - 2 * CARD_PAD));
+    const fit = (s: Seat): Seat =>
+        footprint.h > h ? { ...s, maxHeight: Math.min(s.maxHeight ?? h, h) } : s;
     const clampX = (x: number) => Math.max(CARD_PAD, Math.min(x, vw - w - CARD_PAD));
     const clampY = (y: number) => Math.max(CARD_PAD, Math.min(y, vh - h - CARD_PAD));
     const right = anchor.x + CARD_PAD;
@@ -122,7 +131,7 @@ export function transientSeat(
         s.top >= avoid.bottom + gap ||
         s.top + h <= avoid.top - gap;
     const full = seats.find((s) => clearOfMark(s) && clearOfAvoid(s)) ?? seats.find(clearOfMark);
-    if (full) return full;
+    if (full) return fit(full);
     // No full-size corner clears both the pointer and the anchor. Take the band above or below the
     // anchor (at the clamped column) and cap the card to it; an avoid-rect in that column bounds the
     // band too. Only a band at least `bandFloor` tall is usable: the roomier usable band that leaves
@@ -141,16 +150,16 @@ export function transientSeat(
     const minH = bandFloor(h, vh);
     const usable = bands.filter((s) => s.maxHeight >= minH);
     const band = usable.find((s) => !covers(s, pointer));
-    if (band) return band;
+    if (band) return fit(band);
     const clearOfAnchor = (s: Seat) => !covers(s, anchor);
     const corner = seats.find((s) => clearOfAnchor(s) && clearOfAvoid(s)) ?? seats.find(clearOfAnchor);
-    if (corner) return corner;
-    if (usable[0]) return usable[0];
+    if (corner) return fit(corner);
+    if (usable[0]) return fit(usable[0]);
     const widest = bands[0]!;
     const top = widest.top === below ? below : anchor.y - CARD_PAD - minH;
     return {
         left: widest.left,
-        top: Math.max(0, Math.min(top, vh - CARD_PAD - minH)),
+        top: Math.max(CARD_PAD, Math.min(top, vh - CARD_PAD - minH)),
         maxHeight: minH,
     };
 }
