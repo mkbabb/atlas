@@ -15,10 +15,14 @@
   shrinks to 0 px in a crowded row (`flex: none`). The /ecf plate re-laid the flex row itself and
   drew the ramp 0 px wide. Witness: `ChartLegend.measure.browser.spec.ts`.
 - **A region's name and value never share a seat (U/B8 N-2).** With `placeLabel` and a value word,
-  `GeoChoropleth` seats them as one stack (`labelStack`): name above, value below, by their 1.32 em line
+  `GeoChoropleth` seats them as one stack (`labelStack`): name above, value below, by their line
   boxes. A value word keeps its seat only clear of every other region's name (`resolveLabelCollisions`
-  takes `reserved` boxes). Its box was sized for a 9 px face; it now reads the 12 px face it paints.
-  /ecf at 1440 had 39 name/value overlaps in light. Witness: `tests/component/b8-geo-label-stack.spec.ts`.
+  takes `reserved` boxes). Both words are sized by the faces the map renders, read off one rendered word
+  of each (`measureLabelFace`; `estimatedLabelFaces` until then). A consumer must not move a map label:
+  the declutter reserves each name where atlas seats it, and the routes' old `translate: 0 -7px` lift
+  drew names 7 units off that seat (sci deletes it). /ecf at 1440 light had 39 name/value glyph-cell
+  crossings in Chromium and 41 in Firefox; it has 0 in both. Witnesses:
+  `tests/component/b8-geo-label-stack.spec.ts` and `GeoChoropleth.label-faces.browser.spec.ts`.
 - **A selection never moves the reader (U/B8 N-5, N-W2).** A pick or clear holds the figure the reader
   acted on where it was on screen until the layout settles (`platform/interaction/holdAnchor.ts`, run
   by `useSelection`). A /usf tap filters every figure, the page above the map grows, and WebKit left
