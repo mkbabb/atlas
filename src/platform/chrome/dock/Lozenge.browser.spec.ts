@@ -103,4 +103,31 @@ describe("the section pager (U/B7 §2.1 D-7)", () => {
         const cell = document.querySelector("[data-dock-cell='sections'] [data-testid='dock-section-label'], [data-dock-cell='sections'][data-testid='dock-section-select'] [data-testid='dock-section-label']");
         expect(cell?.textContent?.trim()).toBe("Trend");
     });
+
+    // U/B8 PF (P-2). RED before: on phone the pager renders nothing, but every section change still
+    // read `--shell-head-reserve` and the root font size through getComputedStyle (17 ms of the
+    // /demand phone scroll walk, B7D-PERF §5 item 3). Mutation: drop the phone return in readBand.
+    it("at 390 a section change reads no computed style for the band it never draws", async () => {
+        site = await mountSite("/sci", 390);
+        await settle(200);
+        const real = window.getComputedStyle;
+        let rootReads = 0;
+        window.getComputedStyle = ((el: Element, pseudo?: string | null) => {
+            // The pager's own reads (its band); glass's dock reads the root for its own reasons.
+            if (el === document.documentElement && new Error().stack?.includes("MembraneTitleLozenge")) rootReads++;
+            return real.call(window, el, pseudo);
+        }) as typeof window.getComputedStyle;
+        try {
+            for (const id of ["two", "three", "one"]) {
+                const sec = document.getElementById(id);
+                if (!sec) continue;
+                window.scrollTo(0, sec.getBoundingClientRect().top + scrollY + 120);
+                await settle(150);
+            }
+        } finally {
+            window.getComputedStyle = real;
+        }
+        expect(lozenge()).toBeNull();
+        expect(rootReads).toBe(0);
+    });
 });
