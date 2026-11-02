@@ -3,7 +3,8 @@
 // page opened on a deep link nothing starts watching until the restore has settled. Fails before:
 // the only form was AnimatedRule's own IntersectionObserver, which drew on the first intersection.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FIRST_VIEW_DWELL_MS, observeFirstView } from "../../src/motion/useFirstView";
+import { effectScope, nextTick, shallowRef } from "vue";
+import { FIRST_VIEW_DWELL_MS, observeFirstView, useFirstViewTarget } from "../../src/motion/useFirstView";
 import {
     beginNarrativeRestore,
     markNarrativeRestoreAbsent,
@@ -118,5 +119,31 @@ describe("observeFirstView", () => {
         stop();
         markNarrativeRestoreAbsent();
         expect(observers).toHaveLength(0);
+    });
+});
+
+describe("useFirstViewTarget", () => {
+    it("observes the live target, re-arms when it changes, and lets go on dispose", async () => {
+        const target = shallowRef<Element | null>(null);
+        const onView = vi.fn();
+        const scope = effectScope();
+        scope.run(() => useFirstViewTarget(target, onView));
+        await nextTick();
+        expect(observers).toHaveLength(0);
+        const a = {} as Element;
+        target.value = a;
+        await nextTick();
+        expect(observers).toHaveLength(1);
+        expect(observers[0]!.observed).toEqual([a]);
+        target.value = null;
+        await nextTick();
+        expect(observers[0]!.disconnected).toBe(true);
+        target.value = a;
+        await nextTick();
+        observers[1]!.cb([seen(1)]);
+        vi.advanceTimersByTime(FIRST_VIEW_DWELL_MS);
+        expect(onView).toHaveBeenCalledTimes(1);
+        scope.stop();
+        expect(observers[1]!.disconnected).toBe(true);
     });
 });

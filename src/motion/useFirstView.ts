@@ -15,7 +15,7 @@
 //
 // The ECharts first paint is not an entrance: `useEChart` paints a chart's first frame at rest
 // (see `firstPaint` there), so a chart mounted below the fold never spends its entrance off screen.
-import { onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue";
+import { onBeforeUnmount, onMounted, onScopeDispose, ref, watch, type Ref, type WatchSource } from "vue";
 import { useReducedMotion } from "./useReducedMotion.js";
 import { narrativeLandingHeld, whenNarrativeLanded } from "./narrative-restore.js";
 
@@ -77,6 +77,30 @@ export function observeFirstView(
     };
     const cancelLanding = whenNarrativeLanded(watchForView);
     return stop;
+}
+
+/**
+ * The composable form over a live target: observe whatever element `target` names (null observes
+ * nothing), re-arming when it changes, so an entrance turned on after mount still plays once on its
+ * first view. `isSupported` is false where the engine has no IntersectionObserver.
+ */
+export function useFirstViewTarget(
+    target: WatchSource<Element | null | undefined>,
+    onView: () => void,
+    options: FirstViewOptions = {},
+): { isSupported: Readonly<Ref<boolean>> } {
+    const isSupported = ref(typeof IntersectionObserver !== "undefined");
+    let stop: (() => void) | null = null;
+    watch(
+        target,
+        (el) => {
+            stop?.();
+            stop = el && isSupported.value ? observeFirstView(el, onView, options) : null;
+        },
+        { immediate: true, flush: "post" },
+    );
+    onScopeDispose(() => stop?.());
+    return { isSupported };
 }
 
 /** `rest`: painted final, no flight · `pending`: held at its first frame, waiting for the first view
