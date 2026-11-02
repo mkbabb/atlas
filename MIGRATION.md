@@ -225,6 +225,12 @@ projecting components.
   or its entry names the beat that holds it in `figureAnchor`.
 - `useComponentPointLoading` takes `figureHash`, the live hash.
 
+## 5k · U/B8: the map draws through its entrance
+
+| Change | Consumer edit |
+|---|---|
+| `GeoChoropleth` no longer marks a ranked map: no `.geo-shape--draw` class and no `--rank` style on its shapes (the `map-draw.css` keyframe that read them is gone) | to animate a map, pass `entrance: { origin, kind: "ripple" }`; `rank` alone renders the map at rest and is only the ripple's fallback order when its origin is missing. Delete any route CSS that reads `.geo-shape--draw` or `var(--rank)` |
+
 ## 6 · glass-ui 10.1.0
 
 Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.

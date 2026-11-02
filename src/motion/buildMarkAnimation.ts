@@ -19,7 +19,7 @@ export interface MarkAnimation {
 }
 
 /** Options a primitive adapter needs per mechanism. `morph` needs the from/to path `d`; `draw`/`path`
-    read the element's own stroke length. */
+    read the element's own stroke length (its authored `pathLength` when it has one). */
 export interface BuildMarkOptions {
     readonly ease?: (t: number) => number;
     readonly morphFrom?: string;
@@ -38,8 +38,16 @@ export function buildMarkAnimation(
     switch (mechanism) {
         case "draw":
         case "path": {
+            // An authored `pathLength` rescales the dash units to it, so the sweep runs in those
+            // units (a `pathLength="1"` mark draws over a unit dash); otherwise the measured length.
             const geom = el as SVGGeometryElement;
-            const raw = typeof geom.getTotalLength === "function" ? geom.getTotalLength() : 0;
+            const authored = Number(el.getAttribute("pathLength"));
+            const raw =
+                authored > 0
+                    ? authored
+                    : typeof geom.getTotalLength === "function"
+                      ? geom.getTotalLength()
+                      : 0;
             const len = raw > 0 ? raw : 100; // an unmeasured/empty path falls to a nominal stroke length
             const anim = new NumericAnimation([{ dashoffset: len }, { dashoffset: 0 }]); // undrawn → drawn
             const ease = opts.ease ?? easeOutExpo;

@@ -27,6 +27,7 @@ import type { FeedMeta } from "../../data/contract.js";
 // pure predicate (no drift). The `import.meta.env.DEV` branch that calls it is tree-shaken out of
 // the prod build, so this gate module never ships in the bundle (it is side-effect-free).
 import { isCoherent, type GeoCoherenceSample } from "./geo-coherence.js";
+import type { GeoEntrance } from "./geo-entrance.js";
 // O-A22 — the sighted-colorblind redundant channel (the a11y P3 pattern/value-label fallback) + the
 // X10-LIB per-region label gate + the pairwise-collision declutter. The PURE mechanism lives beside
 // the SFC so the component and the O-A22 spec read ONE source (no drift).
@@ -111,9 +112,8 @@ export interface ChoroplethProps {
     /** Keys that are SELECTED (the pinned-mark FRAME) — distinct from raised (hover). */
     selectedKeys?: ReadonlySet<string>;
     /**
-     * The per-feature DRAW-ON rank (C.W4.3) — the extremes-first stagger index the `.geo-shape--draw`
-     * keyframe reads as `--rank`. Producer-time and FROZEN: derive it from a STORE-STABLE order,
-     * NEVER from the hover-sorted set, so a hover can never re-key the draw. Omit ⇒ no draw markup.
+     * The per-feature landing order the `ripple` entrance falls back to when its origin is missing
+     * (see `originRank`). Derive it from a STORE-STABLE order, never from the hover-sorted set.
      */
     rank?: (key: EntityKey) => number | undefined;
     /** The key under the roving keyboard cursor (a ring), or null. */
@@ -152,6 +152,13 @@ export interface ChoroplethProps {
      * identical render for every route that does not declare it.
      */
     placeLabel?: (key: string) => string;
+    /**
+     * U/B8 A1 — THE ENTRANCE FROM AN ORIGIN (opt-in). On first view the shapes ripple out from
+     * `origin` in distance order, or (`kind: "threads"`) slack threads run from `origin` to every
+     * valued feature, each landing as its thread reaches it. A missing origin falls back to `rank`.
+     * Reduced motion paints the map final. Omit ⇒ the map paints at rest, no overlay.
+     */
+    entrance?: GeoEntrance;
     ariaLabel?: string;
 }
 
@@ -159,8 +166,6 @@ export interface Shape {
     key: string;
     d: string;
     name: string;
-    /** The frozen extremes-first draw rank (C.W4.3) — undefined when no `rank` prop is given. */
-    rank?: number;
     /** GAP-5 — the centroid the forced-colors value LABEL is seated at (px, viewport space). */
     cx: number;
     cy: number;
@@ -264,8 +269,6 @@ export function useChoroplethShapes(props: ChoroplethProps) {
         geoPath(props.projection ?? geoIdentity().reflectY(false)),
     );
 
-    const drawOn = computed(() => props.rank != null);
-
     /** The per-feature fill — the coordinated categorical quad stop (`category` WINS for a key it
         indexes), else the caller's magnitude `fill`. Index-bound to the SAME quad the ranked-bar
         reads. */
@@ -291,7 +294,6 @@ export function useChoroplethShapes(props: ChoroplethProps) {
         const keyOf = props.keyField ?? defaultKeyField;
         const nameOf = props.nameField ?? defaultNameField;
         const draw = path.value;
-        const rankOf = props.rank;
         const valueOf = props.value;
         // O-A22 — the on-mark WORD source UNIFIES the two label props: the explicit `valueLabel`
         // WINS, else the per-key `valueFormat` EVERY data plate already supplies (the offscreen a11y
@@ -330,9 +332,12 @@ export function useChoroplethShapes(props: ChoroplethProps) {
             // the fill draws through (one projection, one coordinate frame), whenever a WORD source
             // exists (`valueLabel` OR `valueFormat`) OR the D-02 magnitude-ring channel needs an
             // anchor (`symbolR` — the ring seats at the same centroid the label would) OR the A-28
-            // place-label augment channel seats its bold letters here (`placeLabel`).
+            // place-label augment channel seats its bold letters here (`placeLabel`) OR the U/B8 A1
+            // entrance measures its distances and threads from here (`entrance`).
             const [cx, cy] =
-                wordOf || props.symbolR || props.placeLabel ? draw.centroid(f) : [0, 0];
+                wordOf || props.symbolR || props.placeLabel || props.entrance
+                    ? draw.centroid(f)
+                    : [0, 0];
             // X10-LIB — the region's bounding-box minor axis, measured off the SAME path generator.
             // Measured for EVERY feature (A-04): the label size-gate reads it, and so does the
             // aggregated-cell tap floor below — which must judge a field carrying no word source.
@@ -344,9 +349,6 @@ export function useChoroplethShapes(props: ChoroplethProps) {
                 key,
                 d: draw(f) ?? "",
                 name: nameOf(f),
-                // The draw rank is read off the STORE-STABLE order the caller supplies — never the
-                // hover set — so the draw identity is invariant on hover (the frozen-rank invariant).
-                rank: rankOf ? rankOf(key) : undefined,
                 cx,
                 cy,
                 label: word,
@@ -527,7 +529,6 @@ export function useChoroplethShapes(props: ChoroplethProps) {
         WIDTH,
         HEIGHT,
         shapes,
-        drawOn,
         resolvedChannel,
         patternDefs,
         textureFor,
@@ -538,7 +539,6 @@ export function useChoroplethShapes(props: ChoroplethProps) {
         WIDTH: ComputedRef<number>;
         HEIGHT: ComputedRef<number>;
         shapes: ComputedRef<Shape[]>;
-        drawOn: ComputedRef<boolean>;
         resolvedChannel: ComputedRef<ResolvedChannel>;
         patternDefs: ComputedRef<PatternDefEmit[]>;
         textureFor: (s: Shape) => string | null;
