@@ -125,6 +125,16 @@
 
 ### Features
 
+- **Map labels on a rail (U/B8 A10).** `GeoChoropleth` takes an opt-in `labelRail` (`LabelRailSpec`:
+  `keys` in priority order, optional `name`, `value`, `side: "top" | "right"`, `count`). The top
+  regions hang from a rail above or right of the field on leader threads to their centroids, spaced
+  so none touch, and the count drops with the rendered width (3 under 560 px, 4 under 900, else 6).
+  Font, halo, thread and dot are divided by k, the screen px per viewBox unit, so the rail reads the
+  same at any width; a side rail narrows the map and the tap floor and place letters read that k.
+  The X10 gate is untouched: a railed region keeps its own word or texture. `settleRail`,
+  `railLabelCount` and `layoutLabelRail` are exported from `charts`. Omit the prop and the render is
+  unchanged. Witness: `b8-label-rail.spec.ts`, red before.
+
 - **Entity drill hops (U/B7d D1 · M-06).** `EntityDescription.links` lists the views one hop from an
   entity; EntityDetail renders them as links and closes when one is followed. Witness:
   `EntityDetail.browser.spec.ts` "M-06", red before.
