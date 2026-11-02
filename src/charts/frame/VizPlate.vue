@@ -31,7 +31,7 @@ import ChartLegend from "../legend/ChartLegend.vue";
 import ChartDataTable from "../legend/ChartDataTable.vue";
 import PlateVoid from "./PlateVoid.vue";
 import PlateSkeleton from "./PlateSkeleton.vue";
-import type { PlateView } from "./plate-view.js";
+import { PLATE_VIEW_KEY, type PlateView } from "./plate-view.js";
 import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
 import { plateAnchorId } from "../../platform/provenance/appendix.js";
 import { STORY_CARD_KEY } from "./story-card-context.js";
@@ -106,11 +106,16 @@ onBeforeUnmount(() => storyCard?.clearAggregateStats(props.contract.id));
 // U/B8 A4 — THE TABLE VIEW (O-18, O-19). The dock's Table view toggle swaps the drawn figure for its
 // export rows in the same footprint. The figure stays mounted and laid out underneath (hidden and
 // inert), so a chart never resizes to zero and back, and the plate's height does not move.
-const view = ref<PlateView>("chart");
-watch(
-    () => props.contract.id,
-    () => (view.value = "chart"),
-);
+// Inside a composed stage the stage owns the dock and so the view (PLATE_VIEW_KEY): a scene change
+// keeps the reader's view, so the table follows the scene. A plate of its own resets to the chart
+// when its contract changes.
+const stageView = inject(PLATE_VIEW_KEY, null);
+const view = stageView ?? ref<PlateView>("chart");
+if (!stageView)
+    watch(
+        () => props.contract.id,
+        () => (view.value = "chart"),
+    );
 
 defineExpose({ archetype, view });
 </script>

@@ -4,6 +4,7 @@ import { SegmentedTabs } from "@mkbabb/glass-ui/tabs";
 import StickyScene from "./StickyScene.vue";
 import FootAnatomy from "../frame/FootAnatomy.vue";
 import PlateDock from "../frame/PlateDock.vue";
+import { PLATE_VIEW_KEY, type PlateView } from "../frame/plate-view.js";
 import VizAppendixDock from "../../platform/provenance/VizAppendixDock.vue";
 import {
     createStageMorphDriver,
@@ -101,6 +102,9 @@ provide(STAGE_EVENTS_KEY, stageEvents);
 provide(STAGE_COMMANDS_KEY, { openProvenance: provenance.openProvenance });
 provide(STAGE_EVENT_HUB_KEY, { hub: events, scope });
 provide(STAGE_ANATOMY_KEY, true);
+// U/B8 A4 — the stage's dock carries the Table view toggle; its graphic's plate reads the view here.
+const stageView = ref<PlateView>("chart");
+provide(PLATE_VIEW_KEY, stageView);
 const sourcePanelProps = {
     eventHub: events,
     eventScope: scope,
@@ -257,6 +261,8 @@ watch(sourceDataOpen, (open) => {
                     :title="stage.anatomy.foot.title"
                     :enlarge="enlargeStage"
                     :browse="openSourceData"
+                    :view="stageView"
+                    @update:view="stageView = $event"
                 >
                     <template v-if="stageControls" #options>
                         <component :is="stageControls.component" v-bind="stageControls.props" />
