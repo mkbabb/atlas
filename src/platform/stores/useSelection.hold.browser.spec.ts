@@ -5,9 +5,11 @@
 // an engine whose scroll anchoring does not hold the figure (WebKit, N-W2); the second case leaves the
 // engine's anchoring on.
 import { afterEach, describe, expect, it } from "vitest";
-import { nextTick } from "vue";
+import { createApp, nextTick } from "vue";
 import { createPinia, setActivePinia } from "pinia";
+import { createMemoryHistory, createRouter } from "vue-router";
 import { useSelection } from "./useSelection.js";
+import { installDashboardRegistry } from "../../contract/registry-inject.js";
 
 const cleanups: Array<() => void> = [];
 afterEach(() => {
@@ -19,6 +21,20 @@ const frames = (n: number) =>
         const step = (k: number) => (k ? requestAnimationFrame(() => step(k - 1)) : resolve());
         step(n);
     });
+
+/** The selection store in an app with a router and a registry (its view params read both). */
+async function store() {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const router = createRouter({ history: createMemoryHistory(), routes: [{ path: "/", component: { render: () => null } }] });
+    const host = document.createElement("div");
+    const app = createApp({ render: () => null }).use(pinia).use(router);
+    installDashboardRegistry(app, { getDashboards: () => [], findDashboard: () => undefined });
+    app.mount(host);
+    await router.isReady();
+    cleanups.push(() => app.unmount());
+    return app.runWithContext(() => useSelection(pinia));
+}
 
 function page(anchoring: boolean) {
     const root = document.createElement("div");
@@ -42,8 +58,7 @@ function page(anchoring: boolean) {
 for (const anchoring of [false, true]) {
     describe(`a selection holds the reader's figure (engine anchoring ${anchoring ? "on" : "off"})`, () => {
         it("keeps the figure where it was through the reflow a pick sets off, and again on the clear", async () => {
-            setActivePinia(createPinia());
-            const selection = useSelection();
+            const selection = await store();
             const { above, mark, plate } = page(anchoring);
             window.scrollTo(0, 1000);
             await frames(2);
@@ -68,8 +83,7 @@ for (const anchoring of [false, true]) {
         });
 
         it.skipIf(anchoring)("never fights the reader: input ends the hold", async () => {
-            setActivePinia(createPinia());
-            const selection = useSelection();
+            const selection = await store();
             const { above, mark, plate } = page(anchoring);
             window.scrollTo(0, 1000);
             await frames(2);

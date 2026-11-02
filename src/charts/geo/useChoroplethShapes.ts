@@ -189,35 +189,55 @@ export interface PatternDefEmit {
     geom: PatternDef;
 }
 
-/** The label box metrics, in SVG user-space (the `cx`/`cy` frame): a mono word's advance per char
-    (≈0.6em) and its line height. `.geo-value-label` is `--type-micro` (0.75rem, 12 user units) mono;
-    `.geo-place-label` is 11 user units bold mono, times the phone counter-scale (GeoChoropleth.css).
-    U/B8 N-2: the value box was sized for a 9px face, so the declutter kept words whose ink touched. */
-export const VALUE_LABEL_PX = 12;
-export const PLACE_LABEL_PX = 11;
-const MONO_ADVANCE_EM = 0.6;
-/** A word's line box, ascent to descent: Fira Code's (and its fallback's, 99% + 32%) is 1.32 em.
-    Read on /ecf at 1440: the 12 px value box is 16.4 user units tall, the 11 px name 13.9. */
-const LINE_EM = 1.32;
+/** One label face in SVG user space (the `cx`/`cy` frame): a character's advance and the line box,
+    ascent to descent. Both words are monospace, so a word's box is its length times the advance. */
+export interface LabelFace {
+    advance: number;
+    line: number;
+}
+/** The two faces the stack seats: the bold place word and the value word. */
+export interface LabelFaces {
+    place: LabelFace;
+    value: LabelFace;
+}
+/** The faces before the rendered words are measured: `.geo-place-label` is 11 user units bold mono
+    times the phone counter-scale, `.geo-value-label` `--type-micro` (12) mono; a mono advance is about
+    0.6 em and Fira Code's line box (99% + 32%) 1.32 em. The SFC replaces them with the faces it reads
+    off the rendered words (`measureLabelFaces`), since engines and fallback fonts differ (U/B8 N-2:
+    the fixed estimate left 7 overlaps in Chromium and 14 in Firefox on /ecf at 1440). */
+export function estimatedLabelFaces(placeScale = 1): LabelFaces {
+    return {
+        place: { advance: 11 * placeScale * 0.6, line: 11 * placeScale * 1.32 },
+        value: { advance: 12 * 0.6, line: 12 * 1.32 },
+    };
+}
+/** Read a face off a rendered word: its box over its length. Null for an empty or unrendered word. */
+export function measureLabelFace(el: SVGTextElement | null): LabelFace | null {
+    const text = el?.textContent?.trim() ?? "";
+    if (!el || !text) return null;
+    const box = el.getBBox();
+    if (!(box.width > 0 && box.height > 0)) return null;
+    return { advance: box.width / text.length, line: box.height };
+}
 
 /**
  * U/B8 N-2 · THE LABEL STACK. A region that carries both a place word and a value word seats them as
  * one block centred on its centroid: the place word above, the value word below. They never share a
  * baseline (they did: both at the centroid, so /ecf printed PITT over $14.66, 63 overlaps at 1440).
- * Returns each word's centre y and box size; `placeScale` is the phone counter-scale.
+ * Returns each word's centre y and box size, from the faces.
  */
 export function labelStack(
     s: Pick<Shape, "cx" | "cy" | "label" | "place">,
-    placeScale = 1,
+    faces: LabelFaces = estimatedLabelFaces(),
 ): { placeY: number; valueY: number; placeW: number; placeH: number; valueW: number; valueH: number } {
-    const placeH = s.place ? PLACE_LABEL_PX * placeScale * LINE_EM : 0;
-    const valueH = s.label ? VALUE_LABEL_PX * LINE_EM : 0;
+    const placeH = s.place ? faces.place.line : 0;
+    const valueH = s.label ? faces.value.line : 0;
     return {
         placeY: s.cy - valueH / 2,
         valueY: s.cy + placeH / 2,
-        placeW: s.place.length * PLACE_LABEL_PX * placeScale * MONO_ADVANCE_EM,
+        placeW: s.place.length * faces.place.advance,
         placeH,
-        valueW: Math.max(1, s.label.length) * VALUE_LABEL_PX * MONO_ADVANCE_EM,
+        valueW: Math.max(1, s.label.length) * faces.value.advance,
         valueH,
     };
 }
@@ -282,8 +302,8 @@ function categoryVar(idx: number): string {
  */
 export function useChoroplethShapes(
     props: ChoroplethProps,
-    /** The place words' phone counter-scale (the SFC's measured `placeLetterScale`); 1 on desktop. */
-    placeScale: () => number = () => 1,
+    /** The label faces the stack and the declutter size words by (the SFC's measured faces). */
+    labelFaces: () => LabelFaces = () => estimatedLabelFaces(),
 ) {
     // The viewBox: the US Albers canvas by default, or the caller's NC-fitted viewport.
     const WIDTH = computed(() => props.viewport?.[0] ?? 975);
@@ -467,12 +487,12 @@ export function useChoroplethShapes(
     // key ASC as the deterministic tiebreak, so the suppressed set is frozen per frame.
     const collisionSuppressed = computed<Set<string>>(() => {
         if (resolvedChannel.value !== "value-label") return new Set<string>();
-        const scale = placeScale();
+        const faces = labelFaces();
         const boxes: LabelBox[] = shapes.value
             .filter((s) => s.hasValue && s.label !== "" && shapeClearsLabelGate(s.key))
             .sort((a, b) => b.minorAxis - a.minorAxis || (a.key < b.key ? -1 : 1))
             .map((s) => {
-                const k = labelStack(s, scale);
+                const k = labelStack(s, faces);
                 return { key: s.key, cx: s.cx, cy: k.valueY, w: k.valueW, h: k.valueH };
             });
         // A place word always draws (A-28: it augments, never yields), so its box is reserved. A
@@ -480,7 +500,7 @@ export function useChoroplethShapes(
         const reserved = shapes.value
             .filter((s) => s.place !== "")
             .map((s) => {
-                const k = labelStack(s, scale);
+                const k = labelStack(s, faces);
                 return { key: s.key, cx: s.cx, cy: k.placeY, w: k.placeW, h: k.placeH };
             });
         return resolveLabelCollisions(boxes, reserved);
