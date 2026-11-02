@@ -8,12 +8,15 @@
 // fires a ONE-TIME micro-lift on its first scroll-into-view so the eye learns "these marks move".
 // The instrument teaches itself through its OWN motion — not a pitch.
 //
-// THE MECHANISM (no new engine). An IntersectionObserver watches the FIRST `[data-viz-plate]` on the
-// route (every VizPlate stamps that marker — the interactive plate host). On its first entry into the
-// reading band, the composable sets `data-affordance-lift` on that plate for ONE pass; the unscoped
-// `chrome-overlays.css` `affordance-lift` keyframe (a brief settle of the figure body — the shipped
-// reveal grammar's own lift vocabulary, one pass) plays, then the attribute is removed. The observer
-// then disconnects — it fires AT MOST ONCE.
+// THE MECHANISM (no new engine). The FIRST `[data-viz-plate]` on the route (every VizPlate stamps
+// that marker — the interactive plate host) is handed to the atlas entrance law (`observeFirstView`,
+// motion/useFirstView.ts, U/B8 A9): the lift plays once, after the plate has been in view for the
+// dwell, never on a pass-through, and on a deep-linked page only after the restore has landed. The
+// composable then sets `data-affordance-lift` on that plate for ONE pass; the unscoped
+// `chrome-overlays.css` `affordance-lift` keyframe (a brief settle of the figure body, one pass)
+// plays, then the attribute is removed. It fires AT MOST ONCE. (Before U/B8 DV repair 1 it armed a
+// raw IntersectionObserver and lifted on the first hit: a plate scrolled past, or one sitting at the
+// top of a deep-linked page before the restore moved it away, spent the lift off the reader's screen.)
 //
 // THE THREE FENCES THAT GATE IT (DESIGN §4.0 TENET-5):
 //   • SESSION-ONCE — a `sessionStorage` latch (`atlas:affordance-hint`) makes it fire ONCE per
@@ -30,6 +33,7 @@
 
 import { onBeforeUnmount, onMounted } from "vue";
 import { useReducedMotion } from "../motion/useReducedMotion.js";
+import { observeFirstView } from "../motion/useFirstView.js";
 
 /** The session-once latch key — the hint fires once per browser session (across routes + a
     same-session reload), never a per-route nag. */
@@ -63,13 +67,13 @@ function claimFired(): void {
 }
 
 /**
- * Mount the one-time first-viz affordance micro-lift. Self-contained: it owns its IntersectionObserver
- * + the session latch + the PRM fence; the caller mounts it ONCE (HoverCard) and passes nothing. It is
- * a no-op under PRM, when the session latch is already claimed, or off-DOM.
+ * Mount the one-time first-viz affordance micro-lift. Self-contained: it owns its first-view watch
+ * (the entrance law) + the session latch + the PRM fence; the caller mounts it ONCE (HoverCard) and
+ * passes nothing. It is a no-op under PRM, when the session latch is already claimed, or off-DOM.
  */
 export function useAffordanceHint(): void {
     const reduced = useReducedMotion();
-    let observer: IntersectionObserver | null = null;
+    let stopView: (() => void) | null = null;
     let liftTimer: ReturnType<typeof setTimeout> | null = null;
     // A page-load-scoped guard so a sessionStorage-blocked browser still fires at most once per load.
     let firedThisLoad = false;
@@ -84,7 +88,8 @@ export function useAffordanceHint(): void {
 
     /** Play the one micro-lift pass on the plate, then strip the attribute (the lift is transient). */
     function lift(plate: Element): void {
-        if (firedThisLoad) return;
+        // a reader who switched to reduced motion while the plate waited gets no lift (the PRM fence).
+        if (firedThisLoad || reduced.value) return;
         firedThisLoad = true;
         claimFired();
         plate.setAttribute(LIFT_ATTR, "");
@@ -114,27 +119,18 @@ export function useAffordanceHint(): void {
         // a plate resolved — reset the retry budget (the rAF loop has settled).
         plateRetries = 0;
         rafHandle = null;
-        observer?.disconnect();
-        observer = new IntersectionObserver(
-            (entries) => {
-                for (const e of entries) {
-                    if (!e.isIntersecting) continue;
-                    lift(e.target);
-                    observer?.disconnect(); // fire AT MOST ONCE — drop the observer after.
-                    observer = null;
-                }
-            },
-            // the reading band — the plate is "arrived" once its top crosses into the upper-middle
-            // viewport (the same upper-band reading line the dock's beat observer uses).
-            { rootMargin: "0px 0px -40% 0px", threshold: 0.01 },
-        );
-        observer.observe(plate);
+        stopView?.();
+        // The entrance law owns when "arrived" is: in view for the dwell, after any deep link landed.
+        stopView = observeFirstView(plate, () => {
+            stopView = null;
+            lift(plate);
+        });
     }
 
     onMounted(observeFirstPlate);
     onBeforeUnmount(() => {
-        observer?.disconnect();
-        observer = null;
+        stopView?.();
+        stopView = null;
         if (liftTimer) clearTimeout(liftTimer);
         // cancel any pending plate-resolve retry frame (the bounded one-shot rAF, C43).
         if (rafHandle !== null) cancelAnimationFrame(rafHandle);

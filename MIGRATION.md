@@ -434,6 +434,9 @@ The dedicated public entry points introduced here are `@mkbabb/atlas/events` and
   `@mkbabb/atlas/motion`; do not arm one on a raw IntersectionObserver. A restorer that is not the
   dock stepper must call `beginNarrativeRestore()` / `markNarrativeRestoreAbsent()` and publish
   `settleNarrativeRestore`, or entrances on a deep-linked page hold.
+- The first-plate affordance lift (`useAffordanceHint`) plays under the same law: after 130 ms in
+  view, not on a pass-through, and after a deep link has landed. A consumer test that reads
+  `data-affordance-lift` on the first intersection now waits for the dwell.
 
 ## Update peers
 

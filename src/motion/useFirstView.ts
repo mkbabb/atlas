@@ -62,9 +62,15 @@ export function observeFirstView(
                         (e.intersectionRatio >= threshold ||
                             e.intersectionRect.height >= window.innerHeight * 0.5),
                 );
-                clearTimeout(dwell);
-                dwell = undefined;
-                if (!seen) return;
+                // Leaving view cancels the dwell. Staying in view keeps the dwell already running:
+                // each threshold a scroll crosses reports again, and restarting the timer on every
+                // report would hold a slowly scrolled element past its 130 ms.
+                if (!seen) {
+                    clearTimeout(dwell);
+                    dwell = undefined;
+                    return;
+                }
+                if (dwell !== undefined) return;
                 dwell = setTimeout(() => {
                     if (done) return;
                     stop();
