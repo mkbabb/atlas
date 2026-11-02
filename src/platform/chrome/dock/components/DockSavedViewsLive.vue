@@ -7,7 +7,7 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { Bookmark } from "@lucide/vue";
 import { Select, SelectContent, SelectItem } from "@mkbabb/glass-ui/select";
-import { DockTrigger } from "@mkbabb/glass-ui/dock";
+import { DockTrigger } from "@mkbabb/glass-ui/dock-trigger";
 import { useSavedViews } from "../../../composables/useSavedViews.js";
 
 // One control: the caller's attributes land on the trigger (a seat of the bar's run).
