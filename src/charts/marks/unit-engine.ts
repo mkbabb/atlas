@@ -55,7 +55,7 @@ export interface UnitMorphOptions {
 }
 
 const DEFAULT_SPRING: UnitSpring = { response: 0.5, dampingFraction: 0.68 };
-// Shared by every morph on the default spring: sampled at module load, once.
+// Shared by every morph on the default spring: sampled once, on the first default-spring morph.
 let defaultLut: Float32Array | undefined;
 
 export class UnitMorph {
@@ -240,7 +240,6 @@ export interface UnitCanvasOptions {
 
 export class UnitCanvas {
     readonly morph: UnitMorph;
-    reduced: boolean;
 
     private readonly ctx: CanvasRenderingContext2D;
     private readonly now: () => number;
@@ -254,6 +253,7 @@ export class UnitCanvas {
     private colorOf: Uint16Array;
     private dpr = 1;
     private frameId = 0;
+    private isReduced: boolean;
 
     constructor(
         private readonly canvas: HTMLCanvasElement,
@@ -262,7 +262,7 @@ export class UnitCanvas {
     ) {
         this.ctx = canvas.getContext("2d")!;
         this.morph = new UnitMorph(count, options.morph);
-        this.reduced = options.reduced ?? false;
+        this.isReduced = options.reduced ?? false;
         this.spriteFactory = options.sprite;
         this.now = options.now ?? (() => performance.now());
         this.raf = options.raf ?? ((cb) => requestAnimationFrame(cb));
@@ -270,6 +270,20 @@ export class UnitCanvas {
         this.colorOf = new Uint16Array(count);
         this.order = new Uint32Array(count);
         for (let i = 0; i < count; i++) this.order[i] = i;
+    }
+
+    /** Snap every change instead of morphing. Turning it on mid-flight lands the marks and the alpha. */
+    get reduced(): boolean {
+        return this.isReduced;
+    }
+
+    set reduced(r: boolean) {
+        this.isReduced = r;
+        if (!r) return;
+        const l = this.morph.layout;
+        if (l) this.morph.snap(l);
+        this.morph.settleAlpha();
+        this.kick();
     }
 
     /** True while a frame is scheduled. */
@@ -305,7 +319,7 @@ export class UnitCanvas {
 
     /** Show a layout: morph into it, or land on it under reduced motion and on the first paint. */
     show(layout: UnitLayout): void {
-        if (this.reduced || !this.morph.layout) this.morph.snap(layout);
+        if (this.isReduced || !this.morph.layout) this.morph.snap(layout);
         else this.morph.morphTo(layout, this.now());
         this.kick();
     }
@@ -318,10 +332,14 @@ export class UnitCanvas {
 
     focus(group: number | null): void {
         this.morph.focus(group);
-        if (this.reduced) this.morph.settleAlpha();
+        if (this.isReduced) this.morph.settleAlpha();
         this.kick();
     }
 
+    /**
+     * The mark at a frame point (`hitTest`). It reads the target layout, not the drawn positions:
+     * mid-morph the pointer finds a mark where it is going, which is where it will stay.
+     */
     hit(px: number, py: number): number {
         const l = this.morph.layout;
         return l ? hitTest(l, px, py) : -1;

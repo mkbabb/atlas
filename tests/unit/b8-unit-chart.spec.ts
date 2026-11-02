@@ -76,6 +76,23 @@ describe("unit layouts", () => {
         expect(l.height).toBe(60);
     });
 
+    it("grouped blocks fitted to a height stay inside the frame width", () => {
+        // The reviewer's repros: a tall frame must not grow a pitch wider than its block.
+        const cases: [number[], { width: number; height: number; blockGap?: number }][] = [
+            [Array.from({ length: 30 }, (_, i) => i % 10), { width: 100, height: 600 }],
+            [Array.from({ length: 12 }, (_, i) => i % 3), { width: 90, height: 300, blockGap: 0 }],
+        ];
+        for (const [group, o] of cases) {
+            const l = groupedBlocksLayout(group, o);
+            for (let i = 0; i < l.count; i++) {
+                expect(l.x[i] - l.w[i] / 2).toBeGreaterThanOrEqual(-1e-4);
+                expect(l.x[i] + l.w[i] / 2).toBeLessThanOrEqual(o.width + 1e-4);
+                expect(l.y[i] - l.h[i] / 2).toBeGreaterThanOrEqual(-1e-4);
+            }
+            for (const b of l.blocks) expect(b.x + b.w).toBeLessThanOrEqual(o.width + 1e-4);
+        }
+    });
+
     it("a layout authored as data validates its arrays", () => {
         expect(() =>
             createUnitLayout({ width: 10, height: 10, x: [1, 2], y: [1], w: [1, 1], h: [1, 1] }),
@@ -353,6 +370,27 @@ describe("unit canvas", () => {
         u.show(b);
         f.run(0);
         expect(Array.from(u.morph.x)).toEqual(Array.from(b.x));
+        expect(f.pending()).toBe(false);
+    });
+
+    it("lands a morph in flight when reduced motion turns on", () => {
+        const { canvas } = fakeCanvas();
+        const f = fakeFrames();
+        let now = 0;
+        const u = new UnitCanvas(canvas, 4, { raf: f.raf, caf: f.caf, now: () => now, morph: { duration: 100, spread: 0 } });
+        const g = gridLayout(4, { width: 40, cell: 10 });
+        u.show(createUnitLayout({ ...g, group: [0, 0, 1, 1] }));
+        f.run(0);
+        const b = boustrophedonLayout(4, { width: 20, cell: 10, group: [0, 0, 1, 1] });
+        u.show(b);
+        u.focus(1);
+        f.run((now = 30));
+        expect(Array.from(u.morph.x)).not.toEqual(Array.from(b.x));
+        u.reduced = true;
+        expect(Array.from(u.morph.x)).toEqual(Array.from(b.x));
+        expect(Array.from(u.morph.y)).toEqual(Array.from(b.y));
+        expect(u.morph.settled).toBe(true);
+        f.run((now = 31));
         expect(f.pending()).toBe(false);
     });
 

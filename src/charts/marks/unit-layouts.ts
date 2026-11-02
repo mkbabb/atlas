@@ -222,8 +222,10 @@ export function groupedBlocksLayout(group: ArrayLike<number>, o: UnitBlockOption
     const blockGapAt = (p: number) => o.blockGap ?? p;
     const blockWAt = (p: number) => (o.width - blockGapAt(p) * (groups - 1)) / Math.max(1, groups);
     const colsAt = (p: number) => Math.max(1, Math.floor(blockWAt(p) / p + 1e-6));
-    const pitch =
-        o.cell ?? (o.height ? fitPitch((p) => Math.ceil(tallest / colsAt(p)) * p <= o.height! + 1e-6, o.height) : 8);
+    // A fitted pitch holds the tallest block in the height AND one column in the block width: past
+    // `blockW` the clamped single column would carry the marks out of the frame sideways.
+    const fits = (p: number) => blockWAt(p) >= p - 1e-6 && Math.ceil(tallest / colsAt(p)) * p <= o.height! + 1e-6;
+    const pitch = o.cell ?? (o.height ? fitPitch(fits, Math.min(o.width, o.height)) : 8);
     const blockW = blockWAt(pitch);
     const cols = colsAt(pitch);
     const height = o.height ?? Math.ceil(tallest / cols) * pitch;
