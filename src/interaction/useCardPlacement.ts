@@ -34,6 +34,14 @@ export const RAIL_PAD = 16;
 export const RAIL_TOP = 96; // below the chrome dock — the rail starts under the masthead
 export const RAIL_CARD_STRIDE = 8; // the gap between stacked rail cards
 
+/** A viewport box the card keeps clear of (a fixed dock, a rail). A `DOMRect` satisfies it. */
+export interface Rect {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+}
+
 /** The TRANSIENT card seat — clamped off the MEASURED footprint so `x + pad + w ≤ vw − pad`, top
     likewise. The card hugs the hovered DATUM (the desktop pointer register), viewport-clamped.
 
@@ -43,6 +51,10 @@ export const RAIL_CARD_STRIDE = 8; // the gap between stacked rail cards
     (`!tapPeek.value`), so this seat math is the desktop-pointer path ONLY — the dead right-margin
     branch is retired and the reach idiom has a single home.
 
+    U/B8 A5 — the card FLIPS to the far side of the anchor on each axis when the near side would
+    cross the viewport edge and the far side has room, so the clamp never slides it back over the
+    anchor and its mark. `avoid` (a fixed dock) is a box the seat stays clear of when a corner can.
+
     `pointer` is the live pointer (null for a keyboard or deep-link selection): the seat never covers
     it (U/B7c L · F-14). */
 export function transientSeat(
@@ -50,27 +62,37 @@ export function transientSeat(
     footprint: Footprint,
     viewport: Viewport,
     pointer: Anchor | null = null,
+    avoid: Rect | null = null,
 ): { left: number; top: number } {
     const { vw, vh } = viewport;
-    const clampX = (x: number) => Math.max(CARD_PAD, Math.min(x, vw - footprint.w - CARD_PAD));
-    const clampY = (y: number) => Math.max(CARD_PAD, Math.min(y, vh - footprint.h - CARD_PAD));
-    const right = clampX(anchor.x + CARD_PAD);
-    const below = clampY(anchor.y + CARD_PAD);
-    // U/B7c L · F-14 — the card takes the pointer, so it must never seat over it: a card under the
-    // pointer eats the next click on the mark. The corners round the anchor, in order; the first that
-    // leaves the live pointer clear wins (below-right whenever the pointer allows it).
-    if (!pointer) return { left: right, top: below };
-    const left = clampX(anchor.x - CARD_PAD - footprint.w);
-    const above = clampY(anchor.y - CARD_PAD - footprint.h);
+    const { w, h } = footprint;
+    const clampX = (x: number) => Math.max(CARD_PAD, Math.min(x, vw - w - CARD_PAD));
+    const clampY = (y: number) => Math.max(CARD_PAD, Math.min(y, vh - h - CARD_PAD));
+    const right = anchor.x + CARD_PAD;
+    const left = anchor.x - CARD_PAD - w;
+    const below = anchor.y + CARD_PAD;
+    const above = anchor.y - CARD_PAD - h;
+    // The near side (right, below) unless it crosses the far edge and the other side fits.
+    const flipX = right + w > vw - CARD_PAD && left >= CARD_PAD;
+    const flipY = below + h > vh - CARD_PAD && above >= CARD_PAD;
+    const [x0, x1] = (flipX ? [left, right] : [right, left]).map(clampX) as [number, number];
+    const [y0, y1] = (flipY ? [above, below] : [below, above]).map(clampY) as [number, number];
+    // The corners round the anchor, the preferred one first; the first that leaves the live pointer
+    // and the avoid-rect clear wins. A card under the pointer eats the next click on the mark (F-14),
+    // so the pointer outranks the avoid-rect when no corner clears both.
     const seats = [
-        { left: right, top: below },
-        { left, top: below },
-        { left: right, top: above },
-        { left, top: above },
+        { left: x0, top: y0 },
+        { left: x1, top: y0 },
+        { left: x0, top: y1 },
+        { left: x1, top: y1 },
     ];
-    const clear = (s: { left: number; top: number }) =>
-        pointer.x < s.left || pointer.x > s.left + footprint.w || pointer.y < s.top || pointer.y > s.top + footprint.h;
-    return seats.find(clear) ?? seats[0]!;
+    const clearOfPointer = (s: { left: number; top: number }) =>
+        !pointer || pointer.x < s.left || pointer.x > s.left + w || pointer.y < s.top || pointer.y > s.top + h;
+    const clearOfAvoid = (s: { left: number; top: number }) =>
+        !avoid || s.left >= avoid.right || s.left + w <= avoid.left || s.top >= avoid.bottom || s.top + h <= avoid.top;
+    return (
+        seats.find((s) => clearOfPointer(s) && clearOfAvoid(s)) ?? seats.find(clearOfPointer) ?? seats[0]!
+    );
 }
 
 /** A SINGLE pin seats at its datum ANCHOR (the same law as the transient card), clamped on-screen. */

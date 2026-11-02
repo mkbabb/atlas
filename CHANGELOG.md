@@ -4,6 +4,12 @@
 
 ### Fixes
 
+- **The hover card flips at the viewport edge (U/B8 A5).** Near the right or bottom edge the
+  transient seat clamped the card back over its anchor, so it covered the mark it described. The card
+  now takes the far side of the anchor on each axis when the near side would cross the edge and the
+  far side fits. `transientSeat` takes an optional avoid-rect (a fixed dock; a `DOMRect` serves) that
+  the seat stays clear of when a corner can; the live pointer still outranks it. The seat is
+  internal, so no consumer changes. Witness: `tests/unit/b8-card-flip-and-avoid.spec.ts`, red before.
 - **A section jump lands where it was sent (U/B7d M2 · WebKit).** On the first Sections jump after a
   load, WebKit stopped the smooth scroll 360 to 381 px short when focus moved as the list closed, with
   `?at=` written and the label a section behind (2 of 25 jumps in the engine harness; the served /sci
