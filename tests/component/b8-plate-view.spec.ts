@@ -3,7 +3,11 @@
 // sits in a view stage that starts on the chart. The click path and the sort are in
 // src/charts/frame/PlateTable.browser.spec.ts. Fails before: the dock had no view toggle and the
 // plate no stage.
-import { createSSRApp, h } from "vue";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { createSSRApp, defineComponent, h, provide, ref } from "vue";
+import { PLATE_VIEW_KEY } from "../../src/charts/frame/plate-view";
+import { STAGE_ANATOMY_KEY } from "../../src/charts/contract/scene-contract";
 import { renderToString } from "@vue/server-renderer";
 import { createPinia, setActivePinia } from "pinia";
 import { createMemoryHistory, createRouter } from "vue-router";
@@ -115,5 +119,39 @@ describe("A4 · the table view toggle", () => {
             expect(figure).toMatch(/class="viz-plate__stage" data-view="chart"/);
             expect(figure).not.toMatch(/data-plate-table/);
         }
+    });
+});
+
+describe("A4 · a composed stage owns the view", () => {
+    it("the stage's graphic plate reads the stage's view and draws its rows as the table", async () => {
+        const VizPlate = (await import("../../src/charts/frame/VizPlate.vue")).default;
+        const Stage = defineComponent({
+            setup(_, { slots }) {
+                provide(STAGE_ANATOMY_KEY, true);
+                provide(PLATE_VIEW_KEY, ref("table"));
+                return () => slots.default?.();
+            },
+        });
+        const html = await renderApp({
+            render: () =>
+                h(Stage, null, {
+                    default: () =>
+                        h(VizPlate, { contract: contract("sci-stage", "Bandwidth by scene") }, {
+                            default: () => h("div", { "data-chart-body": "s" }, "chart s"),
+                        }),
+                }),
+        });
+        expect(html).toMatch(/class="viz-plate__stage" data-view="table"/);
+        expect(html).toMatch(/data-plate-table[^>]*data-subject="sci-stage"/);
+        expect(html).toContain("Wake");
+        expect(html).toContain("$1.86B");
+        // Inside a stage the plate seats no dock of its own: the stage's dock is the one toggle.
+        expect(html).not.toMatch(/data-action="view"/);
+    });
+
+    it("ChapterStage provides the view and hands its dock the toggle", () => {
+        const src = readFileSync(join(__dirname, "../../src/charts/scene/ChapterStage.vue"), "utf8");
+        expect(src).toMatch(/provide\(PLATE_VIEW_KEY, stageView\)/);
+        expect(src).toMatch(/:view="stageView"\s*@update:view="stageView = \$event"/);
     });
 });

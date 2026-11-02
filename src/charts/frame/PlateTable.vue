@@ -96,6 +96,9 @@ onMounted(() => {
     flex-direction: column;
     min-inline-size: 0;
     font-size: var(--type-small, 0.8125rem);
+    /* The table sits on the card, not on the plate's graph-paper ground: rows read without the grid
+       showing through them. */
+    background: var(--card, var(--background));
 }
 .plate-table :deep([data-slot="data-table"]) {
     flex: 1 1 auto;
@@ -122,6 +125,11 @@ onMounted(() => {
 .plate-table :deep(th),
 .plate-table :deep(td) {
     border-color: var(--viz-grid);
+}
+/* Rows at reading density: a long table shows more of itself in the figure's box. */
+.plate-table :deep(td),
+.plate-table :deep(th) {
+    padding-block: 0.5rem;
 }
 .plate-table :deep(.plate-table__value) {
     font-variant-numeric: tabular-nums;

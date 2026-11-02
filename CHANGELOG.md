@@ -11,7 +11,9 @@
   never resizes to zero and the page height does not move. Both columns sort; a blank stays last in
   both directions. The table loads on the first press (`lazy-PlateTable` chunk). The source-data
   control in the open dock now shows a `Database` glyph, so the two tables never share an icon. New:
-  `PlateTable.vue`, `plate-view.ts` (`PlateView`), `PlateDock`'s `view` prop and `update:view` event.
+  `PlateTable.vue`, `plate-view.ts` (`PlateView`, `PLATE_VIEW_KEY`), `PlateDock`'s `view` prop and
+  `update:view` event. A composed stage owns its graphic's dock, so `ChapterStage` provides the view
+  and its graphic's plate reads it; a scene change keeps the reader's view.
   A closed dock with the toggle is two tab stops (the toggle, then the handle). Witnesses:
   `PlateTable.browser.spec.ts`, `b8-plate-view.spec.ts`, red before.
 - **One table sort (U/B8 A4).** `lib/compareCells.ts`: `cellSortKey`, `compareCells`, `sortRowsBy`.
