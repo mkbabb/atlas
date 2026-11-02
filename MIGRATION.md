@@ -436,7 +436,11 @@ The dedicated public entry points introduced here are `@mkbabb/atlas/events` and
   `settleNarrativeRestore`, or entrances on a deep-linked page hold.
 - The first-plate affordance lift (`useAffordanceHint`) plays under the same law: after 130 ms in
   view, not on a pass-through, and after a deep link has landed. A consumer test that reads
-  `data-affordance-lift` on the first intersection now waits for the dwell.
+  `data-affordance-lift` on the first intersection now waits for the dwell. The lift no longer has
+  its own reading band (the old `-40%` bottom `rootMargin`): like every entrance, it counts the
+  plate as in view once a quarter of it, or half the viewport's height of it, is on screen,
+  anywhere on screen. A consumer that relied on the lift waiting until the plate reached the upper
+  60% of the viewport now sees it sooner.
 
 ## Update peers
 
