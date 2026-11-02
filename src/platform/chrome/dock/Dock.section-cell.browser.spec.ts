@@ -12,6 +12,26 @@ afterEach(() => {
 });
 
 describe("the phone bar's Sections cell", () => {
+    it("lays the dashboard cells while the context still loads", async () => {
+        // The site layer would show Search where the Sections cell goes.
+        const cells: string[][] = [];
+        let sampling = true;
+        const sample = () => {
+            const bar = document.querySelector<HTMLElement>("[data-dock-register='bar']");
+            if (bar) cells.push([...bar.querySelectorAll<HTMLElement>("[data-dock-cell]")].map((e) => e.dataset.dockCell!));
+            if (sampling) requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+        // The context arrives 400 ms after the bar's first frame.
+        site = await mountSite("/bead", 390, 844, 400);
+        await settle(900);
+        sampling = false;
+        expect(cells.length).toBeGreaterThan(0);
+        expect(cells.filter((c) => c.includes("search"))).toEqual([]);
+        expect(cells.every((c) => c.includes("sections"))).toBe(true);
+        expect(document.querySelector("[data-dock-register='bar']")?.getAttribute("data-dock-context")).toBe("dashboard");
+    });
+
     it("holds its slot from the bar's first frame, so the bar never slides as the cell fills", async () => {
         const frames: { left: number; width: number; cell: number | null }[] = [];
         let sampling = true;

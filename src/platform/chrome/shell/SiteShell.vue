@@ -87,7 +87,13 @@ const outletKey = computed(() => (slug.value ? `dashboard:${slug.value}` : Strin
         </a>
         <!-- The banner landmark: the dock is the one persistent site chrome on every route. -->
         <header role="banner">
-            <Dock :context="context" :home="home" :subjects="subjects" :search-sources="searchSources" />
+            <Dock
+                :context="context"
+                :dashboard="slug && findDashboard(slug) ? slug : undefined"
+                :home="home"
+                :subjects="subjects"
+                :search-sources="searchSources"
+            />
         </header>
         <RouterView v-slot="{ Component }">
             <component :is="Component" :key="outletKey" />

@@ -63,6 +63,9 @@ const props = withDefaults(
     defineProps<{
         /** The active route's chrome contract; undefined off a dashboard route (the site layer only). */
         context?: DashboardContext;
+        /** The dashboard route's slug, known at once from the route while `context` still loads. The
+            phone bar lays its dashboard cells from it, so the context's arrival moves no cell (U/B8 P-12). */
+        dashboard?: string;
         /** True on the homepage (`/`): the rail rests open with the roster at ≥ 768 px. */
         home?: boolean;
         /** The subject index the roster's "By subject" row opens. */
@@ -76,6 +79,7 @@ const props = withDefaults(
     }>(),
     {
         context: undefined,
+        dashboard: undefined,
         home: false,
         subjects: () => [],
         searchSources: () => [],
@@ -403,11 +407,13 @@ watch(bottomHeld, (held) => {
             <DockCrest :crest="ctx?.crest" morph-stage="seed" data-dock-cell="crest" />
         </template>
         <template #default>
-            <template v-if="ctx">
+            <!-- A dashboard route lays the dashboard cells from its first frame: the slug is known at
+                 once, the context a chunk later (U/B8 P-12). -->
+            <template v-if="ctx || dashboard">
                 <DockDashboardSelect
                     v-model:open="bar.dashboards.open.value"
                     :return-focus="!bar.dashboards.displaced.value"
-                    :active="ctx.id"
+                    :active="ctx?.id ?? dashboard"
                     side="top"
                     data-dock-cell="dashboards"
                 />
