@@ -7,6 +7,15 @@
 // Two pure legs the SFC reads: `settleRail` spaces the labels so none touch, and `layoutLabelRail`
 // picks N by the rendered width and sizes text, strokes and pad per SCREEN pixel — every px constant
 // is divided by `k`, the screen px per viewBox unit, so the rail reads the same at 390 and at 1440.
+//
+// THE THREADS DO NOT CROSS. A straight thread from a settled label to its centroid can: two labels
+// pushed right of their anchors, the left one tied to a deep centroid and the right one to a shallow
+// one, cross inside the field. So each thread is routed in two legs through a KNEE on the field's
+// edge, level with its anchor: a slant inside the rail band (label → knee), then a drop square to the
+// rail (knee → centroid). The labels and the knees are both in anchor order on two parallel lines, so
+// no two slants cross; the drops are parallel at distinct anchors, so no two drops cross; and a slant
+// stays outside the field while a drop stays inside it, so they meet only at a thread's own knee.
+// Two regions whose centroids share the exact rail coordinate share one drop line.
 
 /** One label on a 1-D rail: its anchor (the centroid's coordinate along the rail) and its extent. */
 export interface RailItem {
@@ -19,8 +28,8 @@ export interface RailItem {
  * as the others allow. Pool-adjacent-violators: each label starts as its own run seated on its anchor;
  * while a run overlaps the run before it the two merge, and a merged run is seated where its mean
  * offset from the anchors is zero (a crowded cluster spreads about its own centre, not one way), then
- * clamped into `[lo, hi]`. The input ORDER is kept (the caller orders by anchor, so threads never
- * cross). Throws a RangeError when the labels cannot fit the span at all; the caller drops labels
+ * clamped into `[lo, hi]`. The input ORDER is kept: the caller orders by anchor, and
+ * `layoutLabelRail` routes each thread through a knee so ordered labels give threads that never cross. Throws a RangeError when the labels cannot fit the span at all; the caller drops labels
  * first (`layoutLabelRail`), so an overlap is never the answer.
  */
 export function settleRail(
@@ -132,6 +141,8 @@ export interface RailLabel {
     /** The label's extent along the rail (viewBox units). */
     size: number;
     from: { x: number; y: number };
+    /** The bend on the field's edge, level with the anchor: the thread runs from → knee → to. */
+    knee: { x: number; y: number };
     to: { x: number; y: number };
 }
 
@@ -153,8 +164,8 @@ const textPx = (r: RailRegion) => textOf(r).length * RAIL_ADVANCE_PX + RAIL_LABE
 
 /**
  * THE RAIL LAYOUT — pick the top N for the width, drop the lowest-priority labels the rail cannot
- * hold, order the rest along the rail by their centroids, settle them, and size every mark per screen
- * pixel. Pure: `(regions, measure) → layout`, frozen per width.
+ * hold, order the rest along the rail by their centroids, settle them, route each thread through its
+ * knee (so no two cross), and size every mark per screen pixel. Pure: `(regions, measure) → layout`, frozen per width.
  */
 export function layoutLabelRail(regions: readonly RailRegion[], opts: RailOptions): RailLayout {
     const side = opts.side ?? "top";
@@ -214,6 +225,7 @@ export function layoutLabelRail(regions: readonly RailRegion[], opts: RailOption
                 anchor: "middle",
                 size,
                 from: { x: pos[i], y: y + 4 / k },
+                knee: { x: r.cx, y: Math.min(0, r.cy) },
                 to: { x: r.cx, y: r.cy },
             };
         }
@@ -227,6 +239,7 @@ export function layoutLabelRail(regions: readonly RailRegion[], opts: RailOption
             anchor: "start",
             size,
             from: { x: x - 4 / k, y: pos[i] },
+            knee: { x: Math.max(viewWidth, r.cx), y: r.cy },
             to: { x: r.cx, y: r.cy },
         };
     });

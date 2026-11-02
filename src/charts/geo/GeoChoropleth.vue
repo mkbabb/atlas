@@ -20,7 +20,7 @@ import {
     isMultiSelect,
     type SelectionEmits,
 } from "../contract/selection-contract.js";
-import { DATA_PATTERN_TILE } from "./redundant-channel.js";
+import { DATA_PATTERN_TILE, patternScreenTransform } from "./redundant-channel.js";
 import { layoutLabelRail, type RailLayout, type RailRegion } from "./label-rail.js";
 import ChartDataTable from "../legend/ChartDataTable.vue";
 import {
@@ -134,6 +134,10 @@ const pxPerUnit = computed<number>(() =>
 );
 
 const cellFloor = computed<number>(() => cellFloorScale(shapes.value, pxPerUnit.value));
+
+/** The hatch and the tier textures per screen pixel (÷ k), one grain at every width. */
+const hatchTransform = computed(() => patternScreenTransform(pxPerUnit.value, "rotate(45)"));
+const textureTransform = computed(() => patternScreenTransform(pxPerUnit.value));
 
 function isRaised(key: string): boolean {
     return props.raisedKeys?.has(key) ?? false;
@@ -271,7 +275,7 @@ const tableRows = computed(() =>
                     width="6"
                     height="6"
                     patternUnits="userSpaceOnUse"
-                    patternTransform="rotate(45)"
+                    :patternTransform="hatchTransform"
                 >
                     <rect width="6" height="6" fill="var(--background)" opacity="0.1" />
                     <line
@@ -296,6 +300,7 @@ const tableRows = computed(() =>
                     :width="DATA_PATTERN_TILE"
                     :height="DATA_PATTERN_TILE"
                     patternUnits="userSpaceOnUse"
+                    :patternTransform="textureTransform"
                 >
                     <line
                         v-for="(l, i) in p.geom.lines ?? []"
@@ -459,7 +464,7 @@ const tableRows = computed(() =>
                 >
                     <path
                         class="geo-rail-thread"
-                        :d="`M${l.from.x},${l.from.y}L${l.to.x},${l.to.y}`"
+                        :d="`M${l.from.x},${l.from.y}L${l.knee.x},${l.knee.y}L${l.to.x},${l.to.y}`"
                         :stroke-width="rail.threadWidth"
                     />
                     <circle

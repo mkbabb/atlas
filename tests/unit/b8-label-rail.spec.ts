@@ -6,7 +6,46 @@ import {
     layoutLabelRail,
     RAIL_COUNT_STEPS,
     type RailItem,
+    type RailLabel,
+    type RailRegion,
 } from "../../src/charts/geo/label-rail";
+import { patternScreenTransform } from "../../src/charts/geo/redundant-channel";
+
+type Pt = { x: number; y: number };
+/** Whether two segments cross at a point interior to both (shared endpoints do not count). */
+function segmentsCross(a: Pt, b: Pt, c: Pt, d: Pt): boolean {
+    const o = (p: Pt, q: Pt, r: Pt) => (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
+    const d1 = o(c, d, a);
+    const d2 = o(c, d, b);
+    const d3 = o(a, b, c);
+    const d4 = o(a, b, d);
+    const eps = 1e-9;
+    return ((d1 > eps && d2 < -eps) || (d1 < -eps && d2 > eps)) && ((d3 > eps && d4 < -eps) || (d3 < -eps && d4 > eps));
+}
+/** The legs a label's thread draws: from → knee → centroid. */
+const legs = (l: RailLabel): [Pt, Pt][] => [
+    [l.from, l.knee],
+    [l.knee, l.to],
+];
+/** Whether any two threads in a layout cross. */
+function threadsCross(labels: readonly RailLabel[], legsOf: (l: RailLabel) => [Pt, Pt][] = legs): boolean {
+    for (let i = 0; i < labels.length; i++) {
+        for (let j = i + 1; j < labels.length; j++) {
+            for (const [a, b] of legsOf(labels[i])) {
+                for (const [c, d] of legsOf(labels[j])) if (segmentsCross(a, b, c, d)) return true;
+            }
+        }
+    }
+    return false;
+}
+/** The straight thread the first cut drew: label → centroid, no knee. */
+const straight = (l: RailLabel): [Pt, Pt][] => [[l.from, l.to]];
+
+/** A seeded LCG, so the property sweeps are reproducible. */
+function lcg(seed: number): () => number {
+    let s = seed >>> 0;
+    return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 2 ** 32);
+}
 
 const items = (anchors: number[], w = 40): RailItem[] => anchors.map((at) => ({ at, size: w }));
 
@@ -130,6 +169,16 @@ describe("layoutLabelRail", () => {
         }
     });
 
+    it("the fixture is crowded: a naive rail seating each label on its anchor overlaps", () => {
+        // The red evidence for the settle pass: the same picks, seated where a rail with no settle
+        // would put them (on the centroids), collide; the laid rail does not.
+        const out = layoutLabelRail(regions, { viewWidth: 975, widthPx: 1200, side: "top" });
+        const sorted = [...out.labels].sort((p, q) => p.x - q.x);
+        const naive = sorted.map((l) => l.to.x);
+        expect(overlaps(naive, sorted.map((l) => l.size))).toBe(true);
+        expect(overlaps(sorted.map((l) => l.x), sorted.map((l) => l.size))).toBe(false);
+    });
+
     it("keeps the rail labels apart and inside the map's width", () => {
         const out = layoutLabelRail(regions, { viewWidth: 975, widthPx: 1200, side: "top" });
         const sorted = [...out.labels].sort((p, q) => p.x - q.x);
@@ -159,7 +208,65 @@ describe("layoutLabelRail", () => {
         expect(out.pad).toBeGreaterThan(0);
     });
 
+    it("routes the threads so no two cross where straight threads would", () => {
+        // Two regions by the left edge: the clamp pushes both labels right of their anchors, the
+        // left one tied to a deep centroid and the right one to a shallow one. A straight thread
+        // from each label to its centroid crosses the other; the knee route does not.
+        const edge: RailRegion[] = [
+            { key: "deep", name: "Deep", value: "10", cx: 5, cy: 500 },
+            { key: "shallow", name: "Shallow", value: "20", cx: 15, cy: 10 },
+        ];
+        const out = layoutLabelRail(edge, { viewWidth: 975, widthPx: 975, side: "top" });
+        expect(out.labels.map((l) => l.key)).toEqual(["deep", "shallow"]);
+        expect(threadsCross(out.labels, straight)).toBe(true);
+        expect(threadsCross(out.labels)).toBe(false);
+    });
+
+    it("bends each thread on the field's edge, level with its anchor", () => {
+        const top = layoutLabelRail(regions, { viewWidth: 975, widthPx: 1200, side: "top" });
+        for (const l of top.labels) expect(l.knee).toEqual({ x: l.to.x, y: 0 });
+        const side = layoutLabelRail(regions, { viewWidth: 975, viewHeight: 610, widthPx: 1200, side: "right" });
+        for (const l of side.labels) expect(l.knee).toEqual({ x: 975, y: l.to.y });
+    });
+
+    it("never crosses two threads, on either rail, over random fields", () => {
+        const rand = lcg(0xa10);
+        let straightCrossed = 0;
+        for (let trial = 0; trial < 300; trial++) {
+            const n = 2 + Math.floor(rand() * 5);
+            const field: RailRegion[] = Array.from({ length: n }, (_, i) => ({
+                key: `r${i}`,
+                name: "Region".slice(0, 2 + Math.floor(rand() * 5)),
+                value: String(Math.floor(rand() * 999)),
+                cx: 1 + rand() * 973,
+                cy: 1 + rand() * 608,
+            }));
+            for (const side of ["top", "right"] as const) {
+                const widthPx = 390 + rand() * 1050;
+                const out = layoutLabelRail(field, { viewWidth: 975, viewHeight: 610, widthPx, side, count: () => 6 });
+                expect(threadsCross(out.labels)).toBe(false);
+                if (threadsCross(out.labels, straight)) straightCrossed++;
+            }
+        }
+        // The sweep is not vacuous: straight threads cross on some of these fields.
+        expect(straightCrossed).toBeGreaterThan(0);
+    });
+
     it("reads no labels before the field is measured", () => {
         expect(layoutLabelRail(regions, { viewWidth: 975, widthPx: 0, side: "top" }).labels).toEqual([]);
+    });
+});
+
+describe("patternScreenTransform", () => {
+    it("divides the hatch tile by k so it holds one screen grain at every width", () => {
+        expect(patternScreenTransform(2)).toBe("scale(0.5)");
+        expect(patternScreenTransform(0.5, "rotate(45)")).toBe("scale(2) rotate(45)");
+    });
+
+    it("writes nothing new while unmeasured or at k = 1, so the resting markup is unchanged", () => {
+        expect(patternScreenTransform(0)).toBeUndefined();
+        expect(patternScreenTransform(1)).toBeUndefined();
+        expect(patternScreenTransform(0, "rotate(45)")).toBe("rotate(45)");
+        expect(patternScreenTransform(1, "rotate(45)")).toBe("rotate(45)");
     });
 });
