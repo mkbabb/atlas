@@ -127,3 +127,18 @@ describe("GeoChoropleth — the opt-in entrance overlay", () => {
         expect(await render({})).not.toContain("data-entrance-pending");
     });
 });
+
+// U/B8 owner ruling — the ripple stays on WAAPI; the CSS `--rank` draw hook (and its
+// `.geo-shape--draw` class) is retired, so a ranked map carries neither on any mark.
+describe("GeoChoropleth — no CSS draw hook", () => {
+    const rank = (k: string) => ({ "01": 0, "02": 1, "03": 2 })[k];
+
+    it("puts no --rank style and no draw class on a ranked map's shapes", async () => {
+        for (const props of [{ rank }, { rank, entrance: { origin: "01", kind: "ripple" } }]) {
+            const html = await render(props);
+            expect(html).toContain('class="geo-shape');
+            expect(html).not.toContain("--rank");
+            expect(html).not.toContain("geo-shape--draw");
+        }
+    });
+});

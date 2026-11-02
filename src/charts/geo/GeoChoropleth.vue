@@ -85,7 +85,6 @@ const {
     WIDTH,
     HEIGHT,
     shapes,
-    drawOn,
     patternDefs,
     textureFor,
     labelsMounted,
@@ -314,11 +313,7 @@ const tableRows = computed(() =>
                         :data-kbd-active="kbdActiveKey === s.key ? 'true' : undefined"
                         aria-hidden="true"
                         class="geo-shape stroke-background outline-none transition-opacity duration-200 dimmed:opacity-70 raised:opacity-100 selected:[stroke-width:2.5]"
-                        :class="{
-                            'geo-shape--draw': drawOn,
-                            'geo-shape--cell-floor': cellFloor > 1,
-                        }"
-                        :style="drawOn ? { '--rank': s.rank ?? 0 } : undefined"
+                        :class="{ 'geo-shape--cell-floor': cellFloor > 1 }"
                         :stroke-width="isRaised(s.key) ? 2 : 0.5"
                         @mouseenter="onEnter(s)"
                         @mouseleave="onLeave"
@@ -331,11 +326,7 @@ const tableRows = computed(() =>
                         :fill="textureFor(s)!"
                         :data-texture-key="s.key"
                         class="geo-texture pointer-events-none"
-                        :class="{
-                            'geo-shape--draw': drawOn,
-                            'geo-shape--cell-floor': cellFloor > 1,
-                        }"
-                        :style="drawOn ? { '--rank': s.rank ?? 0 } : undefined"
+                        :class="{ 'geo-shape--cell-floor': cellFloor > 1 }"
                         aria-hidden="true"
                     />
                     <path

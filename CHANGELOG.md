@@ -4,6 +4,12 @@
 
 ### Fixes
 
+- **The dead map-draw hook is deleted (U/B8 A1).** The ripple stays on WAAPI, and nothing has read
+  the `--rank` style or the `.geo-shape--draw` class since the `map-draw.css` draw left (b25200d).
+  `GeoChoropleth` no longer writes either on its shapes or textures, and the internal `drawOn` flag
+  and `Shape.rank` field go with them. The `rank` prop stays: it is the ripple's fallback order when
+  the origin is missing. See MIGRATION §5k. Witness: `tests/component/geo-entrance.spec.ts` "puts no
+  --rank style and no draw class on a ranked map's shapes", red before.
 - **A section jump lands where it was sent (U/B7d M2 · WebKit).** On the first Sections jump after a
   load, WebKit stopped the smooth scroll 360 to 381 px short when focus moved as the list closed, with
   `?at=` written and the label a section behind (2 of 25 jumps in the engine harness; the served /sci
