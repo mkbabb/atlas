@@ -89,6 +89,18 @@ describe("observeFirstView", () => {
         expect(onView).toHaveBeenCalledTimes(1);
     });
 
+    it("a slow scroll that keeps crossing thresholds does not restart the dwell", () => {
+        // DV repair 1 (verify §9 item 6): each callback cleared and restarted the timer, so an
+        // element reported every 100 ms by a slow scroll never played until the scroll stopped.
+        const onView = vi.fn();
+        observeFirstView(el, onView);
+        observers[0]!.cb([seen(0.3)]);
+        vi.advanceTimersByTime(100);
+        observers[0]!.cb([seen(0.4)]);
+        vi.advanceTimersByTime(FIRST_VIEW_DWELL_MS - 100);
+        expect(onView).toHaveBeenCalledTimes(1);
+    });
+
     it("on a page opened on a deep link, waits for the restore to settle", () => {
         resetNarrativeLanding(true);
         expect(narrativeLandingHeld()).toBe(true);
