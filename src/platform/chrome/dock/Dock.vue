@@ -47,6 +47,7 @@ import { useScrollChrome } from "./composables/useScrollChrome.js";
 import { useDocumentScrollProgress } from "../../../motion/useScrollProgress.js";
 import { useReducedMotion } from "../../../motion/useReducedMotion.js";
 import { useDockPortals } from "./composables/useDockPortals.js";
+import { useDockRect } from "./composables/useDockRect.js";
 import { revealReleasesOnLeave, revealPersists } from "./composables/coarse-reveal.js";
 import { useSeatedOpen, useSurfaceSeats } from "../surfaces/useSurfaceSeat.js";
 import type { DashboardContext } from "../../../contract/index.js";
@@ -109,6 +110,8 @@ const reduced = useReducedMotion();
 // ══ ≥ 768 px: THE RAIL ══════════════════════════════════════════════════════════════════════════
 const { collapsed, toggle: collapseToggle, bindDock, setIntent } = useDockCollapse();
 const dockRef = ref<DockExposed | null>(null);
+/** A GlassDock instance's rendered root (the fixed plate). */
+const rootOf = (inst: DockExposed | null) => (inst as unknown as { $el?: HTMLElement } | null)?.$el ?? null;
 watch(dockRef, (inst) => bindDock(inst), { immediate: true });
 
 // The rest posture: open on `/` (the roster is the homepage's index), the crest circle elsewhere.
@@ -131,7 +134,7 @@ let detachBloom: (() => void) | null = null;
 function bindBloom(inst: DockExposed | null): void {
     detachBloom?.();
     detachBloom = null;
-    const el = (inst as unknown as { $el?: HTMLElement } | null)?.$el;
+    const el = rootOf(inst);
     if (!el) return;
     // The bloom has two holders, a hovering pointer and keyboard focus inside the rail. Either one
     // leaving releases it only when the other is gone too: a pointer drifting off does not collapse
@@ -195,6 +198,13 @@ function bindBloom(inst: DockExposed | null): void {
 }
 watch(dockRef, (inst) => bindBloom(inst), { immediate: true });
 onBeforeUnmount(() => detachBloom?.());
+
+// The dock's screen box, for the surfaces that seat clear of it (the hover card): whichever register
+// renders binds its root, the rail at ≥ 768 px or the bar below.
+const barRef = ref<DockExposed | null>(null);
+const dockRect = useDockRect();
+watch([dockRef, barRef], ([rail, bar]) => dockRect.bind(rootOf(rail) ?? rootOf(bar)), { immediate: true });
+onBeforeUnmount(() => dockRect.bind(null));
 
 // The crown: the section pager shows once the reader has left the top.
 const { atTop } = useScrollChrome({ source: scrollProgress });
@@ -369,6 +379,7 @@ watch(bottomHeld, (held) => {
         v-else
         id="dock-bar"
         key="bar"
+        ref="barRef"
         orientation="horizontal"
         shape="card"
         :collapse="false"

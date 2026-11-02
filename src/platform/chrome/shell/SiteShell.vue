@@ -12,13 +12,14 @@
 //
 // It is also the one binder of the active route's `--route-*` theme cascade (the dock and the route
 // frame both read it) and the scope of the dock-portal registry (the dock's pin and the route's
-// filter drawer share it).
+// filter drawer share it) and of the dock-rect source (the dock binds it, the hover card reads it).
 import { computed, shallowRef, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import Dock from "../dock/Dock.vue";
 import { AMERICA, themeCssVars, useDashboardRegistry, type DashboardContext } from "../../../contract/index.js";
 import { atmosphereCssVars } from "../background/composables/atmosphere.js";
 import { provideDockPortals } from "../dock/composables/useDockPortals.js";
+import { provideDockRect } from "../dock/composables/useDockRect.js";
 import type { SiteSearchSource, SiteSubject } from "../dock/site.js";
 
 const props = withDefaults(
@@ -38,6 +39,8 @@ const props = withDefaults(
 const route = useRoute();
 const { findDashboard } = useDashboardRegistry();
 provideDockPortals();
+// Where the dock sits, for the surfaces that seat clear of it (the hover card).
+provideDockRect();
 
 const slug = computed<string | undefined>(() => {
     if (route.name !== props.dashboardRoute) return undefined;

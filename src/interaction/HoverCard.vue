@@ -54,6 +54,7 @@ import { useHoverReadout, type HoverReadout } from "../platform/stores/useHoverR
 import { useAffordanceHint } from "./useAffordanceHint.js";
 import { MQ } from "../design/foundations/breakpoints.js";
 import { transientSeat } from "./useCardPlacement.js";
+import { useDockRect } from "../platform/chrome/dock/composables/useDockRect.js";
 import { useDismissArbiter } from "../platform/interaction/useDismissArbiter.js";
 import { createHoverBridge } from "./hover-bridge.js";
 import { useSelection } from "../platform/stores/useSelection.js";
@@ -200,7 +201,11 @@ watch(
         const el = measureEl();
         if (!el) return;
         const r = el.getBoundingClientRect();
-        if (r.width > 0 && r.height > 0) footprint.value = { w: r.width, h: r.height };
+        // The natural height, not the capped one: a seat that capped the card (`maxHeight`, a
+        // viewport too small for it) must not read the cap back as the card's size, or the next seat
+        // would uncap it and the one after cap it again.
+        const h = Math.max(r.height, el.scrollHeight + el.offsetHeight - el.clientHeight);
+        if (r.width > 0 && h > 0) footprint.value = { w: r.width, h };
     },
     { immediate: true },
 );
@@ -233,6 +238,7 @@ onBeforeUnmount(() => {
 // open/close is now a real `v-if` TEARDOWN on the template (J-FILTER C32 — `mouseleave` vanishes the
 // card; `document.querySelector('[data-testid=hover-card]')` is `null`), NOT the old D2 mounted-hidden
 // `visibility` paint-flip. So `style` carries ONLY the seat geometry; presence is the `v-if`.
+const dock = useDockRect();
 const style = computed(() => {
     const pad = 16;
     // THE Anchor|null PAINT GUARD (H.W1.a) — a null anchor is "no measured datum"; `transientOpen`
@@ -250,13 +256,16 @@ const style = computed(() => {
     // THE TRANSIENT SEAT (the colocated placement geometry, AR-8) — the viewport-clamp, one law in
     // useCardPlacement. The right-margin `tapPeek` fork is REMOVED from the seat math (J-MOBILE §3).
     // The live pointer keeps the card clear of it (F-14); the seat re-reads it when the anchor moves.
-    const { left, top } = transientSeat(anchor, footprint.value, { vw, vh }, store.pointerAt());
+    // The platform dock is fixed, so the seat keeps clear of it (U/B8 A5); the dock binds its rect.
+    const { left, top, maxHeight } = transientSeat(anchor, footprint.value, { vw, vh }, store.pointerAt(), dock.rect());
     return {
         // `position: fixed` is set inline (it WINS over Surface's root `position: relative`) so
         // the teleported floating card is viewport-clamped, not flow-relative.
         position: "fixed" as const,
         left: `${left}px`,
         top: `${top}px`,
+        // Set only in a viewport too small for the card beside its anchor: it caps to the room there.
+        ...(maxHeight === undefined ? {} : { maxHeight: `${maxHeight}px`, overflowY: "auto" as const }),
     };
 });
 
