@@ -4,6 +4,8 @@
 
 export * from "./trajectory-marks.js";
 export * from "./scatter-compare.js";
+export * from "./unit-layouts.js";
+export * from "./unit-engine.js";
 export { default as DiscreteColumns } from "./DiscreteColumns.vue";
 export { default as MultiYearFigure } from "./MultiYearFigure.vue";
 export { default as RankedBar } from "./RankedBar.vue";
@@ -12,6 +14,7 @@ export { default as StackedBar } from "./StackedBar.vue";
 export { default as TimeSeries } from "./TimeSeries.vue";
 export { default as TrajectoryPlate } from "./TrajectoryPlate.vue";
 export { default as Treemap } from "./Treemap.vue";
+export { default as UnitChart } from "./UnitChart.vue";
 
 // v1.0.1 (O-B10 re-cut) — the mark component-script TYPES. A `default`-only re-export drops the
 // named `<script>` type exports, so a consumer authoring a mark's data payload had no contract to

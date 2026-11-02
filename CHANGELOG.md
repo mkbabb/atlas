@@ -125,6 +125,18 @@
 
 ### Features
 
+- **A canvas unit chart, one mark per record (U/B8 A3).** `UnitChart` in `@mkbabb/atlas/charts` draws
+  one mark per record on a canvas and morphs between arrangements held as data: a `UnitLayout` is
+  `{x, y, w, h, rank, group}` typed arrays plus a hit index. Each mark flies on a keyframes.js spring
+  sampled once into a lookup table, staggered by the target's rank; a change mid-flight leaves from
+  the current positions, a frame allocates nothing, and the rAF stops once the marks settle. The DPR
+  caps at 2, colors are CSS custom properties re-read on the post-settle theme epoch, reduced motion
+  snaps, and the canvas is `role="img"` with a `summary` (`unitSummary` writes one). Layouts:
+  `gridLayout`, `boustrophedonLayout`, `groupedBlocksLayout` (with each group's block box), and
+  `createUnitLayout` for authored ones. The engine (`UnitMorph`, `UnitCanvas`, `sampleSpring`) is
+  exported framework-free; a styled mark (the Gregg woven thread) is an optional `sprite`. Ported from
+  the Gregg Museum hero cloth. Witness: `tests/unit/b8-unit-chart.spec.ts`, red before.
+
 - **Entity drill hops (U/B7d D1 · M-06).** `EntityDescription.links` lists the views one hop from an
   entity; EntityDetail renders them as links and closes when one is followed. Witness:
   `EntityDetail.browser.spec.ts` "M-06", red before.

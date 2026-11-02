@@ -1,0 +1,264 @@
+// charts/marks/unit-layouts.ts — the UNIT CHART's layouts (U/B8 A3): one mark per record, every
+// arrangement held as data. A layout is six typed arrays indexed by mark (center x/y, size w/h, the
+// rank the morph reaches it in, its group) plus a bucketed hit index, so the engine (`unit-engine.ts`)
+// morphs between any two layouts of the same count without knowing how either was built. A consumer
+// may author its own with `createUnitLayout`; the three here are the common flows: a reading-order
+// grid, a boustrophedon (the snake a shuttle or a plough walks), and grouped blocks (a unit bar
+// chart: one block per group, filled up from a shared baseline).
+//
+// Every coordinate is CSS px in the canvas frame; the engine scales by the capped DPR at draw time.
+
+import { formatCount } from "../lib/format.js";
+
+/** A bucket grid over the frame: the marks whose centers fall in each cell, CSR-packed. */
+export interface UnitHitIndex {
+    cell: number;
+    cols: number;
+    rows: number;
+    /** `items[start[k] .. start[k+1]]` are the marks in cell `k`. */
+    start: Uint32Array;
+    items: Uint32Array;
+}
+
+/** One arrangement of `count` marks. */
+export interface UnitLayout {
+    readonly count: number;
+    readonly width: number;
+    readonly height: number;
+    /** Mark centers and sizes, indexed by mark. */
+    readonly x: Float32Array;
+    readonly y: Float32Array;
+    readonly w: Float32Array;
+    readonly h: Float32Array;
+    /** The order a morph into this layout reaches each mark (0 first): the stagger key. */
+    readonly rank: Uint32Array;
+    /** The group each mark belongs to here: the hover dim and the summary read it. */
+    readonly group: Uint32Array;
+    readonly hit: UnitHitIndex;
+}
+
+/** One group's block in a grouped layout: its frame box, for labels and a table twin. */
+export interface UnitBlock {
+    group: number;
+    count: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
+export interface GroupedUnitLayout extends UnitLayout {
+    readonly blocks: readonly UnitBlock[];
+}
+
+export interface UnitLayoutData {
+    width: number;
+    height: number;
+    x: ArrayLike<number>;
+    y: ArrayLike<number>;
+    w: ArrayLike<number>;
+    h: ArrayLike<number>;
+    /** Defaults to mark order. */
+    rank?: ArrayLike<number>;
+    /** Defaults to one group, 0. */
+    group?: ArrayLike<number>;
+}
+
+/** A layout from authored arrays: copied into typed arrays, checked, indexed for hit testing. */
+export function createUnitLayout(data: UnitLayoutData): UnitLayout {
+    const count = data.x.length;
+    for (const key of ["y", "w", "h", "rank", "group"] as const) {
+        const a = data[key];
+        if (a && a.length !== count) throw new Error(`unit layout: ${key} has length ${a.length}, x has ${count}`);
+    }
+    const layout = {
+        count,
+        width: data.width,
+        height: data.height,
+        x: Float32Array.from(data.x),
+        y: Float32Array.from(data.y),
+        w: Float32Array.from(data.w),
+        h: Float32Array.from(data.h),
+        rank: data.rank ? Uint32Array.from(data.rank) : identity(count),
+        group: data.group ? Uint32Array.from(data.group) : new Uint32Array(count),
+    };
+    return { ...layout, hit: buildHitIndex(layout) };
+}
+
+function identity(n: number) {
+    const a = new Uint32Array(n);
+    for (let i = 0; i < n; i++) a[i] = i;
+    return a;
+}
+
+function buildHitIndex(l: Omit<UnitLayout, "hit">): UnitHitIndex {
+    let size = 1;
+    for (let i = 0; i < l.count; i++) size = Math.max(size, l.w[i], l.h[i]);
+    // A cell as wide as the largest mark: any mark within one cell of a point sits in its 3 x 3.
+    const cell = size;
+    const cols = Math.max(1, Math.ceil(l.width / cell) + 1);
+    const rows = Math.max(1, Math.ceil(l.height / cell) + 1);
+    const cellOf = new Int32Array(l.count);
+    const start = new Uint32Array(cols * rows + 1);
+    for (let i = 0; i < l.count; i++) {
+        const c = Math.floor(l.x[i] / cell);
+        const r = Math.floor(l.y[i] / cell);
+        const k = c < 0 || r < 0 || c >= cols || r >= rows ? -1 : r * cols + c;
+        cellOf[i] = k;
+        if (k >= 0) start[k + 1]++;
+    }
+    for (let k = 0; k < cols * rows; k++) start[k + 1] += start[k];
+    const fill = start.slice(0, cols * rows);
+    const items = new Uint32Array(start[cols * rows]);
+    for (let i = 0; i < l.count; i++) if (cellOf[i] >= 0) items[fill[cellOf[i]]++] = i;
+    return { cell, cols, rows, start, items };
+}
+
+/** The mark under a point, or the nearest within one cell (the target outgrows a small mark); -1 when none. */
+export function hitTest(l: UnitLayout, px: number, py: number): number {
+    const { cell, cols, rows, start, items } = l.hit;
+    const c0 = Math.floor(px / cell);
+    const r0 = Math.floor(py / cell);
+    let best = -1;
+    let bestD = cell * cell;
+    for (let r = r0 - 1; r <= r0 + 1; r++) {
+        if (r < 0 || r >= rows) continue;
+        for (let c = c0 - 1; c <= c0 + 1; c++) {
+            if (c < 0 || c >= cols) continue;
+            const k = r * cols + c;
+            for (let j = start[k]; j < start[k + 1]; j++) {
+                const i = items[j];
+                const dx = l.x[i] - px;
+                const dy = l.y[i] - py;
+                const d = dx * dx + dy * dy;
+                if (d < bestD || (d === bestD && best >= 0 && i < best)) {
+                    bestD = d;
+                    best = i;
+                }
+            }
+        }
+    }
+    return best;
+}
+
+export interface UnitFlowOptions {
+    /** Frame width, CSS px. */
+    width: number;
+    /** Frame height. Given without `cell`, the pitch is the largest that holds every mark. */
+    height?: number;
+    /** The pitch, one cell per mark. Defaults to the fitted pitch, else 8. */
+    cell?: number;
+    /** The gap between marks, as a fraction of the pitch. Default 0.15. */
+    gap?: number;
+    /** Slot `k` holds mark `order[k]`. Defaults to mark order. */
+    order?: ArrayLike<number>;
+    /** Each mark's group, carried onto the layout. */
+    group?: ArrayLike<number>;
+}
+
+/** The largest pitch in `[lo, hi]` that passes `fits`, by bisection (fits is monotone in practice). */
+function fitPitch(fits: (p: number) => boolean, hi: number) {
+    let lo = 0.5;
+    if (fits(hi)) return hi;
+    for (let k = 0; k < 40; k++) {
+        const mid = (lo + hi) / 2;
+        if (fits(mid)) lo = mid;
+        else hi = mid;
+    }
+    return lo;
+}
+
+function flow(n: number, o: UnitFlowOptions, snake: boolean): UnitLayout {
+    const gap = o.gap ?? 0.15;
+    const colsAt = (p: number) => Math.max(1, Math.floor(o.width / p + 1e-6));
+    const pitch =
+        o.cell ??
+        (o.height ? fitPitch((p) => Math.ceil(n / colsAt(p)) * p <= o.height! + 1e-6, Math.min(o.width, o.height)) : 8);
+    const cols = colsAt(pitch);
+    const rows = Math.ceil(n / cols);
+    const x = new Float32Array(n);
+    const y = new Float32Array(n);
+    const size = new Float32Array(n).fill(pitch * (1 - gap));
+    const rank = new Uint32Array(n);
+    for (let k = 0; k < n; k++) {
+        const i = o.order ? o.order[k] : k;
+        const r = Math.floor(k / cols);
+        const c = snake && r % 2 === 1 ? cols - 1 - (k % cols) : k % cols;
+        x[i] = (c + 0.5) * pitch;
+        y[i] = (r + 0.5) * pitch;
+        rank[i] = k;
+    }
+    return createUnitLayout({ width: o.width, height: o.height ?? rows * pitch, x, y, w: size, h: size, rank, group: o.group });
+}
+
+/** Rows in reading order, left to right, top to bottom. */
+export function gridLayout(count: number, options: UnitFlowOptions): UnitLayout {
+    return flow(count, options, false);
+}
+
+/** Rows that turn at each end: left to right, then right to left. Rank follows the path. */
+export function boustrophedonLayout(count: number, options: UnitFlowOptions): UnitLayout {
+    return flow(count, options, true);
+}
+
+export interface UnitBlockOptions extends Omit<UnitFlowOptions, "group"> {
+    /** The space between blocks, CSS px. Defaults to one pitch. */
+    blockGap?: number;
+    /** How many groups to lay out, empty ones included. Defaults to the largest group id + 1. */
+    groups?: number;
+}
+
+/** One block per group, side by side, each filled from the shared baseline upward. */
+export function groupedBlocksLayout(group: ArrayLike<number>, o: UnitBlockOptions): GroupedUnitLayout {
+    const n = group.length;
+    const gap = o.gap ?? 0.15;
+    let groups = o.groups ?? 0;
+    for (let i = 0; i < n; i++) groups = Math.max(groups, group[i] + 1);
+    const counts = new Uint32Array(groups);
+    for (let i = 0; i < n; i++) counts[group[i]]++;
+    let tallest = 0;
+    for (const c of counts) tallest = Math.max(tallest, c);
+
+    const blockGapAt = (p: number) => o.blockGap ?? p;
+    const blockWAt = (p: number) => (o.width - blockGapAt(p) * (groups - 1)) / Math.max(1, groups);
+    const colsAt = (p: number) => Math.max(1, Math.floor(blockWAt(p) / p + 1e-6));
+    const pitch =
+        o.cell ?? (o.height ? fitPitch((p) => Math.ceil(tallest / colsAt(p)) * p <= o.height! + 1e-6, o.height) : 8);
+    const blockW = blockWAt(pitch);
+    const cols = colsAt(pitch);
+    const height = o.height ?? Math.ceil(tallest / cols) * pitch;
+
+    const x = new Float32Array(n);
+    const y = new Float32Array(n);
+    const size = new Float32Array(n).fill(pitch * (1 - gap));
+    const rank = new Uint32Array(n);
+    const slot = new Uint32Array(groups);
+    const offset = new Uint32Array(groups);
+    for (let g = 1; g < groups; g++) offset[g] = offset[g - 1] + counts[g - 1];
+    for (let k = 0; k < n; k++) {
+        const i = o.order ? o.order[k] : k;
+        const g = group[i];
+        const s = slot[g]++;
+        const x0 = g * (blockW + blockGapAt(pitch));
+        x[i] = x0 + ((s % cols) + 0.5) * pitch;
+        y[i] = height - (Math.floor(s / cols) + 0.5) * pitch;
+        rank[i] = offset[g] + s;
+    }
+    const blocks: UnitBlock[] = [];
+    for (let g = 0; g < groups; g++) {
+        const h = Math.ceil(counts[g] / cols) * pitch;
+        blocks.push({ group: g, count: counts[g], x: g * (blockW + blockGapAt(pitch)), y: height - h, w: blockW, h });
+    }
+    const layout = createUnitLayout({ width: o.width, height, x, y, w: size, h: size, rank, group });
+    return { ...layout, blocks };
+}
+
+/** The role=img summary: the total, then each group's count, largest first ("5 visits: 3 Tour, …"). */
+export function unitSummary(l: UnitLayout, groupNames: readonly string[], noun: string): string {
+    const counts = new Map<number, number>();
+    for (let i = 0; i < l.count; i++) counts.set(l.group[i], (counts.get(l.group[i]) ?? 0) + 1);
+    const parts = [...counts]
+        .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+        .map(([g, c]) => `${formatCount(c)} ${groupNames[g] ?? `group ${g + 1}`}`);
+    return `${formatCount(l.count)} ${noun}: ${parts.join(", ")}.`;
+}
