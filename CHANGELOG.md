@@ -19,8 +19,8 @@
   blanks (`""`, `—`, `n/a`) last in both directions; text compares with numeric runs. The data viewer
   sorts through it too, which moves an empty cell from first to last ascending. Witnesses:
   `b8-compare-cells.spec.ts`, `b8-one-table-sort.spec.ts`, red before.
-- **One entrance law (U/B8 A9 · P-G4).** `motion/useFirstView.ts`: `observeFirstView` and
-  `useEntrance`. An entrance plays once, after 130 ms in view (a tall element counts at half the
+- **One entrance law (U/B8 A9 · P-G4).** `motion/useFirstView.ts`: `observeFirstView`,
+  `useFirstViewTarget` (over a live target, re-armed when it changes) and `useEntrance`. An entrance plays once, after 130 ms in view (a tall element counts at half the
   viewport); a pass-through does not use it up; on a page opened on a deep link it waits until the
   restore settles (`whenNarrativeLanded`, `narrativeLandingHeld`, `beginNarrativeRestore`,
   `markNarrativeRestoreAbsent` in `narrative-restore.ts`; the dock stepper marks both edges); under
