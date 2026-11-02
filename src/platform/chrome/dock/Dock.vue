@@ -44,7 +44,7 @@ import { useDockStepper } from "./composables/useDockStepper.js";
 import { useDockDataState } from "./composables/useDockDataState.js";
 import { useMobileRegister } from "../../composables/useMobileRegister.js";
 import { useScrollChrome } from "./composables/useScrollChrome.js";
-import { useDocumentScrollProgress } from "../../../motion/useScrollProgress.js";
+import { useDocumentScrollExtent, useDocumentScrollProgress } from "../../../motion/useScrollProgress.js";
 import { useReducedMotion } from "../../../motion/useReducedMotion.js";
 import { useDockPortals } from "./composables/useDockPortals.js";
 import { revealReleasesOnLeave, revealPersists } from "./composables/coarse-reveal.js";
@@ -266,11 +266,15 @@ const bottomHeld = computed(() => seats.holders.bottom !== null);
 const barOut = ref(false);
 let lastY = 0;
 let travelled = 0;
+// The page's extent from the one scroll source, read after layout: `scrollHeight` here forced a
+// layout on every scrollend while chart mounts had the page dirty (30 ms of the /sci phone scroll
+// walk, U/B8 PF).
+const extent = useDocumentScrollExtent();
 function onScrollEnd(): void {
     const y = window.scrollY;
     const dy = y - lastY;
     lastY = y;
-    const atEnd = y + window.innerHeight >= document.documentElement.scrollHeight - 2;
+    const atEnd = y + extent.viewport.value >= extent.height.value - 2;
     if (reduced.value || !isPhone.value || dy < 0 || atEnd || bottomHeld.value) {
         travelled = 0;
         barOut.value = false;

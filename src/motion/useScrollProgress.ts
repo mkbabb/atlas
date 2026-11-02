@@ -185,6 +185,20 @@ function acquireDocumentScroll(): DocumentScroll {
 }
 
 /**
+ * The page's scroll extent from the one document scroll source: the scroll height and the
+ * viewport height, each read where layout is clean (the root's resize delivery, a resize). A
+ * scroll handler that needs "is the page at its end" reads these instead of `scrollHeight`, which
+ * forces a layout whenever the page has pending changes (U/B8 PF).
+ */
+export function useDocumentScrollExtent(): {
+    readonly height: Readonly<ShallowRef<number>>;
+    readonly viewport: Readonly<ShallowRef<number>>;
+} {
+    const { height, viewport } = acquireDocumentScroll();
+    return { height, viewport };
+}
+
+/**
  * Whole-DOCUMENT scroll progress as a [0, 1] scalar — 0 pinned at the page top, 1 at
  * the bottom of the scrollable range. The section variant above answers "how far through
  * THIS beat", which is the right scalar for a per-viz reveal; the dock barometer instead

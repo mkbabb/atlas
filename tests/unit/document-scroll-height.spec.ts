@@ -56,3 +56,13 @@ describe("useDocumentScrollProgress reads the page height off the root's resize 
         scope.stop();
     });
 });
+
+describe("the dock's scrollend reads the shared extent, not scrollHeight (U/B8 PF)", () => {
+    // RED before: Dock.vue's onScrollEnd read documentElement.scrollHeight on every scrollend.
+    it("Dock.vue reads no scrollHeight", async () => {
+        const { readFileSync } = await import("node:fs");
+        const src = readFileSync(new URL("../../src/platform/chrome/dock/Dock.vue", import.meta.url), "utf8");
+        expect(src).not.toMatch(/\.scrollHeight/);
+        expect(src).toMatch(/useDocumentScrollExtent\(\)/);
+    });
+});
