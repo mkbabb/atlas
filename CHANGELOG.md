@@ -4,6 +4,35 @@
 
 ### Fixes
 
+- **The hover card flips at the viewport edge (U/B8 A5).** Near the right or bottom edge the
+  transient seat clamped the card back over its anchor, so it covered the mark it described. The card
+  now takes the far side of the anchor on each axis when the near side would cross the edge and the
+  far side fits. `transientSeat` takes an optional avoid-rect (a fixed dock; a `DOMRect` serves) that
+  the seat stays clear of when a corner can; the live pointer still outranks it. The seat is
+  internal, so no consumer changes. Witness: `tests/unit/b8-card-flip-and-avoid.spec.ts`, red before.
+- **The hover card keeps a gap from an avoid-rect and never covers its anchor (U/B8 A5 repair).** The
+  avoid-rect now carries a clearance gap (`AVOID_GAP`, 8 px, Gregg's dock clearance), so a card seated
+  clear of a dock never sits flush on it. In a viewport too small for the card on any side of its
+  anchor, every corner clamped back over the anchor; the seat now takes the roomier band above or
+  below it and caps the card's height there (`maxHeight`, the card scrolls), and `HoverCard` measures
+  the card's natural height so it never reads the cap back as its size. `HoverCard` passes no
+  avoid-rect: wiring it to the dock's rect is U/B8's. Witnesses: `tests/unit/b8-card-flip-and-avoid.spec.ts`
+  and `tests/unit/b8-card-no-dock-rect.spec.ts`, red before.
+- **The band fallback no longer shrinks the hover card to a sliver (U/B8 A5 repair).** The band seat
+  also fired in normal viewports when the pointer sat off the anchor and every full-size corner covered
+  one of them, and then picked whatever band cleared the pointer: 38 px at 1440x900 near the bottom-left,
+  0 px at top -16 near the top-right. A band now counts only at the usable floor (`bandFloor`: the card's
+  height or `BAND_FLOOR`, 120 px, whichever is less). A band under the floor loses to a full-size corner
+  that clears the anchor, even one over the pointer. No seat caps the card below the floor or puts its
+  top above the viewport. Witness: `tests/unit/b8-card-band-floor.spec.ts` (both cases plus a property
+  sweep), red before.
+- **A hover card taller than the viewport fits inside it (U/B8 A5 repair).** A card taller than the
+  viewport less its margins got a full-size corner with no `maxHeight`, clamped to `top = CARD_PAD`, and
+  ran past the bottom edge. `transientSeat` now seats it at the height that fits (`vh − 2·CARD_PAD`) and
+  gives every seat it returns that cap or a smaller one, so `top ≥ CARD_PAD` and the card ends inside the
+  bottom margin. The floor rules stand; the last-resort fallback's top is now held at `CARD_PAD`, not 0.
+  Witness: `tests/unit/b8-card-taller-than-viewport.spec.ts` and the property sweep in
+  `tests/unit/b8-card-band-floor.spec.ts`, now with cards of 700, 1000 and 1600 px (red before).
 - **A section jump lands where it was sent (U/B7d M2 · WebKit).** On the first Sections jump after a
   load, WebKit stopped the smooth scroll 360 to 381 px short when focus moved as the list closed, with
   `?at=` written and the label a section behind (2 of 25 jumps in the engine harness; the served /sci

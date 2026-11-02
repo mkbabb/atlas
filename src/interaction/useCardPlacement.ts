@@ -34,6 +34,36 @@ export const RAIL_PAD = 16;
 export const RAIL_TOP = 96; // below the chrome dock — the rail starts under the masthead
 export const RAIL_CARD_STRIDE = 8; // the gap between stacked rail cards
 
+/** A viewport box the card keeps clear of (a fixed dock, a rail). A `DOMRect` satisfies it. */
+export interface Rect {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+}
+
+/** The clearance the card keeps from an avoid-rect, so it never sits flush on the dock (U/B8 A5;
+    the 8 px Gregg's ChartTip keeps from its page dock). */
+export const AVOID_GAP = 8;
+
+/** The least height a capped card keeps, so a band seat never shrinks it to an unreadable sliver. */
+export const BAND_FLOOR = 120;
+
+/** The usable band floor for a card of height `h` in a viewport `vh` tall: the card's own height or
+    `BAND_FLOOR`, whichever is less, and never more than the viewport holds inside its padding. */
+export function bandFloor(h: number, vh: number): number {
+    return Math.max(0, Math.min(h, BAND_FLOOR, vh - 2 * CARD_PAD));
+}
+
+/** A transient seat. `maxHeight` is set when no full-size seat clears the anchor (a viewport too
+    small for the card on any side), so the card caps its height to the room on one side, and on every
+    seat of a card taller than the viewport less its margins, so the card fits inside them. */
+export interface Seat {
+    left: number;
+    top: number;
+    maxHeight?: number;
+}
+
 /** The TRANSIENT card seat — clamped off the MEASURED footprint so `x + pad + w ≤ vw − pad`, top
     likewise. The card hugs the hovered DATUM (the desktop pointer register), viewport-clamped.
 
@@ -43,34 +73,95 @@ export const RAIL_CARD_STRIDE = 8; // the gap between stacked rail cards
     (`!tapPeek.value`), so this seat math is the desktop-pointer path ONLY — the dead right-margin
     branch is retired and the reach idiom has a single home.
 
+    U/B8 A5 — the card FLIPS to the far side of the anchor on each axis when the near side would
+    cross the viewport edge and the far side has room, so the clamp never slides it back over the
+    anchor and its mark. `avoid` (a fixed dock; a `DOMRect` serves) is a box the seat stays `gap` px
+    clear of when a corner can. The seat never covers the anchor: when the viewport is too small for
+    any full-size corner to clear it, the card takes the side above or below the anchor with the
+    more room and caps its height to that room (`maxHeight`).
+
+    A card taller than the viewport less its margins is seated as a card of the height that fits
+    (`vh − 2·CARD_PAD`), and every seat it gets carries that cap or a smaller one as `maxHeight`, so
+    `top ≥ CARD_PAD` and the card never runs past the bottom edge.
+
     `pointer` is the live pointer (null for a keyboard or deep-link selection): the seat never covers
-    it (U/B7c L · F-14). */
+    it (U/B7c L · F-14). Precedence: the pointer, then the anchor, then the avoid-rect. */
 export function transientSeat(
     anchor: Anchor,
     footprint: Footprint,
     viewport: Viewport,
     pointer: Anchor | null = null,
-): { left: number; top: number } {
+    avoid: Rect | null = null,
+    gap: number = AVOID_GAP,
+): Seat {
     const { vw, vh } = viewport;
-    const clampX = (x: number) => Math.max(CARD_PAD, Math.min(x, vw - footprint.w - CARD_PAD));
-    const clampY = (y: number) => Math.max(CARD_PAD, Math.min(y, vh - footprint.h - CARD_PAD));
-    const right = clampX(anchor.x + CARD_PAD);
-    const below = clampY(anchor.y + CARD_PAD);
-    // U/B7c L · F-14 — the card takes the pointer, so it must never seat over it: a card under the
-    // pointer eats the next click on the mark. The corners round the anchor, in order; the first that
-    // leaves the live pointer clear wins (below-right whenever the pointer allows it).
-    if (!pointer) return { left: right, top: below };
-    const left = clampX(anchor.x - CARD_PAD - footprint.w);
-    const above = clampY(anchor.y - CARD_PAD - footprint.h);
-    const seats = [
-        { left: right, top: below },
-        { left, top: below },
-        { left: right, top: above },
-        { left, top: above },
+    const { w } = footprint;
+    // A card taller than the viewport less its margins is placed at the height that fits, and capped.
+    const h = Math.min(footprint.h, Math.max(0, vh - 2 * CARD_PAD));
+    const fit = (s: Seat): Seat =>
+        footprint.h > h ? { ...s, maxHeight: Math.min(s.maxHeight ?? h, h) } : s;
+    const clampX = (x: number) => Math.max(CARD_PAD, Math.min(x, vw - w - CARD_PAD));
+    const clampY = (y: number) => Math.max(CARD_PAD, Math.min(y, vh - h - CARD_PAD));
+    const right = anchor.x + CARD_PAD;
+    const left = anchor.x - CARD_PAD - w;
+    const below = anchor.y + CARD_PAD;
+    const above = anchor.y - CARD_PAD - h;
+    // The near side (right, below) unless it crosses the far edge and the other side fits.
+    const flipX = right + w > vw - CARD_PAD && left >= CARD_PAD;
+    const flipY = below + h > vh - CARD_PAD && above >= CARD_PAD;
+    const [x0, x1] = (flipX ? [left, right] : [right, left]).map(clampX) as [number, number];
+    const [y0, y1] = (flipY ? [above, below] : [below, above]).map(clampY) as [number, number];
+    // The corners round the anchor, the preferred one first.
+    const seats: Seat[] = [
+        { left: x0, top: y0 },
+        { left: x1, top: y0 },
+        { left: x0, top: y1 },
+        { left: x1, top: y1 },
     ];
-    const clear = (s: { left: number; top: number }) =>
-        pointer.x < s.left || pointer.x > s.left + footprint.w || pointer.y < s.top || pointer.y > s.top + footprint.h;
-    return seats.find(clear) ?? seats[0]!;
+    const covers = (s: Seat, p: Anchor | null) => {
+        const sh = Math.min(h, s.maxHeight ?? h);
+        return !!p && p.x >= s.left && p.x <= s.left + w && p.y >= s.top && p.y <= s.top + sh;
+    };
+    // A card under the pointer eats the next click on the mark (F-14); one over the anchor hides it.
+    const clearOfMark = (s: Seat) => !covers(s, pointer) && !covers(s, anchor);
+    const clearOfAvoid = (s: Seat) =>
+        !avoid ||
+        s.left >= avoid.right + gap ||
+        s.left + w <= avoid.left - gap ||
+        s.top >= avoid.bottom + gap ||
+        s.top + h <= avoid.top - gap;
+    const full = seats.find((s) => clearOfMark(s) && clearOfAvoid(s)) ?? seats.find(clearOfMark);
+    if (full) return fit(full);
+    // No full-size corner clears both the pointer and the anchor. Take the band above or below the
+    // anchor (at the clamped column) and cap the card to it; an avoid-rect in that column bounds the
+    // band too. Only a band at least `bandFloor` tall is usable: the roomier usable band that leaves
+    // the pointer clear wins, then a full-size corner that clears the anchor (over the pointer if it
+    // must), then a usable band over the pointer. A viewport with none of those (too small for the
+    // card on any side) gets the roomier band raised to the floor, kept inside the viewport.
+    const inColumn = avoid !== null && x0 < avoid.right + gap && x0 + w > avoid.left - gap;
+    const floor = Math.min(vh - CARD_PAD, inColumn && avoid.top > anchor.y ? avoid.top - gap : Infinity);
+    const ceil = Math.max(CARD_PAD, inColumn && avoid.bottom < anchor.y ? avoid.bottom + gap : -Infinity);
+    const roomBelow = Math.max(0, Math.min(h, floor - below));
+    const roomAbove = Math.max(0, Math.min(h, anchor.y - CARD_PAD - ceil));
+    const bands: Required<Seat>[] = [
+        { left: x0, top: below, maxHeight: roomBelow },
+        { left: x0, top: anchor.y - CARD_PAD - roomAbove, maxHeight: roomAbove },
+    ].sort((a, b) => b.maxHeight - a.maxHeight);
+    const minH = bandFloor(h, vh);
+    const usable = bands.filter((s) => s.maxHeight >= minH);
+    const band = usable.find((s) => !covers(s, pointer));
+    if (band) return fit(band);
+    const clearOfAnchor = (s: Seat) => !covers(s, anchor);
+    const corner = seats.find((s) => clearOfAnchor(s) && clearOfAvoid(s)) ?? seats.find(clearOfAnchor);
+    if (corner) return fit(corner);
+    if (usable[0]) return fit(usable[0]);
+    const widest = bands[0]!;
+    const top = widest.top === below ? below : anchor.y - CARD_PAD - minH;
+    return {
+        left: widest.left,
+        top: Math.max(CARD_PAD, Math.min(top, vh - CARD_PAD - minH)),
+        maxHeight: minH,
+    };
 }
 
 /** A SINGLE pin seats at its datum ANCHOR (the same law as the transient card), clamped on-screen. */
