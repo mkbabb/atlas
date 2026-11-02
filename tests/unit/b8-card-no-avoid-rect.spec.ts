@@ -1,37 +1,9 @@
-// U/B8 A5 scope. The owner ruled that wiring the hover card to the dock's rect is U/B8's, not this
-// row's. So no dock-rect source lives in the tree, HoverCard seats with no avoid-rect, and with no
-// avoid-rect the seat is the one the card took before the A5 repair wherever that seat left the anchor
-// and the pointer clear (the repair changes only the seats that covered them).
-import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+// U/B8 A5. With no avoid-rect (a mount outside the site shell, where no dock binds the dock-rect
+// source), the seat is the one the card took before the A5 repair wherever that seat left the anchor
+// and the pointer clear (the repair changes only the seats that covered them). The wiring that passes
+// the dock's rect is witnessed by src/interaction/HoverCard.dock-clear.browser.spec.ts.
 import { describe, expect, it } from "vitest";
 import { CARD_PAD, transientSeat, type Anchor, type Footprint, type Viewport } from "../../src/interaction/useCardPlacement.js";
-
-const SRC = fileURLToPath(new URL("../../src", import.meta.url));
-
-function walk(dir: string): string[] {
-    return readdirSync(dir).flatMap((name) => {
-        const path = join(dir, name);
-        return statSync(path).isDirectory() ? walk(path) : [path];
-    });
-}
-
-describe("the hover card reads no dock rect (U/B8 A5 scope)", () => {
-    it("no source file names the dock-rect source", () => {
-        const hits = walk(SRC)
-            .filter((path) => /\.(ts|vue)$/.test(path))
-            .filter((path) => /\b(useDockRect|provideDockRect|createDockRect|DockRectSource)\b/.test(readFileSync(path, "utf8")))
-            .map((path) => path.slice(SRC.length + 1));
-        expect(hits).toEqual([]);
-    });
-
-    it("HoverCard seats with the anchor, footprint, viewport and pointer only", () => {
-        const card = readFileSync(join(SRC, "interaction/HoverCard.vue"), "utf8");
-        const calls = [...card.matchAll(/transientSeat\([^;]*;/g)].map((m) => m[0]);
-        expect(calls).toEqual(["transientSeat(anchor, footprint.value, { vw, vh }, store.pointerAt());"]);
-    });
-});
 
 // The seat as it stood at c3f38da with no avoid-rect: flip each axis at the edge, then the first
 // corner that leaves the live pointer clear.
