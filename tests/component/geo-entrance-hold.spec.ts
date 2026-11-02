@@ -20,14 +20,17 @@ const hooks = vi.hoisted(() => ({ mounted: [] as (() => void)[], unmount: [] as 
 
 vi.mock("@vueuse/core", async (actual) => {
     const real = await actual<typeof import("@vueuse/core")>();
+    return { ...real, usePreferredReducedMotion: () => motion.pref! };
+});
+// The first view is the atlas entrance law's (`useFirstViewTarget`); its dwell and landing hold are
+// pinned in tests/unit/b8-first-view.spec.ts. Here the stand-in fires the view on demand.
+vi.mock("../../src/motion/useFirstView.js", async () => {
     const vue = await import("vue");
     return {
-        ...real,
-        usePreferredReducedMotion: () => motion.pref!,
-        useIntersectionObserver: (target: { value: unknown }, cb: typeof io.fire) => {
+        useFirstViewTarget: (target: { value: unknown }, cb: () => void) => {
             io.target = target;
-            io.fire = cb;
-            return { isSupported: vue.ref(io.supported), stop: () => {} };
+            io.fire = () => cb();
+            return { isSupported: vue.ref(io.supported) };
         },
     };
 });
