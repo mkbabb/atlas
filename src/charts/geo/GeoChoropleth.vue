@@ -104,7 +104,7 @@ const cellFloor = computed<number>(() =>
 );
 
 // U/B8 A1 — the opt-in entrance from an origin (ripple or threads), played once on first view.
-const { threads: entranceThreads } = useGeoEntrance(field, shapes, props);
+const { threads: entranceThreads, pending: entrancePending } = useGeoEntrance(field, shapes, props);
 
 function isRaised(key: string): boolean {
     return props.raisedKeys?.has(key) ?? false;
@@ -228,6 +228,7 @@ const tableRows = computed(() =>
             :aria-label="ariaLabel"
             :aria-details="sourceGridOpen ? sourceGridId || undefined : undefined"
             :data-entrance="entrance?.kind"
+            :data-entrance-pending="entrancePending || undefined"
             data-testid="geo-choropleth-svg"
             @pointerup="onFieldPointerUp"
             @click="onFieldClick"

@@ -171,6 +171,19 @@
     transform-box: fill-box;
     transform-origin: center;
 }
+/* The hold: until the entrance plays, the marks it lands are not painted, so a map scrolled into
+   view does not show final and then snap back to its first frame. The entrance starts its flights
+   before it clears the flag (`fill: backwards` owns the first frame from then on). Behind the motion
+   query, so reduced motion never holds. */
+@media (prefers-reduced-motion: no-preference) {
+    [data-entrance-pending] .geo-shape,
+    [data-entrance-pending] .geo-texture,
+    [data-entrance-pending] .geo-value-labels,
+    [data-entrance-pending] .geo-place-labels,
+    [data-entrance-pending] .geo-magnitude-rings {
+        opacity: 0;
+    }
+}
 /* The thread is a hairline of foreground ink, undrawn at rest (the unit dash parked off the path,
    the same `pathLength="1"` dash the hover trace rides). The entrance draws it, then fades it;
    reduced motion never mounts it. */

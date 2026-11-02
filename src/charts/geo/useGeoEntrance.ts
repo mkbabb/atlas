@@ -2,9 +2,11 @@
 // `entrance` once, on first view: `ripple` lands each shape in `originRank` order, `threads` draws a
 // slack thread from the origin to every valued feature, lands the feature as its thread reaches it,
 // then fades the thread. The motion is WAAPI on the shapes the SFC already draws, timed by the
-// keyframes.js `stagger` and eased by the atlas spring registers. Reduced motion never plays: the map
-// paints final. A map without `entrance` mounts no observer and no overlay.
-import { computed, onBeforeUnmount, ref, type ComputedRef, type Ref } from "vue";
+// keyframes.js `stagger` and eased by the atlas spring registers. Until it plays the marks are
+// `pending` (held hidden by the CSS, so a map scrolled into view does not paint final, then snap back
+// and pop in). Reduced motion never plays and never holds: the map paints final, and a switch to it
+// mid-entrance cancels the flight to the final frame. A map without `entrance` observes nothing.
+import { computed, onBeforeUnmount, onMounted, ref, watch, type ComputedRef, type Ref } from "vue";
 import { useIntersectionObserver } from "@vueuse/core";
 import { stagger } from "@mkbabb/keyframes.js";
 import { useReducedMotion } from "../../motion/useReducedMotion.js";
@@ -31,8 +33,13 @@ const FIRST_VIEW = 0.25;
 const LATE_LAYERS = ".geo-value-labels, .geo-place-labels, .geo-magnitude-rings";
 
 export interface UseGeoEntrance {
-    /** The threads to mount: non-empty only for an opted-in `threads` entrance that has not landed. */
+    /** The threads to mount: non-empty only for an opted-in `threads` entrance that has not landed,
+        and only once mounted (the server cannot know the client's motion preference). */
     threads: ComputedRef<EntranceThread[]>;
+    /** True while an opted-in entrance waits for its first view: the CSS holds the marks hidden
+        (never under reduced motion, whose media query the hold sits behind). The same on the
+        server and at hydration; a reduced-motion client clears it on mount. */
+    pending: ComputedRef<boolean>;
 }
 
 export function useGeoEntrance(
@@ -41,12 +48,16 @@ export function useGeoEntrance(
     props: ChoroplethProps,
 ): UseGeoEntrance {
     const reduced = useReducedMotion();
+    const mounted = ref(false);
+    /** The entrance has started (once per mount); `landed` once its threads have flown. */
+    const played = ref(false);
     const landed = ref(false);
-    const running: Animation[] = [];
+    let running: Animation[] = [];
 
+    const pending = computed(() => !!props.entrance && !played.value);
     const threads = computed<EntranceThread[]>(() => {
         const e = props.entrance;
-        if (e?.kind !== "threads" || landed.value || reduced.value) return [];
+        if (e?.kind !== "threads" || !mounted.value || landed.value || reduced.value) return [];
         return entranceThreads(e.origin, shapes.value);
     });
 
@@ -135,32 +146,47 @@ export function useGeoEntrance(
         fade(root.querySelectorAll(LATE_LAYERS), 800);
     }
 
+    /** Every flight cut to its final frame (a cancelled WAAPI effect leaves the mark at rest). */
+    function settle() {
+        running.forEach((a) => a.cancel());
+        running = [];
+    }
+
+    /** Start the flights first, then release the hold: `fill: "backwards"` already owns each mark's
+        first frame, so the marks never show at rest between the two. */
     function play() {
         const root = field.value;
         const e = props.entrance;
-        if (!root || !e || reduced.value || typeof root.animate !== "function") {
-            landed.value = true;
-            return;
+        if (root && e && !reduced.value && typeof root.animate === "function") {
+            if (e.kind === "threads") thread(root, e.origin);
+            else ripple(root, e.origin);
         }
-        if (e.kind === "threads") thread(root, e.origin);
-        else {
-            ripple(root, e.origin);
-            landed.value = true;
-        }
+        if (e?.kind !== "threads" || !running.length) landed.value = true;
+        played.value = true;
     }
 
-    if (props.entrance) {
-        const { stop } = useIntersectionObserver(
-            field,
-            ([entry]) => {
-                if (!entry?.isIntersecting || landed.value) return;
-                stop();
-                play();
-            },
-            { threshold: FIRST_VIEW },
-        );
+    // The target clears once played (the observer disconnects), and arms when `entrance` turns on
+    // after mount, so a live opt-in still plays once on its first view.
+    const { isSupported } = useIntersectionObserver(
+        computed(() => (props.entrance && !played.value && !reduced.value ? field.value : null)),
+        ([entry]) => {
+            if (entry?.isIntersecting && !played.value) play();
+        },
+        { threshold: FIRST_VIEW },
+    );
+    // Reduced motion, at mount or switched on mid-entrance: every mark at rest, nothing replays.
+    function rest() {
+        settle();
+        played.value = landed.value = true;
     }
-    onBeforeUnmount(() => running.forEach((a) => a.cancel()));
+    watch(reduced, (r) => r && rest());
+    // No observer to wait on: play at mount, so the hold never strands the map hidden.
+    onMounted(() => {
+        mounted.value = true;
+        if (reduced.value) rest();
+        else if (props.entrance && !isSupported.value) play();
+    });
+    onBeforeUnmount(settle);
 
-    return { threads };
+    return { threads, pending };
 }

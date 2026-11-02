@@ -131,8 +131,12 @@
   fallback rank. `GeoChoropleth` takes an opt-in `entrance` (`GeoEntrance`, `{ origin, kind }`). On
   first view `ripple` lands the shapes in that order, and `threads` draws a slack quadratic thread
   from the origin to every valued feature (`entranceThreads`), lands each feature as its thread
-  reaches it, then fades the thread. Reduced motion paints the map final. Without `entrance` the map
-  renders as before. Witness: `tests/component/geo-entrance.spec.ts`, red before.
+  reaches it, then fades the thread. Until it plays the map is held unpainted (`data-entrance-pending`,
+  behind `prefers-reduced-motion: no-preference`), so a map scrolled into view never paints final and
+  then pops in again; the thread layer mounts on the client only. Reduced motion paints the map final,
+  and a switch to it mid-entrance cuts every flight to rest. An `entrance` set after mount still plays
+  once on first view. Without `entrance` the map renders as before. Witnesses:
+  `tests/component/geo-entrance.spec.ts`, `tests/component/geo-entrance-hold.spec.ts`, red before.
 
 - **Entity drill hops (U/B7d D1 · M-06).** `EntityDescription.links` lists the views one hop from an
   entity; EntityDetail renders them as links and closes when one is followed. Witness:

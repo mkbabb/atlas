@@ -114,12 +114,16 @@ describe("GeoChoropleth — the opt-in entrance overlay", () => {
         expect(html).not.toContain("geo-entrance-threads");
     });
 
-    it("draws the threads from the origin to every valued feature when opted in", async () => {
+    it("serves the threads entrance held, with no thread layer (it mounts on the client)", async () => {
+        // The server cannot know the client's motion preference, so it renders the hold (which the
+        // CSS gates behind the motion query) and leaves the threads to mount after hydration.
         const html = await render({ entrance: { origin: "01", kind: "threads" } });
         expect(html).toContain('data-entrance="threads"');
-        expect(html).toContain('data-testid="geo-entrance-threads"');
-        expect((html.match(/class="geo-entrance-thread"/g) ?? []).length).toBe(1);
-        expect(html).toContain('data-thread-key="02"');
-        expect(html).not.toContain('data-thread-key="03"');
+        expect(html).toContain("data-entrance-pending");
+        expect(html).not.toContain("geo-entrance-threads");
+    });
+
+    it("serves an opted-out map with no hold", async () => {
+        expect(await render({})).not.toContain("data-entrance-pending");
     });
 });
