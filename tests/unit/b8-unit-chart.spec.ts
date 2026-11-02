@@ -168,6 +168,37 @@ describe("unit layouts", () => {
         expect(() => groupedBlocksLayout([0, 1, 1], { width: 3 * MIN_UNIT_PITCH - 1e-3 })).toThrow(RangeError);
     });
 
+    it("an explicit cell the frame cannot hold throws the fitted path's RangeError in every builder", () => {
+        const builders = [
+            (o: UnitBlockOptions) => gridLayout(4, o),
+            (o: UnitBlockOptions) => boustrophedonLayout(4, o),
+            (o: UnitBlockOptions) => groupedBlocksLayout([0, 1, 1], o),
+        ];
+        const frames: UnitBlockOptions[] = [
+            // A cell wider than the frame: one column already runs out of it sideways.
+            { width: 100, cell: 500 },
+            // Rows that overrun a given height.
+            { width: 20, height: 15, cell: 10 },
+        ];
+        for (const build of builders) {
+            for (const frame of frames) {
+                expect(() => build(frame), JSON.stringify(frame)).toThrow(RangeError);
+                expect(() => build(frame), JSON.stringify(frame)).toThrow(/minimum pitch|cannot fill/);
+            }
+        }
+        // Two blocks and a one-pitch gap need three cells of width.
+        expect(() => groupedBlocksLayout([0, 1, 1], { width: 25, cell: 10 })).toThrow(RangeError);
+        // A cell the frame holds is laid out as given, every mark inside the frame.
+        for (const build of builders) {
+            const l = build({ width: 30, height: 30, cell: 10, gap: 0 });
+            expect(l.w[0]).toBe(10);
+            for (let i = 0; i < l.count; i++) {
+                expect(l.x[i] + l.w[i] / 2).toBeLessThanOrEqual(30 + 1e-4);
+                expect(l.y[i] + l.h[i] / 2).toBeLessThanOrEqual(30 + 1e-4);
+            }
+        }
+    });
+
     it("a layout authored as data validates its arrays", () => {
         expect(() =>
             createUnitLayout({ width: 10, height: 10, x: [1, 2], y: [1], w: [1, 1], h: [1, 1] }),

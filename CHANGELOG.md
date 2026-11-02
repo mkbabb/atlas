@@ -41,6 +41,11 @@
   frame, and holds its draw while the host measures 0 px wide; the layout it holds lands once the
   host has a width. Witness: `b8-unit-chart.spec.ts` "a zero or degenerate frame…", and two
   `UnitChart.browser.spec.ts` cases (a 0 px first mount, a held draw), red before.
+- **An explicit unit cell meets the fitted contract (U/B8 A3 review).** A given `cell` was checked
+  only against the floor, so `gridLayout(4, { width: 100, cell: 500 })` laid marks out to x = 250.
+  Every builder now holds a given cell to the fit's own test (one column inside the frame or block,
+  rows under a given height) and throws the same RangeError when it fails. Witness:
+  `b8-unit-chart.spec.ts` "an explicit cell the frame cannot hold…", red before.
 - **The ink clamps hold their floors on a plate (U/B7d M3 repair 1 · T-12).** The light body ink moves from
   L 0.47 to 0.44 and the large ink from 0.62 to 0.60; they read 4.37:1 and 2.96:1. Witness:
   `ink-floor.spec.ts`.

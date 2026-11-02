@@ -184,7 +184,8 @@ export interface UnitFlowOptions {
      * The pitch, one cell per mark. Defaults to the fitted pitch: with a height, the largest that
      * holds every mark; without one, 8 or less, so a column fits the width. Every pitch is at least
      * `MIN_UNIT_PITCH`: a frame no such pitch fills (a zero or degenerate frame among them) throws a
-     * RangeError, in every builder.
+     * RangeError, in every builder. An explicit cell meets the same contract: one the frame cannot
+     * hold (wider than the frame or a block, or rows past a given height) throws the same RangeError.
      */
     cell?: number;
     /** The gap between marks, as a fraction of the pitch. Default 0.15. */
@@ -201,9 +202,11 @@ const DEFAULT_PITCH = 8;
 export const MIN_UNIT_PITCH = 0.5;
 
 /**
- * The pitch a flow uses: `o.cell` as given, else the largest pitch up to `hi` (the frame's short
- * side when it has a height, else `DEFAULT_PITCH`) that passes `fits`, found by bisection (`fits` is
- * monotone in practice). Every pitch is at least `MIN_UNIT_PITCH`, so a frame that holds the marks
+ * The pitch a flow uses: `o.cell` as given when it passes `fits`, else the largest pitch up to `hi`
+ * (the frame's short side when it has a height, else `DEFAULT_PITCH`) that passes `fits`, found by
+ * bisection (`fits` is monotone in practice). An explicit cell is held to the same `fits` as a fitted
+ * one: a cell wider than the frame (or a block), or rows that overrun a given height, throw the same
+ * RangeError. Every pitch is at least `MIN_UNIT_PITCH`, so a frame that holds the marks
  * at no pitch from the floor up is impossible and says so with a RangeError, whatever the reason: a
  * frame too small for the marks, a block gap that eats the width, or a degenerate frame (a width or
  * height that is zero, negative, not finite, or under the floor). The marks are never laid out past
@@ -219,6 +222,7 @@ function resolvePitch(o: UnitFlowOptions, fits: (p: number) => boolean, what: st
     }
     if (o.cell !== undefined) {
         if (!usable(o.cell)) throw refuse(`a ${o.cell} px cell is under the minimum pitch of ${MIN_UNIT_PITCH} px`);
+        if (!fits(o.cell)) throw refuse(`a ${o.cell} px cell does not hold the marks inside the frame`);
         return o.cell;
     }
     let hi = o.height !== undefined ? Math.min(o.width, o.height) : Math.min(o.width, DEFAULT_PITCH);
