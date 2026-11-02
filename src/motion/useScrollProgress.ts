@@ -126,30 +126,50 @@ export function useScrollProgress(
 interface DocumentScroll {
     readonly y: ShallowRef<number>;
     readonly viewport: ShallowRef<number>;
+    /** The document's scroll height, read where layout is clean (U/B8 PF): a ResizeObserver
+        delivery on the root, after layout and before paint, and on resize. Before, the progress
+        computed read `scrollHeight` itself, which its scroll-time watchers ran inside Vue's flush
+        while chart mounts had the layout dirty: a forced layout per scroll tick (the /sci and
+        /demand phone scroll walks, 28-49 ms). */
+    readonly height: ShallowRef<number>;
 }
 let documentScroll: (DocumentScroll & { users: number; stop: () => void }) | null = null;
 
 function acquireDocumentScroll(): DocumentScroll {
-    if (typeof window === "undefined") return { y: shallowRef(0), viewport: shallowRef(0) };
+    if (typeof window === "undefined")
+        return { y: shallowRef(0), viewport: shallowRef(0), height: shallowRef(0) };
     if (!documentScroll) {
+        const doc = document.documentElement;
         const y = shallowRef(window.scrollY);
         const viewport = shallowRef(window.innerHeight);
+        const height = shallowRef(doc.scrollHeight);
         const onScroll = (): void => {
             y.value = window.scrollY;
         };
         const onResize = (): void => {
             viewport.value = window.innerHeight;
             y.value = window.scrollY;
+            height.value = doc.scrollHeight;
         };
         window.addEventListener("scroll", onScroll, { passive: true });
         window.addEventListener("resize", onResize, { passive: true });
+        // The root's box grows and shrinks with the page; its delivery runs after layout.
+        const grow =
+            typeof ResizeObserver === "undefined"
+                ? null
+                : new ResizeObserver(() => {
+                      height.value = doc.scrollHeight;
+                  });
+        grow?.observe(doc);
         documentScroll = {
             y,
             viewport,
+            height,
             users: 0,
             stop: () => {
                 window.removeEventListener("scroll", onScroll);
                 window.removeEventListener("resize", onResize);
+                grow?.disconnect();
             },
         };
     }
@@ -184,7 +204,7 @@ function acquireDocumentScroll(): DocumentScroll {
  * grep (T6-class) seals it: `useWindowScroll`/`scrollY` may appear only in this file.
  */
 export function useDocumentScrollProgress(): ComputedRef<number> {
-    const { y, viewport } = acquireDocumentScroll();
+    const { y, viewport, height } = acquireDocumentScroll();
 
     return computed(() => {
         if (typeof document === "undefined") return 0;
@@ -195,8 +215,7 @@ export function useDocumentScrollProgress(): ComputedRef<number> {
         // not reactive) freezing the scalar at 0 for that subscriber FOREVER (the N.WB1 story
         // director's storyT froze this way; the dock barometer + aurora ride the same scalar).
         const scrolled = y.value;
-        const doc = document.documentElement;
-        const scrollable = doc.scrollHeight - viewport.value;
+        const scrollable = height.value - viewport.value;
         if (scrollable <= 0) return 0;
         return clamp01(scrolled / scrollable);
     });
