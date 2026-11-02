@@ -2,9 +2,9 @@
 // through `useDevicePixelRatio` → `UnitCanvas.setSize` (capped at 2), the keyboard walks the marks and
 // blur clears the walk, and only a keyboard move speaks in the live line; a pointer hover stays silent.
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createApp, defineComponent, h, nextTick, ref, type App } from "vue";
+import { computed, createApp, defineComponent, h, nextTick, ref, type App } from "vue";
 import UnitChart from "./UnitChart.vue";
-import { gridLayout } from "./unit-layouts";
+import { gridLayout, type UnitLayout } from "./unit-layouts";
 
 // The display ratio as a test-owned ref: a display move or a zoom is a write to it.
 const ratio = ref(1);
@@ -48,6 +48,33 @@ function mountChart() {
     const live = el.querySelector("[aria-live]")!;
     return { canvas, live, hovers };
 }
+
+/** A chart in a host `hostWidth` px wide, fed `view` as its layout; the resize widths it emits. */
+function mountSized(hostWidth: number, view: () => UnitLayout | null, onResize: (w: number) => void = () => {}) {
+    el = document.createElement("div");
+    el.style.width = `${hostWidth}px`;
+    document.body.appendChild(el);
+    const resizes: number[] = [];
+    app = createApp(
+        defineComponent({
+            setup: () => () =>
+                h(UnitChart, {
+                    layout: view(),
+                    colors: ["#336", "#663"],
+                    summary: "4 marks",
+                    onResize: (w: number) => {
+                        resizes.push(w);
+                        onResize(w);
+                    },
+                }),
+        }),
+    );
+    app.mount(el);
+    return { host: el, canvas: el.querySelector("canvas")!, resizes };
+}
+
+/** Two frames: a ResizeObserver delivery and the Vue flush after it. */
+const frames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
 const key = (canvas: HTMLCanvasElement, k: string) =>
     canvas.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
@@ -104,5 +131,34 @@ describe("UnitChart", () => {
         await nextTick();
         expect(hovers.at(-1)).toBe(0);
         expect(live.textContent).toBe("");
+    });
+
+    // A canvas the engine never sized keeps the HTML default backing store, 300 x 150.
+    it("mounts at 0 px wide without a layout, then draws the one the consumer builds at the first width", async () => {
+        const width = ref(0);
+        // The consumer's side: every builder refuses a 0 px frame, so it builds on the first resize.
+        expect(() => gridLayout(4, { width: 0 })).toThrow(RangeError);
+        const view = computed(() => (width.value > 0 ? gridLayout(4, { width: width.value, cell: 10, gap: 0 }) : null));
+        const { host, canvas, resizes } = mountSized(0, () => view.value, (w) => (width.value = w));
+        await frames();
+        expect(resizes).toEqual([]);
+        expect([canvas.width, canvas.height]).toEqual([300, 150]);
+        host.style.width = "120px";
+        await expect.poll(() => resizes).toEqual([120]);
+        await expect.poll(() => [canvas.width, canvas.height]).toEqual([120, 10]);
+        expect(canvas.style.width).toBe("120px");
+    });
+
+    it("holds a layout's draw while the host measures 0 px wide, and lands it once the host has a width", async () => {
+        const { host, canvas } = mountSized(0, () => layout);
+        await frames();
+        expect([canvas.width, canvas.height]).toEqual([300, 150]);
+        expect(canvas.style.width).toBe("0px");
+        // A keyboard walk over a chart with nothing drawn moves nothing.
+        canvas.focus();
+        key(canvas, "ArrowRight");
+        host.style.width = "200px";
+        await expect.poll(() => [canvas.width, canvas.height]).toEqual([40, 10]);
+        expect(canvas.style.width).toBe("40px");
     });
 });

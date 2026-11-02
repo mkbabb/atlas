@@ -31,6 +31,16 @@
   unchecked, and `groupedBlocksLayout` and the flows without a height shrink the default 8 px pitch
   until one column fits the width. Witness: `b8-unit-chart.spec.ts` (3 cases, red before) and
   `UnitChart.browser.spec.ts` (the DPR wiring, the keyboard walk and blur, the silent pointer).
+- **The unit chart's frame contract holds at zero (U/B8 A3 review).** A 0 px frame without a height
+  laid its marks at NaN (the fit's ceiling, `min(width, 8)`, was 0, it passed, and `width / 0` gave
+  NaN columns), and a 0.3 px frame fitted a 0.3 px pitch under the floor the doc promised. Every
+  pitch is now at least `MIN_UNIT_PITCH`, and `gridLayout`, `boustrophedonLayout` and
+  `groupedBlocksLayout` all throw the same RangeError for a frame no such pitch fills: one too small
+  for the marks, or a degenerate one (a width or height that is zero, negative, not finite or under
+  the floor, or a given `cell` under it). `UnitChart` takes `layout: null` until the consumer has a
+  frame, and holds its draw while the host measures 0 px wide; the layout it holds lands once the
+  host has a width. Witness: `b8-unit-chart.spec.ts` "a zero or degenerate frame…", and two
+  `UnitChart.browser.spec.ts` cases (a 0 px first mount, a held draw), red before.
 - **The ink clamps hold their floors on a plate (U/B7d M3 repair 1 · T-12).** The light body ink moves from
   L 0.47 to 0.44 and the large ink from 0.62 to 0.60; they read 4.37:1 and 2.96:1. Witness:
   `ink-floor.spec.ts`.

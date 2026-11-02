@@ -6,6 +6,9 @@ import {
     gridLayout,
     groupedBlocksLayout,
     hitTest,
+    MIN_UNIT_PITCH,
+    type UnitBlockOptions,
+    type UnitLayout,
     unitStep,
     unitSummary,
 } from "../../src/charts/marks/unit-layouts";
@@ -119,6 +122,50 @@ describe("unit layouts", () => {
         const l = gridLayout(400, { width: 10, height: 10, gap: 0 });
         expect(l.w[0]).toBeCloseTo(0.5, 5);
         for (let i = 0; i < l.count; i++) expect(l.y[i] + l.h[i] / 2).toBeLessThanOrEqual(10 + 1e-4);
+    });
+
+    it("a zero or degenerate frame, or one under the minimum pitch, throws the same RangeError in every builder", () => {
+        const builders = [
+            (o: UnitBlockOptions) => gridLayout(4, o),
+            (o: UnitBlockOptions) => boustrophedonLayout(4, o),
+            (o: UnitBlockOptions) => groupedBlocksLayout([0, 1, 1], o),
+        ];
+        const frames: UnitBlockOptions[] = [
+            { width: 0 },
+            { width: 0, height: 0 },
+            { width: 0.3 },
+            { width: MIN_UNIT_PITCH - 1e-3, height: 100 },
+            { width: -10 },
+            { width: Number.NaN },
+            { width: Number.POSITIVE_INFINITY },
+            { width: 100, height: 0 },
+            { width: 100, height: 0.3 },
+            { width: 0, cell: 10 },
+            { width: 100, cell: 0 },
+            { width: 100, cell: 0.3 },
+        ];
+        for (const build of builders) {
+            for (const frame of frames) expect(() => build(frame), JSON.stringify(frame)).toThrow(RangeError);
+        }
+        // Every fitted pitch is at or above the floor: never 0, never NaN. Two blocks and the gap of
+        // one pitch between them need three pitches of width.
+        const fitted: [(o: UnitBlockOptions) => UnitLayout, number[]][] = [
+            [builders[0], [MIN_UNIT_PITCH, 0.7, 1, 3]],
+            [builders[1], [MIN_UNIT_PITCH, 0.7, 1, 3]],
+            [builders[2], [3 * MIN_UNIT_PITCH, 3, 7]],
+        ];
+        for (const [build, widths] of fitted) {
+            for (const width of widths) {
+                const l = build({ width, gap: 0 });
+                expect(l.w[0]).toBeGreaterThanOrEqual(MIN_UNIT_PITCH);
+                for (let i = 0; i < l.count; i++) {
+                    expect(Number.isFinite(l.x[i]) && Number.isFinite(l.y[i])).toBe(true);
+                    expect(l.x[i] + l.w[i] / 2).toBeLessThanOrEqual(width + 1e-4);
+                }
+            }
+        }
+        // Under three floor pitches of width the two blocks refuse, with the same error.
+        expect(() => groupedBlocksLayout([0, 1, 1], { width: 3 * MIN_UNIT_PITCH - 1e-3 })).toThrow(RangeError);
     });
 
     it("a layout authored as data validates its arrays", () => {

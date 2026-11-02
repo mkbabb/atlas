@@ -182,8 +182,9 @@ export interface UnitFlowOptions {
     height?: number;
     /**
      * The pitch, one cell per mark. Defaults to the fitted pitch: with a height, the largest that
-     * holds every mark; without one, 8 or less, so a column fits the width. A frame no pitch down to
-     * `MIN_UNIT_PITCH` fits throws a RangeError.
+     * holds every mark; without one, 8 or less, so a column fits the width. Every pitch is at least
+     * `MIN_UNIT_PITCH`: a frame no such pitch fills (a zero or degenerate frame among them) throws a
+     * RangeError, in every builder.
      */
     cell?: number;
     /** The gap between marks, as a fraction of the pitch. Default 0.15. */
@@ -202,18 +203,28 @@ export const MIN_UNIT_PITCH = 0.5;
 /**
  * The pitch a flow uses: `o.cell` as given, else the largest pitch up to `hi` (the frame's short
  * side when it has a height, else `DEFAULT_PITCH`) that passes `fits`, found by bisection (`fits` is
- * monotone in practice). A frame that holds the marks at no pitch down to `MIN_UNIT_PITCH` is
- * impossible, and says so: the marks are never laid out past the frame in silence.
+ * monotone in practice). Every pitch is at least `MIN_UNIT_PITCH`, so a frame that holds the marks
+ * at no pitch from the floor up is impossible and says so with a RangeError, whatever the reason: a
+ * frame too small for the marks, a block gap that eats the width, or a degenerate frame (a width or
+ * height that is zero, negative, not finite, or under the floor). The marks are never laid out past
+ * the frame in silence, and never at a pitch that divides by zero. A chart measuring a frame it has
+ * not laid out yet (a first mount before layout, a hidden tab) holds its draw; it does not build.
  */
-function resolvePitch(o: UnitFlowOptions, fits: (p: number) => boolean, hi: number, what: string): number {
-    if (o.cell !== undefined) return o.cell;
-    if (fits(hi)) return hi;
-    let lo = Math.min(MIN_UNIT_PITCH, hi);
-    if (!fits(lo)) {
-        throw new RangeError(
-            `unit layout: ${what} do not fit a ${o.width} x ${o.height ?? "auto"} px frame at the minimum pitch of ${MIN_UNIT_PITCH} px`,
-        );
+function resolvePitch(o: UnitFlowOptions, fits: (p: number) => boolean, what: string): number {
+    const refuse = (why: string) =>
+        new RangeError(`unit layout: ${what} cannot fill a ${o.width} x ${o.height ?? "auto"} px frame: ${why}`);
+    const usable = (v: number) => Number.isFinite(v) && v >= MIN_UNIT_PITCH;
+    if (!usable(o.width) || (o.height !== undefined && !usable(o.height))) {
+        throw refuse(`each side must reach the minimum pitch of ${MIN_UNIT_PITCH} px`);
     }
+    if (o.cell !== undefined) {
+        if (!usable(o.cell)) throw refuse(`a ${o.cell} px cell is under the minimum pitch of ${MIN_UNIT_PITCH} px`);
+        return o.cell;
+    }
+    let hi = o.height !== undefined ? Math.min(o.width, o.height) : Math.min(o.width, DEFAULT_PITCH);
+    if (fits(hi)) return hi;
+    let lo = MIN_UNIT_PITCH;
+    if (!fits(lo)) throw refuse(`no pitch from the minimum pitch of ${MIN_UNIT_PITCH} px up holds the marks`);
     for (let k = 0; k < 40; k++) {
         const mid = (lo + hi) / 2;
         if (fits(mid)) lo = mid;
@@ -222,16 +233,13 @@ function resolvePitch(o: UnitFlowOptions, fits: (p: number) => boolean, hi: numb
     return lo;
 }
 
-/** The fit's upper bound: the frame's short side when it has a height, else the default pitch. */
-const pitchCeiling = (o: UnitFlowOptions) => (o.height ? Math.min(o.width, o.height) : Math.min(o.width, DEFAULT_PITCH));
-
 function flow(n: number, o: UnitFlowOptions, snake: boolean): UnitLayout {
     const gap = o.gap ?? 0.15;
     const colsAt = (p: number) => Math.max(1, Math.floor(o.width / p + 1e-6));
     // One column must fit the width (past it the clamped column runs out of the frame sideways),
     // and with a height every row must fit under it.
-    const fits = (p: number) => p <= o.width + 1e-6 && (!o.height || Math.ceil(n / colsAt(p)) * p <= o.height + 1e-6);
-    const pitch = resolvePitch(o, fits, pitchCeiling(o), `${n} marks`);
+    const fits = (p: number) => p <= o.width + 1e-6 && (o.height === undefined || Math.ceil(n / colsAt(p)) * p <= o.height + 1e-6);
+    const pitch = resolvePitch(o, fits, `${n} marks`);
     const cols = colsAt(pitch);
     const rows = Math.ceil(n / cols);
     const x = new Float32Array(n);
@@ -284,8 +292,8 @@ export function groupedBlocksLayout(group: ArrayLike<number>, o: UnitBlockOption
     // `blockW` the clamped single column would carry the marks out of the frame sideways), and with
     // a height the tallest block under it.
     const fits = (p: number) =>
-        blockWAt(p) >= p - 1e-6 && (!o.height || Math.ceil(tallest / colsAt(p)) * p <= o.height + 1e-6);
-    const pitch = resolvePitch(o, fits, pitchCeiling(o), `${n} marks in ${groups} blocks`);
+        blockWAt(p) >= p - 1e-6 && (o.height === undefined || Math.ceil(tallest / colsAt(p)) * p <= o.height + 1e-6);
+    const pitch = resolvePitch(o, fits, `${n} marks in ${groups} blocks`);
     const blockW = blockWAt(pitch);
     const cols = colsAt(pitch);
     const height = o.height ?? Math.ceil(tallest / cols) * pitch;

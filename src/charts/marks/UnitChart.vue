@@ -14,6 +14,11 @@
 // the keyboard walks to is announced through a polite live line (`markLabel`); a pointer hover is
 // never announced (the pointer user sees the mark, and a sweep across the cloth would read a stream).
 // A figure's table twin carries the same counts.
+//
+// The chart draws only a frame it can see: while the host measures 0 px wide (a first mount before
+// layout, a hidden tab) or no layout is given yet (`null`: the consumer builds one on the first
+// `resize`, since every layout builder refuses a frame under `MIN_UNIT_PITCH` with a RangeError), it
+// holds its draw, and the layout it holds lands once the host has a width.
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import { useDevicePixelRatio, useElementSize } from "@vueuse/core";
 import { useReducedMotion } from "../../motion/useReducedMotion.js";
@@ -24,8 +29,11 @@ import { unitStep, type UnitLayout } from "./unit-layouts.js";
 
 const props = withDefaults(
     defineProps<{
-        /** The arrangement to show. A new layout of the same count morphs; another count remounts the marks. */
-        layout: UnitLayout;
+        /**
+         * The arrangement to show. A new layout of the same count morphs; another count remounts the
+         * marks. `null` until the consumer has a frame to build one at (the first `resize`).
+         */
+        layout: UnitLayout | null;
         /** The palette: CSS custom property names (`--viz-category-1`) or literal colors. */
         colors: readonly string[];
         /** Each mark's palette entry. Defaults to the layout's group. */
@@ -63,6 +71,8 @@ const emit = defineEmits<{
 const host = ref<HTMLElement | null>(null);
 const canvas = ref<HTMLCanvasElement | null>(null);
 const engine = shallowRef<UnitCanvas>();
+/** The layout on the canvas: the last one drawn, held while the host has no width. */
+const shown = shallowRef<UnitLayout | null>(null);
 const hovered = ref(-1);
 /** The mark the keyboard last walked to, for the live line; -1 once the pointer takes over. */
 const walked = ref(-1);
@@ -87,24 +97,33 @@ function mount(layout: UnitLayout) {
     engine.value = u;
 }
 
-onMounted(() => mount(props.layout));
+/** The layout to draw now: none while there is no layout or the host measures 0 px wide. */
+const drawable = computed(() => (props.layout && hostWidth.value > 0 ? props.layout : null));
+
+function draw(next: UnitLayout | null) {
+    const prev = shown.value;
+    if (!next || next === prev) return;
+    shown.value = next;
+    const u = engine.value;
+    if (!u || !prev || next.count !== u.count) return mount(next);
+    // A new frame size is a rebuilt layout: land on it. A new arrangement morphs.
+    const resized = next.width !== prev.width || next.height !== prev.height;
+    u.setSize(next.width, next.height, pixelRatio.value);
+    if (resized) u.snap(next);
+    else u.show(next);
+    if (!props.colorOf) u.setPalette(palette.value, next.group);
+}
+
+onMounted(() => draw(drawable.value));
 onBeforeUnmount(() => engine.value?.destroy());
 
-watch(
-    () => props.layout,
-    (next, prev) => {
-        const u = engine.value;
-        if (!u || next.count !== u.count) return mount(next);
-        // A new frame size is a rebuilt layout: land on it. A new arrangement morphs.
-        const resized = next.width !== prev.width || next.height !== prev.height;
-        u.setSize(next.width, next.height, pixelRatio.value);
-        if (resized) u.snap(next);
-        else u.show(next);
-        if (!props.colorOf) u.setPalette(palette.value, next.group);
-    },
-);
-watch([palette, () => props.colorOf], ([colors]) => engine.value?.setPalette(colors, props.colorOf ?? props.layout.group));
-watch(pixelRatio, (dpr) => engine.value?.setSize(props.layout.width, props.layout.height, dpr));
+watch(drawable, draw);
+watch([palette, () => props.colorOf], ([colors]) => {
+    if (shown.value) engine.value?.setPalette(colors, props.colorOf ?? shown.value.group);
+});
+watch(pixelRatio, (dpr) => {
+    if (shown.value) engine.value?.setSize(shown.value.width, shown.value.height, dpr);
+});
 watch(reduced, (r) => {
     if (engine.value) engine.value.reduced = r;
 });
@@ -115,7 +134,7 @@ watch(hostWidth, (w) => {
 const lit = computed(() => {
     if (props.focusGroup !== null) return props.focusGroup;
     if (!props.dimOnHover || hovered.value < 0) return null;
-    return props.layout.group[hovered.value] ?? null;
+    return shown.value?.group[hovered.value] ?? null;
 });
 watch(lit, (g) => engine.value?.focus(g));
 
@@ -141,7 +160,8 @@ function onKey(e: KeyboardEvent) {
         e.preventDefault();
         return emit("select", hovered.value);
     }
-    const i = unitStep(props.layout, hovered.value, e.key);
+    if (!shown.value) return;
+    const i = unitStep(shown.value, hovered.value, e.key);
     if (i === hovered.value) return;
     e.preventDefault();
     hover(i, true);
@@ -149,8 +169,9 @@ function onKey(e: KeyboardEvent) {
 
 const announce = computed(() => {
     const i = walked.value;
-    if (i < 0 || i >= props.layout.count) return "";
-    return props.markLabel?.(i) ?? `${props.layout.rank[i] + 1} of ${props.layout.count}`;
+    const l = shown.value;
+    if (!l || i < 0 || i >= l.count) return "";
+    return props.markLabel?.(i) ?? `${l.rank[i] + 1} of ${l.count}`;
 });
 </script>
 
@@ -162,7 +183,7 @@ const announce = computed(() => {
             role="img"
             tabindex="0"
             :aria-label="summary"
-            :style="{ width: `${layout.width}px`, height: `${layout.height}px` }"
+            :style="{ width: `${shown?.width ?? 0}px`, height: `${shown?.height ?? 0}px` }"
             @pointermove="onMove"
             @pointerleave="onLeave"
             @click="onClick"
