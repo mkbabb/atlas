@@ -27,6 +27,7 @@ import type { FeedMeta } from "../../data/contract.js";
 // pure predicate (no drift). The `import.meta.env.DEV` branch that calls it is tree-shaken out of
 // the prod build, so this gate module never ships in the bundle (it is side-effect-free).
 import { isCoherent, type GeoCoherenceSample } from "./geo-coherence.js";
+import type { GeoEntrance } from "./geo-entrance.js";
 // O-A22 — the sighted-colorblind redundant channel (the a11y P3 pattern/value-label fallback) + the
 // X10-LIB per-region label gate + the pairwise-collision declutter. The PURE mechanism lives beside
 // the SFC so the component and the O-A22 spec read ONE source (no drift).
@@ -152,6 +153,13 @@ export interface ChoroplethProps {
      * identical render for every route that does not declare it.
      */
     placeLabel?: (key: string) => string;
+    /**
+     * U/B8 A1 — THE ENTRANCE FROM AN ORIGIN (opt-in). On first view the shapes ripple out from
+     * `origin` in distance order, or (`kind: "threads"`) slack threads run from `origin` to every
+     * valued feature, each landing as its thread reaches it. A missing origin falls back to `rank`.
+     * Reduced motion paints the map final. Omit ⇒ the map paints at rest, no overlay.
+     */
+    entrance?: GeoEntrance;
     ariaLabel?: string;
 }
 
@@ -330,9 +338,12 @@ export function useChoroplethShapes(props: ChoroplethProps) {
             // the fill draws through (one projection, one coordinate frame), whenever a WORD source
             // exists (`valueLabel` OR `valueFormat`) OR the D-02 magnitude-ring channel needs an
             // anchor (`symbolR` — the ring seats at the same centroid the label would) OR the A-28
-            // place-label augment channel seats its bold letters here (`placeLabel`).
+            // place-label augment channel seats its bold letters here (`placeLabel`) OR the U/B8 A1
+            // entrance measures its distances and threads from here (`entrance`).
             const [cx, cy] =
-                wordOf || props.symbolR || props.placeLabel ? draw.centroid(f) : [0, 0];
+                wordOf || props.symbolR || props.placeLabel || props.entrance
+                    ? draw.centroid(f)
+                    : [0, 0];
             // X10-LIB — the region's bounding-box minor axis, measured off the SAME path generator.
             // Measured for EVERY feature (A-04): the label size-gate reads it, and so does the
             // aggregated-cell tap floor below — which must judge a field carrying no word source.

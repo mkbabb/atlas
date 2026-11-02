@@ -3,6 +3,9 @@
 // re-exports, the .ts leaves whole). Split-internal helpers stay family-internal.
 
 export * from "./geo-coherence.js";
+// U/B8 A1 — the entrance from an origin: `originRank` (the distance-ordered `rank` input),
+// `entranceThreads` and the `GeoEntrance` prop type.
+export * from "./geo-entrance.js";
 export { default as GeoChoropleth } from "./GeoChoropleth.vue";
 export { default as GeoPlate } from "./GeoPlate.vue";
 export { default as SelectionRegion } from "./SelectionRegion.vue";

@@ -162,3 +162,26 @@
     stroke: var(--background);
     stroke-width: 2.5px;
 }
+
+/* U/B8 A1 · THE ENTRANCE FROM AN ORIGIN. A landing mark springs up about its own box, so a shape
+   grows where it sits rather than from the viewBox corner. Static geometry until the entrance runs
+   (no transform at rest); only a map that declares `entrance` carries it. */
+[data-entrance] .geo-shape,
+[data-entrance] .geo-texture {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+/* The thread is a hairline of foreground ink, undrawn at rest (the unit dash parked off the path,
+   the same `pathLength="1"` dash the hover trace rides). The entrance draws it, then fades it;
+   reduced motion never mounts it. */
+.geo-entrance-thread {
+    fill: none;
+    stroke: var(--foreground);
+    stroke-width: 1;
+    stroke-linecap: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    opacity: 0;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+}

@@ -125,6 +125,15 @@
 
 ### Features
 
+- **A map entrance from an origin (U/B8 A1).** `originRank(origin, centroids, fallback?)`
+  (`./charts`) turns an origin key and the feature centroids into the `GeoChoropleth` `rank` input:
+  the origin first, then each feature by distance, ties in input order; a missing origin returns the
+  fallback rank. `GeoChoropleth` takes an opt-in `entrance` (`GeoEntrance`, `{ origin, kind }`). On
+  first view `ripple` lands the shapes in that order, and `threads` draws a slack quadratic thread
+  from the origin to every valued feature (`entranceThreads`), lands each feature as its thread
+  reaches it, then fades the thread. Reduced motion paints the map final. Without `entrance` the map
+  renders as before. Witness: `tests/component/geo-entrance.spec.ts`, red before.
+
 - **Entity drill hops (U/B7d D1 · M-06).** `EntityDescription.links` lists the views one hop from an
   entity; EntityDetail renders them as links and closes when one is followed. Witness:
   `EntityDetail.browser.spec.ts` "M-06", red before.
