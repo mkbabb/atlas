@@ -342,7 +342,8 @@ const tableRows = computed(() =>
                         v-if="isDimmed(s.key)"
                         :d="s.d"
                         fill="url(#geo-dim-hatch)"
-                        class="pointer-events-none"
+                        :data-hatch-key="s.key"
+                        class="geo-dim-hatch pointer-events-none"
                         :class="{ 'geo-shape--cell-floor': cellFloor > 1 }"
                         aria-hidden="true"
                     />

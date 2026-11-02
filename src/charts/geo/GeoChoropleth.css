@@ -167,17 +167,20 @@
    grows where it sits rather than from the viewBox corner. Static geometry until the entrance runs
    (no transform at rest); only a map that declares `entrance` carries it. */
 [data-entrance] .geo-shape,
-[data-entrance] .geo-texture {
+[data-entrance] .geo-texture,
+[data-entrance] .geo-dim-hatch {
     transform-box: fill-box;
     transform-origin: center;
 }
 /* The hold: until the entrance plays, the marks it lands are not painted, so a map scrolled into
    view does not show final and then snap back to its first frame. The entrance starts its flights
    before it clears the flag (`fill: backwards` owns the first frame from then on). Behind the motion
-   query, so reduced motion never holds. */
-@media (prefers-reduced-motion: no-preference) {
+   query, so reduced motion never holds, and behind `scripting: enabled`, so a page that runs no
+   script (which never clears the flag) shows the map at rest. */
+@media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
     [data-entrance-pending] .geo-shape,
     [data-entrance-pending] .geo-texture,
+    [data-entrance-pending] .geo-dim-hatch,
     [data-entrance-pending] .geo-value-labels,
     [data-entrance-pending] .geo-place-labels,
     [data-entrance-pending] .geo-magnitude-rings {

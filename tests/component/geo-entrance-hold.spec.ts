@@ -1,4 +1,4 @@
-import { computed, effectScope, nextTick, reactive, ref, shallowRef } from "vue";
+import { computed, effectScope, nextTick, reactive, ref, shallowRef, watch } from "vue";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -43,16 +43,23 @@ interface FakeAnimation {
     cancelled: boolean;
     cancel(): void;
     finished: Promise<void>;
+    currentTime: number;
+    el: Record<string, string>;
+    frames: Record<string, unknown>[];
 }
 function fakeEl(attrs: Record<string, string>, log: FakeAnimation[]) {
     return {
         getAttribute: (k: string) => attrs[k] ?? null,
         classList: { contains: () => false },
-        animate: () => {
+        style: {} as Record<string, string>,
+        animate: (frames: Record<string, unknown>[]) => {
             const a: FakeAnimation = {
                 cancelled: false,
                 cancel: () => void (a.cancelled = true),
                 finished: new Promise(() => {}),
+                currentTime: 0,
+                el: attrs,
+                frames,
             };
             log.push(a);
             return a;
@@ -70,18 +77,33 @@ const shapes = computed<Shape[]>(
 
 function setup(entrance: ChoroplethProps["entrance"], reduce = false) {
     const flights: FakeAnimation[] = [];
-    const els = [fakeEl({ "data-key": "01" }, flights), fakeEl({ "data-key": "02" }, flights)];
+    const els = [
+        fakeEl({ "data-key": "01" }, flights),
+        fakeEl({ "data-key": "02" }, flights),
+        fakeEl({ "data-hatch-key": "02" }, flights),
+    ];
+    // The thread layer is in the DOM only once a render has flushed after the threads mount (a
+    // pre-flush watcher stands in for the SFC's render).
+    const threadEls: ReturnType<typeof fakeEl>[] = [];
     const root = {
         animate: () => undefined,
-        querySelectorAll: (sel: string) => (sel.includes("data-key") ? els : []),
+        querySelectorAll: (sel: string) =>
+            sel.includes("data-key") ? els : sel === ".geo-entrance-thread" ? threadEls : [],
     };
     motion.pref = ref(reduce ? "reduce" : "no-preference");
     const props = reactive({ entrance }) as unknown as ChoroplethProps;
     const field = shallowRef(root as unknown as SVGSVGElement);
     const scope = effectScope();
-    const api = scope.run(() => useGeoEntrance(field, shapes, props))!;
+    const api = scope.run(() => {
+        const api = useGeoEntrance(field, shapes, props);
+        watch(api.threads, (list) => {
+            threadEls.length = 0;
+            for (const t of list) threadEls.push(fakeEl({ "data-thread-key": t.key, pathLength: "1" }, flights));
+        });
+        return api;
+    })!;
     hooks.mounted.forEach((fn) => fn());
-    return { api, props, flights, root };
+    return { api, props, flights, root, threadEls };
 }
 
 beforeEach(() => {
@@ -133,11 +155,21 @@ describe("useGeoEntrance — the marks are held until the entrance plays", () =>
         expect(api.pending.value).toBe(false);
     });
 
-    it("plays at mount when there is no observer, so the hold never strands the map", () => {
+    it("plays at mount when there is no observer, so the hold never strands the map", async () => {
         io.supported = false;
         const { api, flights } = setup({ origin: "01", kind: "ripple" });
+        await nextTick();
         expect(flights.length).toBeGreaterThan(0);
         expect(api.pending.value).toBe(false);
+    });
+
+    it("with no observer, plays the threads once their layer has rendered", async () => {
+        io.supported = false;
+        const { api, flights, threadEls } = setup({ origin: "01", kind: "threads" });
+        await nextTick();
+        expect(threadEls).toHaveLength(1);
+        expect(flights.filter((a) => a.el["data-thread-key"])).toHaveLength(1);
+        expect(api.threads.value).toHaveLength(1); // still flying, not landed without its threads
     });
 
     it("mounts the threads only after mount (the server cannot know the motion preference)", () => {
@@ -151,13 +183,53 @@ describe("useGeoEntrance — the marks are held until the entrance plays", () =>
     });
 });
 
+describe("useGeoEntrance — the flights", () => {
+    it("authors only each mark's first frame, so it lands on its own resting value", () => {
+        const { flights } = setup({ origin: "01", kind: "ripple" });
+        io.fire!([{ isIntersecting: true }]);
+        expect(flights.length).toBeGreaterThan(0);
+        for (const a of flights) {
+            expect(a.frames).toHaveLength(1);
+            expect(a.frames[0]).toMatchObject({ opacity: 0, offset: 0 });
+        }
+    });
+
+    it("lands the dim hatch with its shape", () => {
+        const { flights } = setup({ origin: "01", kind: "ripple" });
+        io.fire!([{ isIntersecting: true }]);
+        const shape = flights.find((a) => a.el["data-key"] === "02")!;
+        const hatch = flights.find((a) => a.el["data-hatch-key"] === "02")!;
+        expect(hatch).toBeDefined();
+        expect(hatch.frames).toEqual(shape.frames);
+    });
+
+    it("draws each thread with the atlas draw mechanism, its flight clocking only the fade", async () => {
+        const { flights, threadEls } = setup({ origin: "01", kind: "threads" });
+        await nextTick();
+        io.fire!([{ isIntersecting: true }]);
+        const thread = flights.find((a) => a.el["data-thread-key"])!;
+        expect(thread.frames.some((f) => "strokeDashoffset" in f)).toBe(false);
+        // buildMarkAnimation('draw') parked it undrawn over its unit dash (pathLength="1").
+        expect(threadEls[0]!.style).toMatchObject({ strokeDasharray: "1", strokeDashoffset: "1" });
+    });
+});
+
 describe("GeoChoropleth.css — the hold sits behind the motion query", () => {
     const css = readFileSync(join(__dirname, "../../src/charts/geo/GeoChoropleth.css"), "utf8");
 
-    it("hides the shapes, textures and late layers under [data-entrance-pending], only for no-preference", () => {
-        const block = css.match(/@media \(prefers-reduced-motion: no-preference\) \{([\s\S]*?)\n\}/);
+    it("hides the marks and late layers under [data-entrance-pending], only for no-preference with script", () => {
+        const block = css.match(
+            /@media \(prefers-reduced-motion: no-preference\) and \(scripting: enabled\) \{([\s\S]*?)\n\}/,
+        );
         expect(block).not.toBeNull();
-        for (const cls of ["geo-shape", "geo-texture", "geo-value-labels", "geo-place-labels", "geo-magnitude-rings"])
+        for (const cls of [
+            "geo-shape",
+            "geo-texture",
+            "geo-dim-hatch",
+            "geo-value-labels",
+            "geo-place-labels",
+            "geo-magnitude-rings",
+        ])
             expect(block![1]).toContain(`[data-entrance-pending] .${cls}`);
         expect(block![1]).toMatch(/opacity:\s*0/);
     });

@@ -6,9 +6,10 @@
 // `pending` (held hidden by the CSS, so a map scrolled into view does not paint final, then snap back
 // and pop in). Reduced motion never plays and never holds: the map paints final, and a switch to it
 // mid-entrance cancels the flight to the final frame. A map without `entrance` observes nothing.
-import { computed, onBeforeUnmount, onMounted, ref, watch, type ComputedRef, type Ref } from "vue";
-import { useIntersectionObserver } from "@vueuse/core";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type ComputedRef, type Ref } from "vue";
+import { useIntersectionObserver, useRafFn } from "@vueuse/core";
 import { stagger } from "@mkbabb/keyframes.js";
+import { buildMarkAnimation, type MarkAnimation } from "../../motion/buildMarkAnimation.js";
 import { useReducedMotion } from "../../motion/useReducedMotion.js";
 import { EASE } from "../../motion/variant-registers.js";
 import { entranceThreads, originRank, type EntranceThread } from "./geo-entrance.js";
@@ -22,6 +23,7 @@ const RIPPLE_EACH_MS = 11;
 const THREAD_EACH_MS = 42;
 /** A thread flies 62% of its run drawing and the rest fading; its feature lands at 480 ms. */
 const THREAD_MS = 1150;
+const THREAD_DRAW = 0.62;
 const THREAD_LAND_MS = 480;
 const THREAD_LEAD_MS = 200;
 const LAND_MS = 820;
@@ -31,6 +33,8 @@ const FIRST_VIEW = 0.25;
 
 /** The overlay groups (words, letters, rings) that wait until the map has mostly landed. */
 const LATE_LAYERS = ".geo-value-labels, .geo-place-labels, .geo-magnitude-rings";
+/** Every mark a key owns: the shape, its tier texture and its dim hatch land together. */
+const KEY_MARKS = "[data-key], [data-texture-key], [data-hatch-key]";
 
 export interface UseGeoEntrance {
     /** The threads to mount: non-empty only for an opted-in `threads` entrance that has not landed,
@@ -53,6 +57,20 @@ export function useGeoEntrance(
     const played = ref(false);
     const landed = ref(false);
     let running: Animation[] = [];
+    /** The thread draws: the atlas `draw` mechanism, scrubbed off each thread's own WAAPI clock. */
+    let draws: { mark: MarkAnimation; clock: Animation; delay: number }[] = [];
+    const drawLoop = useRafFn(
+        () => {
+            let drawing = false;
+            for (const d of draws) {
+                const t = (Number(d.clock.currentTime ?? 0) - d.delay) / (THREAD_MS * THREAD_DRAW);
+                d.mark.at(t);
+                if (t < 1) drawing = true;
+            }
+            if (!drawing) drawLoop.pause();
+        },
+        { immediate: false },
+    );
 
     const pending = computed(() => !!props.entrance && !played.value);
     const threads = computed<EntranceThread[]>(() => {
@@ -61,27 +79,28 @@ export function useGeoEntrance(
         return entranceThreads(e.origin, shapes.value);
     });
 
-    /** Each key's marks: the shape and its tier texture land together. */
+    /** Each key's marks: the shape, its tier texture and its dim hatch land together. */
     function marksByKey(root: SVGSVGElement): Map<string, Element[]> {
         const out = new Map<string, Element[]>();
-        for (const el of root.querySelectorAll("[data-key], [data-texture-key]")) {
-            const key = el.getAttribute("data-key") ?? el.getAttribute("data-texture-key")!;
+        for (const el of root.querySelectorAll(KEY_MARKS)) {
+            const key =
+                el.getAttribute("data-key") ??
+                el.getAttribute("data-texture-key") ??
+                el.getAttribute("data-hatch-key")!;
             out.set(key, [...(out.get(key) ?? []), el]);
         }
         return out;
     }
 
     /** A mark lands: it springs up from `from` scale. A clamped cell field (the A-04 floor owns the
-        transform) lands on opacity alone. */
+        transform) lands on opacity alone. Only the first frame is authored: the flight ends on the
+        mark's own resting value (a dimmed shape rests at its dim opacity), so nothing snaps at the end. */
     function land(els: Element[] | undefined, delay: number, from: number) {
         for (const el of els ?? []) {
             const scaled = !el.classList.contains("geo-shape--cell-floor");
             const frames = scaled
-                ? [
-                      { transform: `scale(${from})`, opacity: 0 },
-                      { transform: "scale(1)", opacity: 1 },
-                  ]
-                : [{ opacity: 0 }, { opacity: 1 }];
+                ? [{ transform: `scale(${from})`, opacity: 0, offset: 0 }]
+                : [{ opacity: 0, offset: 0 }];
             running.push(
                 el.animate(frames, { duration: LAND_MS, delay, easing: EASE.soft.css, fill: "backwards" }),
             );
@@ -92,7 +111,7 @@ export function useGeoEntrance(
     function fade(els: Iterable<Element> | undefined, delay: number, duration = FADE_MS) {
         for (const el of els ?? []) {
             running.push(
-                el.animate([{ opacity: 0 }, { opacity: 1 }], {
+                el.animate([{ opacity: 0, offset: 0 }], {
                     duration,
                     delay,
                     easing: EASE.crisp.css,
@@ -126,20 +145,27 @@ export function useGeoEntrance(
         const delay = stagger(list.length, {
             each: Math.min(THREAD_EACH_MS, THREAD_SPREAD_MS / list.length),
         });
+        // Each thread shows, draws through the first 62% of its run (the `draw` mechanism, scrubbed
+        // off this flight's clock), then fades.
         const flights = [...root.querySelectorAll<SVGPathElement>(".geo-entrance-thread")].map(
             (el, i) => {
-                const a = el.animate(
+                const start = THREAD_LEAD_MS + delay(i);
+                const clock = el.animate(
                     [
-                        { strokeDashoffset: 1, opacity: 0.85 },
-                        { strokeDashoffset: 0, opacity: 0.85, offset: 0.62 },
-                        { strokeDashoffset: 0, opacity: 0 },
+                        { opacity: 0.85 },
+                        { opacity: 0.85, offset: THREAD_DRAW, easing: EASE.crisp.css },
+                        { opacity: 0 },
                     ],
-                    { duration: THREAD_MS, delay: THREAD_LEAD_MS + delay(i), easing: EASE.crisp.css, fill: "both" },
+                    { duration: THREAD_MS, delay: start, fill: "both" },
                 );
-                running.push(a);
-                return a.finished.catch(() => undefined);
+                const mark = buildMarkAnimation(el, "draw", { ease: EASE.crisp.fn });
+                mark.at(0);
+                draws.push({ mark, clock, delay: start });
+                running.push(clock);
+                return clock.finished.catch(() => undefined);
             },
         );
+        if (draws.length) drawLoop.resume();
         void Promise.all(flights).then(() => (landed.value = true));
         list.forEach((t, i) => land(marks.get(t.key), THREAD_LEAD_MS + delay(i) + THREAD_LAND_MS, 0.3));
         for (const s of shapes.value) if (!s.hasValue) fade(marks.get(s.key), 150, 600);
@@ -148,6 +174,8 @@ export function useGeoEntrance(
 
     /** Every flight cut to its final frame (a cancelled WAAPI effect leaves the mark at rest). */
     function settle() {
+        drawLoop.pause();
+        draws = [];
         running.forEach((a) => a.cancel());
         running = [];
     }
@@ -180,11 +208,15 @@ export function useGeoEntrance(
         played.value = landed.value = true;
     }
     watch(reduced, (r) => r && rest());
-    // No observer to wait on: play at mount, so the hold never strands the map hidden.
+    // No observer to wait on: play once the mount has rendered (the thread layer mounts with it), so
+    // the hold never strands the map hidden and the threads are there to draw.
     onMounted(() => {
         mounted.value = true;
         if (reduced.value) rest();
-        else if (props.entrance && !isSupported.value) play();
+        else if (props.entrance && !isSupported.value)
+            void nextTick(() => {
+                if (!played.value && !reduced.value) play();
+            });
     });
     onBeforeUnmount(settle);
 

@@ -132,11 +132,21 @@
   first view `ripple` lands the shapes in that order, and `threads` draws a slack quadratic thread
   from the origin to every valued feature (`entranceThreads`), lands each feature as its thread
   reaches it, then fades the thread. Until it plays the map is held unpainted (`data-entrance-pending`,
-  behind `prefers-reduced-motion: no-preference`), so a map scrolled into view never paints final and
-  then pops in again; the thread layer mounts on the client only. Reduced motion paints the map final,
+  behind `prefers-reduced-motion: no-preference` and `scripting: enabled`, so a page that runs no
+  script shows the map at rest), so a map scrolled into view never paints final and then pops in
+  again; the thread layer mounts on the client only. Each mark lands on its own resting value (a
+  dimmed shape on its dim opacity, with no snap at the end), the dim hatch lands with its shape, and
+  each thread draws through the `draw` mechanism of `buildMarkAnimation`, scrubbed off its own fade
+  flight. Without an IntersectionObserver the entrance plays after the mount renders, so the threads
+  are there to draw. Reduced motion paints the map final,
   and a switch to it mid-entrance cuts every flight to rest. An `entrance` set after mount still plays
   once on first view. Without `entrance` the map renders as before. Witnesses:
-  `tests/component/geo-entrance.spec.ts`, `tests/component/geo-entrance-hold.spec.ts`, red before.
+  `tests/component/geo-entrance.spec.ts`, `tests/component/geo-entrance-hold.spec.ts`,
+  `GeoChoropleth.entrance.browser.spec.ts`, red before.
+- **`buildMarkAnimation` `draw` honours an authored `pathLength` (U/B8 A1).** The sweep ran in the
+  measured user-space length, so a `pathLength="1"` path (whose dash values are in unit lengths) drew
+  wrong. It now sweeps in the authored units. Witness: `build-mark-animation-path-length.spec.ts`,
+  red before.
 
 - **Entity drill hops (U/B7d D1 · M-06).** `EntityDescription.links` lists the views one hop from an
   entity; EntityDetail renders them as links and closes when one is followed. Witness:
