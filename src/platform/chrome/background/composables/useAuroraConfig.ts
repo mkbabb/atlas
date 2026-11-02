@@ -16,8 +16,9 @@
 // is a valid `OklchStop` triple derived from the oklab poles, NOT an invented palette.
 //
 // AT REST (U/B7 · PLAN §5.6, R-INTERACT §5): the field reads no scroll. The nuclei sit at their
-// rest position with no Tide, no section lean and no selection lean, and the breath depth is 0, so
-// glass-ui's demand gate parks the loop. The config changes only on a route or theme change.
+// rest position with no Tide, no section lean and no selection lean, and glass's STILL_FIELD zeroes
+// every drift axis and the film grain, so glass-ui's demand gate parks the loop after one frame.
+// The config changes only on a route or theme change.
 
 import { computed, reactive, toValue, type ComputedRef, type MaybeRefOrGetter } from "vue";
 import { useThemeKey } from "../../../composables/useThemeKey.js";
@@ -25,6 +26,7 @@ import { useThemeKey } from "../../../composables/useThemeKey.js";
 import {
     DEFAULT_AURORA_CONFIG,
     PAPER_WASH_GROUND,
+    STILL_FIELD,
     hexToOklchStop,
     type AuroraConfig,
     type AuroraHuePath,
@@ -297,9 +299,13 @@ export function useAuroraConfig(
         get granulation(): number {
             return profile.value.granulation;
         },
-        // The field does not breathe (U/B7 · PLAN §4.2 idle row): depth 0 lets glass-ui's demand
-        // gate settle `needsAnimation` and park the loop.
-        breathDepth: 0,
+        // THE STILL FIELD (U/B8 PF, A7 / P-G2; O-16). glass's STILL_FIELD zeroes every drift
+        // axis and the clocked film grain, so the demand gate parks the loop after the first
+        // frame and the field draws once. Before it, DEFAULT_AURORA_CONFIG's drift (nuclei and
+        // palette 0.015, warp 0.008) and PAPER_WASH's film grain (0.008) rode through the
+        // spread: the gate never parked while the reader was active, and the grain re-seeded on
+        // every frame, scrolling included. The spatial crayon tooth stays.
+        ...STILL_FIELD,
         get breathPeriod(): number {
             return profile.value.breathPeriod;
         },
