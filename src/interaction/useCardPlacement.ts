@@ -46,6 +46,15 @@ export interface Rect {
     the 8 px Gregg's ChartTip keeps from its page dock). */
 export const AVOID_GAP = 8;
 
+/** The least height a capped card keeps, so a band seat never shrinks it to an unreadable sliver. */
+export const BAND_FLOOR = 120;
+
+/** The usable band floor for a card of height `h` in a viewport `vh` tall: the card's own height or
+    `BAND_FLOOR`, whichever is less, and never more than the viewport holds inside its padding. */
+export function bandFloor(h: number, vh: number): number {
+    return Math.max(0, Math.min(h, BAND_FLOOR, vh - 2 * CARD_PAD));
+}
+
 /** A transient seat. `maxHeight` is set only when no full-size seat clears the anchor (a viewport too
     small for the card on any side): the card then caps its height to the room on one side. */
 export interface Seat {
@@ -114,9 +123,12 @@ export function transientSeat(
         s.top + h <= avoid.top - gap;
     const full = seats.find((s) => clearOfMark(s) && clearOfAvoid(s)) ?? seats.find(clearOfMark);
     if (full) return full;
-    // No full-size corner clears the mark: both axes clamp over it. Take the band above or below
-    // the anchor (at the clamped column) and cap the card to it; an avoid-rect in that column
-    // bounds the band too. The roomier band that leaves the pointer clear wins.
+    // No full-size corner clears both the pointer and the anchor. Take the band above or below the
+    // anchor (at the clamped column) and cap the card to it; an avoid-rect in that column bounds the
+    // band too. Only a band at least `bandFloor` tall is usable: the roomier usable band that leaves
+    // the pointer clear wins, then a full-size corner that clears the anchor (over the pointer if it
+    // must), then a usable band over the pointer. A viewport with none of those (too small for the
+    // card on any side) gets the roomier band raised to the floor, kept inside the viewport.
     const inColumn = avoid !== null && x0 < avoid.right + gap && x0 + w > avoid.left - gap;
     const floor = Math.min(vh - CARD_PAD, inColumn && avoid.top > anchor.y ? avoid.top - gap : Infinity);
     const ceil = Math.max(CARD_PAD, inColumn && avoid.bottom < anchor.y ? avoid.bottom + gap : -Infinity);
@@ -126,7 +138,21 @@ export function transientSeat(
         { left: x0, top: below, maxHeight: roomBelow },
         { left: x0, top: anchor.y - CARD_PAD - roomAbove, maxHeight: roomAbove },
     ].sort((a, b) => b.maxHeight - a.maxHeight);
-    return bands.find((s) => !covers(s, pointer)) ?? bands[0]!;
+    const minH = bandFloor(h, vh);
+    const usable = bands.filter((s) => s.maxHeight >= minH);
+    const band = usable.find((s) => !covers(s, pointer));
+    if (band) return band;
+    const clearOfAnchor = (s: Seat) => !covers(s, anchor);
+    const corner = seats.find((s) => clearOfAnchor(s) && clearOfAvoid(s)) ?? seats.find(clearOfAnchor);
+    if (corner) return corner;
+    if (usable[0]) return usable[0];
+    const widest = bands[0]!;
+    const top = widest.top === below ? below : anchor.y - CARD_PAD - minH;
+    return {
+        left: widest.left,
+        top: Math.max(0, Math.min(top, vh - CARD_PAD - minH)),
+        maxHeight: minH,
+    };
 }
 
 /** A SINGLE pin seats at its datum ANCHOR (the same law as the transient card), clamped on-screen. */

@@ -18,6 +18,14 @@
   the card's natural height so it never reads the cap back as its size. `HoverCard` passes no
   avoid-rect: wiring it to the dock's rect is U/B8's. Witnesses: `tests/unit/b8-card-flip-and-avoid.spec.ts`
   and `tests/unit/b8-card-no-dock-rect.spec.ts`, red before.
+- **The band fallback no longer shrinks the hover card to a sliver (U/B8 A5 repair).** The band seat
+  also fired in normal viewports when the pointer sat off the anchor and every full-size corner covered
+  one of them, and then picked whatever band cleared the pointer: 38 px at 1440x900 near the bottom-left,
+  0 px at top -16 near the top-right. A band now counts only at the usable floor (`bandFloor`: the card's
+  height or `BAND_FLOOR`, 120 px, whichever is less). A band under the floor loses to a full-size corner
+  that clears the anchor, even one over the pointer. No seat caps the card below the floor or puts its
+  top above the viewport. Witness: `tests/unit/b8-card-band-floor.spec.ts` (both cases plus a property
+  sweep), red before.
 - **A section jump lands where it was sent (U/B7d M2 · WebKit).** On the first Sections jump after a
   load, WebKit stopped the smooth scroll 360 to 381 px short when focus moved as the list closed, with
   `?at=` written and the label a section behind (2 of 25 jumps in the engine harness; the served /sci
