@@ -10,9 +10,10 @@
 // ratio (a display move or a zoom resizes the backing store), reduced motion (every change snaps,
 // and turning it on lands a flight), and the pointer and keyboard (hit test or the rank walk →
 // `hover`/`select`, and the hovered mark's group stays lit while the rest dim). The canvas is
-// `role="img"`; `summary` is its accessible text, and `unitSummary` writes one from a layout. The
-// hovered mark is announced through a polite live line (`markLabel`). A figure's table twin carries
-// the same counts.
+// `role="img"`; `summary` is its accessible text, and `unitSummary` writes one from a layout. A mark
+// the keyboard walks to is announced through a polite live line (`markLabel`); a pointer hover is
+// never announced (the pointer user sees the mark, and a sweep across the cloth would read a stream).
+// A figure's table twin carries the same counts.
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import { useDevicePixelRatio, useElementSize } from "@vueuse/core";
 import { useReducedMotion } from "../../motion/useReducedMotion.js";
@@ -63,6 +64,8 @@ const host = ref<HTMLElement | null>(null);
 const canvas = ref<HTMLCanvasElement | null>(null);
 const engine = shallowRef<UnitCanvas>();
 const hovered = ref(-1);
+/** The mark the keyboard last walked to, for the live line; -1 once the pointer takes over. */
+const walked = ref(-1);
 const reduced = useReducedMotion();
 const { width: hostWidth } = useElementSize(host);
 const { pixelRatio } = useDevicePixelRatio();
@@ -120,7 +123,8 @@ function at(e: MouseEvent) {
     const r = canvas.value!.getBoundingClientRect();
     return engine.value?.hit(e.clientX - r.left, e.clientY - r.top) ?? -1;
 }
-function hover(i: number) {
+function hover(i: number, byKey = false) {
+    walked.value = byKey ? i : -1;
     if (i === hovered.value) return;
     hovered.value = i;
     emit("hover", i);
@@ -132,7 +136,7 @@ function onClick(e: MouseEvent) {
     if (i >= 0) emit("select", i);
 }
 function onKey(e: KeyboardEvent) {
-    if (e.key === "Escape") return hover(-1);
+    if (e.key === "Escape") return hover(-1, true);
     if ((e.key === "Enter" || e.key === " ") && hovered.value >= 0) {
         e.preventDefault();
         return emit("select", hovered.value);
@@ -140,11 +144,11 @@ function onKey(e: KeyboardEvent) {
     const i = unitStep(props.layout, hovered.value, e.key);
     if (i === hovered.value) return;
     e.preventDefault();
-    hover(i);
+    hover(i, true);
 }
 
 const announce = computed(() => {
-    const i = hovered.value;
+    const i = walked.value;
     if (i < 0 || i >= props.layout.count) return "";
     return props.markLabel?.(i) ?? `${props.layout.rank[i] + 1} of ${props.layout.count}`;
 });

@@ -114,6 +114,14 @@ function buildHitIndex(l: Omit<UnitLayout, "hit">): UnitHitIndex {
     return { cell, cols, rows, start, items };
 }
 
+/**
+ * The nearest-mark rule both hit tests share: a mark closer than the best so far wins, and on a tie
+ * the lower index wins, so the answer never depends on the order the marks are visited in.
+ */
+function nearer(d: number, i: number, bestD: number, best: number) {
+    return d < bestD || (d === bestD && best >= 0 && i < best);
+}
+
 /** The mark under a point, or the nearest within one cell (the target outgrows a small mark); -1 when none. */
 export function hitTest(l: UnitLayout, px: number, py: number): number {
     const { cell, cols, rows, start, items } = l.hit;
@@ -131,11 +139,37 @@ export function hitTest(l: UnitLayout, px: number, py: number): number {
                 const dx = l.x[i] - px;
                 const dy = l.y[i] - py;
                 const d = dx * dx + dy * dy;
-                if (d < bestD || (d === bestD && best >= 0 && i < best)) {
+                if (nearer(d, i, bestD, best)) {
                     bestD = d;
                     best = i;
                 }
             }
+        }
+    }
+    return best;
+}
+
+/**
+ * `hitTest`'s rule over free positions (marks in flight, where no index holds): the nearest center
+ * within `cell` of the point, by a scan of every mark. Allocation-free.
+ */
+export function hitNearest(
+    x: ArrayLike<number>,
+    y: ArrayLike<number>,
+    count: number,
+    cell: number,
+    px: number,
+    py: number,
+): number {
+    let best = -1;
+    let bestD = cell * cell;
+    for (let i = 0; i < count; i++) {
+        const dx = x[i] - px;
+        const dy = y[i] - py;
+        const d = dx * dx + dy * dy;
+        if (nearer(d, i, bestD, best)) {
+            bestD = d;
+            best = i;
         }
     }
     return best;
@@ -146,7 +180,11 @@ export interface UnitFlowOptions {
     width: number;
     /** Frame height. Given without `cell`, the pitch is the largest that holds every mark. */
     height?: number;
-    /** The pitch, one cell per mark. Defaults to the fitted pitch, else 8. */
+    /**
+     * The pitch, one cell per mark. Defaults to the fitted pitch: with a height, the largest that
+     * holds every mark; without one, 8 or less, so a column fits the width. A frame no pitch down to
+     * `MIN_UNIT_PITCH` fits throws a RangeError.
+     */
     cell?: number;
     /** The gap between marks, as a fraction of the pitch. Default 0.15. */
     gap?: number;
@@ -156,10 +194,26 @@ export interface UnitFlowOptions {
     group?: ArrayLike<number>;
 }
 
-/** The largest pitch in `[lo, hi]` that passes `fits`, by bisection (fits is monotone in practice). */
-function fitPitch(fits: (p: number) => boolean, hi: number) {
-    let lo = 0.5;
+/** The pitch a layout falls back to without a frame height: a mark readable at a glance. */
+const DEFAULT_PITCH = 8;
+/** The smallest pitch a fit may reach: one device pixel at the capped DPR of 2. */
+export const MIN_UNIT_PITCH = 0.5;
+
+/**
+ * The pitch a flow uses: `o.cell` as given, else the largest pitch up to `hi` (the frame's short
+ * side when it has a height, else `DEFAULT_PITCH`) that passes `fits`, found by bisection (`fits` is
+ * monotone in practice). A frame that holds the marks at no pitch down to `MIN_UNIT_PITCH` is
+ * impossible, and says so: the marks are never laid out past the frame in silence.
+ */
+function resolvePitch(o: UnitFlowOptions, fits: (p: number) => boolean, hi: number, what: string): number {
+    if (o.cell !== undefined) return o.cell;
     if (fits(hi)) return hi;
+    let lo = Math.min(MIN_UNIT_PITCH, hi);
+    if (!fits(lo)) {
+        throw new RangeError(
+            `unit layout: ${what} do not fit a ${o.width} x ${o.height ?? "auto"} px frame at the minimum pitch of ${MIN_UNIT_PITCH} px`,
+        );
+    }
     for (let k = 0; k < 40; k++) {
         const mid = (lo + hi) / 2;
         if (fits(mid)) lo = mid;
@@ -168,12 +222,16 @@ function fitPitch(fits: (p: number) => boolean, hi: number) {
     return lo;
 }
 
+/** The fit's upper bound: the frame's short side when it has a height, else the default pitch. */
+const pitchCeiling = (o: UnitFlowOptions) => (o.height ? Math.min(o.width, o.height) : Math.min(o.width, DEFAULT_PITCH));
+
 function flow(n: number, o: UnitFlowOptions, snake: boolean): UnitLayout {
     const gap = o.gap ?? 0.15;
     const colsAt = (p: number) => Math.max(1, Math.floor(o.width / p + 1e-6));
-    const pitch =
-        o.cell ??
-        (o.height ? fitPitch((p) => Math.ceil(n / colsAt(p)) * p <= o.height! + 1e-6, Math.min(o.width, o.height)) : 8);
+    // One column must fit the width (past it the clamped column runs out of the frame sideways),
+    // and with a height every row must fit under it.
+    const fits = (p: number) => p <= o.width + 1e-6 && (!o.height || Math.ceil(n / colsAt(p)) * p <= o.height + 1e-6);
+    const pitch = resolvePitch(o, fits, pitchCeiling(o), `${n} marks`);
     const cols = colsAt(pitch);
     const rows = Math.ceil(n / cols);
     const x = new Float32Array(n);
@@ -222,10 +280,12 @@ export function groupedBlocksLayout(group: ArrayLike<number>, o: UnitBlockOption
     const blockGapAt = (p: number) => o.blockGap ?? p;
     const blockWAt = (p: number) => (o.width - blockGapAt(p) * (groups - 1)) / Math.max(1, groups);
     const colsAt = (p: number) => Math.max(1, Math.floor(blockWAt(p) / p + 1e-6));
-    // A fitted pitch holds the tallest block in the height AND one column in the block width: past
-    // `blockW` the clamped single column would carry the marks out of the frame sideways.
-    const fits = (p: number) => blockWAt(p) >= p - 1e-6 && Math.ceil(tallest / colsAt(p)) * p <= o.height! + 1e-6;
-    const pitch = o.cell ?? (o.height ? fitPitch(fits, Math.min(o.width, o.height)) : 8);
+    // A fitted pitch holds one column in the block width, with or without a frame height (past
+    // `blockW` the clamped single column would carry the marks out of the frame sideways), and with
+    // a height the tallest block under it.
+    const fits = (p: number) =>
+        blockWAt(p) >= p - 1e-6 && (!o.height || Math.ceil(tallest / colsAt(p)) * p <= o.height + 1e-6);
+    const pitch = resolvePitch(o, fits, pitchCeiling(o), `${n} marks in ${groups} blocks`);
     const blockW = blockWAt(pitch);
     const cols = colsAt(pitch);
     const height = o.height ?? Math.ceil(tallest / cols) * pitch;

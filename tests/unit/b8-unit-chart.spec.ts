@@ -95,6 +95,32 @@ describe("unit layouts", () => {
         }
     });
 
+    it("grouped blocks without a height still fit one column in each block", () => {
+        // Ten groups across 60 px leave blocks under 8 px wide: the default pitch must shrink to fit.
+        const group = Array.from({ length: 30 }, (_, i) => i % 10);
+        const l = groupedBlocksLayout(group, { width: 60, gap: 0 });
+        expect(l.w[0]).toBeLessThan(8);
+        for (let i = 0; i < l.count; i++) {
+            expect(l.x[i] - l.w[i] / 2).toBeGreaterThanOrEqual(-1e-4);
+            expect(l.x[i] + l.w[i] / 2).toBeLessThanOrEqual(60 + 1e-4);
+        }
+        for (const b of l.blocks) expect(b.w).toBeGreaterThanOrEqual(l.w[0] - 1e-4);
+        // A frame wide enough keeps the default pitch.
+        expect(groupedBlocksLayout([0, 1], { width: 100, gap: 0 }).w[0]).toBe(8);
+    });
+
+    it("a frame no pitch fits throws instead of laying the marks out past it", () => {
+        // A block gap that eats the whole width leaves no block for any pitch.
+        expect(() => groupedBlocksLayout([0, 1, 2], { width: 20, height: 20, blockGap: 10 })).toThrow(RangeError);
+        expect(() => groupedBlocksLayout([0, 1, 2], { width: 20, blockGap: 10 })).toThrow(RangeError);
+        // A height of a hair cannot hold a hundred thousand marks at half a pixel.
+        expect(() => gridLayout(100_000, { width: 10, height: 0.1 })).toThrow(/minimum pitch/);
+        // The fitted pitch at the floor is still a fit, not a refusal.
+        const l = gridLayout(400, { width: 10, height: 10, gap: 0 });
+        expect(l.w[0]).toBeCloseTo(0.5, 5);
+        for (let i = 0; i < l.count; i++) expect(l.y[i] + l.h[i] / 2).toBeLessThanOrEqual(10 + 1e-4);
+    });
+
     it("a layout authored as data validates its arrays", () => {
         expect(() =>
             createUnitLayout({ width: 10, height: 10, x: [1, 2], y: [1], w: [1, 1], h: [1, 1] }),
@@ -432,6 +458,30 @@ describe("unit canvas", () => {
         f.run(0);
         expect(calls.drawImage).toBe(4);
         expect(calls.fillRect).toBe(0);
+    });
+
+    it("hit-tests mid-morph against the marks where they are drawn, not their targets", () => {
+        const { canvas } = fakeCanvas();
+        const f = fakeFrames();
+        let t = 0;
+        const u = new UnitCanvas(canvas, 2, { raf: f.raf, caf: f.caf, now: () => t, morph: { duration: 100, spread: 0 } });
+        const from = createUnitLayout({ width: 100, height: 10, x: [5, 15], y: [5, 5], w: [8, 8], h: [8, 8] });
+        const to = createUnitLayout({ width: 100, height: 10, x: [85, 95], y: [5, 5], w: [8, 8], h: [8, 8] });
+        u.show(from);
+        f.run(0);
+        u.show(to);
+        t = 1;
+        f.run(t);
+        // One ms in, mark 0 is still near x = 5: the pointer there finds it, and the empty target
+        // slot at x = 85 finds nothing yet.
+        expect(u.morph.x[0]).toBeLessThan(10);
+        expect(u.hit(5, 5)).toBe(0);
+        expect(u.hit(85, 5)).toBe(-1);
+        // Landed: the layout's index answers again, at the targets.
+        t = 200;
+        f.run(t);
+        expect(u.hit(85, 5)).toBe(0);
+        expect(u.hit(5, 5)).toBe(-1);
     });
 
     it("hit-tests against the layout on screen", () => {

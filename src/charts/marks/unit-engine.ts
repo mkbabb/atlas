@@ -6,16 +6,17 @@
 //     target layout's rank, and interruptible: `morphTo` first advances to its own start time, then
 //     leaves from wherever the marks are. The keyframes.js spring is sampled ONCE into a lookup table,
 //     so a frame is arithmetic over preallocated arrays and allocates nothing.
-//   • `UnitCanvas` — the DOM half. Sizes the backing store at the device pixel ratio capped at 2,
-//     batches fills by palette entry, runs the rAF only while something moves, snaps under reduced
-//     motion, and hit-tests the layout on screen. Mark styling past a flat fill (Gregg's woven
-//     thread) is an optional sprite: one source rect per palette entry.
+//   • `UnitCanvas` — the DOM half. Sizes the backing store at the device pixel ratio capped by
+//     `cappedDpr` (lib/dpr.ts, the one atlas canvas cap), batches fills by palette entry, runs the
+//     rAF only while something moves, snaps under reduced motion, and hit-tests the marks where they
+//     are drawn. Mark styling past a flat fill (Gregg's woven thread) is an optional sprite: one
+//     source rect per palette entry.
 //
 // Framework-free: `UnitChart.vue` owns the Vue lifecycle, the CSS-variable colors and the theme flip.
 
 import { springTimingFunction, stagger } from "@mkbabb/keyframes.js";
 import { cappedDpr } from "../../lib/dpr.js";
-import { hitTest, type UnitLayout } from "./unit-layouts.js";
+import { hitNearest, hitTest, type UnitLayout } from "./unit-layouts.js";
 
 export interface UnitSpring {
     response: number;
@@ -49,7 +50,8 @@ export interface UnitMorphOptions {
 }
 
 const DEFAULT_SPRING: UnitSpring = { response: 0.5, dampingFraction: 0.68 };
-// Shared by every morph on the default spring: sampled once, on the first default-spring morph.
+// Shared by every morph on the default spring: sampled lazily, when the first `UnitMorph` without a
+// `spring` option is constructed, and reused by every later one.
 let defaultLut: Float32Array | undefined;
 
 export class UnitMorph {
@@ -98,6 +100,11 @@ export class UnitMorph {
     /** The layout the marks are in, or flying to. */
     get layout(): UnitLayout | undefined {
         return this.target;
+    }
+
+    /** A morph is in flight: the drawn positions are not yet the target layout's. */
+    get flying(): boolean {
+        return this.moving;
     }
 
     /** Nothing in flight: no morph and no alpha still easing. */
@@ -331,12 +338,16 @@ export class UnitCanvas {
     }
 
     /**
-     * The mark at a frame point (`hitTest`). It reads the target layout, not the drawn positions:
-     * mid-morph the pointer finds a mark where it is going, which is where it will stay.
+     * The mark at a frame point. At rest it reads the layout's hit index (`hitTest`); mid-morph it
+     * reads the positions last drawn (`hitNearest`), so the pointer finds the mark it is over, not
+     * the one whose slot lies there.
      */
     hit(px: number, py: number): number {
         const l = this.morph.layout;
-        return l ? hitTest(l, px, py) : -1;
+        if (!l) return -1;
+        if (!this.morph.flying) return hitTest(l, px, py);
+        const { x, y } = this.morph;
+        return hitNearest(x, y, this.count, l.hit.cell, px, py);
     }
 
     private kick() {

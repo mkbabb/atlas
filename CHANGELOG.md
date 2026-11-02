@@ -23,6 +23,14 @@
   move to the store module. Witness: `HoverCard.tap-pin.browser.spec.ts` "a card that mounts after the
   first tap ended still pins that tap's readout", red before. The sci tap spec's first segment (High
   Cost) raised no card in Chromium and WebKit 2287.
+- **The unit chart speaks keyboard moves only, hits marks where they are drawn, and refuses a frame
+  it cannot fill (U/B8 A3 review).** The live line announces a mark the keyboard walks to; a pointer
+  hover no longer speaks. Mid-morph `UnitCanvas.hit` reads the drawn positions (`hitNearest`, sharing
+  `hitTest`'s nearest rule) instead of the target layout. A fitted pitch now checks its floor: a frame
+  no pitch down to `MIN_UNIT_PITCH` (0.5 px) holds throws a RangeError instead of returning 0.5 px
+  unchecked, and `groupedBlocksLayout` and the flows without a height shrink the default 8 px pitch
+  until one column fits the width. Witness: `b8-unit-chart.spec.ts` (3 cases, red before) and
+  `UnitChart.browser.spec.ts` (the DPR wiring, the keyboard walk and blur, the silent pointer).
 - **The ink clamps hold their floors on a plate (U/B7d M3 repair 1 · T-12).** The light body ink moves from
   L 0.47 to 0.44 and the large ink from 0.62 to 0.60; they read 4.37:1 and 2.96:1. Witness:
   `ink-floor.spec.ts`.
