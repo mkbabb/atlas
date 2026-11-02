@@ -46,6 +46,13 @@
   Every builder now holds a given cell to the fit's own test (one column inside the frame or block,
   rows under a given height) and throws the same RangeError when it fails. Witness:
   `b8-unit-chart.spec.ts` "an explicit cell the frame cannot hold…", red before.
+- **The step-loop allocation witness is deterministic (U/B8 A3 review).** It read bytes per frame as
+  the slope between two runs, so the runtime's own allocation landing in the long run (a tier-up
+  under load) failed it 3 times in 10 (4.2 to 4.8 against a limit of 4). The structural check now
+  traps every typed-array and `Array` construction during flight and settle, and the measured check
+  subtracts an empty read per trial and takes the minimum over trials, which runtime noise only
+  raises; the limit tightens from 4 to 1 B per frame. Witness: `b8-unit-chart.spec.ts` "the
+  allocation probe is immune to a runtime burst…" (10.5 B per frame under the slope, red before).
 - **The ink clamps hold their floors on a plate (U/B7d M3 repair 1 · T-12).** The light body ink moves from
   L 0.47 to 0.44 and the large ink from 0.62 to 0.60; they read 4.37:1 and 2.96:1. Witness:
   `ink-floor.spec.ts`.

@@ -361,6 +361,38 @@ describe("morph engine", () => {
         expect(() => m.snap(gridLayout(5, { width: 40, cell: 10 }))).toThrow(/count/);
     });
 
+    // Bytes per frame, from V8's running allocation count (Node 26 `total_allocated_bytes`). A read
+    // allocates too, and by a varying amount, so each trial subtracts an empty read taken just before
+    // it. The runtime's own allocation (a tier-up or a deopt landing mid-trial, more likely under
+    // load) only ever adds bytes, so the minimum over trials is the frame's own rate: a frame that
+    // allocates shows it in every trial, a clean one reads ~0 once compiled. The trials stop at the
+    // first one under `below`, and run at most `trials` (the interpreter boxes floats until the loop
+    // is compiled, so the first few always read high). Undefined on an older Node without the count.
+    function allocationPerFrame(frame: (t: number) => unknown, below = -Infinity, trials = 40, frames = 20_000) {
+        const stats = () => getHeapStatistics() as unknown as { total_allocated_bytes?: number };
+        if (stats().total_allocated_bytes === undefined) return undefined;
+        const allocated = () => stats().total_allocated_bytes!;
+        let best = Infinity;
+        let t = 0;
+        for (let k = 0; k < trials && best >= below; k++) {
+            const r0 = allocated();
+            const r1 = allocated();
+            const end = t + frames;
+            for (; t < end; t++) frame(t);
+            const r2 = allocated();
+            best = Math.min(best, (r2 - r1 - (r1 - r0)) / frames);
+        }
+        return best;
+    }
+
+    function smallMorph() {
+        const small = new UnitMorph(200, { duration: 1e9, spread: 2000 });
+        small.snap(gridLayout(200, { width: 400, cell: 8 }));
+        small.morphTo(boustrophedonLayout(200, { width: 300, cell: 6 }), 0);
+        small.focus(0);
+        return small;
+    }
+
     it("allocates nothing in the step loop", () => {
         const n = 2000;
         const from = gridLayout(n, { width: 400, cell: 8 });
@@ -370,51 +402,73 @@ describe("morph engine", () => {
         m.morphTo(to, 0);
         m.focus(0);
 
-        // No typed array is built by a frame.
-        const RealF32 = globalThis.Float32Array;
+        // Structural: no typed array or Array is constructed by a frame, mid-flight and settling.
+        const g = globalThis as unknown as Record<string, new (...a: never[]) => unknown>;
+        const names = [
+            "Float32Array",
+            "Float64Array",
+            "Int8Array",
+            "Int16Array",
+            "Int32Array",
+            "Uint8Array",
+            "Uint8ClampedArray",
+            "Uint16Array",
+            "Uint32Array",
+            "Array",
+        ];
+        const real = names.map((k) => g[k]);
         let built = 0;
-        globalThis.Float32Array = class extends RealF32 {
-            constructor(...args: ConstructorParameters<typeof Float32Array>) {
-                super(...args);
-                built++;
-            }
-        } as typeof Float32Array;
+        names.forEach((k, j) => {
+            const Real = real[j] as unknown as new (...a: unknown[]) => object;
+            g[k] = new Proxy(Real, {
+                construct(target, args, newTarget) {
+                    built++;
+                    return Reflect.construct(target, args, newTarget);
+                },
+                apply(target, self, args) {
+                    built++;
+                    return Reflect.apply(target as unknown as (...a: unknown[]) => unknown, self, args);
+                },
+            }) as never;
+        });
+        let more = true;
         try {
             for (let t = 0; t < 200; t++) m.step(t * 16);
+            for (let t = 0; t < 2000 && more; t++) more = m.step(4000 + t * 16);
         } finally {
-            globalThis.Float32Array = RealF32;
+            names.forEach((k, j) => (g[k] = real[j]));
         }
         expect(built).toBe(0);
 
-        // Bytes per frame, from V8's running allocation count (Node 26 `total_allocated_bytes`). A
-        // read carries a fixed overhead, so the rate is the slope between a short and a long run.
-        // The probe is shown able to see one small object per frame, so a clean read is real.
-        // An older Node has no such count: the typed-array check above is then the whole witness.
-        const stats = () => getHeapStatistics() as unknown as { total_allocated_bytes?: number };
-        if (stats().total_allocated_bytes === undefined) return;
-        const allocated = () => stats().total_allocated_bytes!;
-        const run = (frame: (t: number) => unknown, frames: number) => {
-            const before = allocated();
-            for (let t = 0; t < frames; t++) frame(t);
-            return allocated() - before;
-        };
-        const perFrame = (frame: (t: number) => unknown) => {
-            run(frame, 5000); // warm: the interpreter boxes floats until the loop is compiled
-            return (run(frame, 200_000) - run(frame, 20_000)) / 180_000;
-        };
-        const small = new UnitMorph(200, { duration: 1e9, spread: 2000 });
-        small.snap(gridLayout(200, { width: 400, cell: 8 }));
-        small.morphTo(boustrophedonLayout(200, { width: 300, cell: 6 }), 0);
-        small.focus(0);
+        // Measured: the probe sees one small object per frame, so a clean read is real.
+        const small = smallMorph();
         let held: unknown = null;
-        const control = perFrame((t) => {
+        const control = allocationPerFrame((t) => {
             small.step(t);
             held = { t };
-        });
+        }, -Infinity, 8);
         void held;
-        const clean = perFrame((t) => small.step(t));
+        const clean = allocationPerFrame((t) => small.step(t), 1);
+        if (control === undefined || clean === undefined) return; // the structural check is then the witness
         expect(control).toBeGreaterThan(16);
-        expect(clean).toBeLessThan(4);
+        expect(clean).toBeLessThan(1);
+    });
+
+    it("the allocation probe is immune to a runtime burst landing mid-run", () => {
+        // A one-off 1.6 MB allocation the frame does not own (a tier-up under load, modelled): a slope
+        // or a mean over the run would carry it as ~10 B per frame; the per-trial minimum does not.
+        const small = smallMorph();
+        let calls = 0;
+        let held: unknown = null;
+        const clean = allocationPerFrame((t) => {
+            small.step(t);
+            if (++calls === 10_000) held = new Array(200_000).fill(0);
+        }, 1);
+        void held;
+        if (clean === undefined) return;
+        // The burst landed in the first trial, so the read came from a later one.
+        expect(calls).toBeGreaterThan(20_000);
+        expect(clean).toBeLessThan(1);
     });
 });
 
