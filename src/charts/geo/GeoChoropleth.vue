@@ -28,6 +28,7 @@ import {
     type ChoroplethProps,
     type Shape,
 } from "./useChoroplethShapes.js";
+import { useGeoEntrance } from "./useGeoEntrance.js";
 
 const props = withDefaults(
     defineProps<
@@ -69,6 +70,7 @@ const props = withDefaults(
         redundantChannel: "auto",
         symbolR: undefined,
         placeLabel: undefined,
+        entrance: undefined,
         ariaLabel: "Geographic choropleth",
         sourceGridId: undefined,
         sourceGridOpen: false,
@@ -83,7 +85,6 @@ const {
     WIDTH,
     HEIGHT,
     shapes,
-    drawOn,
     patternDefs,
     textureFor,
     labelsMounted,
@@ -100,6 +101,9 @@ const { width: fieldWidth } = useElementSize(field);
 const cellFloor = computed<number>(() =>
     cellFloorScale(shapes.value, fieldWidth.value / WIDTH.value),
 );
+
+// U/B8 A1 — the opt-in entrance from an origin (ripple or threads), played once on first view.
+const { threads: entranceThreads, pending: entrancePending } = useGeoEntrance(field, shapes, props);
 
 function isRaised(key: string): boolean {
     return props.raisedKeys?.has(key) ?? false;
@@ -222,6 +226,8 @@ const tableRows = computed(() =>
             role="img"
             :aria-label="ariaLabel"
             :aria-details="sourceGridOpen ? sourceGridId || undefined : undefined"
+            :data-entrance="entrance?.kind"
+            :data-entrance-pending="entrancePending || undefined"
             data-testid="geo-choropleth-svg"
             @pointerup="onFieldPointerUp"
             @click="onFieldClick"
@@ -307,11 +313,7 @@ const tableRows = computed(() =>
                         :data-kbd-active="kbdActiveKey === s.key ? 'true' : undefined"
                         aria-hidden="true"
                         class="geo-shape stroke-background outline-none transition-opacity duration-200 dimmed:opacity-70 raised:opacity-100 selected:[stroke-width:2.5]"
-                        :class="{
-                            'geo-shape--draw': drawOn,
-                            'geo-shape--cell-floor': cellFloor > 1,
-                        }"
-                        :style="drawOn ? { '--rank': s.rank ?? 0 } : undefined"
+                        :class="{ 'geo-shape--cell-floor': cellFloor > 1 }"
                         :stroke-width="isRaised(s.key) ? 2 : 0.5"
                         @mouseenter="onEnter(s)"
                         @mouseleave="onLeave"
@@ -324,22 +326,38 @@ const tableRows = computed(() =>
                         :fill="textureFor(s)!"
                         :data-texture-key="s.key"
                         class="geo-texture pointer-events-none"
-                        :class="{
-                            'geo-shape--draw': drawOn,
-                            'geo-shape--cell-floor': cellFloor > 1,
-                        }"
-                        :style="drawOn ? { '--rank': s.rank ?? 0 } : undefined"
+                        :class="{ 'geo-shape--cell-floor': cellFloor > 1 }"
                         aria-hidden="true"
                     />
                     <path
                         v-if="isDimmed(s.key)"
                         :d="s.d"
                         fill="url(#geo-dim-hatch)"
-                        class="pointer-events-none"
+                        :data-hatch-key="s.key"
+                        class="geo-dim-hatch pointer-events-none"
                         :class="{ 'geo-shape--cell-floor': cellFloor > 1 }"
                         aria-hidden="true"
                     />
                 </template>
+            </g>
+            <!-- U/B8 A1 · THE ENTRANCE THREADS — slack threads from the origin to each valued
+                 feature, undrawn at rest; the entrance draws each, lands its feature and fades it,
+                 then unmounts the layer. Mounted only for an opted-in `threads` entrance, never
+                 under reduced motion. -->
+            <g
+                v-if="entranceThreads.length"
+                class="geo-entrance-threads"
+                aria-hidden="true"
+                data-testid="geo-entrance-threads"
+            >
+                <path
+                    v-for="t in entranceThreads"
+                    :key="`thread-${t.key}`"
+                    :d="t.d"
+                    :data-thread-key="t.key"
+                    pathLength="1"
+                    class="geo-entrance-thread"
+                />
             </g>
             <!-- D-02 · THE MAGNITUDE RINGS (the graduated-symbol channel) — ring AREA carries the
                  caller's second quantity over the hue-borne first; hairline foreground ink,

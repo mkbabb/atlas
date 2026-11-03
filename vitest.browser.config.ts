@@ -60,6 +60,24 @@ export default defineConfig({
                 emulateMotion: async ({ page }, reducedMotion: "reduce" | "no-preference") => {
                     await page.emulateMedia({ reducedMotion });
                 },
+                // Render served markup in a context that runs no page script (the browser's own,
+                // closed in `finally`) and read each match's painted opacity, 0 when hidden: the
+                // no-JS witness for a hold the client is meant to release.
+                noScriptOpacity: async ({ page }, html: string, selector: string) => {
+                    const context = await page.context().browser()!.newContext({ javaScriptEnabled: false });
+                    try {
+                        const p = await context.newPage();
+                        await p.setContent(html);
+                        return await p.$$eval(selector, (els) =>
+                            els.map((el) => {
+                                const cs = getComputedStyle(el);
+                                return cs.visibility === "hidden" ? 0 : Number(cs.opacity);
+                            }),
+                        );
+                    } finally {
+                        await context.close();
+                    }
+                },
                 // Rest the pointer in the page's far corner, outside every spec's mount, so a file
                 // never starts with the pointer where the last one left it (tests/browser/engine-setup.ts).
                 parkPointer: async ({ page }) => {
