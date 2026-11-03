@@ -28,14 +28,20 @@ import {
     type SelectionKey,
     type SelectionKind,
 } from "../../charts/contract/selection-contract.js";
-// The LEA→county hop reads the TOPOLOGY-FREE `leaJoin` (NOT `geometry.ts`). `geometry.ts`
-// statically imports the us-atlas states topology (the `geo-*.js` chunk) + the inlined
-// NC-counties arcs; importing the join from THERE would drag that topology into the chrome
-// chain (`useViewParams` ← `useVizOptions` ← VizPlate → the shared `charts-host` chunk EVERY
-// route pulls), so /demand (zero geo marks) + the gallery would parse-block the map topology
-// they never draw (J-PERF arm d, the geo leak). `leaJoin.leaToCountyFips` matches county NAMES
-// from the committed glyph registry, so the focus county-hop stays synchronous + geo-free.
-import { leaToCountyFips } from "../../data/leaJoin.js";
+// The LEA→county hop reads the TOPOLOGY-FREE `leaJoin` (NOT `geometry.ts`, which would drag the
+// map topology into the chrome chain: J-PERF arm d, the geo leak). It is LOADED ON DEMAND (U/B8 PF,
+// entry JS): its two name tables (`lea-to-geoid.json` 5,452 B, `nc-county.names.json` 1,803 B)
+// rode in every route's entry for a hop only a `?focus` deep link resolved to a county grain takes.
+// The join loads when such a focus is present or first asked for; the answer is reactive, so a
+// computed over `focusForGrain` re-runs when it lands.
+type LeaToCounty = (lea: string | number) => string | null;
+const leaToCounty = shallowRef<LeaToCounty | null>(null);
+let leaJoinLoad: Promise<void> | null = null;
+function loadLeaJoin(): void {
+    leaJoinLoad ??= import("../../data/leaJoin.js").then((m) => {
+        leaToCounty.value = m.leaToCountyFips;
+    });
+}
 
 // ── THE `?focus` CROSS-ROUTE CODEC (I-UX.a · UX-S3 · the entity through-line) ──────────────────
 //
@@ -83,6 +89,7 @@ const NC_STATE_FIPS = "37";
 export function resolveFocusToGrain(
     source: SelectionKey,
     target: SelectionKind,
+    toCounty: LeaToCounty,
 ): SelectionKey | null {
     // Same grain — pass through verbatim (the round-trip identity case).
     if (source.kind === target) return source;
@@ -103,7 +110,7 @@ export function resolveFocusToGrain(
     // The COUNTY rung — a school/district resolves through the shipped LEA→county join
     // (`leaJoin`, topology-free — see the import note above).
     if (target === "county") {
-        const fips = leaToCountyFips(source.id);
+        const fips = toCounty(source.id);
         if (!fips) return null;
         return { kind: "county", id: fips, key: encodeSelKey("county", fips) };
     }
@@ -323,8 +330,26 @@ export const useViewParams = defineStore("platform:viewParams", () => {
      */
     function focusForGrain(target: SelectionKind): SelectionKey | null {
         const f = focusKey.value;
-        return f ? resolveFocusToGrain(f, target) : null;
+        if (!f) return null;
+        if (target === "county" && f.kind !== "county") {
+            const join = leaToCounty.value;
+            if (!join) {
+                loadLeaJoin();
+                return null; // reactive: re-resolves when the join lands
+            }
+            return resolveFocusToGrain(f, target, join);
+        }
+        return resolveFocusToGrain(f, target, () => null);
     }
+    // A deep link that carries a district or school focus loads the join at once, so the county
+    // hop is in hand by the time a county-grain view asks for it.
+    watch(
+        focusKey,
+        (f) => {
+            if (f && (f.kind === "district" || f.kind === "school")) loadLeaJoin();
+        },
+        { immediate: true },
+    );
 
     // ── `?sel`: READ ON LOAD, NEVER WRITTEN (U-F60 cl. 4) ────────────────────────────────
     const SEL_KEY = "sel";

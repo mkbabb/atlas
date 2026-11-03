@@ -92,6 +92,12 @@ function measure(): void {
     });
 }
 function readBand(): void {
+    // The phone register draws no pager, so it has no band to read (U/B8 PF, P-2): the read was
+    // two getComputedStyle calls on every section change of a phone scroll.
+    if (props.isPhone) {
+        headingInBand.value = false;
+        return;
+    }
     bandFoot = bandPx() - PAGER_CLEARANCE_PX;
     measure();
 }

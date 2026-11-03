@@ -10,7 +10,7 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { LayoutGrid } from "@lucide/vue";
 import { Select, SelectContent, SelectItem, SelectSeparator } from "@mkbabb/glass-ui/select";
-import { DockTrigger } from "@mkbabb/glass-ui/dock";
+import { DockTrigger } from "@mkbabb/glass-ui/dock-trigger";
 import { useDashboardRegistry } from "../../../../contract/index.js";
 import { siteTransition } from "../site-transition.js";
 

@@ -5,7 +5,7 @@
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { Select, SelectContent, SelectItem } from "@mkbabb/glass-ui/select";
-import { DockTrigger } from "@mkbabb/glass-ui/dock";
+import { DockTrigger } from "@mkbabb/glass-ui/dock-trigger";
 import { siteTransition } from "../site-transition.js";
 import type { SiteSubject } from "../site.js";
 
