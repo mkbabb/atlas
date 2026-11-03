@@ -12,6 +12,7 @@
 export * from "./bounds.js";
 export * from "./dpr.js";
 export * from "./regions.js";
+export * from "./compareCells.js";
 export * from "./perf/inp-probe.js";
 
 // ── v1.0.2 (O-B10 re-cut) — THE PROSE-FORMATTER LIGHT SURFACE ──────────────────────────────────

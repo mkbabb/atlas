@@ -2,15 +2,17 @@
 // `entrance` once, on first view: `ripple` lands each shape in `originRank` order, `threads` draws a
 // slack thread from the origin to every valued feature, lands the feature as its thread reaches it,
 // then fades the thread. The motion is WAAPI on the shapes the SFC already draws, timed by the
-// keyframes.js `stagger` and eased by the atlas spring registers. Until it plays the marks are
+// keyframes.js `stagger` and eased by the atlas spring registers. It plays under the atlas entrance
+// law (`useFirstViewTarget`: 130 ms in view, after any deep link lands). Until it plays the marks are
 // `pending` (held hidden by the CSS, so a map scrolled into view does not paint final, then snap back
 // and pop in). Reduced motion never plays and never holds: the map paints final, and a switch to it
 // mid-entrance cancels the flight to the final frame. A map without `entrance` observes nothing.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type ComputedRef, type Ref } from "vue";
-import { useIntersectionObserver, useRafFn } from "@vueuse/core";
+import { useRafFn } from "@vueuse/core";
 import { stagger } from "@mkbabb/keyframes.js";
 import { buildMarkAnimation, type MarkAnimation } from "../../motion/buildMarkAnimation.js";
 import { useReducedMotion } from "../../motion/useReducedMotion.js";
+import { useFirstViewTarget } from "../../motion/useFirstView.js";
 import { EASE } from "../../motion/variant-registers.js";
 import { entranceThreads, originRank, type EntranceThread } from "./geo-entrance.js";
 import type { ChoroplethProps, Shape } from "./useChoroplethShapes.js";
@@ -193,12 +195,14 @@ export function useGeoEntrance(
         played.value = true;
     }
 
-    // The target clears once played (the observer disconnects), and arms when `entrance` turns on
-    // after mount, so a live opt-in still plays once on its first view.
-    const { isSupported } = useIntersectionObserver(
+    // The first view is the atlas entrance law (U/B8 A9, motion/useFirstView.ts): 130 ms in view,
+    // after any deep link has landed, so a jump past the map does not spend its entrance. The target
+    // clears once played, and arms when `entrance` turns on after mount, so a live opt-in still plays
+    // once on its first view.
+    const { isSupported } = useFirstViewTarget(
         computed(() => (props.entrance && !played.value && !reduced.value ? field.value : null)),
-        ([entry]) => {
-            if (entry?.isIntersecting && !played.value) play();
+        () => {
+            if (!played.value) play();
         },
         { threshold: FIRST_VIEW },
     );

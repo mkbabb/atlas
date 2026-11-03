@@ -17,11 +17,81 @@ export function onNarrativeRestoreSettled(consumer: RestoreConsumer): () => void
     return () => consumers.delete(consumer);
 }
 
+// ── THE LANDING HOLD (U/B8 A9) ──────────────────────────────────────────────────────────────────
+// A page opened on a deep link scrolls to its anchor once the sections have mounted. Until then,
+// every element above the anchor sits in view at the top of the page; an entrance that played there
+// would be used up off the reader's screen. So entrances wait for the landing: `whenNarrativeLanded`
+// runs its callback at once when no restore is owed, and after the restore settles when one is.
+// The dock's stepper is the one restorer: it marks the restore begun when it has an anchor, and
+// publishes the settle (aborted or not) on every path, including an anchor that names nothing.
+
+/** The URL keys that carry a narrative anchor (read by `useViewParams`; the `#fragment` is the third). */
+export const NARRATIVE_AT_KEY = "at";
+export const NARRATIVE_SCENE_KEY = "scene";
+
+type LandingState = "unknown" | "landing" | "landed";
+let landing: LandingState = "unknown";
+let openedOnLink: boolean | null = null;
+const afterLanding = new Set<() => void>();
+
+/** Whether the document was opened on a narrative link: read once, from the address it loaded with. */
+function pageOpenedOnLink(): boolean {
+    if (openedOnLink === null) {
+        if (typeof location === "undefined") openedOnLink = false;
+        else {
+            const q = new URLSearchParams(location.search);
+            openedOnLink = q.has(NARRATIVE_AT_KEY) || q.has(NARRATIVE_SCENE_KEY) || location.hash.length > 1;
+        }
+    }
+    return openedOnLink;
+}
+
+/** True while a deep-link restore is owed and has not settled. */
+export function narrativeLandingHeld(): boolean {
+    return landing === "landing" || (landing === "unknown" && pageOpenedOnLink());
+}
+
+/** Run `start` once no deep-link restore is owed: now, or when the owed restore settles. */
+export function whenNarrativeLanded(start: () => void): () => void {
+    if (!narrativeLandingHeld()) {
+        start();
+        return () => undefined;
+    }
+    afterLanding.add(start);
+    return () => afterLanding.delete(start);
+}
+
+function land(): void {
+    landing = "landed";
+    for (const start of [...afterLanding]) {
+        afterLanding.delete(start);
+        start();
+    }
+}
+
+/** The restorer has an anchor and is driving to it: entrances hold until its settle. */
+export function beginNarrativeRestore(): void {
+    landing = "landing";
+}
+
+/** The restorer found no anchor to restore: nothing is owed, entrances go live. */
+export function markNarrativeRestoreAbsent(): void {
+    land();
+}
+
+/** Test seam: forget the landing state (a new document). */
+export function resetNarrativeLanding(opened: boolean | null = null): void {
+    landing = "unknown";
+    openedOnLink = opened;
+    afterLanding.clear();
+}
+
 /** Publish one settled deep-link restore. `true` means a scene consumed its authored step. */
 export function settleNarrativeRestore(
     anchor: NarrativeAnchor,
     settlement: NarrativeRestoreSettlement,
 ): boolean {
+    land();
     let consumed = false;
     for (const consumer of [...consumers])
         consumed = consumer(anchor, settlement) === true || consumed;

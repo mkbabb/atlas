@@ -2,6 +2,43 @@
 
 ## Unreleased (8.0.0 train)
 
+### Features (U/B8 lane DV)
+
+- **Table view in every figure's dock (U/B8 A4 · owner O-18, O-19).** The plate dock's persistent seat
+  carries one pressed-state toggle, "Table view of <title>", live while the dock is closed. One click
+  swaps the figure for its export rows (`contract.export.rows()`) in the glass `DataTable`, in the
+  figure's own box: the figure stays mounted and laid out underneath (hidden and inert), so a chart
+  never resizes to zero and the page height does not move. Both columns sort; a blank stays last in
+  both directions. The table loads on the first press (`lazy-PlateTable` chunk). The source-data
+  control in the open dock now shows a `Database` glyph, so the two tables never share an icon. New:
+  `PlateTable.vue`, `plate-view.ts` (`PlateView`, `PLATE_VIEW_KEY`), `PlateDock`'s `view` prop and
+  `update:view` event. A composed stage owns its graphic's dock, so `ChapterStage` provides the view
+  and its graphic's plate reads it; a scene change keeps the reader's view.
+  A closed dock with the toggle is two tab stops (the toggle, then the handle). Witnesses:
+  `PlateTable.browser.spec.ts`, `b8-plate-view.spec.ts`, red before.
+- **One table sort (U/B8 A4).** `lib/compareCells.ts`: `cellSortKey`, `compareCells`, `sortRowsBy`.
+  Formatted values read back to their magnitude (`$730M` below `$1.86B`, `500 Mbps` below `7 Gbps`);
+  blanks (`""`, `—`, `n/a`) last in both directions; text compares with numeric runs. The data viewer
+  sorts through it too, which moves an empty cell from first to last ascending. Witnesses:
+  `b8-compare-cells.spec.ts`, `b8-one-table-sort.spec.ts`, red before.
+- **One entrance law (U/B8 A9 · P-G4).** `motion/useFirstView.ts`: `observeFirstView`,
+  `useFirstViewTarget` (over a live target, re-armed when it changes) and `useEntrance`. An entrance plays once, after 130 ms in view (a tall element counts at half the
+  viewport); a pass-through does not use it up; on a page opened on a deep link it waits until the
+  restore settles (`whenNarrativeLanded`, `narrativeLandingHeld`, `beginNarrativeRestore`,
+  `markNarrativeRestoreAbsent` in `narrative-restore.ts`; the dock stepper marks both edges); under
+  reduced motion it rests. `AnimatedRule` draws under it. `NARRATIVE_AT_KEY` and `NARRATIVE_SCENE_KEY`
+  are the one spelling of the anchor keys. Witnesses: `b8-first-view.spec.ts`,
+  `AnimatedRule.browser.spec.ts` "the entrance law (A9)", red before.
+
+### Changes (U/B8 lane DV)
+
+- **A chart's first paint is at rest (U/B8 P-G4).** `useEChart` overlays `animation: false` on the
+  first push only. The rise or draw a plate's base `animation: true` played at mount ran off screen
+  for an eager chart below the fold, or half-seen for a lazy one mounted 200 px early. Later paints
+  keep the plate's flag, so filters, re-ranks and morphs still move. Witness:
+  `b8-echart-first-paint.spec.ts`, red before. `b8-no-looping-chart-motion.spec.ts` pins the
+  no-loop law (it holds at b25200d).
+
 ### Fixes
 
 - **The dead map-draw hook is deleted (U/B8 A1).** The ripple stays on WAAPI, and nothing has read

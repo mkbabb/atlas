@@ -19,6 +19,7 @@ import { defineStore } from "pinia";
 import { useRoute } from "vue-router";
 import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from "vue";
 import { useUrlState } from "../composables/useUrlState.js";
+import { NARRATIVE_AT_KEY, NARRATIVE_SCENE_KEY } from "../../motion/narrative-restore.js";
 import { useYearScope, type UseYearScope } from "../../data/useYearScope.js";
 import { useActiveDashboard } from "./useActiveDashboard.js";
 import {
@@ -394,8 +395,8 @@ export const useViewParams = defineStore("platform:viewParams", () => {
     // `?sel`/filter cells on an enlarge). The ChartFrame + VizPlate consumer re-point (A1·§3.C) CO-LANDS
     // with K-FILTER-UNIFIED's `figOpen` (A1·§3.D) so the `k0-one-url-bag` gate flips in ONE step (a
     // single surviving private `?fig` bag keeps it RED) — K-ACTIVE ships the codec, the fold co-lands.
-    const AT_KEY = "at";
-    const SCENE_KEY = "scene";
+    const AT_KEY = NARRATIVE_AT_KEY;
+    const SCENE_KEY = NARRATIVE_SCENE_KEY;
     const FIG_KEY = "fig";
 
     /** A `?scene` link promoted onto its beat's anchor (`resolveSceneAnchor`), held in memory. U-F60

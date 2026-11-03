@@ -418,6 +418,30 @@ Every custom `VizAlternate` now requires `morph: "same-instance" | "cross-instan
 
 The dedicated public entry points introduced here are `@mkbabb/atlas/events` and `/skin`. The `/viz-set` and `/stage` subpaths introduced in this release were later withdrawn (in 7.0.0); their facilities re-home to the `@mkbabb/atlas/charts` and `/story` barrels, which re-export them. Existing chart and story barrels continue to re-export their corresponding facilities.
 
+## The figure's table view and the entrance law (U/B8 lane DV)
+
+- `PlateDock` takes an optional `view: PlateView` and emits `update:view`. With a `view`, a closed
+  dock is two tab stops: the Table view toggle, then the handle. A consumer test that counts one
+  stop per closed figure dock now counts two.
+- A host that owns a plate's dock (as `ChapterStage` does) provides `PLATE_VIEW_KEY` from
+  `charts/frame/plate-view`; the plate inside reads its view from it.
+- The source-data control in the open dock shows `Database`, not `Table2`. Its label is unchanged.
+- `useEChart`'s first push carries `animation: false`. A consumer test that reads a first-render
+  ECharts animation now reads the final frame at once; later pushes keep the plate's flag.
+- Sort a table through `sortRowsBy` / `compareCells` from `@mkbabb/atlas/lib`; do not write a local
+  comparator. `DataViewerRoute` now puts an empty cell last ascending.
+- An entrance plays through `useEntrance`, `useFirstViewTarget` or `observeFirstView` from
+  `@mkbabb/atlas/motion`; do not arm one on a raw IntersectionObserver. A restorer that is not the
+  dock stepper must call `beginNarrativeRestore()` / `markNarrativeRestoreAbsent()` and publish
+  `settleNarrativeRestore`, or entrances on a deep-linked page hold.
+- The first-plate affordance lift (`useAffordanceHint`) plays under the same law: after 130 ms in
+  view, not on a pass-through, and after a deep link has landed. A consumer test that reads
+  `data-affordance-lift` on the first intersection now waits for the dwell. The lift no longer has
+  its own reading band (the old `-40%` bottom `rootMargin`): like every entrance, it counts the
+  plate as in view once a quarter of it, or half the viewport's height of it, is on screen,
+  anywhere on screen. A consumer that relied on the lift waiting until the plate reached the upper
+  60% of the viewport now sees it sooner.
+
 ## Update peers
 
 Install versions satisfying `@mkbabb/glass-ui ^6.0.0`, `@mkbabb/keyframes.js ^5.3.5`, `@mkbabb/pencil-boil ^0.9.2`, and `@mkbabb/value.js ^3.1.0`. These published peers compose directly; do not use `--force`, `--legacy-peer-deps`, or a consumer override to assemble the dependency tree.

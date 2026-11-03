@@ -10,6 +10,7 @@ import { createMemoryHistory, createRouter } from "vue-router";
 import { useDockStepper } from "./useDockStepper";
 import type { DashboardContext } from "../../../../contract/index.js";
 import { installDashboardRegistry } from "../../../../contract/registry-inject.js";
+import { narrativeLandingHeld, resetNarrativeLanding } from "../../../../motion/narrative-restore";
 
 const BEATS = ["beat-a", "beat-b", "beat-c", "beat-d"];
 const ctx = {
@@ -123,5 +124,35 @@ describe("a #fragment deep link lands on its beat (M-5)", () => {
         await wait(1200);
         expect(window.scrollY).toBe(0);
         expect(settles).toEqual(["settled"]);
+    });
+});
+
+// U/B8 A9 (DV repair 1): the stepper is the one restorer, so it owns the landing hold every entrance
+// waits on (motion/narrative-restore). It marks the restore begun when it has an anchor, even when
+// the document did not open on that link (a client-side route change carries it), and releases the
+// hold when it has none, even when the address the page opened with looked like a link. Fails
+// before: the stepper only published the settle, so an anchor reached by a route change left the
+// entrances live over the restore, and a link with nothing to restore held them for the page's life.
+describe("the stepper owns the entrance landing hold (A9)", () => {
+    afterEach(() => resetNarrativeLanding(false));
+
+    it("an anchor the document did not open on holds entrances until the restore settles", async () => {
+        resetNarrativeLanding(false);
+        expect(narrativeLandingHeld()).toBe(false);
+        await mount("/k3#beat-c");
+        done = unmountLast;
+        await wait(200); // the section nodes resolved and the restore is driving, not yet settled
+        expect(narrativeLandingHeld()).toBe(true);
+        await wait(1600);
+        expect(narrativeLandingHeld()).toBe(false);
+    });
+
+    it("no anchor to restore releases the hold of a page that opened on a link", async () => {
+        resetNarrativeLanding(true);
+        expect(narrativeLandingHeld()).toBe(true);
+        await mount("/k3");
+        done = unmountLast;
+        await wait(200);
+        expect(narrativeLandingHeld()).toBe(false);
     });
 });
