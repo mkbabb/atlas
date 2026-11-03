@@ -52,6 +52,7 @@ import { cssColorToOklab, readLabelInk } from "../scale/colorRamp.js";
 // `useGeoPaletteEpoch` is the SAME settle-epoch seam `GeoPlate.vue` owns (idempotent — one
 // subscription per module), so a theme flip re-derives the per-region gate in the post-settle task.
 import { useGeoPaletteEpoch } from "../composables/useGeoPaletteEpoch.js";
+import type { RailSide } from "./label-rail.js";
 
 // The choropleth joins on a feed's entity key — the value under `FeedMeta.keyField` (a zero-padded
 // FIPS, an LEA number, an entity id). Binding the type to the shared contract keeps every
@@ -159,7 +160,25 @@ export interface ChoroplethProps {
      * Reduced motion paints the map final. Omit ⇒ the map paints at rest, no overlay.
      */
     entrance?: GeoEntrance;
+    /**
+     * U/B8 A10 — THE LABEL RAIL (opt-in). Names the top regions off the map: each label hangs from a
+     * rail above (`side: "top"`, the default) or right of the field on a leader thread to its
+     * centroid, settled so no two touch (`settleRail`), the count dropping with the rendered width
+     * (`railLabelCount`, or `count`). It composes with the X10 gate — a railed region keeps its own
+     * word or texture. Omit ⇒ no rail, byte-identical render.
+     */
+    labelRail?: LabelRailSpec;
     ariaLabel?: string;
+}
+
+/** The `labelRail` contract. `keys` is the PRIORITY order (the first keeps its label longest when
+    the rail narrows); `name` defaults to the feature's name, `value` to its on-mark word. */
+export interface LabelRailSpec {
+    keys: readonly string[];
+    name?: (key: string) => string;
+    value?: (key: string) => string;
+    side?: RailSide;
+    count?: (widthPx: number) => number;
 }
 
 export interface Shape {
@@ -333,9 +352,10 @@ export function useChoroplethShapes(props: ChoroplethProps) {
             // exists (`valueLabel` OR `valueFormat`) OR the D-02 magnitude-ring channel needs an
             // anchor (`symbolR` — the ring seats at the same centroid the label would) OR the A-28
             // place-label augment channel seats its bold letters here (`placeLabel`) OR the U/B8 A1
-            // entrance measures its distances and threads from here (`entrance`).
+            // entrance measures its distances and threads from here (`entrance`) OR the A10 rail
+            // ties a leader thread here (`labelRail`).
             const [cx, cy] =
-                wordOf || props.symbolR || props.placeLabel || props.entrance
+                wordOf || props.symbolR || props.placeLabel || props.entrance || props.labelRail
                     ? draw.centroid(f)
                     : [0, 0];
             // X10-LIB — the region's bounding-box minor axis, measured off the SAME path generator.

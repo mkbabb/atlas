@@ -20,7 +20,8 @@ import {
     isMultiSelect,
     type SelectionEmits,
 } from "../contract/selection-contract.js";
-import { DATA_PATTERN_TILE } from "./redundant-channel.js";
+import { DATA_PATTERN_TILE, patternScreenTransform } from "./redundant-channel.js";
+import { layoutLabelRail, type RailLayout, type RailRegion } from "./label-rail.js";
 import ChartDataTable from "../legend/ChartDataTable.vue";
 import {
     useChoroplethShapes,
@@ -71,6 +72,7 @@ const props = withDefaults(
         symbolR: undefined,
         placeLabel: undefined,
         entrance: undefined,
+        labelRail: undefined,
         ariaLabel: "Geographic choropleth",
         sourceGridId: undefined,
         sourceGridOpen: false,
@@ -98,12 +100,47 @@ const {
 // administrative geography reads 1 and is never touched.
 const field = ref<SVGSVGElement | null>(null);
 const { width: fieldWidth } = useElementSize(field);
-const cellFloor = computed<number>(() =>
-    cellFloorScale(shapes.value, fieldWidth.value / WIDTH.value),
+
+// U/B8 A10 · THE LABEL RAIL — the top regions named off the map on leader threads, laid out per
+// rendered width (`layoutLabelRail`: the count, the settle, every mark divided by k). Null when the
+// prop is omitted, so the resting viewBox and every other layer are unchanged.
+const rail = computed<RailLayout | null>(() => {
+    const spec = props.labelRail;
+    if (!spec) return null;
+    const byKey = new Map(shapes.value.map((s) => [s.key, s]));
+    const regions = spec.keys.flatMap<RailRegion>((key) => {
+        const s = byKey.get(key);
+        if (!s) return [];
+        return [{ key, name: spec.name?.(key) ?? s.name, value: spec.value?.(key) ?? s.label, cx: s.cx, cy: s.cy }];
+    });
+    return layoutLabelRail(regions, {
+        viewWidth: WIDTH.value,
+        viewHeight: HEIGHT.value,
+        widthPx: fieldWidth.value,
+        side: spec.side,
+        count: spec.count,
+    });
+});
+/** The viewBox — grown by the rail's pad above (top) or to the right (side) when a rail is laid. */
+const viewBox = computed<string>(() => {
+    const pad = rail.value?.labels.length ? rail.value.pad : 0;
+    if (!pad) return `0 0 ${WIDTH.value} ${HEIGHT.value}`;
+    return props.labelRail?.side === "right"
+        ? `0 0 ${WIDTH.value + pad} ${HEIGHT.value}`
+        : `0 ${-pad} ${WIDTH.value} ${HEIGHT.value + pad}`;
+});
+/** Screen px per viewBox unit — the rail's k when a side rail narrows the map, else width / WIDTH. */
+const pxPerUnit = computed<number>(() =>
+    rail.value?.labels.length ? rail.value.k : fieldWidth.value / WIDTH.value,
 );
 
 // U/B8 A1 — the opt-in entrance from an origin (ripple or threads), played once on first view.
 const { threads: entranceThreads, pending: entrancePending } = useGeoEntrance(field, shapes, props);
+const cellFloor = computed<number>(() => cellFloorScale(shapes.value, pxPerUnit.value));
+
+/** The hatch and the tier textures per screen pixel (÷ k), one grain at every width. */
+const hatchTransform = computed(() => patternScreenTransform(pxPerUnit.value, "rotate(45)"));
+const textureTransform = computed(() => patternScreenTransform(pxPerUnit.value));
 
 function isRaised(key: string): boolean {
     return props.raisedKeys?.has(key) ?? false;
@@ -202,7 +239,7 @@ const placeLabels = computed(() => {
 // ratified desktop geometry is the identity and centroid crowding stays bounded. Desktop renders
 // (scale ≥ 1) bind no style — the resting render is unchanged.
 const placeLetterScale = computed<number>(() => {
-    const s = fieldWidth.value / WIDTH.value;
+    const s = pxPerUnit.value;
     return s > 0 && s < 1 ? Math.min(1 / s, 2) : 1;
 });
 
@@ -220,7 +257,7 @@ const tableRows = computed(() =>
     <div class="relative w-full">
         <svg
             ref="field"
-            :viewBox="`0 0 ${WIDTH} ${HEIGHT}`"
+            :viewBox="viewBox"
             class="h-auto w-full"
             :style="cellFloor > 1 ? { '--cell-floor': cellFloor } : undefined"
             role="img"
@@ -243,7 +280,7 @@ const tableRows = computed(() =>
                     width="6"
                     height="6"
                     patternUnits="userSpaceOnUse"
-                    patternTransform="rotate(45)"
+                    :patternTransform="hatchTransform"
                 >
                     <rect width="6" height="6" fill="var(--background)" opacity="0.1" />
                     <line
@@ -268,6 +305,7 @@ const tableRows = computed(() =>
                     :width="DATA_PATTERN_TILE"
                     :height="DATA_PATTERN_TILE"
                     patternUnits="userSpaceOnUse"
+                    :patternTransform="textureTransform"
                 >
                     <line
                         v-for="(l, i) in p.geom.lines ?? []"
@@ -426,6 +464,45 @@ const tableRows = computed(() =>
                 >
                     {{ p.text }}
                 </text>
+            </g>
+            <!-- U/B8 A10 · THE LABEL RAIL — the top regions named off the map, each on a leader thread
+                 to its centroid. Every size is per screen pixel (÷ k). Topmost and pointer-transparent;
+                 the offscreen table carries the names, so the layer is aria-hidden. -->
+            <g
+                v-if="rail && rail.labels.length"
+                class="geo-label-rail"
+                aria-hidden="true"
+                data-testid="geo-label-rail"
+            >
+                <g
+                    v-for="l in rail.labels"
+                    :key="`rail-${l.key}`"
+                    :data-raised="isRaised(l.key) || isSelected(l.key) ? 'true' : undefined"
+                >
+                    <path
+                        class="geo-rail-thread"
+                        :d="`M${l.from.x},${l.from.y}L${l.knee.x},${l.knee.y}L${l.to.x},${l.to.y}`"
+                        :stroke-width="rail.threadWidth"
+                    />
+                    <circle
+                        class="geo-rail-dot"
+                        :cx="l.to.x"
+                        :cy="l.to.y"
+                        :r="rail.dotR"
+                        :stroke-width="rail.threadWidth"
+                    />
+                    <text
+                        class="geo-rail-label"
+                        :x="l.x"
+                        :y="l.y"
+                        :text-anchor="l.anchor"
+                        :dominant-baseline="l.anchor === 'start' ? 'central' : undefined"
+                        :style="{ fontSize: `${rail.fontSize}px`, strokeWidth: `${rail.strokeWidth}px` }"
+                    >
+                        <tspan class="geo-rail-name">{{ l.name }}</tspan>
+                        <tspan v-if="l.value" class="geo-rail-value">&#32;{{ l.value }}</tspan>
+                    </text>
+                </g>
             </g>
         </svg>
 

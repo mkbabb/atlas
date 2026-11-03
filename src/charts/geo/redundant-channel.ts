@@ -39,9 +39,25 @@ export const ABSENCE_HATCH_ID = "geo-dim-hatch";
     kind (the disjointness law: a data tier never reads as the no-data/dim state). */
 export const ABSENCE_HATCH_KIND = "diagonal-45";
 
-/** The `<pattern>` tile edge (user-space px) — the SAME 6px tile the dim hatch uses, so the data
-    textures and the absence hatch tile on ONE grain (a shared visual register). */
+/** The `<pattern>` tile edge — the SAME 6px tile the dim hatch uses, so the data textures and the
+    absence hatch tile on ONE grain (a shared visual register). Authored in user space and drawn at
+    SCREEN px through `patternScreenTransform`. */
 export const DATA_PATTERN_TILE = 6;
+
+/**
+ * U/B8 A10 · THE HATCH PER SCREEN PIXEL — the `patternTransform` that draws a user-space tile at its
+ * authored size in screen px. The viewBox scales a `userSpaceOnUse` tile with the geometry, so
+ * unscaled the hatch coarsens on a wide render and closes to a smear on a phone; dividing by `k` (screen px per
+ * viewBox unit) holds one grain at every width, the same rule the rail's text and strokes follow.
+ * `base` is the tile's own transform (the dim hatch's `rotate(45)`), applied inside the scale.
+ * Unmeasured (`k` ≤ 0, SSR, first paint) or at k = 1 the scale is the identity and is not written,
+ * so the resting markup is unchanged.
+ */
+export function patternScreenTransform(k: number, base?: string): string | undefined {
+    const s = k > 0 ? 1 / k : 1;
+    const scale = s === 1 ? undefined : `scale(${s})`;
+    return [scale, base].filter(Boolean).join(" ") || undefined;
+}
 
 /** A tile-local stroke segment (foreground ink, drawn over the tier-colour background rect). */
 export interface PatternLine {

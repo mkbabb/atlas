@@ -236,6 +236,23 @@
   `createUnitLayout` for authored ones. The engine (`UnitMorph`, `UnitCanvas`, `sampleSpring`) is
   exported framework-free; a styled mark (the Gregg woven thread) is an optional `sprite`. Ported from
   the Gregg Museum hero cloth. Witness: `tests/unit/b8-unit-chart.spec.ts`, red before.
+- **Map labels on a rail (U/B8 A10).** `GeoChoropleth` takes an opt-in `labelRail` (`LabelRailSpec`:
+  `keys` in priority order, optional `name`, `value`, `side: "top" | "right"`, `count`). The top
+  regions hang from a rail above or right of the field on leader threads to their centroids, spaced
+  so none touch, and the count drops with the rendered width (3 under 560 px, 4 under 900, else 6).
+  Each thread bends at a knee on the field's edge level with its anchor (a slant in the rail band,
+  then a drop square to the rail), so no two threads cross; a straight thread could. Font, halo,
+  thread and dot are divided by k, the screen px per viewBox unit, so the rail reads the same at any
+  width; a side rail narrows the map and the tap floor, place letters and hatch read that k.
+  The X10 gate is untouched: a railed region keeps its own word or texture. `settleRail`,
+  `railLabelCount` and `layoutLabelRail` are exported from `charts`. Omit the prop and the rail
+  layer is absent. Witness: `b8-label-rail.spec.ts`, `b8-label-rail-measured.spec.ts`, red before.
+
+- **The hatch per screen pixel (U/B8 A10).** The dim hatch and the tier textures are drawn through
+  `patternScreenTransform(k)`, a `scale(1/k)` pattern transform, so the 6 px tile holds one screen
+  grain at every width instead of growing and shrinking with the viewBox. This applies to every
+  measured choropleth, rail or not; unmeasured (SSR, first paint) and k = 1 renders write the same
+  markup as before. Witness: `b8-label-rail.spec.ts` and `b8-label-rail-measured.spec.ts`, red before.
 
 - **Entity drill hops (U/B7d D1 · M-06).** `EntityDescription.links` lists the views one hop from an
   entity; EntityDetail renders them as links and closes when one is followed. Witness:

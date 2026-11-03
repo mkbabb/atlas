@@ -201,3 +201,49 @@
     vector-effect: non-scaling-stroke;
     pointer-events: none;
 }
+/* U/B8 A10 · THE LABEL RAIL — top regions named off the map on leader threads. The SFC sizes every
+   mark per screen pixel (font, halo, thread and dot ÷ k), so these rules carry ink only. The thread
+   rests recessive and lifts with its region's raise or pin; the halo seats each word on the field. */
+.geo-label-rail {
+    pointer-events: none;
+}
+.geo-rail-thread {
+    fill: none;
+    stroke: var(--foreground);
+    stroke-opacity: 0.45;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.geo-rail-dot {
+    fill: var(--foreground);
+    stroke: var(--background);
+    paint-order: stroke;
+}
+.geo-rail-label {
+    font-family: var(--font-mono);
+    fill: var(--foreground);
+    paint-order: stroke;
+    stroke: var(--background);
+    stroke-linejoin: round;
+}
+.geo-rail-name {
+    font-weight: 600;
+}
+.geo-rail-value {
+    fill: var(--muted-foreground);
+}
+.geo-label-rail [data-raised="true"] .geo-rail-thread {
+    stroke-opacity: 1;
+}
+@media (forced-colors: active) {
+    .geo-rail-thread {
+        stroke: CanvasText;
+        stroke-opacity: 1;
+    }
+    .geo-rail-dot,
+    .geo-rail-label,
+    .geo-rail-value {
+        fill: CanvasText;
+        stroke: Canvas;
+    }
+}
