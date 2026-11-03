@@ -29,6 +29,45 @@
   move to the store module. Witness: `HoverCard.tap-pin.browser.spec.ts` "a card that mounts after the
   first tap ended still pins that tap's readout", red before. The sci tap spec's first segment (High
   Cost) raised no card in Chromium and WebKit 2287.
+- **The unit chart speaks keyboard moves only, hits marks where they are drawn, and refuses a frame
+  it cannot fill (U/B8 A3 review).** The live line announces a mark the keyboard walks to; a pointer
+  hover no longer speaks. Mid-morph `UnitCanvas.hit` reads the drawn positions (`hitNearest`, sharing
+  `hitTest`'s nearest rule) instead of the target layout. A fitted pitch now checks its floor: a frame
+  no pitch down to `MIN_UNIT_PITCH` (0.5 px) holds throws a RangeError instead of returning 0.5 px
+  unchecked, and `groupedBlocksLayout` and the flows without a height shrink the default 8 px pitch
+  until one column fits the width. Witness: `b8-unit-chart.spec.ts` (3 cases, red before) and
+  `UnitChart.browser.spec.ts` (the DPR wiring, the keyboard walk and blur, the silent pointer).
+- **The unit chart's frame contract holds at zero (U/B8 A3 review).** A 0 px frame without a height
+  laid its marks at NaN (the fit's ceiling, `min(width, 8)`, was 0, it passed, and `width / 0` gave
+  NaN columns), and a 0.3 px frame fitted a 0.3 px pitch under the floor the doc promised. Every
+  pitch is now at least `MIN_UNIT_PITCH`, and `gridLayout`, `boustrophedonLayout` and
+  `groupedBlocksLayout` all throw the same RangeError for a frame no such pitch fills: one too small
+  for the marks, or a degenerate one (a width or height that is zero, negative, not finite or under
+  the floor, or a given `cell` under it). `UnitChart` takes `layout: null` until the consumer has a
+  frame, and holds its draw while the host measures 0 px wide; the layout it holds lands once the
+  host has a width. Witness: `b8-unit-chart.spec.ts` "a zero or degenerate frame…", and two
+  `UnitChart.browser.spec.ts` cases (a 0 px first mount, a held draw), red before.
+- **An explicit unit cell meets the fitted contract (U/B8 A3 review).** A given `cell` was checked
+  only against the floor, so `gridLayout(4, { width: 100, cell: 500 })` laid marks out to x = 250.
+  Every builder now holds a given cell to the fit's own test (one column inside the frame or block,
+  rows under a given height) and throws the same RangeError when it fails. Witness:
+  `b8-unit-chart.spec.ts` "an explicit cell the frame cannot hold…", red before.
+- **The step-loop allocation witness is deterministic (U/B8 A3 review).** It read bytes per frame as
+  the slope between two runs, so the runtime's own allocation landing in the long run (a tier-up
+  under load) failed it 3 times in 10 (4.2 to 4.8 against a limit of 4). The structural check now
+  traps every typed-array and `Array` construction during flight and settle, and the measured check
+  subtracts an empty read per trial and takes the minimum over trials, which runtime noise only
+  raises; the limit tightens from 4 to 1 B per frame. Witness: `b8-unit-chart.spec.ts` "the
+  allocation probe is immune to a runtime burst…" (10.5 B per frame under the slope, red before).
+- **The step-loop allocation witness sees periodic allocation (U/B8 A3 review).** The per-trial
+  minimum read 20k-frame trials, and V8's `total_allocated_bytes` moves a 256 KiB page at a time, so
+  a trial the count did not tick read negative and won: a closure every 8 frames and a literal or a
+  closure every 32 read -0.033 B per frame and passed. Each read is now one 2M-frame run of a morph
+  kept in flight, minus an empty loop of the same length, and the median of 5 such runs; the limit
+  is 0.25 B per frame (half of a 16 B object every 32 frames). The live loop reads -0.001 to 0.071 and
+  the sparsest control 1.00. Witness: `b8-unit-chart.spec.ts` "the probe sees … every N frames", ten
+  negative controls (a literal and a closure every 1, 3, 4, 8 and 32 frames) that must read over the
+  limit; the burst test now lands 16 MB in one run and holds the median clean.
 - **The ink clamps hold their floors on a plate (U/B7d M3 repair 1 · T-12).** The light body ink moves from
   L 0.47 to 0.44 and the large ink from 0.62 to 0.60; they read 4.37:1 and 2.96:1. Witness:
   `ink-floor.spec.ts`.
@@ -153,6 +192,21 @@
   measured user-space length, so a `pathLength="1"` path (whose dash values are in unit lengths) drew
   wrong. It now sweeps in the authored units. Witness: `build-mark-animation-path-length.spec.ts`,
   red before.
+- **A canvas unit chart, one mark per record (U/B8 A3).** `UnitChart` in `@mkbabb/atlas/charts` draws
+  one mark per record on a canvas and morphs between arrangements held as data: a `UnitLayout` is
+  `{x, y, w, h, rank, group}` typed arrays plus a hit index. Each mark flies on a keyframes.js spring
+  sampled once into a lookup table, staggered by the target's rank; a change mid-flight leaves from
+  the current positions, a frame allocates nothing, and the rAF stops once the marks settle. The DPR
+  caps at 2 (`cappedDpr`/`MAX_CANVAS_DPR` in `@mkbabb/atlas/lib`, the one cap the constellation
+  backdrop reads too) and follows a display move or a zoom; colors are CSS custom properties re-read
+  on the post-settle theme epoch; reduced motion snaps, and turning it on lands a flight. The canvas
+  is `role="img"` with a `summary` (`unitSummary` writes one), takes focus, walks the marks in rank
+  order by arrow keys (`unitStep`; Enter selects, Escape clears), and announces the hovered mark in a
+  polite live line (`markLabel`). Layouts:
+  `gridLayout`, `boustrophedonLayout`, `groupedBlocksLayout` (with each group's block box), and
+  `createUnitLayout` for authored ones. The engine (`UnitMorph`, `UnitCanvas`, `sampleSpring`) is
+  exported framework-free; a styled mark (the Gregg woven thread) is an optional `sprite`. Ported from
+  the Gregg Museum hero cloth. Witness: `tests/unit/b8-unit-chart.spec.ts`, red before.
 
 - **Entity drill hops (U/B7d D1 · M-06).** `EntityDescription.links` lists the views one hop from an
   entity; EntityDetail renders them as links and closes when one is followed. Witness:
