@@ -32,6 +32,7 @@ function cells(n: number, minorAxis: number): Shape[] {
         cx: 0,
         cy: 0,
         label: "",
+        place: "",
         fill: "",
         ordinal: null,
         minorAxis,

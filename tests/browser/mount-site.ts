@@ -58,7 +58,9 @@ function contextFor(slug: string, title: string): DashboardContext {
     } as unknown as DashboardContext;
 }
 
-export function makeRegistry(): { registry: DashboardRegistry; loads: Map<string, number> } {
+/** `contextDelayMs` holds each context module back, as a slow network does its chunk (mountSite
+    holds the dashboard route's chunk back by the same time). */
+export function makeRegistry(contextDelayMs = 0): { registry: DashboardRegistry; loads: Map<string, number> } {
     const loads = new Map<string, number>();
     const metaModules: Record<string, { meta: DashboardMeta }> = {};
     const bodyLoaders: Record<string, () => Promise<{ default: object }>> = {};
@@ -67,6 +69,7 @@ export function makeRegistry(): { registry: DashboardRegistry; loads: Map<string
         metaModules[`./${d.slug}/meta.ts`] = { meta: { ...d } as DashboardMeta };
         bodyLoaders[`./${d.slug}/DashboardBody.vue`] = async () => ({ default: {} });
         contextModules[`./${d.slug}/context.ts`] = async () => {
+            if (contextDelayMs) await new Promise((r) => setTimeout(r, contextDelayMs));
             loads.set(d.slug, (loads.get(d.slug) ?? 0) + 1);
             return { [`${d.slug}Context`]: contextFor(d.slug, d.title) };
         };
@@ -113,7 +116,12 @@ export interface MountedSite {
 }
 
 /** Mount the site at `path` in a viewport `width` px wide. */
-export async function mountSite(path: string, width: number, height = 844): Promise<MountedSite> {
+export async function mountSite(
+    path: string,
+    width: number,
+    height = 844,
+    contextDelayMs = 0,
+): Promise<MountedSite> {
     await page.viewport(width, height);
     const tokens = document.createElement("style");
     // The glass-ui tokens the dock and the route frame read (the consumer's root compiles them):
@@ -122,14 +130,24 @@ export async function mountSite(path: string, width: number, height = 844): Prom
     document.head.appendChild(tokens);
     const host = document.createElement("div");
     document.body.appendChild(host);
-    const { registry, loads } = makeRegistry();
+    const { registry, loads } = makeRegistry(contextDelayMs);
+    // A page load: the history already holds the URL the reader asked for.
+    const memory = createMemoryHistory();
+    memory.replace(path);
     const router = createRouter({
-        history: createMemoryHistory(),
+        history: memory,
         routes: [
             { path: "/", name: "gallery", component: Plain("The Connectivity Atlas") },
             { path: "/c/:category", name: "category-home", component: Plain("Subject") },
             { path: "/data/:rest(.*)*", name: "data", component: Plain("Data") },
-            { path: "/:slug/:view?", name: "dashboard", component: DashboardRoute },
+            {
+                path: "/:slug/:view?",
+                name: "dashboard",
+                // A slow network holds the route's chunk back as it does the context's.
+                component: contextDelayMs
+                    ? () => new Promise((r) => setTimeout(() => r(DashboardRoute), contextDelayMs))
+                    : DashboardRoute,
+            },
             { path: "/:pathMatch(.*)*", name: "not-found", component: Plain("Not found") },
         ],
     });
@@ -148,9 +166,15 @@ export async function mountSite(path: string, width: number, height = 844): Prom
     installDashboardRegistry(app, registry);
     app.use(createPinia());
     app.use(router);
-    await router.push(path);
-    await router.isReady();
-    app.mount(host);
+    if (contextDelayMs) {
+        // A slow load paints before the first navigation commits, as a served page does.
+        app.mount(host);
+        await router.isReady();
+    } else {
+        await router.push(path);
+        await router.isReady();
+        app.mount(host);
+    }
     await settle(500);
     return {
         app,

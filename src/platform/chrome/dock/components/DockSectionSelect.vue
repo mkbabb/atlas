@@ -47,6 +47,8 @@ function onCloseAutoFocus(event: Event): void {
 const total = computed(() => stepper.beatItems.value.length);
 const n = computed(() => stepper.activeStep.value);
 const position = computed(() => `Section ${n.value} of ${total.value}`);
+/** The cell's face: the active section's name, or empty while no section is registered. */
+const cellLabel = computed(() => (n.value > 0 ? (stepper.activeLabel.value ?? "") : ""));
 const model = computed({
     get: () => stepper.activeBeatId.value,
     set: (id) => {
@@ -61,18 +63,18 @@ const sections = computed(() =>
 </script>
 
 <template>
-    <Select v-if="variant === 'cell' && n > 0 && stepper.activeLabel.value" v-model="model" v-model:open="open">
+    <!-- The cell always renders once armed: it keeps the bar's slot while a route's sections register
+         (U/B8 P-12), and it cannot open with no section to list. -->
+    <Select v-if="variant === 'cell'" v-model="model" v-model:open="open" :disabled="!cellLabel">
         <SelectTrigger
             v-bind="$attrs"
             class="dock-sections__face dock-sections__face--cell"
             data-glass-dock-seat
-            :aria-label="`${position}: ${stepper.activeLabel.value}`"
+            :aria-label="cellLabel ? `${position}: ${cellLabel}` : 'Sections'"
             data-testid="dock-section-select"
         >
             <span class="dock-sections__text">
-                <span class="dock-sections__label" data-testid="dock-section-label">{{
-                    stepper.activeLabel.value
-                }}</span>
+                <span class="dock-sections__label" data-testid="dock-section-label">{{ cellLabel }}</span>
             </span>
         </SelectTrigger>
         <SelectContent side="top" align="center" @close-auto-focus="onCloseAutoFocus">
@@ -105,7 +107,7 @@ const sections = computed(() =>
         <Select v-model="model" v-model:open="open">
             <SelectTrigger
                 class="dock-sections__face"
-                :aria-label="`${position}: ${stepper.activeLabel.value}`"
+                :aria-label="cellLabel ? `${position}: ${cellLabel}` : 'Sections'"
                 data-testid="dock-section-select"
             >
                 <span class="dock-sections__text">
@@ -176,45 +178,7 @@ const sections = computed(() =>
     outline-offset: 2px;
 }
 
-/* The face: glass's Select trigger (a row ending in its chevron). The text block holds two lines on
-   the pager (the position over the title) and one in the phone cell. */
-.dock-sections__face {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    min-inline-size: 0;
-    max-inline-size: 18rem;
-    min-block-size: 2.75rem;
-    padding-inline: 0.625rem 0.5rem;
-    border-radius: 0.75rem;
-    text-align: start;
-}
-.dock-sections__text {
-    display: grid;
-    flex: 1 1 auto;
-    min-inline-size: 0;
-    justify-items: start;
-}
-.dock-sections__position {
-    color: var(--muted-foreground);
-    font-size: 0.75rem;
-    line-height: 1.2;
-    font-variant-numeric: tabular-nums;
-}
-.dock-sections__label {
-    max-inline-size: 100%;
-    overflow: hidden;
-    color: var(--foreground);
-    font-size: 0.875rem;
-    font-weight: 550;
-    line-height: 1.25;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* The phone bar's Sections cell: 120 px wide, one line, the bar's cell height. */
-.dock-sections__face--cell {
-    inline-size: 7.5rem;
-    max-inline-size: 7.5rem;
-}
+/* The face rules (the face, its text, the position and label lines, the phone cell's width) live in
+   DockSectionCell.vue, unscoped: the bar paints that face from first paint, before this module loads
+   (U/B8 P-12), and this module's trigger wears the same rules once it does. */
 </style>

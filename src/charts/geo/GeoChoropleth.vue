@@ -14,7 +14,7 @@
 // The dim/raise/frame styling rides the `@custom-variant raised:/dimmed:/selected:` hooks (data-*
 // attributes) — no inline `:class="{ 'opacity-30' }"` object. `dimmed` keys carry a hatch overlay so
 // the de-emphasis is never colour-only.
-import { computed, ref } from "vue";
+import { computed, nextTick, onMounted, ref, shallowRef, watch } from "vue";
 import { useElementSize } from "@vueuse/core";
 import {
     isMultiSelect,
@@ -28,6 +28,10 @@ import {
     cellFloorScale,
     type ChoroplethProps,
     type Shape,
+    type LabelFaces,
+    estimatedLabelFaces,
+    labelStack,
+    measureLabelFace,
 } from "./useChoroplethShapes.js";
 import { useGeoEntrance } from "./useGeoEntrance.js";
 
@@ -92,7 +96,7 @@ const {
     labelsMounted,
     labelsRedundant,
     labelGateFails,
-} = useChoroplethShapes(props);
+} = useChoroplethShapes(props, () => labelFaces.value);
 
 // A-04 · THE AGGREGATED-CELL TAP FLOOR — the field's own rendered measure (the `viewBox` scales the
 // user-space geometry to this box, so `width / WIDTH` is the px-per-unit the floor is judged in).
@@ -224,13 +228,46 @@ const magnitudeRings = computed(() => {
 // place word per feature whose `placeLabel` returns a non-empty string, seated at the SAME centroid
 // the value label uses. It AUGMENTS the value-label channel below (never replaces it); omit the
 // prop ⇒ no layer, byte-identical render.
-const placeLabels = computed(() => {
-    const fn = props.placeLabel;
-    if (!fn) return [];
-    return shapes.value.flatMap((s) => {
-        const text = fn(s.key);
-        return text ? [{ key: s.key, cx: s.cx, cy: s.cy, text }] : [];
-    });
+// U/B8 N-2 — a feature with both words seats them as one stack (`labelStack`): the place word above
+// the centroid, the value word below, so the two never share a baseline.
+const placeLabels = computed(() =>
+    shapes.value.flatMap((s) =>
+        s.place
+            ? [{ key: s.key, cx: s.cx, cy: stackOf(s).placeY, text: s.place }]
+            : [],
+    ),
+);
+/** The stack a feature's words take; a word that is not mounted takes no line. */
+function stackOf(s: Shape) {
+    return labelStack(
+        { cx: s.cx, cy: s.cy, place: s.place, label: labelsMounted.value ? s.label : "" },
+        labelFaces.value,
+    );
+}
+
+// U/B8 N-2 — THE MEASURED FACES. The stack and the declutter size each word by its face's advance
+// and line box. They are read off one rendered word of each face (once mounted, again when the web
+// fonts land and when the phone counter-scale changes), since the engine and the font that loads
+// decide them; the estimate stands until then and wherever nothing renders (SSR, no words).
+const measuredFaces = shallowRef<Partial<LabelFaces>>({});
+const labelFaces = computed<LabelFaces>(() => {
+    const est = estimatedLabelFaces(placeLetterScale.value);
+    return { place: measuredFaces.value.place ?? est.place, value: measuredFaces.value.value ?? est.value };
+});
+function measureFaces(): void {
+    const svg = field.value;
+    if (!svg) return;
+    const place = measureLabelFace(svg.querySelector<SVGTextElement>(".geo-place-label"));
+    const value = measureLabelFace(svg.querySelector<SVGTextElement>(".geo-value-label"));
+    const was = measuredFaces.value;
+    const same = (a?: { advance: number; line: number } | null, b?: { advance: number; line: number }) =>
+        (!a && !b) || (!!a && !!b && Math.abs(a.advance - b.advance) < 0.01 && Math.abs(a.line - b.line) < 0.01);
+    if (same(place, was.place) && same(value, was.value)) return;
+    measuredFaces.value = { place: place ?? undefined, value: value ?? undefined };
+}
+onMounted(() => {
+    void nextTick(measureFaces);
+    void document.fonts?.ready.then(measureFaces);
 });
 
 // The PHONE counter-scale: the viewBox scales the letters with the geometry, so a narrow render
@@ -242,6 +279,8 @@ const placeLetterScale = computed<number>(() => {
     const s = pxPerUnit.value;
     return s > 0 && s < 1 ? Math.min(1 / s, 2) : 1;
 });
+// The counter-scale resizes the place words: read their face again.
+watch(placeLetterScale, () => void nextTick(measureFaces));
 
 const hasTable = computed(() => props.valueFormat != null);
 const tableRows = computed(() =>
@@ -432,7 +471,7 @@ const tableRows = computed(() =>
                     v-show="s.label"
                     :key="`label-${s.key}`"
                     :x="s.cx"
-                    :y="s.cy"
+                    :y="stackOf(s).valueY"
                     class="geo-value-label"
                     :class="{ 'geo-value-label--gate-fail': labelGateFails(s) }"
                     text-anchor="middle"

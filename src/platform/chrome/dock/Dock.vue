@@ -23,7 +23,7 @@
 // detail's bottom sheet: opening one closes whichever surface held the seat. The rail's lists take no
 // seat; each holds the rail open while it is open (a dock-portal claim), and focus goes back to the
 // control that opened it when it closes.
-import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue";
 import { DarkModeToggle } from "@mkbabb/glass-ui/dark-mode-toggle";
 import { DockSeparator, GlassDock } from "@mkbabb/glass-ui/dock";
 import { ScrollProgressRim } from "@mkbabb/glass-ui/scroll-progress-rim";
@@ -34,6 +34,7 @@ import DockRoster from "./components/DockRoster.vue";
 import DockDashboardSelect from "./components/DockDashboardSelect.vue";
 import DockSearch from "./components/DockSearch.vue";
 import DockSavedViews from "./components/DockSavedViews.vue";
+import DockSectionCell from "./components/DockSectionCell.vue";
 import DockFilterTrigger from "./components/DockFilterTrigger.vue";
 import DockSettings from "./DockSettings.vue";
 import MembraneTitleLozenge from "./MembraneTitleLozenge.vue";
@@ -47,20 +48,24 @@ import { useScrollChrome } from "./composables/useScrollChrome.js";
 import { useDocumentScrollProgress } from "../../../motion/useScrollProgress.js";
 import { useReducedMotion } from "../../../motion/useReducedMotion.js";
 import { useDockPortals } from "./composables/useDockPortals.js";
+import { useDockRect } from "./composables/useDockRect.js";
 import { revealReleasesOnLeave, revealPersists } from "./composables/coarse-reveal.js";
 import { useSeatedOpen, useSurfaceSeats } from "../surfaces/useSurfaceSeat.js";
 import type { DashboardContext } from "../../../contract/index.js";
 import type { SiteSearchSource, SiteSubject } from "./site.js";
 // The section Select (glass Select and its list) is its own chunk: it renders only on a dashboard
 // route, so the entry does not carry it (U/B7c C1, O-7). The dock fetches it when a dashboard's
-// context arrives, before the body has registered the sections it lists.
+// context arrives, before the body has registered the sections it lists. On the phone bar its seat
+// (DockSectionCell) holds the cell's slot from first paint (U/B8 P-12).
 const loadSectionSelect = () => import("./components/DockSectionSelect.vue");
-const DockSectionSelect = defineAsyncComponent(loadSectionSelect);
 
 const props = withDefaults(
     defineProps<{
         /** The active route's chrome contract; undefined off a dashboard route (the site layer only). */
         context?: DashboardContext;
+        /** The dashboard route's slug, known at once from the route while `context` still loads. The
+            phone bar lays its dashboard cells from it, so the context's arrival moves no cell (U/B8 P-12). */
+        dashboard?: string;
         /** True on the homepage (`/`): the rail rests open with the roster at ≥ 768 px. */
         home?: boolean;
         /** The subject index the roster's "By subject" row opens. */
@@ -74,6 +79,7 @@ const props = withDefaults(
     }>(),
     {
         context: undefined,
+        dashboard: undefined,
         home: false,
         subjects: () => [],
         searchSources: () => [],
@@ -195,6 +201,14 @@ function bindBloom(inst: DockExposed | null): void {
 }
 watch(dockRef, (inst) => bindBloom(inst), { immediate: true });
 onBeforeUnmount(() => detachBloom?.());
+
+// The dock's screen box, for the surfaces that seat clear of it (the hover card, U/B8 A5): whichever
+// register renders binds its root, the rail at >= 768 px or the bar below.
+const rootOf = (inst: DockExposed | null) => (inst as unknown as { $el?: HTMLElement } | null)?.$el ?? null;
+const barRef = ref<DockExposed | null>(null);
+const dockRect = useDockRect();
+watch([dockRef, barRef], ([rail, bar]) => dockRect.bind(rootOf(rail) ?? rootOf(bar)), { immediate: true });
+onBeforeUnmount(() => dockRect.bind(null));
 
 // The crown: the section pager shows once the reader has left the top.
 const { atTop } = useScrollChrome({ source: scrollProgress });
@@ -369,6 +383,7 @@ watch(bottomHeld, (held) => {
         v-else
         id="dock-bar"
         key="bar"
+        ref="barRef"
         orientation="horizontal"
         shape="card"
         :collapse="false"
@@ -392,19 +407,20 @@ watch(bottomHeld, (held) => {
             <DockCrest :crest="ctx?.crest" morph-stage="seed" data-dock-cell="crest" />
         </template>
         <template #default>
-            <template v-if="ctx">
+            <!-- A dashboard route lays the dashboard cells from its first frame: the slug is known at
+                 once, the context a chunk later (U/B8 P-12). -->
+            <template v-if="ctx || dashboard">
                 <DockDashboardSelect
                     v-model:open="bar.dashboards.open.value"
                     :return-focus="!bar.dashboards.displaced.value"
-                    :active="ctx.id"
+                    :active="ctx?.id ?? dashboard"
                     side="top"
                     data-dock-cell="dashboards"
                 />
-                <DockSectionSelect
+                <DockSectionCell
                     v-model:open="bar.sections.open.value"
                     :return-focus="!bar.sections.displaced.value"
                     :stepper="stepper"
-                    variant="cell"
                     data-dock-cell="sections"
                 />
             </template>

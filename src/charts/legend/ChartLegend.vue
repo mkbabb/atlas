@@ -72,6 +72,12 @@ const props = withDefaults(
         /** (discrete) `chips` for the flex row, OR `ledger` for the editorial tier ledger (the
             swatch-column / label+dot-leader / tnum-count grid; recessive zero rows). */
         layout?: "chips" | "ledger";
+        /** (continuous) `inline` (default): the 5rem header-rung ramp in one wrapping row. `wide`:
+            the editorial key beneath a plate (U/B8 N-3). It is a two-column key, term then detail, one
+            row per pair: the low pole beside a ramp that fills the measure (never under 8rem), with
+            the high pole and the value anchors; the no-data swatch beside its word; the clamp beside
+            the true maximum. A consumer never re-lays the primitive's flex row to get it. */
+        measure?: "inline" | "wide";
         /** (continuous) The ramp's colour kind — paints the bar from the `colorKind.ts`
             stops, the same gradient the dropped-cap glyph wears. Ignored if `gradient` set. */
         colorKind?: ColorKind;
@@ -115,6 +121,7 @@ const props = withDefaults(
     }>(),
     {
         layout: "chips",
+        measure: "inline",
         colorKind: undefined,
         hinge: 0.5,
         gradient: undefined,
@@ -160,6 +167,7 @@ const isDead = (count?: number): boolean => count == null || count === 0;
         class="chart-legend figure"
         :class="{
             'chart-legend--continuous': isContinuous,
+            'chart-legend--wide': isContinuous && measure === 'wide',
             'chart-legend--stepped': isStepped,
             'chart-legend--discrete': mode === 'discrete' && !isLedger,
             'chart-legend--ledger': isLedger,
@@ -341,9 +349,37 @@ const isDead = (count?: number): boolean => count == null || count === 0;
 .chart-legend__ramp {
     position: relative;
     display: inline-block;
+    /* The ramp is the key: a flex row may wrap around it but never squeeze it (an empty flex item's
+       automatic minimum is 0, so without this floor a crowded row drew it 0 px wide, N-3). */
+    flex: none;
     width: 5rem;
     height: 0.5rem;
     border-radius: var(--radius-pill);
+}
+
+/* WIDE (U/B8 N-3) — the editorial key under a plate: a two-column definition grid, the term column
+   sized to its longest term and the detail column taking the rest. The ramp fills its detail cell,
+   with an 8rem floor; each pair is its own row, so nothing shares a line it cannot hold. */
+.chart-legend--wide {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: center;
+    gap: 0.375rem 0.75rem;
+}
+.chart-legend--wide .chart-legend__ramp {
+    flex: 1 1 8rem;
+    width: auto;
+    min-inline-size: 8rem;
+}
+/* The anchors sit a hair below the full-width ramp, in the key's own micro size. */
+.chart-legend--wide .chart-legend__anchors {
+    margin-block-start: 0.3rem;
+}
+.chart-legend--wide .chart-legend__swatch-dt {
+    justify-self: start;
+}
+.chart-legend--wide .chart-legend__clamp::before {
+    content: none;
 }
 /* The break-even HINGE TICK (B-M4) — a thin foreground mark across the ramp at the hinge
    fraction, so the diverging key shows WHERE break-even sits (the seen hinge, not implied). */

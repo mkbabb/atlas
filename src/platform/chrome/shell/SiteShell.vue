@@ -14,11 +14,12 @@
 // frame both read it) and the scope of the dock-portal registry (the dock's pin and the route's
 // filter drawer share it).
 import { computed, shallowRef, watch } from "vue";
-import { RouterView, useRoute } from "vue-router";
+import { RouterView, useRoute, useRouter } from "vue-router";
 import Dock from "../dock/Dock.vue";
 import { AMERICA, themeCssVars, useDashboardRegistry, type DashboardContext } from "../../../contract/index.js";
 import { atmosphereCssVars } from "../background/composables/atmosphere.js";
 import { provideDockPortals } from "../dock/composables/useDockPortals.js";
+import { provideDockRect } from "../dock/composables/useDockRect.js";
 import type { SiteSearchSource, SiteSubject } from "../dock/site.js";
 
 const props = withDefaults(
@@ -38,10 +39,20 @@ const props = withDefaults(
 const route = useRoute();
 const { findDashboard } = useDashboardRegistry();
 provideDockPortals();
+// Where the dock sits, for the surfaces that seat clear of it (the hover card, U/B8 A5).
+provideDockRect();
+
+// Until the first navigation commits (its route chunk still loading), `route` is vue-router's
+// START_LOCATION, which matches nothing. The URL the reader asked for is already known: read it, so
+// the dock lays a dashboard's cells from its first frame (U/B8 P-12).
+const router = useRouter();
+const initial = router.resolve(router.options.history.location);
+const current = computed(() => (route.matched.length ? route : initial));
 
 const slug = computed<string | undefined>(() => {
-    if (route.name !== props.dashboardRoute) return undefined;
-    const raw = route.params.slug;
+    const r = current.value;
+    if (r.name !== props.dashboardRoute) return undefined;
+    const raw = r.params.slug;
     const s = Array.isArray(raw) ? raw[0] : raw;
     return s ? String(s) : undefined;
 });
@@ -84,7 +95,13 @@ const outletKey = computed(() => (slug.value ? `dashboard:${slug.value}` : Strin
         </a>
         <!-- The banner landmark: the dock is the one persistent site chrome on every route. -->
         <header role="banner">
-            <Dock :context="context" :home="home" :subjects="subjects" :search-sources="searchSources" />
+            <Dock
+                :context="context"
+                :dashboard="slug && findDashboard(slug) ? slug : undefined"
+                :home="home"
+                :subjects="subjects"
+                :search-sources="searchSources"
+            />
         </header>
         <RouterView v-slot="{ Component }">
             <component :is="Component" :key="outletKey" />

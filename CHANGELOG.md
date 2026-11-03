@@ -10,6 +10,37 @@
   and `Shape.rank` field go with them. The `rank` prop stays: it is the ripple's fallback order when
   the origin is missing. See MIGRATION §5k. Witness: `tests/component/geo-entrance.spec.ts` "puts no
   --rank style and no draw class on a ranked map's shapes", red before.
+- **The comparison panel prints one count in one word (U/B8 N-4).** /ecf read "2 districts" over
+  "1 districts selected", and /sci "2 districts" over "2 school units selected": the beat's aggregate
+  wrote its own count sentence over the members it could reduce. Breaking: `AggregateResolver` now
+  returns `SelectionAggregate` (`{ facts, covered, noun? }`), never a label. The panel prints every
+  count from the selection, in the grain's noun or the beat's `noun`, and adds "Figures cover 1 of 2
+  districts" when `covered` is short. Witness: `SelectionDrilldownPanel.count-law.browser.spec.ts`.
+- **The continuous key has a wide measure (U/B8 N-3).** `ChartLegend` takes `measure="wide"`: a
+  two-column key whose ramp fills its cell (8rem floor) with one pair per row. The ramp no longer
+  shrinks to 0 px in a crowded row (`flex: none`). The /ecf plate re-laid the flex row itself and
+  drew the ramp 0 px wide. Witness: `ChartLegend.measure.browser.spec.ts`.
+- **A region's name and value never share a seat (U/B8 N-2).** With `placeLabel` and a value word,
+  `GeoChoropleth` seats them as one stack (`labelStack`): name above, value below, by their line
+  boxes. A value word keeps its seat only clear of every other region's name (`resolveLabelCollisions`
+  takes `reserved` boxes). Both words are sized by the faces the map renders, read off one rendered word
+  of each (`measureLabelFace`; `estimatedLabelFaces` until then). A consumer must not move a map label:
+  the declutter reserves each name where atlas seats it, and the routes' old `translate: 0 -7px` lift
+  drew names 7 units off that seat (sci deletes it). /ecf at 1440 light had 39 name/value glyph-cell
+  crossings in Chromium and 41 in Firefox; it has 0 in both. Witnesses:
+  `tests/component/b8-geo-label-stack.spec.ts` and `GeoChoropleth.label-faces.browser.spec.ts`.
+- **A selection never moves the reader (U/B8 N-5, N-W2).** A pick or clear holds the figure the reader
+  acted on where it was on screen until the layout settles (`platform/interaction/holdAnchor.ts`, run
+  by `useSelection`). A /usf tap filters every figure, the page above the map grows, and WebKit left
+  the page 290 px off after Escape. Any reader input or foreign scroll ends the hold. Witness:
+  `useSelection.hold.browser.spec.ts`.
+- **The phone bar's Sections cell holds its slot from first paint (U/B8 P-12).** The cell was the
+  async section Select, so it joined about 2.9 s into a phone load and slid the centred bar (0.0168 of
+  /bead's CLS). `DockSectionCell` is a `DockSelectSeat` that paints the 7.5rem face at once and loads the
+  Select on use. Witness: `Dock.section-cell.browser.spec.ts`.
+- **The hover card seats clear of the dock (U/B8 A5 wiring).** `SiteShell` provides a dock-rect source,
+  `Dock` binds whichever register renders, and `HoverCard` passes its rect to `transientSeat` as the
+  avoid-rect. Witness: `HoverCard.dock-clear.browser.spec.ts`.
 - **The hover card flips at the viewport edge (U/B8 A5).** Near the right or bottom edge the
   transient seat clamped the card back over its anchor, so it covered the mark it described. The card
   now takes the far side of the anchor on each axis when the near side would cross the edge and the
@@ -21,9 +52,8 @@
   clear of a dock never sits flush on it. In a viewport too small for the card on any side of its
   anchor, every corner clamped back over the anchor; the seat now takes the roomier band above or
   below it and caps the card's height there (`maxHeight`, the card scrolls), and `HoverCard` measures
-  the card's natural height so it never reads the cap back as its size. `HoverCard` passes no
-  avoid-rect: wiring it to the dock's rect is U/B8's. Witnesses: `tests/unit/b8-card-flip-and-avoid.spec.ts`
-  and `tests/unit/b8-card-no-dock-rect.spec.ts`, red before.
+  the card's natural height so it never reads the cap back as its size. Witnesses:
+  `tests/unit/b8-card-flip-and-avoid.spec.ts` and `tests/unit/b8-card-no-avoid-rect.spec.ts`, red before.
 - **The band fallback no longer shrinks the hover card to a sliver (U/B8 A5 repair).** The band seat
   also fired in normal viewports when the pointer sat off the anchor and every full-size corner covered
   one of them, and then picked whatever band cleared the pointer: 38 px at 1440x900 near the bottom-left,
