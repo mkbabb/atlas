@@ -296,8 +296,18 @@ describe("virtual-window core", () => {
                 addEventListener: () => undefined,
                 removeEventListener: () => undefined,
             }) as unknown as HTMLElement;
-        const row = (height: number) =>
-            ({ getBoundingClientRect: () => ({ height }) }) as unknown as Element;
+        const row = (height: number) => ({ height }) as unknown as Element;
+        // The browser's first delivery for a newly observed row: its border box (U/B8r DV-3, the
+        // window's one size source).
+        class DeliverOnObserve {
+            constructor(private cb: (entries: unknown[]) => void) {}
+            observe(target: { height: number }): void {
+                this.cb([{ target, borderBoxSize: [{ blockSize: target.height }], contentRect: { height: target.height } }]);
+            }
+            unobserve(): void {}
+            disconnect(): void {}
+        }
+        (globalThis as { ResizeObserver?: unknown }).ResizeObserver = DeliverOnObserve;
         const mount = (width: number, measurementSurface?: object | string) => {
             const scope = effectScope();
             const virtual = scope.run(() =>
@@ -332,5 +342,6 @@ describe("virtual-window core", () => {
         const changedWidth = mount(801, sharedSurface);
         expect(changedWidth.virtual.totalSize.value).toBe(80);
         changedWidth.scope.stop();
+        delete (globalThis as { ResizeObserver?: unknown }).ResizeObserver;
     });
 });

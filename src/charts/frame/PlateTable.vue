@@ -6,9 +6,20 @@
 // table fills the figure's box and scrolls under a sticky header, so switching views moves nothing
 // else on the page. A long table fades at its foot until it is scrolled to the end, so the cut reads
 // as more to come.
+//
+// DV-3 (U/B8r): the rows are windowed. The sort runs over every row; the DataTable gets only the
+// slice atlas's `useVirtualWindow` keeps in and around view, through glass's caller-windowed API
+// (`aria-row-count`, `get-row-index`, `get-row-attrs`, `row-ref`), as SourceDataBrowser and DataViewerRoute do. The
+// /bead provider strip's 546 rows were one 108-169 ms task on a 4x phone open; a window is ~20 rows.
 import { computed, onMounted, ref } from "vue";
-import { DataTable, type DataTableColumn, type DataTableSort } from "@mkbabb/glass-ui/data-table";
+import {
+    DataTable,
+    type DataTableColumn,
+    type DataTableRowAttrs,
+    type DataTableSort,
+} from "@mkbabb/glass-ui/data-table";
 import { sortRowsBy } from "../../lib/compareCells.js";
+import { useVirtualWindow, type VirtualItem } from "../../filter/composables/useVirtualWindow.js";
 import type { ChartDataRow } from "../legend/ChartDataTable.vue";
 
 const props = withDefaults(
@@ -32,10 +43,6 @@ interface TableRow {
 }
 
 const sort = ref<DataTableSort | undefined>(undefined);
-const columns = computed<DataTableColumn<TableRow>[]>(() => [
-    { key: "name", label: props.rowHeader, sortable: true, class: "plate-table__name" },
-    { key: "value", label: props.valueHeader, sortable: true, align: "right", class: "plate-table__value" },
-]);
 const keyed = computed<TableRow[]>(() =>
     props.rows.map((r, i) => ({ _id: r.key ?? i, name: r.name, value: r.value })),
 );
@@ -46,45 +53,88 @@ const sorted = computed<TableRow[]>(() => {
     return sortRowsBy(keyed.value, (r) => r[key], s.direction);
 });
 
-// The foot fade: shown while the scroller has rows below its fold.
-const root = ref<HTMLElement | null>(null);
-const atEnd = ref(true);
-function scroller(): HTMLElement | null {
-    return root.value?.querySelector<HTMLElement>('[data-slot="table-container"]') ?? null;
+// The table, windowed: the viewport is the table's one scroller.
+const viewport = ref<HTMLElement | null>(null);
+const virtual = useVirtualWindow<TableRow, string | number>({
+    items: sorted,
+    viewport,
+    key: (row) => row._id,
+    estimateSize: 37,
+});
+type ViewRow = VirtualItem<TableRow, string | number>;
+const tableRows = computed<ViewRow[]>(() => [...virtual.items.value]);
+const columns = computed<DataTableColumn<ViewRow>[]>(() => [
+    { key: "item.name", label: props.rowHeader, sortable: true, class: "plate-table__name" },
+    { key: "item.value", label: props.valueHeader, sortable: true, align: "right", class: "plate-table__value" },
+]);
+// The DataTable names a column by its row path (`item.name`); the sort keys are the row's own.
+const tableSort = computed<DataTableSort | undefined>(() =>
+    sort.value ? { ...sort.value, key: `item.${sort.value.key}` } : undefined,
+);
+function onSort(next: DataTableSort): void {
+    sort.value = { ...next, key: next.key.replace(/^item\./, "") };
 }
+const rowId = (row: ViewRow): string | number => row.key;
+const rowIndex = (row: ViewRow): number => row.index + 2;
+const rowAttrs: DataTableRowAttrs<ViewRow> = (row) => ({
+    class: "plate-table__row",
+    style: { transform: `translateY(${row.top}px)` },
+});
+// Each mounted row is measured by the window's one observer (rows can wrap to two lines).
+const rowStops = new Map<string | number, () => void>();
+function setRow(element: HTMLElement | null, row: ViewRow): void {
+    rowStops.get(row.key)?.();
+    rowStops.delete(row.key);
+    if (element) rowStops.set(row.key, virtual.observe(row.key, element));
+}
+
+// The foot fade: shown while the scroller has rows below its fold.
+const atEnd = ref(true);
 function onScroll(): void {
-    const sc = scroller();
+    const sc = viewport.value;
     if (sc) atEnd.value = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 2;
 }
+// The scroller is a keyboard stop when it scrolls, so the rows are reachable without a pointer.
+const scrolls = ref(false);
 onMounted(() => {
-    const sc = scroller();
+    const sc = viewport.value;
     if (!sc) return;
-    // The scroller is a keyboard stop when it scrolls, so the rows are reachable without a pointer.
-    if (sc.scrollHeight > sc.clientHeight + 1) {
-        sc.tabIndex = 0;
-        sc.setAttribute("aria-label", `${props.title}: table, ${props.rows.length} rows`);
-    }
+    scrolls.value = sc.scrollHeight > sc.clientHeight + 1;
     onScroll();
 });
 </script>
 
 <template>
     <div
-        ref="root"
         class="plate-table"
         :class="{ 'plate-table--more': !atEnd }"
         data-plate-table
         :data-subject="id"
-        @scroll.capture.passive="onScroll"
     >
-        <DataTable
-            :columns="columns"
-            :rows="sorted"
-            rowKey="_id"
-            :aria-label="title"
-            :sort="sort"
-            @update:sort="sort = $event"
-        />
+        <div
+            ref="viewport"
+            class="plate-table__viewport"
+            data-plate-table-viewport
+            :tabindex="scrolls ? 0 : undefined"
+            :aria-label="scrolls ? `${title}: table, ${rows.length} rows` : undefined"
+            @scroll.passive="onScroll"
+        >
+            <DataTable
+                class="plate-table__table"
+                :style="{ '--plate-table-total': `${virtual.totalSize.value}px` }"
+                :columns="columns"
+                :rows="tableRows"
+                :get-row-id="rowId"
+                :get-row-index="rowIndex"
+                :get-row-attrs="rowAttrs"
+                :row-ref="setRow"
+                :aria-label="title"
+                :aria-row-count="sorted.length + 1"
+                :sort="tableSort"
+                :responsive="false"
+                @update:sort="onSort"
+            />
+        </div>
     </div>
 </template>
 
@@ -100,42 +150,69 @@ onMounted(() => {
        showing through them. */
     background: var(--card, var(--background));
 }
-.plate-table :deep([data-slot="data-table"]) {
+/* The one scroller, on both axes, so the header can stick. */
+.plate-table__viewport {
+    position: relative;
     flex: 1 1 auto;
     min-block-size: 0;
-    display: flex;
-    flex-direction: column;
-}
-/* The library's table container is the one scroller, on both axes, so the header can stick. */
-.plate-table :deep([data-slot="table-container"]) {
-    flex: 1 1 auto;
-    min-block-size: 0;
+    overflow: auto;
     overscroll-behavior: contain;
 }
-.plate-table--more :deep([data-slot="table-container"]) {
+.plate-table--more .plate-table__viewport {
     mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent);
 }
-.plate-table :deep(thead) {
+.plate-table__viewport :deep(.plate-table__table),
+.plate-table__viewport :deep(.plate-table__table [data-slot="table-container"]),
+.plate-table__viewport :deep(.plate-table__table [data-slot="table"]) {
+    overflow: visible;
+}
+/* Windowed rows are seated absolutely, so each row and the head lay out as their own fixed table:
+   the value column holds one width everywhere and the name takes the rest. */
+.plate-table__viewport :deep(table) {
+    inline-size: 100%;
+    table-layout: fixed;
+}
+.plate-table__viewport :deep(thead) {
     position: sticky;
     z-index: 1;
     inset-block-start: 0;
     background: var(--card, var(--background));
 }
-.plate-table :deep(tr),
-.plate-table :deep(th),
-.plate-table :deep(td) {
+.plate-table__viewport :deep(tbody) {
+    position: relative;
+    display: block;
+    block-size: var(--plate-table-total);
+}
+.plate-table__viewport :deep(thead),
+.plate-table__viewport :deep(tbody tr) {
+    display: table;
+    inline-size: 100%;
+    table-layout: fixed;
+}
+.plate-table__viewport :deep(.plate-table__row) {
+    position: absolute;
+    inset-block-start: 0;
+    inline-size: 100%;
+}
+.plate-table__viewport :deep(tr),
+.plate-table__viewport :deep(th),
+.plate-table__viewport :deep(td) {
     border-color: var(--viz-grid);
 }
 /* Rows at reading density: a long table shows more of itself in the figure's box. */
-.plate-table :deep(td),
-.plate-table :deep(th) {
+.plate-table__viewport :deep(td),
+.plate-table__viewport :deep(th) {
     padding-block: 0.5rem;
 }
-.plate-table :deep(.plate-table__value) {
+.plate-table__viewport :deep(th:last-child),
+.plate-table__viewport :deep(.plate-table__value) {
+    inline-size: clamp(7rem, 34%, 11rem);
+}
+.plate-table__viewport :deep(.plate-table__value) {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
-.plate-table :deep(.plate-table__name) {
+.plate-table__viewport :deep(.plate-table__name) {
     min-inline-size: 0;
     overflow-wrap: anywhere;
 }
