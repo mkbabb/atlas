@@ -289,15 +289,18 @@ export interface LabelBox {
     suppressed region to the pattern texture, so O-A22's non-hue-channel-per-region invariant survives
     the thin (the word only changes FORM, it never drops). PURE + DETERMINISTIC: the same ordered
     boxes always yield the same suppressed set — no hover state, frozen per frame. `reserved` boxes
-    are never suppressed and never compete; they only take space. */
+    are never suppressed and never compete; they only take space. `clearance` (user units) is the
+    empty band two kept words must leave between their boxes on each axis (0: boxes may adjoin). */
 export function resolveLabelCollisions(
     boxes: readonly LabelBox[],
     reserved: readonly LabelBox[] = [],
+    clearance = 0,
 ): Set<string> {
     const suppressed = new Set<string>();
     const kept: LabelBox[] = [];
     const hits = (k: LabelBox, b: LabelBox) =>
-        Math.abs(k.cx - b.cx) < (k.w + b.w) / 2 && Math.abs(k.cy - b.cy) < (k.h + b.h) / 2;
+        Math.abs(k.cx - b.cx) < (k.w + b.w) / 2 + clearance &&
+        Math.abs(k.cy - b.cy) < (k.h + b.h) / 2 + clearance;
     for (const b of boxes) {
         // U/B8 N-2 — `reserved` are words that always draw (a region's place name): a word keeps its
         // seat only clear of every other region's reserved box as well as every kept word.

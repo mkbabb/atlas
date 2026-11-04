@@ -150,7 +150,8 @@ export interface ChoroplethProps {
      * feature's centroid, ON TOP of the value-label channel it never replaces: the letters carry
      * PLACE while the magnitude stays on the fill + hover, the two labels coexisting (the ruling's
      * AUGMENT word). Return "" to omit a feature's letters; omit the prop ⇒ no channel, byte-
-     * identical render for every route that does not declare it.
+     * identical render for every route that does not declare it. U/B8r I-4: a name with no room
+     * gives way (`placeNamesSuppressed`), and its value goes with it.
      */
     placeLabel?: (key: string) => string;
     /**
@@ -264,6 +265,42 @@ export function labelStack(
         valueW: Math.max(1, s.label.length) * faces.value.advance,
         valueH,
     };
+}
+
+/** The empty band two place names keep between them, in user units: the two names' paper halos
+    (`.geo-place-label` strokes 2.5 units, half of it outside each glyph), so no halo paints over a
+    neighbour's letters. */
+export const PLACE_LABEL_CLEARANCE = 2.5;
+
+/** The regions the declutter seats, in PRIORITY order: the larger region first (minor axis DESC),
+    key ASC as the tiebreak, so a frame always yields the same set. */
+function byLabelPriority<T extends Pick<Shape, "key" | "minorAxis">>(a: T, b: T): number {
+    return b.minorAxis - a.minorAxis || (a.key < b.key ? -1 : 1);
+}
+
+/**
+ * U/B8r I-4 · THE PLACE-NAME DECLUTTER. A place name draws only where it has room: the names are
+ * seated in priority order (`byLabelPriority`), and a name whose box comes within
+ * `PLACE_LABEL_CLEARANCE` of a name already seated gives way. The faces are the rendered ones, and
+ * the place face grows with the phone counter-scale, so a narrow map seats fewer names (the count
+ * scales with width, as the A10 rail's does). Returns the keys whose names give way. A name never
+ * yields to a value: values yield to names (`collisionSuppressed`).
+ */
+export function placeNamesSuppressed(
+    shapes: readonly Pick<Shape, "key" | "cx" | "cy" | "label" | "place" | "minorAxis">[],
+    faces: LabelFaces = estimatedLabelFaces(),
+    /** Whether a region's value word is mounted (it takes the line below the name). */
+    valueMounted: (key: string) => boolean = () => true,
+): Set<string> {
+    const boxes = shapes
+        .filter((s) => s.place !== "")
+        .slice()
+        .sort(byLabelPriority)
+        .map((s) => {
+            const k = labelStack({ ...s, label: valueMounted(s.key) ? s.label : "" }, faces);
+            return { key: s.key, cx: s.cx, cy: k.placeY, w: k.placeW, h: k.placeH };
+        });
+    return resolveLabelCollisions(boxes, [], PLACE_LABEL_CLEARANCE);
 }
 
 // ── A-04 · THE AGGREGATED-CELL TAP FLOOR (the L4 law at the geo mark) ───────────────────────────
@@ -502,6 +539,18 @@ export function useChoroplethShapes(
         return labelGateResults.value.get(key) ?? false;
     }
 
+    // ── U/B8r I-4 · THE PLACE-NAME DECLUTTER ────────────────────────────────────────────────────
+    // A name with no room gives way (`placeNamesSuppressed`); the names seated are the ones the SFC
+    // draws. A value word takes the line below its name only while the value layer is mounted
+    // (`labelsMounted`, below).
+    const placeSuppressed = computed<Set<string>>(() =>
+        placeNamesSuppressed(shapes.value, labelFaces(), () => labelsMounted.value),
+    );
+    /** Whether `key`'s place name is seated (it has a name, and the name has room). */
+    function placeShown(s: Pick<Shape, "key" | "place">): boolean {
+        return s.place !== "" && !placeSuppressed.value.has(s.key);
+    }
+
     // ── X10 · THE DETERMINISTIC LABEL-COLLISION DECLUTTER (the pairwise-overlap leg) ───────────
     // The resting value-label words seated at region centroids overlap pairwise on a dense
     // choropleth. Only the gate-CLEARING words compete for space (a gate-failing region already shows
@@ -510,22 +559,28 @@ export function useChoroplethShapes(
     const collisionSuppressed = computed<Set<string>>(() => {
         if (resolvedChannel.value !== "value-label") return new Set<string>();
         const faces = labelFaces();
-        const boxes: LabelBox[] = shapes.value
-            .filter((s) => s.hasValue && s.label !== "" && shapeClearsLabelGate(s.key))
-            .sort((a, b) => b.minorAxis - a.minorAxis || (a.key < b.key ? -1 : 1))
+        const suppressed = new Set<string>();
+        // U/B8r I-4 — a name and its value are one lockup. A region whose name gave way loses its
+        // value too: a bare number seated under a neighbour's name would read as the neighbour's.
+        // Its region carries the texture instead, so the channel changes form and never drops.
+        const candidates = shapes.value.filter((s) => s.hasValue && s.label !== "" && shapeClearsLabelGate(s.key));
+        for (const s of candidates) if (s.place !== "" && !placeShown(s)) suppressed.add(s.key);
+        const boxes: LabelBox[] = candidates
+            .filter((s) => !suppressed.has(s.key))
+            .sort(byLabelPriority)
             .map((s) => {
                 const k = labelStack(s, faces);
                 return { key: s.key, cx: s.cx, cy: k.valueY, w: k.valueW, h: k.valueH };
             });
-        // A place word always draws (A-28: it augments, never yields), so its box is reserved. A
-        // region's own name sits above its own value by construction, so it never counts against it.
-        const reserved = shapes.value
-            .filter((s) => s.place !== "")
-            .map((s) => {
-                const k = labelStack(s, faces);
-                return { key: s.key, cx: s.cx, cy: k.placeY, w: k.placeW, h: k.placeH };
-            });
-        return resolveLabelCollisions(boxes, reserved);
+        // A seated name takes its space before any value does (a value gives way rather than cross a
+        // name). A region's own name sits above its own value by construction, so it never counts
+        // against it.
+        const reserved = shapes.value.filter(placeShown).map((s) => {
+            const k = labelStack(s, faces);
+            return { key: s.key, cx: s.cx, cy: k.placeY, w: k.placeW, h: k.placeH };
+        });
+        for (const key of resolveLabelCollisions(boxes, reserved)) suppressed.add(key);
+        return suppressed;
     });
 
     /** THE UNIFIED SUPPRESSION TEST — a value-label region loses its resting word when it fails the
@@ -615,6 +670,7 @@ export function useChoroplethShapes(
         labelsMounted,
         labelsRedundant,
         labelGateFails,
+        placeShown,
     } as {
         WIDTH: ComputedRef<number>;
         HEIGHT: ComputedRef<number>;
@@ -625,5 +681,6 @@ export function useChoroplethShapes(
         labelsMounted: ComputedRef<boolean>;
         labelsRedundant: ComputedRef<boolean>;
         labelGateFails: (s: Shape) => boolean;
+        placeShown: (s: Pick<Shape, "key" | "place">) => boolean;
     };
 }
