@@ -168,3 +168,71 @@ describe("PlateDock: one handle per figure, press opens, Escape closes to the ha
         expect(dock.hasAttribute("data-expanded")).toBe(false);
     });
 });
+
+// U/B8r I-2 and I-3 (REPORT-B8 §6.1). With a `view`, the closed dock carries two cells: the Table
+// view toggle and the handle. I-2: the toggle scaled under the pointer (glass's dock hover lift,
+// 1.1), against register MO-09's "no hover scale". I-3: glass drew every closed dock as a circle
+// (50%), so this 100 x 52 dock became an oval lozenge, a full-radius box over 40 px (F-20). The
+// cures are glass's (u/b8r-glass); this spec reads the served cascade in each engine.
+describe("PlateDock with the Table view toggle: no hover scale, a bar corner", () => {
+    async function mountView(): Promise<HTMLElement> {
+        host = document.createElement("div");
+        host.style.width = "720px";
+        document.body.appendChild(host);
+        pinia = createPinia();
+        setActivePinia(pinia);
+        app = createApp(
+            defineComponent({
+                setup() {
+                    provideDismissArbiter();
+                    return () =>
+                        h("div", { style: "display:flex;flex-direction:column;align-items:flex-end;gap:24px" }, [
+                            h(PlateDock, { id: "v", title: "Total contracted", view: "chart", enlarge: () => {}, exportCsv: () => {}, exportImage: () => {} }),
+                            h(PlateDock, { id: "o", title: "Cost per Mbps", enlarge: () => {}, browse: () => {} }),
+                        ]);
+                },
+            }),
+        );
+        app.use(pinia);
+        app.mount(host);
+        await nextTick();
+        await sleep(400);
+        return host;
+    }
+    const shell = (dock: HTMLElement) => dock.querySelector<HTMLElement>(".plate-dock__dock")!;
+    /** The rq1 stadium rule: a box 40 px or taller, at least 1.3 times as wide, with a full radius. */
+    const isStadium = (el: HTMLElement) => {
+        const r = el.getBoundingClientRect();
+        const rad = parseFloat(getComputedStyle(el).borderTopLeftRadius);
+        return r.height >= 40 && r.width >= 1.3 * r.height && rad >= r.height / 2 - 1;
+    };
+
+    it("the closed two-cell dock keeps the bar corner; the one-cell dock stays a circle", async () => {
+        const root = await mountView();
+        const two = shell(dockOf(root, "v"));
+        const r = two.getBoundingClientRect();
+        expect(r.width, "the toggle sits beside the handle").toBeGreaterThan(1.3 * r.height);
+        const radius = getComputedStyle(two).borderTopLeftRadius;
+        expect(radius, `closed two-cell dock ${Math.round(r.width)} x ${Math.round(r.height)}`).toMatch(/px$/);
+        expect(parseFloat(radius)).toBeLessThan(r.height / 2 - 1);
+        expect(isStadium(two)).toBe(false);
+        const one = shell(dockOf(root, "o"));
+        const o = one.getBoundingClientRect();
+        expect(Math.abs(o.width - o.height)).toBeLessThan(1);
+        expect(getComputedStyle(one).borderTopLeftRadius).toBe("50%");
+    });
+
+    it("hovering the Table view toggle scales nothing", async () => {
+        const root = await mountView();
+        const toggle = dockOf(root, "v").querySelector<HTMLElement>('[data-action="view"]')!;
+        const before = toggle.getBoundingClientRect();
+        await userEvent.hover(toggle);
+        await sleep(450);
+        const cs = getComputedStyle(toggle);
+        expect(["none", "1"]).toContain(cs.scale);
+        expect(cs.transform).toBe("none");
+        const after = toggle.getBoundingClientRect();
+        expect(Math.abs(after.width - before.width)).toBeLessThan(0.5);
+        expect(Math.abs(after.height - before.height)).toBeLessThan(0.5);
+    });
+});
