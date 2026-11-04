@@ -62,7 +62,8 @@ describe("U/B8 N-2 — a region's name and value never share a seat", () => {
     });
 
     it("drops a value word whose block would touch a neighbour's name (the texture carries it)", async () => {
-        // "01"'s name is long enough to reach into "02"'s block; the name always draws.
+        // "01"'s name is long enough to reach into "02"'s block. It also crosses "02"'s name, which
+        // gives way (U/B8r I-4), and "02"'s value goes with its name.
         const html = await render({ "01": "ALPHAALPHAALPHAALPHAALPHAALPHA", "02": "ANSON" });
         const failed = (word: string) =>
             new RegExp(`class="[^"]*geo-value-label--gate-fail[^"]*"[^>]*>\\s*${word.replace(/[$.]/g, "\\$&")}`).test(html);

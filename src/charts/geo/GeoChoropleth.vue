@@ -96,6 +96,7 @@ const {
     labelsMounted,
     labelsRedundant,
     labelGateFails,
+    placeShown,
 } = useChoroplethShapes(props, () => labelFaces.value);
 
 // A-04 · THE AGGREGATED-CELL TAP FLOOR — the field's own rendered measure (the `viewBox` scales the
@@ -230,9 +231,10 @@ const magnitudeRings = computed(() => {
 // prop ⇒ no layer, byte-identical render.
 // U/B8 N-2 — a feature with both words seats them as one stack (`labelStack`): the place word above
 // the centroid, the value word below, so the two never share a baseline.
+// U/B8r I-4 — only the names with room draw (`placeShown`); a name that would cross another gives way.
 const placeLabels = computed(() =>
     shapes.value.flatMap((s) =>
-        s.place
+        placeShown(s)
             ? [{ key: s.key, cx: s.cx, cy: stackOf(s).placeY, text: s.place }]
             : [],
     ),

@@ -2,6 +2,20 @@
 
 ## Unreleased (8.0.0 train)
 
+### Fixes (U/B8r I-4)
+
+- **A place name with no room gives way.** `GeoChoropleth`'s place names used to draw at every
+  centroid (A-28), and only value words gave way, so /ecf's county names crossed each other: 37
+  glyph-cell crossings at 390 and 2 at 1440 in Chromium. Names are now seated in priority order (the
+  larger region first, key as the tiebreak). A name that would come within 2.5 user units (the two
+  paper halos, `PLACE_LABEL_CLEARANCE`) of a seated name gives way. Its value word goes with it, since
+  a bare number under a neighbour's name reads as the neighbour's; the region wears its tier texture,
+  so the redundant channel changes form and never drops. The place face grows with the phone
+  counter-scale, so a narrow map names fewer regions. Values still give way to names. New:
+  `placeNamesSuppressed`, `PLACE_LABEL_CLEARANCE`, and a `clearance` argument on
+  `resolveLabelCollisions`. Witnesses: `b8r-place-declutter.spec.ts` (node) and
+  `GeoChoropleth.place-declutter.browser.spec.ts` (three engines, 254 and 1192 px maps), red before.
+
 ### Features (U/B8 lane DV)
 
 - **Table view in every figure's dock (U/B8 A4 · owner O-18, O-19).** The plate dock's persistent seat
