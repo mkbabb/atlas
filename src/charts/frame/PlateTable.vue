@@ -59,13 +59,32 @@ const virtual = useVirtualWindow<TableRow, string | number>({
     items: sorted,
     viewport,
     key: (row) => row._id,
+    // A one-line row at reading density (36.6 px at 390 px on /bead).
     estimateSize: 37,
+    // A short reach past the fold: the open mounts what is in view and a few rows more, not three
+    // screens of rows (45 rows on the phone /bead open with the default reach).
+    overscan: { before: 240, after: 480 },
 });
 type ViewRow = VirtualItem<TableRow, string | number>;
 const tableRows = computed<ViewRow[]>(() => [...virtual.items.value]);
+// The value column's register, read from the rows. Short figures ("$1.86B", "134 kbps") sit in a
+// right-aligned column as wide as the longest of them. A composed text value (the /bead provider
+// strip's "type · parent · award · …" cell) reads as text: a wide, left-aligned column that wraps.
+const FIGURE_MAX_CH = 18;
+const longestValue = computed(() => props.rows.reduce((n, r) => Math.max(n, String(r.value ?? "").length), 0));
+const valueIsText = computed(() => longestValue.value > FIGURE_MAX_CH);
+// The head shares the column, so the width also fits its label and the sort mark (" ↕").
+const valueCh = computed(() => Math.max(longestValue.value, props.valueHeader.length + 2));
 const columns = computed<DataTableColumn<ViewRow>[]>(() => [
     { key: "item.name", label: props.rowHeader, sortable: true, class: "plate-table__name" },
-    { key: "item.value", label: props.valueHeader, sortable: true, align: "right", class: "plate-table__value" },
+    {
+        key: "item.value",
+        label: props.valueHeader,
+        sortable: true,
+        align: valueIsText.value ? "left" : "right",
+        class: "plate-table__value",
+        headerClass: "plate-table__value",
+    },
 ]);
 // The DataTable names a column by its row path (`item.name`); the sort keys are the row's own.
 const tableSort = computed<DataTableSort | undefined>(() =>
@@ -107,7 +126,8 @@ onMounted(() => {
 <template>
     <div
         class="plate-table"
-        :class="{ 'plate-table--more': !atEnd }"
+        :class="{ 'plate-table--more': !atEnd, 'plate-table--text': valueIsText }"
+        :style="{ '--plate-table-value-ch': valueCh }"
         data-plate-table
         :data-subject="id"
     >
@@ -204,13 +224,19 @@ onMounted(() => {
 .plate-table__viewport :deep(th) {
     padding-block: 0.5rem;
 }
-.plate-table__viewport :deep(th:last-child),
+/* Column widths are plain lengths or plain percentages: a fixed-layout cell treats a width that
+   mixes the two (calc, clamp, min) as auto. A figure column is as wide as its longest figure plus
+   the cell's padding; the name takes the rest and wraps. */
 .plate-table__viewport :deep(.plate-table__value) {
-    inline-size: clamp(7rem, 34%, 11rem);
-}
-.plate-table__viewport :deep(.plate-table__value) {
+    inline-size: calc(var(--plate-table-value-ch) * 1ch + 2.5rem);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+}
+/* A text value takes the wider share and wraps like the name. */
+.plate-table--text .plate-table__viewport :deep(.plate-table__value) {
+    inline-size: 60%;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 .plate-table__viewport :deep(.plate-table__name) {
     min-inline-size: 0;

@@ -39,8 +39,14 @@ afterEach(async () => {
     await page.viewport(1280, 720);
 });
 
+/** The provider strip's composed value cell: six fields in one text cell. */
+const TEXT_ROWS = ROWS.slice(0, 60).map((r, i) => ({
+    ...r,
+    value: `Cooperative · Parent Holdings ${i} · $${i}.2M · 3 · 12 · Provider ${i} Inc.; Provider ${i} Broadband LLC`,
+}));
+
 /** A phone plate: a 390 px column, a 360 px figure box, the table seated in it on demand. */
-async function mount(): Promise<{ root: HTMLElement; open: { value: boolean } }> {
+async function mount(rows = ROWS): Promise<{ root: HTMLElement; open: { value: boolean } }> {
     host = document.createElement("div");
     host.style.width = "390px";
     document.body.appendChild(host);
@@ -50,7 +56,7 @@ async function mount(): Promise<{ root: HTMLElement; open: { value: boolean } }>
             setup: () => () =>
                 h("div", { class: "stage", style: "position:relative;height:360px" }, [
                     open.value
-                        ? h(PlateTable, { id: "bead-providers", title: "Providers", rows: ROWS, rowHeader: "Provider", valueHeader: "Locations" })
+                        ? h(PlateTable, { id: "bead-providers", title: "Providers", rows, rowHeader: "Provider", valueHeader: "Locations" })
                         : null,
                 ]),
         }),
@@ -155,5 +161,39 @@ describe("DV-3 · the table view windows its rows", () => {
         await userEvent.click(value);
         expect(await until(() => names(root)[0] === maxName, 2000), "descending: the global maximum first").toBe(true);
         expect(await blanksLastAtFoot(), "descending: blanks last").toBe(true);
+    });
+
+    // The windowed rows are fixed-layout tables, so the value column's width is the table's to set.
+    // The old auto layout let the provider strip's composed text cell widen the table to 2,572 px
+    // inside a 238 px phone scroller, and squeezed the names to break mid-word.
+    it("a figure column fits its figures; a text value wraps; nothing scrolls sideways", async () => {
+        await page.viewport(390, 844);
+        for (const [rows, text] of [[ROWS, false], [TEXT_ROWS, true]] as const) {
+            const { root, open } = await mount(rows);
+            open.value = true;
+            expect(await until(() => bodyRows(root).length > 0, 2000)).toBe(true);
+            await sleep(200);
+            const sc =
+                root.querySelector<HTMLElement>("[data-plate-table-viewport]") ??
+                root.querySelector<HTMLElement>('[data-plate-table] [data-slot="table-container"]')!;
+            const register = text ? "text" : "figure";
+            expect(sc.scrollWidth, `${register}: no sideways scroll`).toBeLessThanOrEqual(sc.clientWidth + 1);
+            const [nameHead, valueHead] = [...root.querySelectorAll<HTMLElement>("[data-plate-table] thead th")];
+            const cell = bodyRows(root)[0]!.querySelectorAll<HTMLElement>("td")[1]!;
+            expect(cell.scrollWidth, `${register}: the value fits its cell`).toBeLessThanOrEqual(cell.clientWidth + 1);
+            const nameW = nameHead!.getBoundingClientRect().width;
+            const valueW = valueHead!.getBoundingClientRect().width;
+            if (text) {
+                expect(valueW, "text: the value takes the wider share").toBeGreaterThan(nameW);
+                expect(getComputedStyle(cell).textAlign).not.toBe("right");
+            } else {
+                expect(valueW, "figure: the name takes the wider share").toBeLessThan(nameW);
+                expect(getComputedStyle(cell).whiteSpace).toBe("nowrap");
+            }
+            app?.unmount();
+            host?.remove();
+            app = null;
+            host = null;
+        }
     });
 });
