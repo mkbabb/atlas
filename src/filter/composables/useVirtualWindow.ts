@@ -121,35 +121,61 @@ export function useVirtualWindow<Item, Key extends VirtualKey = VirtualKey>(
         return true;
     }
 
-    function observe(key: Key, element: Element): () => void {
-        const commit = (size: number): void => {
-            if (!(size > 0) || sizes.value.get(key) === size) return;
-            const next =
+    /** Commit a batch of row sizes as ONE `sizes` update, so a batch re-lays the window once. */
+    function commit(batch: Iterable<readonly [Key, number]>): void {
+        let next: Map<Key, number> | null = null;
+        for (const [key, size] of batch) {
+            if (!(size > 0) || (next ?? sizes.value).get(key) === size) continue;
+            next ??=
                 activeWidth == null
                     ? new Map(sizes.value)
                     : virtualMeasurementSession<Key>(measurementSurface, activeWidth);
             next.set(key, size);
-            sizes.value = new Map(next);
-        };
-        commit(element.getBoundingClientRect().height);
-        if (typeof ResizeObserver === "undefined") return () => undefined;
-        // Commit the BORDER box, matching the seed's `getBoundingClientRect().height` above (and
-        // the section-window observer's own `borderBoxSize` read). The row is stacked by its full
-        // visual height — its `border-block-end` rule included — so the border box is the correct
-        // measure. Reading `contentRect` (the CONTENT box, one border shorter) made the seed and
-        // the observer disagree by that border: each re-observe re-seeded the border box, each
-        // observer fire re-committed the content box, so `sizes` flip-flopped forever — the
-        // never-settling loop that floods "ResizeObserver loop … undelivered notifications".
-        const observer = new ResizeObserver(
-            ([entry]) => commit(entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height),
+        }
+        if (next) sizes.value = new Map(next);
+    }
+
+    // ONE observer for every mounted row (U/B8r DV-3). An observer per row is a callback per row,
+    // and the browser runs a microtask checkpoint after each callback: every row's commit then
+    // re-rendered the window on its own, all inside one frame. The /bead provider table's phone open
+    // read 96-203 ms at 4x CPU with 20 mounted rows. One observer delivers a frame's resizes as one
+    // batch, committed once.
+    const targets = new Map<Element, Key>();
+    let rowObserver: ResizeObserver | null = null;
+    function observer(): ResizeObserver {
+        if (rowObserver) return rowObserver;
+        // Commit the BORDER box (as the section-window observer's own `borderBoxSize` read does).
+        // The row is stacked by its full visual height — its `border-block-end` rule included — so
+        // the border box is the correct measure. Reading `contentRect` (the CONTENT box, one border
+        // shorter) once disagreed with a border-box seed, and `sizes` flip-flopped forever.
+        rowObserver = new ResizeObserver((entries) =>
+            commit(
+                entries.flatMap((entry) => {
+                    const key = targets.get(entry.target);
+                    if (key === undefined) return [];
+                    const size = entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height;
+                    return [[key, size] as const];
+                }),
+            ),
         );
-        measurements.add(observer);
-        observer.observe(element);
-        const stop = (): void => {
-            observer.disconnect();
-            measurements.delete(observer);
+        measurements.add(rowObserver);
+        return rowObserver;
+    }
+
+    // A row's size comes from the observer's first delivery, which the browser makes after its own
+    // layout and before paint. `observe` reads no layout: the DataTable calls `row-ref` while it is
+    // still inserting rows, so a `getBoundingClientRect` seed here forced one layout per row
+    // (2-5 ms each at 4x CPU, 30 rows on the /bead open).
+    function observe(key: Key, element: Element): () => void {
+        if (typeof ResizeObserver === "undefined") return () => undefined;
+        const rows = observer();
+        targets.set(element, key);
+        rows.observe(element);
+        return (): void => {
+            if (targets.get(element) !== key) return;
+            targets.delete(element);
+            rows.unobserve(element);
         };
-        return stop;
     }
 
     return {

@@ -123,7 +123,7 @@ describe("A4 · the table view toggle", () => {
 });
 
 describe("A4 · a composed stage owns the view", () => {
-    it("the stage's graphic plate reads the stage's view and draws its rows as the table", async () => {
+    it("the stage's graphic plate reads the stage's view and seats its rows as the table", async () => {
         const VizPlate = (await import("../../src/charts/frame/VizPlate.vue")).default;
         const Stage = defineComponent({
             setup(_, { slots }) {
@@ -143,8 +143,11 @@ describe("A4 · a composed stage owns the view", () => {
         });
         expect(html).toMatch(/class="viz-plate__stage" data-view="table"/);
         expect(html).toMatch(/data-plate-table[^>]*data-subject="sci-stage"/);
-        expect(html).toContain("Wake");
-        expect(html).toContain("$1.86B");
+        // The rows are windowed against the live scroller (U/B8r DV-3), so a server render mounts
+        // none; the table states its full count. The view starts on the chart and turns to the table
+        // only on a reader's press, so no served page renders it. The rows themselves are pinned in
+        // src/charts/frame/PlateTable.browser.spec.ts and PlateTable.window.browser.spec.ts.
+        expect(html).toMatch(/<table[^>]*aria-rowcount="2"/);
         // Inside a stage the plate seats no dock of its own: the stage's dock is the one toggle.
         expect(html).not.toMatch(/data-action="view"/);
     });
