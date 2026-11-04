@@ -73,8 +73,10 @@ const tableRows = computed<ViewRow[]>(() => [...virtual.items.value]);
 const FIGURE_MAX_CH = 18;
 const longestValue = computed(() => props.rows.reduce((n, r) => Math.max(n, String(r.value ?? "").length), 0));
 const valueIsText = computed(() => longestValue.value > FIGURE_MAX_CH);
-// The head shares the column, so the width also fits its label and the sort mark (" ↕").
-const valueCh = computed(() => Math.max(longestValue.value, props.valueHeader.length + 2));
+// The figures alone set the width (the floor fits a short head and its sort mark). A long head label
+// wraps in its column: sized by the head, a 28-character label took 240 of a 252 px phone table and
+// left the names 12 px (sci-schoolmap, U/B8r).
+const valueCh = computed(() => Math.max(longestValue.value, 6));
 const columns = computed<DataTableColumn<ViewRow>[]>(() => [
     { key: "item.name", label: props.rowHeader, sortable: true, class: "plate-table__name" },
     {
@@ -219,10 +221,16 @@ onMounted(() => {
 .plate-table__viewport :deep(td) {
     border-color: var(--viz-grid);
 }
-/* Rows at reading density: a long table shows more of itself in the figure's box. */
+/* Rows at reading density: a long table shows more of itself in the figure's box. The inline padding
+   leaves a phone name column room for a whole word ("Corporation" in a 95 px column). */
 .plate-table__viewport :deep(td),
 .plate-table__viewport :deep(th) {
     padding-block: 0.5rem;
+    padding-inline: 0.625rem;
+}
+/* A tall text row reads from its top: the name sits beside the start of its record. */
+.plate-table--text .plate-table__viewport :deep(td) {
+    vertical-align: top;
 }
 /* Column widths are plain lengths or plain percentages: a fixed-layout cell treats a width that
    mixes the two (calc, clamp, min) as auto. A figure column is as wide as its longest figure plus
@@ -232,6 +240,12 @@ onMounted(() => {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
+/* The head label wraps inside the figures' width. */
+.plate-table__viewport :deep(th.plate-table__value),
+.plate-table__viewport :deep(th.plate-table__value .data-table-sort) {
+    white-space: normal;
+    overflow-wrap: break-word;
+}
 /* A text value takes the wider share and wraps like the name. */
 .plate-table--text .plate-table__viewport :deep(.plate-table__value) {
     inline-size: 60%;
@@ -240,6 +254,6 @@ onMounted(() => {
 }
 .plate-table__viewport :deep(.plate-table__name) {
     min-inline-size: 0;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
 }
 </style>

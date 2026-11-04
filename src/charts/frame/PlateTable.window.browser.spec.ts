@@ -46,7 +46,7 @@ const TEXT_ROWS = ROWS.slice(0, 60).map((r, i) => ({
 }));
 
 /** A phone plate: a 390 px column, a 360 px figure box, the table seated in it on demand. */
-async function mount(rows = ROWS): Promise<{ root: HTMLElement; open: { value: boolean } }> {
+async function mount(rows = ROWS, valueHeader = "Locations"): Promise<{ root: HTMLElement; open: { value: boolean } }> {
     host = document.createElement("div");
     host.style.width = "390px";
     document.body.appendChild(host);
@@ -56,7 +56,7 @@ async function mount(rows = ROWS): Promise<{ root: HTMLElement; open: { value: b
             setup: () => () =>
                 h("div", { class: "stage", style: "position:relative;height:360px" }, [
                     open.value
-                        ? h(PlateTable, { id: "bead-providers", title: "Providers", rows, rowHeader: "Provider", valueHeader: "Locations" })
+                        ? h(PlateTable, { id: "bead-providers", title: "Providers", rows, rowHeader: "Provider", valueHeader })
                         : null,
                 ]),
         }),
@@ -168,8 +168,15 @@ describe("DV-3 · the table view windows its rows", () => {
     // inside a 238 px phone scroller, and squeezed the names to break mid-word.
     it("a figure column fits its figures; a text value wraps; nothing scrolls sideways", async () => {
         await page.viewport(390, 844);
-        for (const [rows, text] of [[ROWS, false], [TEXT_ROWS, true]] as const) {
-            const { root, open } = await mount(rows);
+        // The third case is sci-schoolmap's shape: 8-character figures under a 28-character head. A
+        // head-sized column took 240 of a 252 px phone table and left the names 12 px.
+        const cases = [
+            [ROWS, false, "Locations"],
+            [TEXT_ROWS, true, "Locations"],
+            [ROWS.map((r) => ({ ...r, value: r.value === "—" ? "—" : "1.2 Mbps" })), false, "Bandwidth per student (kbps)"],
+        ] as const;
+        for (const [rows, text, head] of cases) {
+            const { root, open } = await mount([...rows], head);
             open.value = true;
             expect(await until(() => bodyRows(root).length > 0, 2000)).toBe(true);
             await sleep(200);
@@ -186,8 +193,9 @@ describe("DV-3 · the table view windows its rows", () => {
             if (text) {
                 expect(valueW, "text: the value takes the wider share").toBeGreaterThan(nameW);
                 expect(getComputedStyle(cell).textAlign).not.toBe("right");
+                expect(getComputedStyle(cell).verticalAlign, "text: a tall row reads from its top").toBe("top");
             } else {
-                expect(valueW, "figure: the name takes the wider share").toBeLessThan(nameW);
+                expect(valueW, `figure (${head}): the name takes the wider share`).toBeLessThan(nameW);
                 expect(getComputedStyle(cell).whiteSpace).toBe("nowrap");
             }
             app?.unmount();
