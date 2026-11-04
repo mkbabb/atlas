@@ -3,8 +3,11 @@
 //   `selectableCurves` was set, so sci /demand latched its crossover lines only to hover them);
 // - on MultiYearFigure, which declared no hover emit, so the /sci utilization and /usf decade
 //   figures could publish no line readout.
+// U/B8 I-1: the spec waits on the figure's own `settled` gate (tests/browser/echart-capture.ts), not on
+// a private `finished` it subscribed to late. The first paint is at rest (P-G4), so that `finished`
+// passed before the spec subscribed and it waited forever, in all three engines.
 import "../../../tests/browser/utilities.css";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 import { createApp, defineComponent, h, type Component } from "vue";
 import { createPinia, setActivePinia } from "pinia";
@@ -14,6 +17,13 @@ import TimeSeries, { type LineSeries } from "./TimeSeries.vue";
 import MultiYearFigure from "./MultiYearFigure.vue";
 import { trajectoryFeed } from "../../data/multiYear";
 import { installDashboardRegistry } from "../../contract/registry-inject";
+import type { UseEChart } from "../composables/useEChart";
+
+// Every useEChart the figure mounts, so the spec reads the line chart's own readiness gate.
+const captured = vi.hoisted(() => ({ apis: [] as UseEChart[] }));
+vi.mock("../composables/useEChart", async (importOriginal) =>
+    (await import("../../../tests/browser/echart-capture")).captureEChart(await importOriginal(), captured),
+);
 
 const until = async (ok: () => boolean, ms = 6000) => {
     const t0 = performance.now();
@@ -26,6 +36,7 @@ const until = async (ok: () => boolean, ms = 6000) => {
 const cleanups: Array<() => void> = [];
 afterEach(() => {
     while (cleanups.length) cleanups.pop()!();
+    captured.apis.length = 0;
 });
 
 async function mount(component: Component, props: Record<string, unknown>) {
@@ -54,29 +65,25 @@ async function mount(component: Component, props: Record<string, unknown>) {
 }
 
 /**
- * Resolve on the chart's first `finished`: its first render is drawn and the line's entrance
- * reveal (600 ms) has run. Until then the reveal's clip has not reached every x, and a pointer
- * there hits nothing. Subscribed as soon as the instance exists, which is before the first frame
- * of a 600 ms animation, so the event cannot have passed.
+ * The line chart's `settled` gate from `useEChart`: open once ECharts has drawn the data it holds
+ * and can answer `convertToPixel` and a pointer. The first paint is at rest (P-G4), so the line is
+ * whole when the gate opens. The gate is state, not an event, so a spec that reads it late still
+ * sees it open.
  */
-function firstFinished(chart: NonNullable<ReturnType<typeof getInstanceByDom>>, ms = 6000) {
-    return new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error("the chart never finished its first render")), ms);
-        const done = () => {
-            clearTimeout(timer);
-            chart.off("finished", done);
-            resolve();
-        };
-        chart.on("finished", done);
-    });
+function readinessOf(host: HTMLElement): UseEChart {
+    const chart = getInstanceByDom(host);
+    const api = captured.apis.find((a) => a.chart.value !== null && a.chart.value === chart);
+    if (!api) throw new Error("the line chart mounted no useEChart");
+    return api;
 }
 
 /** Move the pointer onto the drawn line `name` at x, the way zrender reads a real pointer. */
 async function pointAtLine(el: HTMLElement, name: string, x: number, y: number) {
     const host = el.querySelector<HTMLElement>('[data-testid="time-series"]')!;
     await until(() => host.querySelector("canvas") !== null && getInstanceByDom(host) !== undefined);
-    const chart = getInstanceByDom(host)!;
-    await firstFinished(chart);
+    const readiness = readinessOf(host);
+    await until(() => readiness.settled.value);
+    const chart = readiness.chart.value!;
     const [px, py] = chart.convertToPixel({ seriesName: name }, [x, y]) as number[];
     const box = host.getBoundingClientRect();
     const surface = host.querySelector("canvas")!.parentElement as HTMLElement;
