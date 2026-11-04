@@ -30,18 +30,10 @@ import VizTextOverlay from "../legend/VizTextOverlay.vue";
 use([ScatterChart, GridComponent]);
 
 // Every useEChart a figure mounts is captured, so a figure's settle can be read off its own gate.
-const captured = vi.hoisted(() => ({ apis: [] as unknown[] }));
-vi.mock("./useEChart", async (importOriginal) => {
-    const real = await importOriginal<typeof import("./useEChart")>();
-    return {
-        ...real,
-        useEChart: (o: Parameters<typeof real.useEChart>[0]) => {
-            const api = real.useEChart(o);
-            captured.apis.push(api);
-            return api;
-        },
-    };
-});
+const captured = vi.hoisted(() => ({ apis: [] as UseEChart[] }));
+vi.mock("./useEChart", async (importOriginal) =>
+    (await import("../../../tests/browser/echart-capture")).captureEChart(await importOriginal(), captured),
+);
 // ScatterPlate's frame (title, dock, source bar) is not under test: render its figure slot bare.
 vi.mock("../frame/VizPlate.vue", async () => {
     const { defineComponent: dc, h: hh } = await import("vue");
@@ -489,7 +481,7 @@ function settleTimes(
         installDashboardRegistry(app, { getDashboards: () => [], findDashboard: () => undefined });
         const t0 = performance.now();
         app.mount(el);
-        const api = captured.apis[0] as UseEChart | undefined;
+        const api = captured.apis[0];
         if (!api) return reject(new Error("the figure mounted no useEChart"));
         const done = (r: { first: number; update: number }) => {
             app.unmount();
