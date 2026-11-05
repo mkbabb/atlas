@@ -1,6 +1,72 @@
 # Changelog
 
-## Unreleased (8.0.0 train)
+## 8.0.0-rc.1 — 2026-11-05
+
+The first 8.0.0 prerelease, published under the npm `next` tag. `latest` stays on 7.0.0 until the
+final cut. Every break below is listed against 7.0.0 (`git log v7.0.0..1d933b8`), and MIGRATION.md
+gives the edit for each. The sections after this summary are the entries written as each lane
+landed.
+
+### Breaking changes since 7.0.0
+
+- **Peers.** `@mkbabb/glass-ui` moves from `^7.0.0` to the 10 line, and the rc needs the glass
+  release that ships the `./dock-trigger` subpath (`DockTrigger`) and `STILL_FIELD` from
+  `./aurora`. No published glass has either yet, so 10.1.4 does not satisfy this rc.
+  `@mkbabb/pencil-boil` is no longer a peer, because nothing in atlas imports it.
+  `@mkbabb/keyframes.js ^6.0.0` and `@mkbabb/value.js ^4.0.0` are unchanged.
+- **Styles are compiled by the consumer.** `@mkbabb/atlas/styles` is Tailwind v4 source. A site
+  builds one root sheet that imports `tailwindcss`, then `@mkbabb/glass-ui/styles`, then
+  `@mkbabb/atlas/styles`, and builds through `atlasCorePreset()`, which refuses any other order.
+  `dist/style.css` and `dist/styles/components.css` are gone. Each component imports its own sheet.
+- **Chart readiness.** `useEChart` exposes `settled`, `frame` and `push`. Overlays and the
+  ornament take that handle (`echart`) in place of a bare `chart`. `highlight` takes the live key
+  index, and `downplay()` takes no argument. The chart is null until the paint pump has run `init`.
+- **The figure's dock.** `PlateDock` replaces `PlateAct` and the plate's act row. `PLATE_ACTS`,
+  `PlateActKind`, `VizGearDock`, the viz-context Enlarge, the stage-controls registry, `SceneAct`,
+  `SCENE_ACT_SEAT` and the J-VIZDOCK members of `useVizPlate` are deleted.
+- **The URL.** `setSel` and `setFocus` are deleted. Dials and `?drawer` are no longer written.
+  `openFig` pushes a history entry and `closeFig` goes back. The year scope writes one key, `?sy=`
+  or `?year=`. `yearMode` and `years` are read once and never written.
+- **The data plane.** `loadFeed` reads only the served snapshot, and `apiUrl` is deleted.
+  `aggregateRows` counts a unit only on its row in the latest selected period. `trajectory()`
+  throws on a `latest` measure over a multi-row period. The glyph exports (`charterGlyph`,
+  `glyphRegistryVersion` and the rest) move from `./data` to `./data/entity-geometry`, and they load
+  lazily.
+- **The shell and the dock.** `SiteShell` owns the one dock and the router outlet. `PlatformShell`
+  loses its dock slot and banner, and `Dock` takes its context as a prop. The phone crest sheet, the
+  membrane provenance hosts, `ControlPlaneSpine` and `DEPOSITION_ENVELOPE` are deleted.
+  `MembraneFacet` and `MembraneBand` drop their figure arms.
+- **The dashboard registry.** `DashboardMeta.rank` is required. `DashboardMeta.crest` is deleted.
+  `DashboardEntry.context` is replaced by `loadContext()`, over a lazy `contextModules` map.
+- **Figure surfaces.** `HoverReadout.eyebrow` is deleted and `sources` is new. `formatKbps` is
+  deleted in favour of `formatKbpsPerStudent`, and bandwidth prints "Gbps". `EntityDetail`
+  replaces `ReadoutSheet`. `ChapterScene` drops `steps`, `apply`, `anchor` and `side`
+  (`SceneAnchor` and `SceneSide` go with them), and every scene option needs a `label`.
+  `KeyInput.shift` is now `KeyInput.multi`. `AggregateResolver` returns a `SelectionAggregate` in
+  place of a label. `SubFloorRow` values need an `id`. `ProvenanceAppendix` drops `figureNos`, and
+  `figureOrdinalFor` and `AppendixSource` are deleted.
+- **Motion and type.** The motion `scroll` trigger is retired, along with its three scroll-only
+  presets. The scroll-scrubbed reveals are deleted with no successor (`countAt`, the reveal
+  shapes, `useSectionReveal`, `useScrollLettering`, `ScrollLetteringHeading`, `TypewriterTitle`,
+  `splitGraphemes`). So are `useCountUp`, the rule variants (`RuleVariant`, `AnimatedRule`'s
+  `variant`) and the glass 9 mark morphology (`useMarkMorphology`, `MarkVariant`, `BOIL_BUDGET`,
+  `clockAppear`). `useAuroraConfig` takes only `flatWash`, and `nucleusAt` takes one argument. The
+  display and serif font tokens are the system sans.
+- **Skins and contracts.** The skin runtime (`useSkin`, `SKIN_KEY`, `skinCssVars`, `SkinContract`
+  and its brand, data, cover and type-scale types) is deleted from `./skin` and `./editorial`.
+  `SourceDataSpec` is replaced by the declarative `DataScope`. `ChapterTitle` is exported from
+  `./contract` only, and its function arm is gone. `ScrollDir` and `sharesDimensionCell` are deleted.
+- **Vite.** `atlasCorePreset()` owns `output.manualChunks` through `atlas:route-chunks` and refuses a
+  consumer that sets it. `coreManualChunks` is deleted.
+- **Maps.** `GeoChoropleth` no longer writes `--rank` or `.geo-shape--draw` on its shapes. `rank`
+  on its own renders the map at rest. To animate a map, pass `entrance`.
+
+### New since 7.0.0 for Gregg (U/B8 A1, A3, A5, A10)
+
+`originRank`, `entranceThreads` and the `entrance` prop (A1); `UnitChart`, `UnitCanvas`,
+`UnitMorph` and the unit layouts (A3); a hover card that flips at the edge and stays clear of the
+dock (A5, inside `HoverCard`); and the label rail (`layoutLabelRail`, `settleRail`,
+`railLabelCount`, the `labelRail` prop) (A10). All of these are in `./charts` or `./interaction`.
 
 ### Fixes (U/B8r I-4)
 
