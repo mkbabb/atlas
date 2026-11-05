@@ -2,7 +2,7 @@
 // under `next` (npm refuses a prerelease publish without --tag); the publish runs over OIDC trusted
 // publishing with no token; CI runs on push to master and the release line plus workflow_dispatch,
 // with the three-engine lane pinned to playwright 1.60.0 (WebKit 2287).
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -27,8 +27,10 @@ function stepScript(workflow: string, name: string): string {
 }
 
 describe("scripts/release.sh tag grammar", () => {
-    // The package is not at any of these versions, so an admitted tag stops at the version check
-    // ("does not match") and a refused one at the usage line; neither reaches the build.
+    // The script runs in a scratch directory whose package.json is at none of these versions, so an
+    // admitted tag stops at the version check ("does not match") and a refused one at the usage
+    // line. Neither reaches the build. Run from ROOT, a tag equal to the real version (v8.0.0-rc.1
+    // at the rc cut) would start `npm run prepublishOnly`, and through `npm run test` this spec again.
     const table: Array<[string, boolean]> = [
         ["v8.0.0", true],
         ["v8.0.0-rc.1", true],
@@ -50,7 +52,14 @@ describe("scripts/release.sh tag grammar", () => {
     ];
     for (const [tag, admitted] of table) {
         it(`${admitted ? "admits" : "refuses"} ${JSON.stringify(tag)}`, () => {
-            const r = spawnSync("bash", ["scripts/release.sh", tag], { cwd: ROOT, encoding: "utf8" });
+            const dir = mkdtempSync(join(tmpdir(), "atlas-release-grammar-"));
+            let r: SpawnSyncReturns<string>;
+            try {
+                writeFileSync(join(dir, "package.json"), JSON.stringify({ version: "0.0.0-grammar" }));
+                r = spawnSync("bash", [join(ROOT, "scripts/release.sh"), tag], { cwd: dir, encoding: "utf8" });
+            } finally {
+                rmSync(dir, { recursive: true, force: true });
+            }
             expect(r.status).toBe(1);
             if (admitted) {
                 expect(r.stderr).toMatch(/does not match package version/);
