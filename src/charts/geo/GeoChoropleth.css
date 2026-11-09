@@ -70,7 +70,7 @@
    lift to 0.6, which held visible text below full opacity; now a label is either hidden or painted
    at full ink, and the X10 contrast gate measures exactly the ink it paints. */
 .geo-value-label {
-    font-family: var(--font-mono);
+    font-family: var(--font-mono, monospace);
     font-size: var(--type-micro);
     fill: var(--foreground);
     visibility: hidden;
@@ -151,7 +151,7 @@
    the pointer). Mounted only where a route wires `placeLabel` — the resting map is unchanged for
    every route that does not. */
 .geo-place-label {
-    font-family: var(--font-mono);
+    font-family: var(--font-mono, monospace);
     /* The phone counter-scale var (component-bound; ≤2×) holds the word near its CSS size when
        the viewBox scales a narrow render down — desktop renders bind nothing and read 11px. */
     font-size: calc(11px * var(--geo-place-letter-scale, 1));
@@ -220,7 +220,7 @@
     paint-order: stroke;
 }
 .geo-rail-label {
-    font-family: var(--font-mono);
+    font-family: var(--font-mono, monospace);
     fill: var(--foreground);
     paint-order: stroke;
     stroke: var(--background);
