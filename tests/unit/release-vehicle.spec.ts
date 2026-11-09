@@ -73,10 +73,10 @@ describe("scripts/release.sh tag grammar", () => {
 describe("release.yml", () => {
     const yml = read(".github/workflows/release.yml");
 
-    it("publishes over OIDC trusted publishing: id-token write, npm >= 11.5.1, no token", () => {
+    it("publishes with provenance: id-token write, npm >= 11.5.1, the token only on the publish step", () => {
         expect(yml).toMatch(/^\s+id-token: write$/m);
-        expect(yml).not.toMatch(/secrets\.NPM_TOKEN/);
-        expect(yml).not.toMatch(/NODE_AUTH_TOKEN\s*:/);
+        expect(stepScript(yml, "Publish with provenance")).toMatch(/npm publish --provenance/);
+        expect(yml.match(/secrets\.NPM_TOKEN/g) ?? []).toHaveLength(1);
         const npm = yml.match(/npm install -g npm@(\d+)\.(\d+)\.(\d+)/);
         expect(npm).not.toBeNull();
         const [maj, min, pat] = npm!.slice(1).map(Number);

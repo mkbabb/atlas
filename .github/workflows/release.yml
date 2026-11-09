@@ -48,9 +48,11 @@ jobs:
       - name: Publish with provenance
         # The channel follows the version: a prerelease (8.0.0-rc.1) publishes under `next`, because
         # npm refuses a prerelease publish without --tag; `latest` moves only on a final version.
-        # Trusted publishing over OIDC (`id-token: write`): no NODE_AUTH_TOKEN and no NPM_TOKEN
-        # secret. The trusted-publisher entry (mkbabb/atlas, .github/workflows/release.yml) is set
-        # on npmjs.com by the owner.
+        # Authorization is the repo's NPM_TOKEN secret, as glass-ui publishes; provenance comes from the
+        # OIDC id-token (`id-token: write`). When a trusted-publisher entry for mkbabb/atlas +
+        # release.yml exists on npmjs.com, delete this env block and npm uses OIDC alone.
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           version=$(node -p 'require("./package.json").version')
           case "$version" in
