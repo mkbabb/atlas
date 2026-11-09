@@ -224,12 +224,18 @@ function focusName(): string {
     return a.dataset.testid ?? a.getAttribute("aria-label") ?? a.tagName.toLowerCase();
 }
 
+/** Every dock list's panel: a glass Select's content, the More menu, the Dashboards list. */
+const LISTS = "[data-slot='select-content'], .usf-dock-settings, [data-testid='dock-dashboards-list']";
+
 /** Close a list the reader's way: a tap on the page outside it. The rail's list at 1440 does not
-    close on an outside tap in this build (B7-ATLAS-JOIN open item), so it closes on Escape. */
+    close on an outside tap in this build (B7-ATLAS-JOIN open item), so it closes on Escape. The tap
+    waits for the list to finish opening, and the close is awaited, not slept: the list leaves on its
+    exit motion, which outran a fixed 300 ms on the CI WebKit runner ("sections closes"). */
 async function dismissList(s: Surface): Promise<void> {
+    expect(await atRest(LISTS), "the open list comes to rest").toBe(true);
     if (s.inRail) await userEvent.keyboard("{Escape}");
     else await userEvent.click(document.querySelector<HTMLElement>("#one h2")!, { force: true });
-    await sleep(300);
+    await until(() => !s.isOpen(), 1500);
 }
 
 /** Every seated sheet: the filter drawer, the detail, and the dock's bottom sheets. */

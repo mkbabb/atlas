@@ -84,12 +84,17 @@ describe("DV-3 · the table view windows its rows", () => {
     it.skipIf(server.browser !== "chromium")("the 546-row open stays under a 50 ms task at 4x CPU, 390 px", async () => {
         await page.viewport(390, 844);
         const { root, open } = await mount();
-        // Warm the component once, untimed, so the timed open measures the render, not compilation.
-        open.value = true;
-        expect(await until(() => bodyRows(root).length > 0, 2000)).toBe(true);
-        open.value = false;
-        await nextTick();
-        await sleep(300);
+        // Warm the component, untimed, so the timed open measures the render, not compilation. One
+        // warm open was not enough on the CI runner: the first timed open ran 52-61 ms and the two
+        // after it raised no long task at all, so the cost was the engine's first optimizing pass
+        // over the open's code, not the render. Three warm opens take the timed ones past it.
+        for (let warm = 0; warm < 3; warm++) {
+            open.value = true;
+            expect(await until(() => bodyRows(root).length > 0, 2000)).toBe(true);
+            open.value = false;
+            await nextTick();
+            await sleep(300);
+        }
 
         // vitest types the CDP session without its methods; the Chromium session has `send`.
         const session = cdp() as unknown as { send(method: string, params?: object): Promise<unknown> };
