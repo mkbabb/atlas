@@ -47,7 +47,9 @@ jobs:
     # The frame-loop specs (`src/**/*.browser.spec.ts`) in real engines. The exact `playwright`
     # pin in package.json names the builds: 1.60.0 = chromium-1223, firefox-1522, webkit-2287.
     # WebKit stays on 2287 until the 2311 nested color-mix() crash is characterised (§H M-4).
-    runs-on: ubuntu-latest
+    # The runner is pinned with the builds: ubuntu-latest moved to 26.04, where playwright 1.60.0
+    # refuses to install any engine ("Playwright does not support chromium on ubuntu26.04-x64").
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
