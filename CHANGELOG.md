@@ -9,9 +9,11 @@ landed.
 
 ### Breaking changes since 7.0.0
 
-- **Peers.** `@mkbabb/glass-ui` moves from `^7.0.0` to the 10 line, and the rc needs the glass
-  release that ships the `./dock-trigger` subpath (`DockTrigger`) and `STILL_FIELD` from
-  `./aurora`. No published glass has either yet, so 10.1.4 does not satisfy this rc.
+- **Peers.** `@mkbabb/glass-ui` moves from `^7.0.0` to `^11.0.0` (dev pin `^11.0.0`, locked at
+  11.0.0). Glass 11.0.0 is the first release that ships everything atlas imports: the
+  `./dock-trigger` subpath (`DockTrigger`), `STILL_FIELD` from `./aurora`, the `GlassDock` props
+  `anchor`, `expand-on` and `collapsed-label`, `Card`'s `backdrop-mode`, and the `--radius-circle`
+  and `--radius-bar` tokens. No 10.x release satisfies this rc.
   `@mkbabb/pencil-boil` is no longer a peer, because nothing in atlas imports it.
   `@mkbabb/keyframes.js ^6.0.0` and `@mkbabb/value.js ^4.0.0` are unchanged.
 - **Styles are compiled by the consumer.** `@mkbabb/atlas/styles` is Tailwind v4 source. A site

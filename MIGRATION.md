@@ -1,7 +1,7 @@
-# Migrating to Atlas 8.0.0 (unreleased; the rc train)
+# Migrating to Atlas 8.0.0 (8.0.0-rc.1, npm `next`)
 
 Each row is drawn from the `u/build-atlas-rc` commits over 6dd96b9 (`git log 6dd96b9..`), not from
-intent. The version is not bumped here; the rc tag is an owner act.
+intent. 8.0.0-rc.1 is the first prerelease of the line; it needs `@mkbabb/glass-ui ^11.0.0` (§6).
 
 ## 1 · The styles contract: the consumer compiles atlas's styles
 
@@ -201,7 +201,7 @@ projecting components.
 | `DockSettings` takes `returnFocus` (default true) and `Dock` passes `!bar.more.displaced`; DockSearch's button takes focus before it opens the palette | none |
 | A chart's echarts `init` and first `setOption` run as a job of the paint pump, one frame after the host mounts or scrolls in; `useEChart().chart` is null until then | none for sci plates (they read `settled` / `frame`); code that reads `chart.value` in a microtask after mount waits for it (`watch(api.chart, …)`) |
 | `useDocumentScrollProgress` callers share one scroll listener that reads `scrollY` only | none |
-| The motion `scroll` trigger is retired: `MotionTrigger`, `MOTION_TRIGGERS`, `MotionDrivers.scroll`, `MotionDriverSources.scroll` and `VizContextSources.scroll` are gone, and `useVizContext` no longer runs a cover-progress clock per plate. The scroll-only presets `BarRise`, `ClipWipe` and `DrawIn` are deleted (their K-names fold into `RevealUp` and `CurvePersist`); `CurvePersist` fires on `select` only. 13 presets | none for sci (no segment declares `scroll`); a consumer declaring `on: "scroll"` moves the reveal to the reveal register (`revealHostStyle`) |
+| The motion `scroll` trigger is retired: `MotionTrigger`, `MOTION_TRIGGERS`, `MotionDrivers.scroll`, `MotionDriverSources.scroll` and `VizContextSources.scroll` are gone, and `useVizContext` no longer runs a cover-progress clock per plate. The scroll-only presets `BarRise`, `ClipWipe` and `DrawIn` are deleted (their K-names fold into `RevealUp` and `CurvePersist`); `CurvePersist` fires on `select` only. 13 presets | none for sci (no segment declares `scroll`); a consumer declaring `on: "scroll"` deletes it: the reveal register (`revealHostStyle`, `countAt`, the reveal shapes) was deleted in U/B7 (§5g), and a scroll-scrubbed reveal has no successor; the figure renders its final state |
 | `atlas:route-chunks` folds each chunk that two or more routes load and whose modules hold under `MIN_SET_CHUNK` (8,192) characters into the smallest chunk of a covering route set that every route loads at once or whose modules are all effect-free, when every module in the small chunk is free of side effects, imports no sheet, and imports only what that set already loads (U/B7c M1). A route outside the small set fetches the folded bytes and evaluates nothing new. sci: 71 route script files → 48; /sci requests before the hero 48 → 36 | none |
 | The More gear (`DockSettings`) seats a face (the dock trigger's classes, name, seat mark and test id) and loads the live menu (`DockSettingsMenu`: the glass DropdownMenu, its trigger and the controls sheet) on the gear's first pointer, focus, press or open (U/B7c M1). glass's DropdownMenu root provides the whole reka DropdownMenu family and floating-ui; sci's entry: 422,519 → 340,008 B raw (125,808 → 105,960 B brotli 11) | none |
 
@@ -231,9 +231,39 @@ projecting components.
 |---|---|
 | `GeoChoropleth` no longer marks a ranked map: no `.geo-shape--draw` class and no `--rank` style on its shapes (the `map-draw.css` keyframe that read them is gone) | to animate a map, pass `entrance: { origin, kind: "ripple" }`; `rank` alone renders the map at rest and is only the ripple's fallback order when its origin is missing. Delete any route CSS that reads `.geo-shape--draw` or `var(--rank)` |
 
-## 6 · glass-ui 10.1.0
+## 5l · U/B8: the figure's table view and the entrance law (lane DV)
 
-Peer `@mkbabb/glass-ui` is `^10.1.0`. Each row names the atlas surface, what changed, and the edit.
+- `PlateDock` takes an optional `view: PlateView` and emits `update:view`. With a `view`, a closed
+  dock is two tab stops: the Table view toggle, then the handle. A consumer test that counts one
+  stop per closed figure dock now counts two.
+- A host that owns a plate's dock (as `ChapterStage` does) provides `PLATE_VIEW_KEY` from
+  `charts/frame/plate-view`; the plate inside reads its view from it.
+- The source-data control in the open dock shows `Database`, not `Table2`. Its label is unchanged.
+- `useEChart`'s first push carries `animation: false`. A consumer test that reads a first-render
+  ECharts animation now reads the final frame at once; later pushes keep the plate's flag.
+- Sort a table through `sortRowsBy` / `compareCells` from `@mkbabb/atlas/lib`; do not write a local
+  comparator. `DataViewerRoute` now puts an empty cell last ascending.
+- An entrance plays through `useEntrance`, `useFirstViewTarget` or `observeFirstView` from
+  `@mkbabb/atlas/motion`; do not arm one on a raw IntersectionObserver. A restorer that is not the
+  dock stepper must call `beginNarrativeRestore()` / `markNarrativeRestoreAbsent()` and publish
+  `settleNarrativeRestore`, or entrances on a deep-linked page hold.
+- The first-plate affordance lift (`useAffordanceHint`) plays under the same law: after 130 ms in
+  view, not on a pass-through, and after a deep link has landed. A consumer test that reads
+  `data-affordance-lift` on the first intersection now waits for the dwell. The lift no longer has
+  its own reading band (the old `-40%` bottom `rootMargin`): like every entrance, it counts the
+  plate as in view once a quarter of it, or half the viewport's height of it, is on screen,
+  anywhere on screen. A consumer that relied on the lift waiting until the plate reached the upper
+  60% of the viewport now sees it sooner.
+
+## 6 · glass-ui 11.0.0
+
+Peer `@mkbabb/glass-ui` is `^11.0.0` (dev pin resolved to 11.0.0). No 10.x release satisfies this rc:
+atlas imports surfaces that first shipped in glass 11.0.0, namely the `./dock-trigger` subpath
+(`DockTrigger`), `STILL_FIELD` from `./aurora`, the `GlassDock` props `anchor`, `expand-on` and
+`collapsed-label`, `Card`'s `backdrop-mode`, and the `--radius-circle` and `--radius-bar` tokens.
+Install glass 11 beside atlas (`npm i @mkbabb/glass-ui@^11.0.0 @mkbabb/atlas@next`). The rows below
+name the earlier glass 8–10 edits that still apply. Each row names the atlas surface, what changed,
+and the edit.
 
 | Surface | Change | Consumer edit |
 |---|---|---|
@@ -417,30 +447,6 @@ const skin = defineSkin({
 Every custom `VizAlternate` now requires `morph: "same-instance" | "cross-instance"`. Use `same-instance` only when the alternate is a `VizView` in the base chart's `VizSetContract`; use `cross-instance` for an explicit component swap.
 
 The dedicated public entry points introduced here are `@mkbabb/atlas/events` and `/skin`. The `/viz-set` and `/stage` subpaths introduced in this release were later withdrawn (in 7.0.0); their facilities re-home to the `@mkbabb/atlas/charts` and `/story` barrels, which re-export them. Existing chart and story barrels continue to re-export their corresponding facilities.
-
-## The figure's table view and the entrance law (U/B8 lane DV)
-
-- `PlateDock` takes an optional `view: PlateView` and emits `update:view`. With a `view`, a closed
-  dock is two tab stops: the Table view toggle, then the handle. A consumer test that counts one
-  stop per closed figure dock now counts two.
-- A host that owns a plate's dock (as `ChapterStage` does) provides `PLATE_VIEW_KEY` from
-  `charts/frame/plate-view`; the plate inside reads its view from it.
-- The source-data control in the open dock shows `Database`, not `Table2`. Its label is unchanged.
-- `useEChart`'s first push carries `animation: false`. A consumer test that reads a first-render
-  ECharts animation now reads the final frame at once; later pushes keep the plate's flag.
-- Sort a table through `sortRowsBy` / `compareCells` from `@mkbabb/atlas/lib`; do not write a local
-  comparator. `DataViewerRoute` now puts an empty cell last ascending.
-- An entrance plays through `useEntrance`, `useFirstViewTarget` or `observeFirstView` from
-  `@mkbabb/atlas/motion`; do not arm one on a raw IntersectionObserver. A restorer that is not the
-  dock stepper must call `beginNarrativeRestore()` / `markNarrativeRestoreAbsent()` and publish
-  `settleNarrativeRestore`, or entrances on a deep-linked page hold.
-- The first-plate affordance lift (`useAffordanceHint`) plays under the same law: after 130 ms in
-  view, not on a pass-through, and after a deep link has landed. A consumer test that reads
-  `data-affordance-lift` on the first intersection now waits for the dwell. The lift no longer has
-  its own reading band (the old `-40%` bottom `rootMargin`): like every entrance, it counts the
-  plate as in view once a quarter of it, or half the viewport's height of it, is on screen,
-  anywhere on screen. A consumer that relied on the lift waiting until the plate reached the upper
-  60% of the viewport now sees it sooner.
 
 ## Update peers
 
