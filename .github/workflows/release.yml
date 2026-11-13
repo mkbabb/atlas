@@ -35,7 +35,7 @@ jobs:
             exit 1
           fi
       - name: Verify CI is green on the tagged commit
-        # §J H-A5: a tag is cut only from a commit whose verify and engines jobs passed in ci.yml.
+        # §J H-A5: a tag is cut only from a commit whose verify job passed in ci.yml.
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

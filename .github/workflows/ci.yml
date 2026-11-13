@@ -1,6 +1,8 @@
 # Checks on every pull request, on every push to master and the release line, and on demand.
 # Publication is tag-only through release.yml, and a tag is cut only from a commit whose
-# `verify` and `engines` jobs are green here (RULINGS §J H-A5; release.yml re-checks it).
+# `verify` job is green here (RULINGS §J H-A5; release.yml re-checks it).
+# Owner order 2026-11-13: no browsers in Actions. The engine specs (`npm run test:engines`) run
+# locally through the guard before a release.
 name: CI
 
 on:
@@ -8,6 +10,9 @@ on:
     branches:
       - master
       - "release/**"
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
   workflow_dispatch:
   pull_request:
     paths:
@@ -28,6 +33,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -42,29 +51,3 @@ jobs:
       - run: npm run build
       - run: npm run lint:pub
       - run: npm run test
-
-  engines:
-    # The frame-loop specs (`src/**/*.browser.spec.ts`) in real engines. The exact `playwright`
-    # pin in package.json names the builds: 1.60.0 = chromium-1223, firefox-1522, webkit-2287.
-    # WebKit stays on 2287 until the 2311 nested color-mix() crash is characterised (§H M-4).
-    # The runner is pinned with the builds: ubuntu-latest moved to 26.04, where playwright 1.60.0
-    # refuses to install any engine ("Playwright does not support chromium on ubuntu26.04-x64").
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        engine: [chromium, firefox, webkit]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: npm
-      - run: npm ci
-      - name: Assert the pinned playwright
-        run: node -e 'const v=require("playwright/package.json").version; if (v!=="1.60.0") { console.error("playwright " + v + ", expected 1.60.0"); process.exit(1) }'
-      - run: npx playwright install --with-deps ${{ matrix.engine }}
-      - run: npm run test:engines
-        env:
-          ENGINE: ${{ matrix.engine }}
