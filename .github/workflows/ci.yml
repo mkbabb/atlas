@@ -1,8 +1,8 @@
 # Checks on every pull request, on every push to master and the release line, and on demand.
 # Publication is tag-only through release.yml, and a tag is cut only from a commit whose
 # `verify` job is green here (RULINGS §J H-A5; release.yml re-checks it).
-# Owner order 2026-11-13: no browsers in Actions. The engine specs (`npm run test:engines`) run
-# locally through the guard before a release.
+# Owner order 2026-11-13: no browsers in Actions. The engine specs run locally, through the
+# guard, before a release.
 name: CI
 
 on:

@@ -1,7 +1,7 @@
 // The release vehicle (U RULINGS §J A-2, A-3, H-A5). A prerelease is cut as `-rc.N` and published
 // under `next` (npm refuses a prerelease publish without --tag); the publish runs over OIDC trusted
 // publishing with no token; CI runs on push to master and the release line plus workflow_dispatch,
-// with the three-engine lane pinned to playwright 1.60.0 (WebKit 2287).
+// with no browser in Actions; the three-engine lane (playwright 1.60.0, WebKit 2287) runs locally.
 import { execFileSync, spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -129,14 +129,14 @@ describe("ci.yml", () => {
         expect(on).toMatch(/^\s+pull_request:$/m);
     });
 
-    it("runs the engine lane in Chromium, Firefox and WebKit on the pinned playwright", () => {
-        expect(yml).toMatch(/engine: \[chromium, firefox, webkit\]/);
-        expect(yml).toMatch(/npx playwright install --with-deps \$\{\{ matrix\.engine \}\}/);
-        expect(yml).toMatch(/npm run test:engines/);
+    it("runs no browser in Actions; the engine lane stays a local script on the pinned playwright", () => {
+        // Owner order 2026-11-13: no Playwright in any GitHub Action.
+        expect(yml).not.toMatch(/playwright/i);
+        expect(yml).not.toMatch(/test:engines/);
+        expect(yml).toMatch(/cancel-in-progress: true/);
         const pkg = JSON.parse(read("package.json"));
         // 1.60.0 names chromium-1223, firefox-1522 and webkit-2287 (RULINGS §H M-4).
         expect(pkg.devDependencies.playwright).toBe("1.60.0");
-        expect(yml).toContain('v!=="1.60.0"');
         expect(pkg.scripts["test:engines"]).toBe("vitest run --config vitest.browser.config.ts");
     });
 });
